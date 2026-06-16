@@ -60,6 +60,11 @@ const journey = [
 
 const faqs = [
   {
+    q: "इतने सस्ते में कैसे करवा पा रहे हो यह सब?",
+    a: "सभी के नाम का संकल्प साथ में लिया जाएगा। हर व्यक्ति का नाम और गोत्र अलग-अलग बोला जाएगा, लेकिन पंडित जी एक ही बार में सबके संकल्प सामूहिक रूप से ले लेंगे। इसीलिए यह सेवा सभी के लिए सुलभ और सस्ती रखी गई है।",
+    highlighted: true,
+  },
+  {
     q: "क्या मुझे प्रत्येक सेवा का प्रमाण मिलेगा?",
     a: "जी हाँ। प्रत्येक अनुष्ठान — सुंदरकांड, हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोज — का Live या Video Proof सीधे आपके WhatsApp पर भेजा जाता है। पूर्ण पारदर्शिता हमारी प्राथमिकता है।",
   },
@@ -344,12 +349,23 @@ function HomePage() {
             <button
               key={i}
               onClick={() => setOpenFaq(openFaq === i ? null : i)}
-              className="w-full py-6 text-left group"
+              className={`w-full py-6 text-left group ${
+                f.highlighted
+                  ? "bg-saffron/5 border border-saffron/30 rounded-xl px-5 -mx-5"
+                  : ""
+              }`}
             >
               <div className="flex justify-between items-start gap-6">
-                <h4 className="font-display font-bold text-lg group-hover:text-saffron transition-colors">
-                  {f.q}
-                </h4>
+                <div className="flex items-center gap-3">
+                  {f.highlighted && (
+                    <span className="bg-saffron text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0">
+                      लोकप्रिय
+                    </span>
+                  )}
+                  <h4 className="font-display font-bold text-lg group-hover:text-saffron transition-colors">
+                    {f.q}
+                  </h4>
+                </div>
                 <span
                   className={`text-saffron text-2xl shrink-0 transition-transform ${
                     openFaq === i ? "rotate-45" : ""
