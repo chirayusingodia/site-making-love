@@ -1,8 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { MessageCircle, X } from "lucide-react";
 import heroImg from "@/assets/pushkar-hero.jpg";
 import havanImg from "@/assets/havan.jpg";
 import gauSevaImg from "@/assets/gau-seva.jpg";
+import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+
+const WHATSAPP_URL =
+  "https://wa.me/919999999999?text=%E0%A4%9C%E0%A4%AF%20%E0%A4%B8%E0%A4%BF%E0%A4%AF%E0%A4%BE%E0%A4%B0%E0%A4%BE%E0%A4%AE%20%F0%9F%99%8F%F0%9F%8F%BB%20%E0%A4%AE%E0%A5%81%E0%A4%9D%E0%A5%87%20%E0%A4%AA%E0%A5%81%E0%A4%A3%E0%A5%8D%E0%A4%AF%E0%A4%AE%20%E0%A4%B8%E0%A5%87%E0%A4%B5%E0%A4%BE%20%E0%A4%B8%E0%A5%87%20%E0%A4%9C%E0%A5%81%E0%A4%A1%E0%A4%BC%E0%A4%A8%E0%A4%BE%20%E0%A4%B9%E0%A5%88";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -84,9 +89,11 @@ const faqs = [
 
 function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [waOpen, setWaOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-saffron/20 pb-32">
+
       {/* Nav */}
       <nav className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -160,8 +167,131 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Sundarkand — Importance (highlighted) */}
+      <section id="sundarkand" className="px-6 py-24 bg-deep text-cream relative overflow-hidden">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div className="rounded-3xl overflow-hidden ring-1 ring-gold/20 shadow-2xl order-2 lg:order-1">
+            <img
+              src={pushkarGhatImg}
+              alt="पुष्कर घाट — सूर्योदय के समय दीप अर्पण एवं आरती"
+              width={1920}
+              height={1080}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-gold block mb-4">
+              🚩 सुंदरकांड का महात्म्य
+            </span>
+            <h2 className="font-display font-extrabold text-3xl md:text-5xl leading-[1.15] mb-6 text-balance">
+              जहाँ सुंदरकांड,<br />
+              <span className="text-saffron">वहाँ संकट का नाश।</span>
+            </h2>
+            <p className="text-lg leading-relaxed opacity-90 mb-5">
+              श्री राम चरितमानस का सुंदरकांड — एकमात्र ऐसा कांड है जिसमें श्री हनुमान जी ने स्वयं
+              अपने पराक्रम से असंभव को संभव कर दिखाया। शास्त्रों में कहा गया है —
+              <span className="text-gold font-medium"> "सुंदरकांड का पाठ करने वाले के घर में
+              न दरिद्रता रहती है, न रोग, न शोक, न भय।"</span>
+            </p>
+            <p className="text-lg leading-relaxed opacity-90 mb-5">
+              यह पाठ साक्षात हनुमान जी का आवाहन है — कार्य में आ रही बाधाएँ हटती हैं, बिगड़े काम
+              बनते हैं, ग्रह दोष शांत होते हैं, और परिवार में सकारात्मक ऊर्जा का संचार होता है।
+              मंगलवार एवं शनिवार को इसका पाठ विशेष फलदायी माना गया है।
+            </p>
+
+            <div className="mt-8 p-6 rounded-2xl bg-saffron/10 border border-saffron/30">
+              <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-gold mb-3">
+                आज के समय में सुंदरकांड की लागत
+              </div>
+              <div className="flex items-baseline gap-4 flex-wrap mb-4">
+                <span className="font-display text-3xl md:text-4xl font-extrabold line-through opacity-60">
+                  ₹७,०००–१०,०००
+                </span>
+                <span className="text-xs uppercase tracking-wider opacity-60">
+                  सामान्य आचार्य शुल्क
+                </span>
+              </div>
+              <p className="leading-relaxed opacity-90 mb-4">
+                आज एक बार सुंदरकांड का पाठ अपने घर पर करवाने में ₹७,००० से ₹१०,००० तक खर्च आता है —
+                आचार्य, सामग्री, प्रसाद, दक्षिणा सब मिलाकर। बहुत से भक्त चाहकर भी यह पुण्य लाभ नहीं
+                ले पाते।
+              </p>
+              <p className="leading-relaxed text-gold font-medium">
+                इसलिए श्री हनुमान जी की कृपा से हमने संकल्प लिया — यह पुण्य हर घर तक पहुँचे।
+                सामूहिक संकल्प के माध्यम से <span className="text-saffron font-bold">मात्र ₹२५०</span>{" "}
+                में आपके नाम और गोत्र से सुंदरकांड पाठ — ताकि राम नाम का पुण्य आपके खाते में
+                नित्य जुड़ता रहे।
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Daan in Pushkar — Importance */}
+      <section className="px-6 py-24">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
+              पुष्कर में दान का माहात्म्य
+            </span>
+            <h2 className="font-display font-bold text-3xl md:text-5xl leading-tight mb-6 text-balance">
+              तीर्थराज पुष्कर —<br />
+              <span className="text-saffron">जहाँ एक दान, सहस्र पुण्य।</span>
+            </h2>
+            <div className="h-1 w-20 bg-gold mx-auto" />
+          </div>
+
+          <p className="text-lg leading-relaxed text-muted-foreground max-w-3xl mx-auto text-center mb-12">
+            पद्म पुराण के अनुसार पुष्कर समस्त तीर्थों का राजा है — स्वयं ब्रह्मा जी का यज्ञ
+            स्थल। यहाँ किया गया एक दान अन्य स्थानों पर किए सहस्र दानों के समान फलदायी होता है।
+            इसीलिए हमारी समस्त सेवाएँ इसी पवित्र भूमि से सम्पन्न होती हैं।
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-8 rounded-2xl border border-border bg-cream">
+              <div className="text-3xl mb-4">🐄</div>
+              <h3 className="font-display font-bold text-2xl mb-3">गौ माता को हरा चारा</h3>
+              <p className="text-muted-foreground leading-relaxed mb-3">
+                शास्त्रों में गौ माता में तैंतीस कोटि देवताओं का वास माना गया है। उन्हें हरा चारा
+                अर्पित करने से पितृ दोष शांत होते हैं, घर में लक्ष्मी का वास होता है, और संतान
+                सुख की प्राप्ति होती है।
+              </p>
+              <p className="text-saffron font-medium">
+                "गावो विश्वस्य मातरः" — गाय ही सम्पूर्ण विश्व की माता हैं।
+              </p>
+            </div>
+
+            <div className="p-8 rounded-2xl border border-saffron/40 bg-saffron/5">
+              <div className="text-3xl mb-4">🍌</div>
+              <h3 className="font-display font-bold text-2xl mb-3">
+                मंगलवार को वानरों को केला
+              </h3>
+              <p className="text-muted-foreground leading-relaxed mb-3">
+                मंगलवार श्री हनुमान जी का दिन है। इस दिन वानरों को केला, चना और गुड़ खिलाना
+                साक्षात हनुमान जी की सेवा मानी जाती है — क्योंकि वानर उनके स्वरूप हैं।
+              </p>
+              <p className="leading-relaxed text-muted-foreground mb-3">
+                इस सेवा से मंगल दोष शांत होते हैं, साहस और बल की वृद्धि होती है, शत्रु बाधा
+                समाप्त होती है, और कार्य में अकल्पनीय सफलता मिलती है।
+              </p>
+              <p className="text-saffron font-medium">
+                हर मंगलवार पुष्कर में आपके नाम से वानर सेवा सम्पन्न।
+              </p>
+            </div>
+          </div>
+
+          <p className="text-center mt-12 font-display text-xl md:text-2xl text-deep leading-relaxed text-balance">
+            "जो स्वयं नहीं जा सकते — उनके नाम का संकल्प हम पुष्कर तक पहुँचाते हैं।
+            <span className="text-saffron"> पुण्य आपका, सेवा हमारी।</span>"
+          </p>
+        </div>
+      </section>
+
       {/* Sevas */}
       <section id="sevas" className="px-6 py-24 bg-cream">
+
         <div className="max-w-6xl mx-auto">
           <div className="mb-16 max-w-2xl">
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
@@ -434,6 +564,45 @@ function HomePage() {
           सदस्य बनें
         </a>
       </div>
+
+      {/* Floating WhatsApp button */}
+      <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[60] flex flex-col items-end gap-3">
+        {waOpen && (
+          <div className="animate-incense bg-background border border-saffron/30 shadow-2xl rounded-2xl p-4 pr-3 max-w-[18rem] relative">
+            <button
+              onClick={() => setWaOpen(false)}
+              aria-label="बंद करें"
+              className="absolute top-2 right-2 size-6 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground"
+            >
+              <X size={14} />
+            </button>
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-saffron mb-2">
+              जय सियाराम 🙏🏻
+            </div>
+            <p className="text-sm leading-relaxed text-foreground mb-4 pr-4">
+              आप हमसे WhatsApp पर भी जुड़ सकते हैं — नि:संकोच संपर्क करें, हम आपकी सेवा में
+              उपस्थित हैं।
+            </p>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition-opacity w-full justify-center"
+            >
+              <MessageCircle size={16} />
+              WhatsApp पर जुड़ें
+            </a>
+          </div>
+        )}
+        <button
+          onClick={() => setWaOpen((v) => !v)}
+          aria-label="WhatsApp पर संपर्क करें"
+          className="size-14 rounded-full bg-[#25D366] text-white shadow-2xl shadow-[#25D366]/40 flex items-center justify-center hover:scale-105 transition-transform ring-4 ring-white/40"
+        >
+          <MessageCircle size={26} fill="white" strokeWidth={1.8} />
+        </button>
+      </div>
     </div>
+
   );
 }
