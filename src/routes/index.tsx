@@ -166,7 +166,7 @@ function HomePage() {
       </section>
 
       {/* Manifesto strip */}
-      <section className="px-6 py-16">
+      <section className="px-6 py-12">
         <div className="max-w-3xl mx-auto text-center">
           <p className="font-display text-2xl md:text-3xl leading-relaxed text-balance text-deep">
             "यह कोई व्यवसाय नहीं — यह सनातन सेवा का{" "}
@@ -179,7 +179,7 @@ function HomePage() {
       </section>
 
       {/* Sundarkand — Importance (highlighted) */}
-      <section id="sundarkand" className="px-6 py-24 bg-deep text-cream relative overflow-hidden">
+      <section id="sundarkand" className="px-6 py-14 bg-deep text-cream relative overflow-hidden">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           <div className="rounded-3xl overflow-hidden ring-1 ring-gold/20 shadow-2xl order-2 lg:order-1">
             <img
@@ -241,7 +241,7 @@ function HomePage() {
       </section>
 
       {/* Daan in Pushkar — Importance */}
-      <section className="px-6 py-24">
+      <section className="px-6 py-14">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
@@ -300,7 +300,7 @@ function HomePage() {
       </section>
 
       {/* Sevas */}
-      <section id="sevas" className="px-6 py-24 bg-cream">
+      <section id="sevas" className="px-6 py-14 bg-cream">
 
         <div className="max-w-6xl mx-auto">
           <div className="mb-16 max-w-2xl">
@@ -348,7 +348,7 @@ function HomePage() {
       </section>
 
       {/* Image diptych */}
-      <section className="px-6 py-24">
+      <section className="px-6 py-14">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
           <div className="rounded-2xl overflow-hidden aspect-[4/5] ring-1 ring-border">
             <img
@@ -406,7 +406,7 @@ function HomePage() {
       </section>
 
       {/* Journey */}
-      <section id="journey" className="px-6 py-24 bg-cream">
+      <section id="journey" className="px-6 py-14 bg-cream">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
@@ -445,8 +445,8 @@ function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="px-6 py-24">
-        <div className="max-w-6xl mx-auto bg-saffron text-white rounded-[2.5rem] px-8 py-16 md:px-16 md:py-20">
+      <section id="testimonials" className="px-6 py-14">
+        <div className="max-w-6xl mx-auto bg-saffron text-white rounded-[2.5rem] px-8 py-16 md:px-16 md:py-14">
           <span className="font-mono text-xs uppercase tracking-[0.3em] opacity-70 block mb-4">
             भक्तों के अनुभव
           </span>
@@ -479,7 +479,7 @@ function HomePage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="max-w-3xl mx-auto px-6 py-24">
+      <section id="faq" className="max-w-3xl mx-auto px-6 py-14">
         <div className="text-center mb-12">
           <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
             शंका समाधान
@@ -525,7 +525,7 @@ function HomePage() {
       </section>
 
       {/* Final CTA */}
-      <section id="subscribe" className="px-6 py-24">
+      <section id="subscribe" className="px-6 py-14">
         <div className="max-w-3xl mx-auto bg-deep text-cream rounded-[2.5rem] p-12 md:p-16 text-center">
           <div className="font-mono text-xs uppercase tracking-[0.3em] text-gold mb-6">
             🚩 जय श्री राम • जय बजरंगबली 🚩
