@@ -89,9 +89,11 @@ const faqs = [
 
 function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [waOpen, setWaOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-saffron/20 pb-32">
+
       {/* Nav */}
       <nav className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
