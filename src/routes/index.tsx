@@ -31,31 +31,32 @@ export const Route = createFileRoute("/")({
 
 const sevas = [
   {
-    num: "१",
+    num: "1",
     title: "सुंदरकांड पाठ",
     desc: "आपके नाम एवं गोत्र से संकल्पपूर्वक सस्वर सुंदरकांड पाठ — श्री हनुमान जी की कृपा हेतु।",
   },
   {
-    num: "२",
+    num: "2",
     title: "गृह शांति हवन",
     desc: "विद्वान आचार्यों द्वारा वैदिक मंत्रों से पवित्र हवन — आपके परिवार की मंगल कामना सहित।",
   },
   {
-    num: "३",
+    num: "3",
     title: "गौ माता सेवा",
     desc: "स्थानीय गौशालाओं में गौ माता को हरा चारा एवं गुड़ का अर्पण — सीधा पुण्य।",
   },
   {
-    num: "४",
+    num: "4",
     title: "वानर सेवा",
     desc: "पुष्कर के पवित्र स्थलों पर वानरों को फल एवं चना — श्री हनुमान जी के प्रिय।",
   },
   {
-    num: "५",
+    num: "5",
     title: "ब्राह्मण भोज",
     desc: "विद्वान ब्राह्मणों को सात्विक भोजन एवं यथायोग्य सत्कार — पितृ आशीर्वाद।",
   },
 ];
+
 
 const journey = [
   { title: "मासिक संकल्प", desc: "अपना नाम, गोत्र एवं संकल्प साझा करें। मासिक योगदान ₹251 मात्र।" },
@@ -95,12 +96,13 @@ function HomePage() {
     <div className="min-h-screen bg-background text-foreground selection:bg-saffron/20 pb-32">
 
       {/* Nav */}
-      <nav className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="font-display font-extrabold text-xl tracking-tight text-saffron uppercase">
-            पुण्यम सेवा
-          </div>
-          <div className="hidden md:flex gap-8 text-sm font-medium tracking-wide uppercase opacity-70">
+      <nav className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-saffron/20 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 flex justify-between items-center gap-3">
+          <a href="#top" className="font-display font-extrabold text-lg md:text-xl tracking-tight text-saffron uppercase shrink-0">
+            🚩 पुण्यम सेवा
+          </a>
+          <div className="hidden md:flex gap-6 text-sm font-medium tracking-wide uppercase opacity-80">
+            <a href="#sundarkand" className="hover:text-saffron transition-colors">सुंदरकांड</a>
             <a href="#sevas" className="hover:text-saffron transition-colors">सेवाएँ</a>
             <a href="#journey" className="hover:text-saffron transition-colors">प्रक्रिया</a>
             <a href="#testimonials" className="hover:text-saffron transition-colors">प्रशंसा</a>
@@ -108,12 +110,21 @@ function HomePage() {
           </div>
           <a
             href="#subscribe"
-            className="bg-saffron text-white px-5 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="bg-saffron text-white px-4 md:px-5 py-2 rounded-full text-xs md:text-sm font-semibold hover:opacity-90 transition-opacity shrink-0"
           >
             सदस्य बनें
           </a>
         </div>
+        {/* mobile section nav */}
+        <div className="md:hidden flex gap-4 overflow-x-auto px-4 pb-2 text-xs font-medium uppercase tracking-wide opacity-80 scrollbar-none">
+          <a href="#sundarkand" className="whitespace-nowrap hover:text-saffron">सुंदरकांड</a>
+          <a href="#sevas" className="whitespace-nowrap hover:text-saffron">सेवाएँ</a>
+          <a href="#journey" className="whitespace-nowrap hover:text-saffron">प्रक्रिया</a>
+          <a href="#testimonials" className="whitespace-nowrap hover:text-saffron">प्रशंसा</a>
+          <a href="#faq" className="whitespace-nowrap hover:text-saffron">प्रश्न</a>
+        </div>
       </nav>
+
 
       {/* Hero */}
       <section className="relative px-6 pt-20 pb-20 text-center overflow-hidden">
@@ -135,7 +146,7 @@ function HomePage() {
               href="#subscribe"
               className="bg-saffron text-white px-8 py-4 rounded-xl text-lg font-bold shadow-xl shadow-saffron/20 hover:shadow-saffron/40 transition-all"
             >
-              मासिक संकल्प लें — ₹251
+              सदस्य बनें — ₹251/माह
             </a>
             <span className="text-xs font-mono opacity-60 uppercase tracking-wider">
               कभी भी रोकें • कोई प्रतिबद्धता नहीं
@@ -155,7 +166,7 @@ function HomePage() {
       </section>
 
       {/* Manifesto strip */}
-      <section className="px-6 py-16">
+      <section className="px-6 py-12">
         <div className="max-w-3xl mx-auto text-center">
           <p className="font-display text-2xl md:text-3xl leading-relaxed text-balance text-deep">
             "यह कोई व्यवसाय नहीं — यह सनातन सेवा का{" "}
@@ -168,7 +179,7 @@ function HomePage() {
       </section>
 
       {/* Sundarkand — Importance (highlighted) */}
-      <section id="sundarkand" className="px-6 py-24 bg-deep text-cream relative overflow-hidden">
+      <section id="sundarkand" className="px-6 py-14 bg-deep text-cream relative overflow-hidden">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           <div className="rounded-3xl overflow-hidden ring-1 ring-gold/20 shadow-2xl order-2 lg:order-1">
             <img
@@ -214,7 +225,7 @@ function HomePage() {
                 </span>
               </div>
               <p className="leading-relaxed opacity-90 mb-4">
-                आज एक बार सुंदरकांड का पाठ अपने घर पर करवाने में ₹७,००० से ₹१०,००० तक खर्च आता है —
+                आज एक बार सुंदरकांड का पाठ अपने घर पर करवाने में ₹7,000 से ₹10,000 तक खर्च आता है —
                 आचार्य, सामग्री, प्रसाद, दक्षिणा सब मिलाकर। बहुत से भक्त चाहकर भी यह पुण्य लाभ नहीं
                 ले पाते।
               </p>
@@ -230,7 +241,7 @@ function HomePage() {
       </section>
 
       {/* Daan in Pushkar — Importance */}
-      <section className="px-6 py-24">
+      <section className="px-6 py-14">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
@@ -249,34 +260,33 @@ function HomePage() {
             इसीलिए हमारी समस्त सेवाएँ इसी पवित्र भूमि से सम्पन्न होती हैं।
           </p>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-8 rounded-2xl border border-border bg-cream">
-              <div className="text-3xl mb-4">🐄</div>
-              <h3 className="font-display font-bold text-2xl mb-3">गौ माता को हरा चारा</h3>
-              <p className="text-muted-foreground leading-relaxed mb-3">
+          <div className="grid grid-cols-2 gap-3 md:gap-6">
+            <div className="p-4 md:p-8 rounded-2xl border border-border bg-cream">
+              <div className="text-3xl mb-3 md:mb-4">🐄</div>
+              <h3 className="font-display font-bold text-lg md:text-2xl mb-2 md:mb-3">गौ माता को हरा चारा</h3>
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-3">
                 शास्त्रों में गौ माता में तैंतीस कोटि देवताओं का वास माना गया है। उन्हें हरा चारा
                 अर्पित करने से पितृ दोष शांत होते हैं, घर में लक्ष्मी का वास होता है, और संतान
                 सुख की प्राप्ति होती है।
               </p>
-              <p className="text-saffron font-medium">
+              <p className="text-xs md:text-sm text-saffron font-medium">
                 "गावो विश्वस्य मातरः" — गाय ही सम्पूर्ण विश्व की माता हैं।
               </p>
             </div>
 
-            <div className="p-8 rounded-2xl border border-saffron/40 bg-saffron/5">
-              <div className="text-3xl mb-4">🍌</div>
-              <h3 className="font-display font-bold text-2xl mb-3">
+            <div className="p-4 md:p-8 rounded-2xl border border-saffron/40 bg-saffron/5">
+              <div className="text-3xl mb-3 md:mb-4">🍌</div>
+              <h3 className="font-display font-bold text-lg md:text-2xl mb-2 md:mb-3">
                 मंगलवार को वानरों को केला
               </h3>
-              <p className="text-muted-foreground leading-relaxed mb-3">
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-3">
                 मंगलवार श्री हनुमान जी का दिन है। इस दिन वानरों को केला, चना और गुड़ खिलाना
                 साक्षात हनुमान जी की सेवा मानी जाती है — क्योंकि वानर उनके स्वरूप हैं।
               </p>
-              <p className="leading-relaxed text-muted-foreground mb-3">
-                इस सेवा से मंगल दोष शांत होते हैं, साहस और बल की वृद्धि होती है, शत्रु बाधा
-                समाप्त होती है, और कार्य में अकल्पनीय सफलता मिलती है।
+              <p className="text-sm md:text-base leading-relaxed text-muted-foreground mb-3">
+                इस सेवा से मंगल दोष शांत होते हैं, साहस और बल की वृद्धि होती है।
               </p>
-              <p className="text-saffron font-medium">
+              <p className="text-xs md:text-sm text-saffron font-medium">
                 हर मंगलवार पुष्कर में आपके नाम से वानर सेवा सम्पन्न।
               </p>
             </div>
@@ -290,7 +300,7 @@ function HomePage() {
       </section>
 
       {/* Sevas */}
-      <section id="sevas" className="px-6 py-24 bg-cream">
+      <section id="sevas" className="px-6 py-14 bg-cream">
 
         <div className="max-w-6xl mx-auto">
           <div className="mb-16 max-w-2xl">
@@ -338,7 +348,7 @@ function HomePage() {
       </section>
 
       {/* Image diptych */}
-      <section className="px-6 py-24">
+      <section className="px-6 py-14">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
           <div className="rounded-2xl overflow-hidden aspect-[4/5] ring-1 ring-border">
             <img
@@ -396,7 +406,7 @@ function HomePage() {
       </section>
 
       {/* Journey */}
-      <section id="journey" className="px-6 py-24 bg-cream">
+      <section id="journey" className="px-6 py-14 bg-cream">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
@@ -405,36 +415,38 @@ function HomePage() {
             <h2 className="font-display font-bold text-3xl md:text-4xl">तीन सरल चरण</h2>
           </div>
 
-          <div className="space-y-12 relative">
-            <div className="absolute left-4 top-0 bottom-0 w-px bg-border md:left-1/2" />
-            {journey.map((step, i) => {
-              const right = i % 2 === 1;
-              return (
-                <div key={i} className="relative flex flex-col md:flex-row md:items-center gap-8">
-                  <div className="absolute left-4 md:left-1/2 -translate-x-1/2 size-4 rounded-full bg-saffron ring-4 ring-cream" />
-                  {right ? <div className="hidden md:block md:w-1/2" /> : null}
-                  <div
-                    className={`md:w-1/2 pl-12 ${
-                      right ? "md:pl-12" : "md:text-right md:pr-12 md:pl-0"
-                    }`}
-                  >
-                    <div className="font-mono text-xs uppercase tracking-widest text-saffron mb-2">
-                      चरण {["०१", "०२", "०३"][i]}
-                    </div>
-                    <h4 className="font-display font-bold text-xl mb-2">{step.title}</h4>
-                    <p className="text-muted-foreground leading-relaxed">{step.desc}</p>
-                  </div>
-                  {right ? null : <div className="hidden md:block md:w-1/2" />}
+          <div className="grid grid-cols-3 gap-3 md:gap-6">
+            {journey.map((step, i) => (
+              <div
+                key={i}
+                className="bg-background rounded-2xl p-4 md:p-6 border border-border hover:border-saffron/40 transition-colors flex flex-col"
+              >
+                <div className="size-10 md:size-12 rounded-full bg-saffron text-white font-display font-bold text-base md:text-lg flex items-center justify-center mb-3 md:mb-4 shadow-md shadow-saffron/30">
+                  {i + 1}
                 </div>
-              );
-            })}
+                <h4 className="font-display font-bold text-sm md:text-lg mb-2 leading-snug">{step.title}</h4>
+                <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Bundle highlight */}
+          <div className="mt-10 rounded-2xl bg-deep text-cream p-6 md:p-8 text-center ring-1 ring-gold/30">
+            <div className="font-mono text-[10px] md:text-xs uppercase tracking-[0.3em] text-gold mb-3">
+              ✨ सम्पूर्ण बंडल ✨
+            </div>
+            <p className="font-display text-lg md:text-2xl leading-relaxed text-balance">
+              ये सभी सेवाएँ — सुंदरकांड, हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोज —
+              <br className="hidden md:block" />
+              <span className="text-saffron font-bold"> एक ही बंडल में, मात्र ₹251/- माह।</span>
+            </p>
           </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="px-6 py-24">
-        <div className="max-w-6xl mx-auto bg-saffron text-white rounded-[2.5rem] px-8 py-16 md:px-16 md:py-20">
+      <section id="testimonials" className="px-6 py-14">
+        <div className="max-w-6xl mx-auto bg-saffron text-white rounded-[2.5rem] px-8 py-16 md:px-16 md:py-14">
           <span className="font-mono text-xs uppercase tracking-[0.3em] opacity-70 block mb-4">
             भक्तों के अनुभव
           </span>
@@ -467,7 +479,7 @@ function HomePage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="max-w-3xl mx-auto px-6 py-24">
+      <section id="faq" className="max-w-3xl mx-auto px-6 py-14">
         <div className="text-center mb-12">
           <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
             शंका समाधान
@@ -513,7 +525,7 @@ function HomePage() {
       </section>
 
       {/* Final CTA */}
-      <section id="subscribe" className="px-6 py-24">
+      <section id="subscribe" className="px-6 py-14">
         <div className="max-w-3xl mx-auto bg-deep text-cream rounded-[2.5rem] p-12 md:p-16 text-center">
           <div className="font-mono text-xs uppercase tracking-[0.3em] text-gold mb-6">
             🚩 जय श्री राम • जय बजरंगबली 🚩
@@ -531,7 +543,7 @@ function HomePage() {
             rel="noreferrer"
             className="inline-block bg-saffron text-white px-10 py-5 rounded-xl text-lg font-bold hover:opacity-90 transition-opacity"
           >
-            WhatsApp पर संकल्प लें — ₹251/माह
+            WhatsApp पर सदस्य बनें — ₹251/माह
           </a>
           <div className="font-mono text-[10px] uppercase tracking-[0.3em] opacity-50 mt-8">
             कोई प्रतिबद्धता नहीं • कभी भी रोकें • पूर्ण पारदर्शिता
@@ -543,7 +555,7 @@ function HomePage() {
       <footer className="px-6 py-12 border-t border-border text-center">
         <div className="font-display font-extrabold text-xl text-saffron mb-2">पुण्यम सेवा</div>
         <div className="font-mono text-[10px] tracking-[0.3em] uppercase opacity-50">
-          © २०२६ पुण्यम सेवा संस्थान • पुष्कर राज • राजस्थान
+          © 2026 पुण्यम सेवा संस्थान • पुष्कर राज • राजस्थान
         </div>
       </footer>
 
