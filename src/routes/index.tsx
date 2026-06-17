@@ -58,7 +58,7 @@ const sevas = [
 ];
 
 const journey = [
-  { title: "मासिक संकल्प", desc: "अपना नाम, गोत्र एवं संकल्प साझा करें। मासिक योगदान ₹२५० मात्र।" },
+  { title: "मासिक संकल्प", desc: "अपना नाम, गोत्र एवं संकल्प साझा करें। मासिक योगदान ₹251 मात्र।" },
   { title: "पुष्कर में अनुष्ठान", desc: "हमारे आचार्य आपके नाम से सुंदरकांड, हवन एवं समस्त सेवाएँ सम्पन्न करते हैं।" },
   { title: "WhatsApp पर Video Proof", desc: "प्रत्येक अनुष्ठान का Live या Video Proof सीधे आपके WhatsApp पर — पूर्ण पारदर्शिता।" },
 ];
@@ -135,7 +135,7 @@ function HomePage() {
               href="#subscribe"
               className="bg-saffron text-white px-8 py-4 rounded-xl text-lg font-bold shadow-xl shadow-saffron/20 hover:shadow-saffron/40 transition-all"
             >
-              मासिक संकल्प लें — ₹२५०
+              मासिक संकल्प लें — ₹251
             </a>
             <span className="text-xs font-mono opacity-60 uppercase tracking-wider">
               कभी भी रोकें • कोई प्रतिबद्धता नहीं
@@ -207,7 +207,7 @@ function HomePage() {
               </div>
               <div className="flex items-baseline gap-4 flex-wrap mb-4">
                 <span className="font-display text-3xl md:text-4xl font-extrabold line-through opacity-60">
-                  ₹७,०००–१०,०००
+                  ₹7,०००–10,०००
                 </span>
                 <span className="text-xs uppercase tracking-wider opacity-60">
                   सामान्य आचार्य शुल्क
@@ -220,7 +220,7 @@ function HomePage() {
               </p>
               <p className="leading-relaxed text-gold font-medium">
                 इसलिए श्री हनुमान जी की कृपा से हमने संकल्प लिया — यह पुण्य हर घर तक पहुँचे।
-                सामूहिक संकल्प के माध्यम से <span className="text-saffron font-bold">मात्र ₹२५०</span>{" "}
+                सामूहिक संकल्प के माध्यम से <span className="text-saffron font-bold">मात्र ₹251</span>{" "}
                 में आपके नाम और गोत्र से सुंदरकांड पाठ — ताकि राम नाम का पुण्य आपके खाते में
                 नित्य जुड़ता रहे।
               </p>
@@ -321,7 +321,7 @@ function HomePage() {
                 <div className="font-mono text-xs uppercase tracking-[0.3em] opacity-60 mb-4">
                   मासिक योगदान
                 </div>
-                <div className="font-display font-extrabold text-5xl text-saffron mb-2">₹२५०</div>
+                <div className="font-display font-extrabold text-5xl text-saffron mb-2">₹251</div>
                 <p className="text-sm opacity-80 leading-relaxed">
                   एक-एक पैसा सीधे चारे, फल, भोज एवं सामग्री में।
                 </p>
@@ -522,7 +522,7 @@ function HomePage() {
             अखंड पुण्य के भागीदार बनें।
           </h2>
           <p className="opacity-80 max-w-xl mx-auto mb-10 leading-relaxed">
-            मात्र ₹२५० मासिक — सुंदरकांड, हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोज।
+            मात्र ₹251 मासिक — सुंदरकांड, हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोज।
             हर अनुष्ठान का Video Proof आपके WhatsApp पर।
           </p>
           <a
@@ -531,7 +531,7 @@ function HomePage() {
             rel="noreferrer"
             className="inline-block bg-saffron text-white px-10 py-5 rounded-xl text-lg font-bold hover:opacity-90 transition-opacity"
           >
-            WhatsApp पर संकल्प लें — ₹२५०/माह
+            WhatsApp पर संकल्प लें — ₹251/माह
           </a>
           <div className="font-mono text-[10px] uppercase tracking-[0.3em] opacity-50 mt-8">
             कोई प्रतिबद्धता नहीं • कभी भी रोकें • पूर्ण पारदर्शिता
@@ -554,7 +554,7 @@ function HomePage() {
             मासिक सेवा योगदान
           </div>
           <div className="font-display text-xl font-extrabold text-saffron leading-none mt-1">
-            ₹२५० <span className="text-xs font-normal text-foreground">/ माह</span>
+            ₹251 <span className="text-xs font-normal text-foreground">/ माह</span>
           </div>
         </div>
         <a
