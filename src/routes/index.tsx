@@ -564,6 +564,45 @@ function HomePage() {
           सदस्य बनें
         </a>
       </div>
+
+      {/* Floating WhatsApp button */}
+      <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[60] flex flex-col items-end gap-3">
+        {waOpen && (
+          <div className="animate-incense bg-background border border-saffron/30 shadow-2xl rounded-2xl p-4 pr-3 max-w-[18rem] relative">
+            <button
+              onClick={() => setWaOpen(false)}
+              aria-label="बंद करें"
+              className="absolute top-2 right-2 size-6 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground"
+            >
+              <X size={14} />
+            </button>
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-saffron mb-2">
+              जय सियाराम 🙏🏻
+            </div>
+            <p className="text-sm leading-relaxed text-foreground mb-4 pr-4">
+              आप हमसे WhatsApp पर भी जुड़ सकते हैं — नि:संकोच संपर्क करें, हम आपकी सेवा में
+              उपस्थित हैं।
+            </p>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition-opacity w-full justify-center"
+            >
+              <MessageCircle size={16} />
+              WhatsApp पर जुड़ें
+            </a>
+          </div>
+        )}
+        <button
+          onClick={() => setWaOpen((v) => !v)}
+          aria-label="WhatsApp पर संपर्क करें"
+          className="size-14 rounded-full bg-[#25D366] text-white shadow-2xl shadow-[#25D366]/40 flex items-center justify-center hover:scale-105 transition-transform ring-4 ring-white/40"
+        >
+          <MessageCircle size={26} fill="white" strokeWidth={1.8} />
+        </button>
+      </div>
     </div>
+
   );
 }
