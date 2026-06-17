@@ -1,8 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { MessageCircle, X } from "lucide-react";
 import heroImg from "@/assets/pushkar-hero.jpg";
 import havanImg from "@/assets/havan.jpg";
 import gauSevaImg from "@/assets/gau-seva.jpg";
+import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+
+const WHATSAPP_URL =
+  "https://wa.me/919999999999?text=%E0%A4%9C%E0%A4%AF%20%E0%A4%B8%E0%A4%BF%E0%A4%AF%E0%A4%BE%E0%A4%B0%E0%A4%BE%E0%A4%AE%20%F0%9F%99%8F%F0%9F%8F%BB%20%E0%A4%AE%E0%A5%81%E0%A4%9D%E0%A5%87%20%E0%A4%AA%E0%A5%81%E0%A4%A3%E0%A5%8D%E0%A4%AF%E0%A4%AE%20%E0%A4%B8%E0%A5%87%E0%A4%B5%E0%A4%BE%20%E0%A4%B8%E0%A5%87%20%E0%A4%9C%E0%A5%81%E0%A4%A1%E0%A4%BC%E0%A4%A8%E0%A4%BE%20%E0%A4%B9%E0%A5%88";
 
 export const Route = createFileRoute("/")({
   head: () => ({
