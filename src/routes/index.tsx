@@ -199,11 +199,12 @@ function HomePage() {
           </p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <a
-              href="#subscribe"
+              href="#packages"
               className="bg-saffron text-white px-8 py-4 rounded-xl text-lg font-bold shadow-xl shadow-saffron/20 hover:shadow-saffron/40 transition-all"
             >
-              सदस्य बनें — ₹251/माह
+              योजना चुनें — ₹251 से शुरू
             </a>
+
             <span className="text-xs font-mono opacity-60 uppercase tracking-wider">
               कभी भी रोकें • कोई प्रतिबद्धता नहीं
             </span>
