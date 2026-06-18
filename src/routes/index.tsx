@@ -682,22 +682,21 @@ function HomePage() {
             अखंड पुण्य के भागीदार बनें।
           </h2>
           <p className="opacity-80 max-w-xl mx-auto mb-10 leading-relaxed">
-            मात्र ₹251 मासिक — सुंदरकांड, हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोज।
-            हर अनुष्ठान का Video Proof आपके WhatsApp पर।
+            ₹251 मासिक से शुरू — सुंदरकांड, गृह शांति हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोजन।
+            परिवार के 4 सदस्यों तक का संकल्प। हर अनुष्ठान का Video Proof आपके WhatsApp पर।
           </p>
           <a
-            href="https://wa.me/919999999999?text=जय%20सियाराम%20—%20मुझे%20पुण्यम%20सेवा%20मासिक%20संकल्प%20आरंभ%20करना%20है"
-            target="_blank"
-            rel="noreferrer"
+            href="#packages"
             className="inline-block bg-saffron text-white px-10 py-5 rounded-xl text-lg font-bold hover:opacity-90 transition-opacity"
           >
-            WhatsApp पर सदस्य बनें — ₹251/माह
+            अपनी योजना चुनें →
           </a>
           <div className="font-mono text-[10px] uppercase tracking-[0.3em] opacity-50 mt-8">
             कोई प्रतिबद्धता नहीं • कभी भी रोकें • पूर्ण पारदर्शिता
           </div>
         </div>
       </section>
+
 
       {/* Footer */}
       <footer className="px-6 py-12 border-t border-border text-center">
