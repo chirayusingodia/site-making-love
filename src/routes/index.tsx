@@ -497,7 +497,7 @@ function HomePage() {
           <div className="rounded-2xl overflow-hidden aspect-[4/5] ring-1 ring-border">
             <img
               src={havanImg}
-              alt="हवन अनुष्ठान"
+              alt="गृह शांति हवन अनुष्ठान"
               width={800}
               height={1024}
               loading="lazy"
@@ -506,13 +506,15 @@ function HomePage() {
           </div>
           <div className="flex flex-col justify-center">
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron mb-4">
-              हवन की ऊर्जा
+              गृह शांति हवन की ऊर्जा
             </span>
             <h3 className="font-display font-bold text-3xl md:text-4xl mb-6 leading-tight">
               अग्नि का साक्षी, मंत्रों का आशीर्वाद।
             </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              पवित्र हवन-यज्ञ की सकारात्मक ऊर्जा सम्पूर्ण वातावरण को शुद्ध करती है। आपके नाम से किया
+              गृह शांति हवन-यज्ञ की सकारात्मक ऊर्जा सम्पूर्ण वातावरण को शुद्ध करती है। आपके एवं
+              परिवार के नाम से किया गया संकल्प, मंत्रोच्चार के साथ अग्निदेव को समर्पित किया जाता है।
+
               गया संकल्प, मंत्रोच्चार के साथ अग्निदेव को समर्पित किया जाता है।
             </p>
             <p className="text-muted-foreground leading-relaxed">
