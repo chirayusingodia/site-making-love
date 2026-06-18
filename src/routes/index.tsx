@@ -384,24 +384,111 @@ function HomePage() {
             ))}
             <div className="p-8 rounded-2xl bg-deep text-cream flex flex-col justify-between">
               <div>
-                <div className="font-mono text-xs uppercase tracking-[0.3em] opacity-60 mb-4">
-                  मासिक योगदान
+                <div className="font-mono text-xs uppercase tracking-[0.3em] text-gold mb-4">
+                  ✨ परिवार सहित संकल्प
                 </div>
-                <div className="font-display font-extrabold text-5xl text-saffron mb-2">₹251</div>
+                <h3 className="font-display font-extrabold text-2xl mb-3 leading-snug">
+                  हर योजना में परिवार के <span className="text-saffron">4 सदस्यों</span> तक का नाम
+                </h3>
                 <p className="text-sm opacity-80 leading-relaxed">
-                  एक-एक पैसा सीधे चारे, फल, भोज एवं सामग्री में।
+                  केवल आपका ही नहीं — माता, पिता, पत्नी, संतान — सबके नाम एवं गोत्र से संकल्प।
                 </p>
               </div>
               <a
-                href="#subscribe"
+                href="#packages"
                 className="mt-6 inline-block bg-saffron text-white px-5 py-3 rounded-xl text-sm font-bold text-center hover:opacity-90 transition-opacity"
               >
-                सदस्य बनें
+                योजना देखें →
               </a>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Packages */}
+      <section id="packages" className="px-6 py-16 bg-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-saffron/[0.03] to-transparent pointer-events-none" />
+        <div className="max-w-6xl mx-auto relative">
+          <div className="text-center mb-4">
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
+              अपना संकल्प चुनें
+            </span>
+            <h2 className="font-display font-extrabold text-3xl md:text-5xl leading-[1.1] mb-4 text-balance">
+              तीन पवित्र योजनाएँ —<br />
+              <span className="text-saffron">हर श्रद्धा के लिए।</span>
+            </h2>
+            <div className="h-1 w-20 bg-gold mx-auto mb-6" />
+            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              हर योजना में आपके{" "}
+              <span className="text-foreground font-semibold">परिवार के 4 सदस्यों तक</span> का नाम एवं
+              गोत्र सम्मिलित — माता, पिता, पत्नी, संतान, सब का संकल्प एक साथ।
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5 md:gap-6 mt-12 items-stretch">
+            {plans.map((p) => (
+              <div
+                key={p.id}
+                className={`relative flex flex-col rounded-3xl p-6 md:p-8 transition-all ${
+                  p.highlight
+                    ? "bg-deep text-cream ring-2 ring-saffron shadow-2xl shadow-saffron/20 md:scale-[1.04]"
+                    : "bg-cream text-foreground ring-1 ring-border hover:ring-saffron/40 hover:-translate-y-1"
+                }`}
+              >
+                {p.highlight && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-saffron text-white text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full shadow-lg">
+                    ⭐ {p.tagline}
+                  </span>
+                )}
+                {!p.highlight && (
+                  <span className={`font-mono text-[10px] uppercase tracking-[0.25em] mb-3 ${p.id === "varsh" ? "text-saffron" : "text-muted-foreground"}`}>
+                    {p.tagline}
+                  </span>
+                )}
+                <h3 className={`font-display font-extrabold text-2xl mb-2 ${p.highlight ? "" : ""}`}>
+                  {p.name}
+                </h3>
+                <div className="flex items-baseline gap-1 mb-5">
+                  <span className={`font-display font-extrabold text-5xl ${p.highlight ? "text-saffron" : "text-saffron"}`}>
+                    {p.price}
+                  </span>
+                  <span className={`text-sm ${p.highlight ? "opacity-70" : "text-muted-foreground"}`}>
+                    {p.cycle}
+                  </span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {p.features.map((f, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm leading-relaxed">
+                      <span className={`mt-0.5 size-5 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold ${p.highlight ? "bg-saffron text-white" : "bg-saffron/15 text-saffron"}`}>
+                        ✓
+                      </span>
+                      <span className={p.highlight ? "opacity-90" : ""}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href={`https://wa.me/919999999999?text=${encodeURIComponent(`जय सियाराम 🙏🏻 मुझे ${p.name} योजना (${p.price}${p.cycle}) के लिए सदस्य बनना है।`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`block text-center px-5 py-3.5 rounded-xl font-bold text-sm transition-all ${
+                    p.highlight
+                      ? "bg-saffron text-white hover:bg-saffron/90 shadow-lg shadow-saffron/30"
+                      : "bg-deep text-cream hover:opacity-90"
+                  }`}
+                >
+                  {p.cta}
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-xs md:text-sm text-muted-foreground mt-8 font-mono uppercase tracking-wider">
+            कभी भी रोकें • कोई प्रतिबद्धता नहीं • पूर्ण पारदर्शिता
+          </p>
+        </div>
+      </section>
+
+
 
       {/* Image diptych */}
       <section className="px-6 py-14">
