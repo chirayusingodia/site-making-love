@@ -575,16 +575,20 @@ function HomePage() {
           </div>
 
           {/* Bundle highlight */}
-          <div className="mt-10 rounded-2xl bg-deep text-cream p-6 md:p-8 text-center ring-1 ring-gold/30">
+          <a
+            href="#packages"
+            className="mt-10 block rounded-2xl bg-deep text-cream p-6 md:p-8 text-center ring-1 ring-gold/30 hover:ring-saffron/60 transition-all"
+          >
             <div className="font-mono text-[10px] md:text-xs uppercase tracking-[0.3em] text-gold mb-3">
-              ✨ सम्पूर्ण बंडल ✨
+              ✨ 3 योजनाएँ उपलब्ध ✨
             </div>
             <p className="font-display text-lg md:text-2xl leading-relaxed text-balance">
-              ये सभी सेवाएँ — सुंदरकांड, हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोज —
+              ₹251 मासिक से शुरू — गृह शांति हवन सहित योजनाएँ ₹401/माह एवं ₹2501/वर्ष में।
               <br className="hidden md:block" />
-              <span className="text-saffron font-bold"> एक ही बंडल में, मात्र ₹251/- माह।</span>
+              <span className="text-saffron font-bold"> परिवार के 4 सदस्यों तक का संकल्प हर योजना में सम्मिलित।</span>
             </p>
-          </div>
+          </a>
+
         </div>
       </section>
 
