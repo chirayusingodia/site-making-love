@@ -365,7 +365,7 @@ function HomePage() {
               आपकी मासिक सेवाएँ
             </span>
             <h2 className="font-display font-bold text-3xl md:text-4xl mb-4">
-              पाँच पवित्र अनुष्ठान, एक संकल्प
+              पाँच पवित्र अनुष्ठान — पूरे परिवार के लिए
             </h2>
             <div className="h-1 w-20 bg-gold" />
           </div>
