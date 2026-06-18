@@ -159,12 +159,12 @@ function HomePage() {
           <div className="hidden md:flex gap-6 text-sm font-medium tracking-wide uppercase opacity-80">
             <a href="#sundarkand" className="hover:text-saffron transition-colors">सुंदरकांड</a>
             <a href="#sevas" className="hover:text-saffron transition-colors">सेवाएँ</a>
+            <a href="#packages" className="hover:text-saffron transition-colors">योजनाएँ</a>
             <a href="#journey" className="hover:text-saffron transition-colors">प्रक्रिया</a>
-            <a href="#testimonials" className="hover:text-saffron transition-colors">प्रशंसा</a>
             <a href="#faq" className="hover:text-saffron transition-colors">प्रश्न</a>
           </div>
           <a
-            href="#subscribe"
+            href="#packages"
             className="bg-saffron text-white px-4 md:px-5 py-2 rounded-full text-xs md:text-sm font-semibold hover:opacity-90 transition-opacity shrink-0"
           >
             सदस्य बनें
@@ -174,10 +174,11 @@ function HomePage() {
         <div className="md:hidden flex gap-4 overflow-x-auto px-4 pb-2 text-xs font-medium uppercase tracking-wide opacity-80 scrollbar-none">
           <a href="#sundarkand" className="whitespace-nowrap hover:text-saffron">सुंदरकांड</a>
           <a href="#sevas" className="whitespace-nowrap hover:text-saffron">सेवाएँ</a>
+          <a href="#packages" className="whitespace-nowrap hover:text-saffron">योजनाएँ</a>
           <a href="#journey" className="whitespace-nowrap hover:text-saffron">प्रक्रिया</a>
-          <a href="#testimonials" className="whitespace-nowrap hover:text-saffron">प्रशंसा</a>
           <a href="#faq" className="whitespace-nowrap hover:text-saffron">प्रश्न</a>
         </div>
+
       </nav>
 
 
