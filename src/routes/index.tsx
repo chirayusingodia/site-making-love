@@ -710,18 +710,19 @@ function HomePage() {
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-2xl bg-background/95 backdrop-blur-xl border border-saffron/30 rounded-2xl p-3 pl-5 shadow-2xl z-50 flex items-center justify-between gap-4">
         <div>
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
-            मासिक सेवा योगदान
+            3 योजनाएँ • परिवार सहित
           </div>
           <div className="font-display text-xl font-extrabold text-saffron leading-none mt-1">
-            ₹251 <span className="text-xs font-normal text-foreground">/ माह</span>
+            ₹251 <span className="text-xs font-normal text-foreground">से शुरू</span>
           </div>
         </div>
         <a
-          href="#subscribe"
+          href="#packages"
           className="bg-saffron text-white px-5 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity whitespace-nowrap"
         >
           सदस्य बनें
         </a>
+
       </div>
 
       {/* Floating WhatsApp button */}
