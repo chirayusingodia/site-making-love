@@ -38,7 +38,7 @@ const sevas = [
   {
     num: "2",
     title: "गृह शांति हवन",
-    desc: "विद्वान आचार्यों द्वारा वैदिक मंत्रों से पवित्र हवन — आपके परिवार की मंगल कामना सहित।",
+    desc: "विद्वान आचार्यों द्वारा वैदिक मंत्रों से गृह शांति हवन — आपके परिवार की मंगल कामना सहित।",
   },
   {
     num: "3",
@@ -52,10 +52,65 @@ const sevas = [
   },
   {
     num: "5",
-    title: "ब्राह्मण भोज",
+    title: "ब्राह्मण भोजन",
     desc: "विद्वान ब्राह्मणों को सात्विक भोजन एवं यथायोग्य सत्कार — पितृ आशीर्वाद।",
   },
 ];
+
+const plans = [
+  {
+    id: "basic",
+    name: "मूल संकल्प",
+    price: "₹251",
+    cycle: "/ माह",
+    tagline: "हर घर तक राम नाम",
+    highlight: false,
+    features: [
+      "मासिक सुंदरकांड पाठ (आपके नाम एवं गोत्र से)",
+      "गौ माता सेवा — हरा चारा",
+      "वानर सेवा — फल एवं चना",
+      "ब्राह्मण भोजन",
+      "परिवार के 4 सदस्यों तक का संकल्प",
+      "हर अनुष्ठान का Video Proof — WhatsApp पर",
+    ],
+    cta: "सदस्य बनें",
+  },
+  {
+    id: "grah",
+    name: "गृह शांति",
+    price: "₹401",
+    cycle: "/ माह",
+    tagline: "सर्वाधिक चयनित",
+    highlight: true,
+    features: [
+      "मासिक सुंदरकांड पाठ",
+      "गृह शांति हवन (हर माह)",
+      "हर शनिवार विशेष सेवा (हर माह)",
+      "गौ सेवा + वानर सेवा + ब्राह्मण भोजन",
+      "परिवार के 4 सदस्यों तक का संकल्प",
+      "हर अनुष्ठान का Video Proof",
+    ],
+    cta: "सदस्य बनें",
+  },
+  {
+    id: "varsh",
+    name: "वार्षिक महासंकल्प",
+    price: "₹2501",
+    cycle: "/ वर्ष",
+    tagline: "सर्वाधिक पुण्यदायी",
+    highlight: false,
+    features: [
+      "12 माह — सुंदरकांड पाठ",
+      "गृह शांति हवन (हर माह)",
+      "हर शनिवार विशेष सेवा (हर माह)",
+      "गौ सेवा + वानर सेवा + ब्राह्मण भोजन",
+      "परिवार के 4 सदस्यों तक का संकल्प",
+      "वर्ष भर का Video Proof — WhatsApp पर",
+    ],
+    cta: "सदस्य बनें",
+  },
+];
+
 
 
 const journey = [
@@ -104,12 +159,12 @@ function HomePage() {
           <div className="hidden md:flex gap-6 text-sm font-medium tracking-wide uppercase opacity-80">
             <a href="#sundarkand" className="hover:text-saffron transition-colors">सुंदरकांड</a>
             <a href="#sevas" className="hover:text-saffron transition-colors">सेवाएँ</a>
+            <a href="#packages" className="hover:text-saffron transition-colors">योजनाएँ</a>
             <a href="#journey" className="hover:text-saffron transition-colors">प्रक्रिया</a>
-            <a href="#testimonials" className="hover:text-saffron transition-colors">प्रशंसा</a>
             <a href="#faq" className="hover:text-saffron transition-colors">प्रश्न</a>
           </div>
           <a
-            href="#subscribe"
+            href="#packages"
             className="bg-saffron text-white px-4 md:px-5 py-2 rounded-full text-xs md:text-sm font-semibold hover:opacity-90 transition-opacity shrink-0"
           >
             सदस्य बनें
@@ -119,10 +174,11 @@ function HomePage() {
         <div className="md:hidden flex gap-4 overflow-x-auto px-4 pb-2 text-xs font-medium uppercase tracking-wide opacity-80 scrollbar-none">
           <a href="#sundarkand" className="whitespace-nowrap hover:text-saffron">सुंदरकांड</a>
           <a href="#sevas" className="whitespace-nowrap hover:text-saffron">सेवाएँ</a>
+          <a href="#packages" className="whitespace-nowrap hover:text-saffron">योजनाएँ</a>
           <a href="#journey" className="whitespace-nowrap hover:text-saffron">प्रक्रिया</a>
-          <a href="#testimonials" className="whitespace-nowrap hover:text-saffron">प्रशंसा</a>
           <a href="#faq" className="whitespace-nowrap hover:text-saffron">प्रश्न</a>
         </div>
+
       </nav>
 
 
@@ -143,11 +199,12 @@ function HomePage() {
           </p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <a
-              href="#subscribe"
+              href="#packages"
               className="bg-saffron text-white px-8 py-4 rounded-xl text-lg font-bold shadow-xl shadow-saffron/20 hover:shadow-saffron/40 transition-all"
             >
-              सदस्य बनें — ₹251/माह
+              योजना चुनें — ₹251 से शुरू
             </a>
+
             <span className="text-xs font-mono opacity-60 uppercase tracking-wider">
               कभी भी रोकें • कोई प्रतिबद्धता नहीं
             </span>
@@ -308,7 +365,7 @@ function HomePage() {
               आपकी मासिक सेवाएँ
             </span>
             <h2 className="font-display font-bold text-3xl md:text-4xl mb-4">
-              पाँच पवित्र अनुष्ठान, एक संकल्प
+              पाँच पवित्र अनुष्ठान — पूरे परिवार के लिए
             </h2>
             <div className="h-1 w-20 bg-gold" />
           </div>
@@ -328,24 +385,111 @@ function HomePage() {
             ))}
             <div className="p-8 rounded-2xl bg-deep text-cream flex flex-col justify-between">
               <div>
-                <div className="font-mono text-xs uppercase tracking-[0.3em] opacity-60 mb-4">
-                  मासिक योगदान
+                <div className="font-mono text-xs uppercase tracking-[0.3em] text-gold mb-4">
+                  ✨ परिवार सहित संकल्प
                 </div>
-                <div className="font-display font-extrabold text-5xl text-saffron mb-2">₹251</div>
+                <h3 className="font-display font-extrabold text-2xl mb-3 leading-snug">
+                  हर योजना में परिवार के <span className="text-saffron">4 सदस्यों</span> तक का नाम
+                </h3>
                 <p className="text-sm opacity-80 leading-relaxed">
-                  एक-एक पैसा सीधे चारे, फल, भोज एवं सामग्री में।
+                  केवल आपका ही नहीं — माता, पिता, पत्नी, संतान — सबके नाम एवं गोत्र से संकल्प।
                 </p>
               </div>
               <a
-                href="#subscribe"
+                href="#packages"
                 className="mt-6 inline-block bg-saffron text-white px-5 py-3 rounded-xl text-sm font-bold text-center hover:opacity-90 transition-opacity"
               >
-                सदस्य बनें
+                योजना देखें →
               </a>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Packages */}
+      <section id="packages" className="px-6 py-16 bg-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-saffron/[0.03] to-transparent pointer-events-none" />
+        <div className="max-w-6xl mx-auto relative">
+          <div className="text-center mb-4">
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron block mb-4">
+              अपना संकल्प चुनें
+            </span>
+            <h2 className="font-display font-extrabold text-3xl md:text-5xl leading-[1.1] mb-4 text-balance">
+              तीन पवित्र योजनाएँ —<br />
+              <span className="text-saffron">हर श्रद्धा के लिए।</span>
+            </h2>
+            <div className="h-1 w-20 bg-gold mx-auto mb-6" />
+            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              हर योजना में आपके{" "}
+              <span className="text-foreground font-semibold">परिवार के 4 सदस्यों तक</span> का नाम एवं
+              गोत्र सम्मिलित — माता, पिता, पत्नी, संतान, सब का संकल्प एक साथ।
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5 md:gap-6 mt-12 items-stretch">
+            {plans.map((p) => (
+              <div
+                key={p.id}
+                className={`relative flex flex-col rounded-3xl p-6 md:p-8 transition-all ${
+                  p.highlight
+                    ? "bg-deep text-cream ring-2 ring-saffron shadow-2xl shadow-saffron/20 md:scale-[1.04]"
+                    : "bg-cream text-foreground ring-1 ring-border hover:ring-saffron/40 hover:-translate-y-1"
+                }`}
+              >
+                {p.highlight && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-saffron text-white text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full shadow-lg">
+                    ⭐ {p.tagline}
+                  </span>
+                )}
+                {!p.highlight && (
+                  <span className={`font-mono text-[10px] uppercase tracking-[0.25em] mb-3 ${p.id === "varsh" ? "text-saffron" : "text-muted-foreground"}`}>
+                    {p.tagline}
+                  </span>
+                )}
+                <h3 className={`font-display font-extrabold text-2xl mb-2 ${p.highlight ? "" : ""}`}>
+                  {p.name}
+                </h3>
+                <div className="flex items-baseline gap-1 mb-5">
+                  <span className={`font-display font-extrabold text-5xl ${p.highlight ? "text-saffron" : "text-saffron"}`}>
+                    {p.price}
+                  </span>
+                  <span className={`text-sm ${p.highlight ? "opacity-70" : "text-muted-foreground"}`}>
+                    {p.cycle}
+                  </span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {p.features.map((f, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm leading-relaxed">
+                      <span className={`mt-0.5 size-5 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold ${p.highlight ? "bg-saffron text-white" : "bg-saffron/15 text-saffron"}`}>
+                        ✓
+                      </span>
+                      <span className={p.highlight ? "opacity-90" : ""}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href={`https://wa.me/919999999999?text=${encodeURIComponent(`जय सियाराम 🙏🏻 मुझे ${p.name} योजना (${p.price}${p.cycle}) के लिए सदस्य बनना है।`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`block text-center px-5 py-3.5 rounded-xl font-bold text-sm transition-all ${
+                    p.highlight
+                      ? "bg-saffron text-white hover:bg-saffron/90 shadow-lg shadow-saffron/30"
+                      : "bg-deep text-cream hover:opacity-90"
+                  }`}
+                >
+                  {p.cta}
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-xs md:text-sm text-muted-foreground mt-8 font-mono uppercase tracking-wider">
+            कभी भी रोकें • कोई प्रतिबद्धता नहीं • पूर्ण पारदर्शिता
+          </p>
+        </div>
+      </section>
+
+
 
       {/* Image diptych */}
       <section className="px-6 py-14">
@@ -353,7 +497,7 @@ function HomePage() {
           <div className="rounded-2xl overflow-hidden aspect-[4/5] ring-1 ring-border">
             <img
               src={havanImg}
-              alt="हवन अनुष्ठान"
+              alt="गृह शांति हवन अनुष्ठान"
               width={800}
               height={1024}
               loading="lazy"
@@ -362,13 +506,15 @@ function HomePage() {
           </div>
           <div className="flex flex-col justify-center">
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-saffron mb-4">
-              हवन की ऊर्जा
+              गृह शांति हवन की ऊर्जा
             </span>
             <h3 className="font-display font-bold text-3xl md:text-4xl mb-6 leading-tight">
               अग्नि का साक्षी, मंत्रों का आशीर्वाद।
             </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              पवित्र हवन-यज्ञ की सकारात्मक ऊर्जा सम्पूर्ण वातावरण को शुद्ध करती है। आपके नाम से किया
+              गृह शांति हवन-यज्ञ की सकारात्मक ऊर्जा सम्पूर्ण वातावरण को शुद्ध करती है। आपके एवं
+              परिवार के नाम से किया गया संकल्प, मंत्रोच्चार के साथ अग्निदेव को समर्पित किया जाता है।
+
               गया संकल्प, मंत्रोच्चार के साथ अग्निदेव को समर्पित किया जाता है।
             </p>
             <p className="text-muted-foreground leading-relaxed">
@@ -431,16 +577,20 @@ function HomePage() {
           </div>
 
           {/* Bundle highlight */}
-          <div className="mt-10 rounded-2xl bg-deep text-cream p-6 md:p-8 text-center ring-1 ring-gold/30">
+          <a
+            href="#packages"
+            className="mt-10 block rounded-2xl bg-deep text-cream p-6 md:p-8 text-center ring-1 ring-gold/30 hover:ring-saffron/60 transition-all"
+          >
             <div className="font-mono text-[10px] md:text-xs uppercase tracking-[0.3em] text-gold mb-3">
-              ✨ सम्पूर्ण बंडल ✨
+              ✨ 3 योजनाएँ उपलब्ध ✨
             </div>
             <p className="font-display text-lg md:text-2xl leading-relaxed text-balance">
-              ये सभी सेवाएँ — सुंदरकांड, हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोज —
+              ₹251 मासिक से शुरू — गृह शांति हवन सहित योजनाएँ ₹401/माह एवं ₹2501/वर्ष में।
               <br className="hidden md:block" />
-              <span className="text-saffron font-bold"> एक ही बंडल में, मात्र ₹251/- माह।</span>
+              <span className="text-saffron font-bold"> परिवार के 4 सदस्यों तक का संकल्प हर योजना में सम्मिलित।</span>
             </p>
-          </div>
+          </a>
+
         </div>
       </section>
 
@@ -534,22 +684,21 @@ function HomePage() {
             अखंड पुण्य के भागीदार बनें।
           </h2>
           <p className="opacity-80 max-w-xl mx-auto mb-10 leading-relaxed">
-            मात्र ₹251 मासिक — सुंदरकांड, हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोज।
-            हर अनुष्ठान का Video Proof आपके WhatsApp पर।
+            ₹251 मासिक से शुरू — सुंदरकांड, गृह शांति हवन, गौ सेवा, वानर सेवा एवं ब्राह्मण भोजन।
+            परिवार के 4 सदस्यों तक का संकल्प। हर अनुष्ठान का Video Proof आपके WhatsApp पर।
           </p>
           <a
-            href="https://wa.me/919999999999?text=जय%20सियाराम%20—%20मुझे%20पुण्यम%20सेवा%20मासिक%20संकल्प%20आरंभ%20करना%20है"
-            target="_blank"
-            rel="noreferrer"
+            href="#packages"
             className="inline-block bg-saffron text-white px-10 py-5 rounded-xl text-lg font-bold hover:opacity-90 transition-opacity"
           >
-            WhatsApp पर सदस्य बनें — ₹251/माह
+            अपनी योजना चुनें →
           </a>
           <div className="font-mono text-[10px] uppercase tracking-[0.3em] opacity-50 mt-8">
             कोई प्रतिबद्धता नहीं • कभी भी रोकें • पूर्ण पारदर्शिता
           </div>
         </div>
       </section>
+
 
       {/* Footer */}
       <footer className="px-6 py-12 border-t border-border text-center">
@@ -563,18 +712,19 @@ function HomePage() {
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-2xl bg-background/95 backdrop-blur-xl border border-saffron/30 rounded-2xl p-3 pl-5 shadow-2xl z-50 flex items-center justify-between gap-4">
         <div>
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
-            मासिक सेवा योगदान
+            3 योजनाएँ • परिवार सहित
           </div>
           <div className="font-display text-xl font-extrabold text-saffron leading-none mt-1">
-            ₹251 <span className="text-xs font-normal text-foreground">/ माह</span>
+            ₹251 <span className="text-xs font-normal text-foreground">से शुरू</span>
           </div>
         </div>
         <a
-          href="#subscribe"
+          href="#packages"
           className="bg-saffron text-white px-5 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity whitespace-nowrap"
         >
           सदस्य बनें
         </a>
+
       </div>
 
       {/* Floating WhatsApp button */}
