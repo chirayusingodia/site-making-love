@@ -7,7 +7,6 @@ import {
   Video,
   Ban,
   Star,
-  Phone,
   Youtube,
   Instagram,
   Lock,
