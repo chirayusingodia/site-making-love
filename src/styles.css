@@ -90,12 +90,27 @@
 }
 
 @layer base {
+  html { scroll-behavior: smooth; }
   * { border-color: var(--color-border); }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-body);
+    font-family: 'Noto Sans Devanagari', var(--font-body);
     -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(at 20% 10%, color-mix(in oklab, var(--saffron) 6%, transparent) 0px, transparent 50%),
+      radial-gradient(at 80% 90%, color-mix(in oklab, var(--gold) 6%, transparent) 0px, transparent 50%);
+    background-attachment: fixed;
   }
   h1, h2, h3, h4 { font-family: var(--font-display); }
+}
+
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
+  50% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+}
+.animate-flame { animation: flame-flicker 1.6s ease-in-out infinite; transform-origin: bottom center; }
+
+@keyframes marquee-dots {
+  to { background-position: 24px 0; }
 }
