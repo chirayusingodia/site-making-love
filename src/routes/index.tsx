@@ -543,42 +543,6 @@ function WhatsAppProofSection() {
   );
 }
 
-function PanditsSection() {
-  return (
-    <section className="px-6 py-14">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="font-display font-extrabold text-2xl md:text-4xl text-maroon">
-            🙏 हमारे आचार्य — जो आपकी सेवा करते हैं
-          </h2>
-          <div className="h-1 w-20 bg-gold mx-auto mt-4" />
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {pandits.map((p, i) => (
-            <div
-              key={i}
-              className="bg-cream rounded-2xl p-6 border-2 border-gold/40 shadow-md hover-lift text-center"
-            >
-              <div
-                className={`mx-auto size-24 rounded-full bg-gradient-to-br ${p.color} text-white text-4xl flex items-center justify-center shadow-lg mb-4 ring-4 ring-gold/30`}
-              >
-                🧘
-              </div>
-              <h3 className="font-display font-bold text-xl text-maroon mb-1">{p.name}</h3>
-              <div className="text-xs uppercase tracking-wider text-saffron font-semibold mb-3">
-                {p.role}
-              </div>
-              <p className="text-sm text-deep/80 leading-relaxed mb-4">{p.detail}</p>
-              <p className="italic font-display text-saffron text-sm border-t border-gold/30 pt-3">
-                "{p.quote}"
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function GallerySection() {
   return (
