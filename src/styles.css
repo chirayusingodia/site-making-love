@@ -69,11 +69,14 @@
   --input: oklch(0.22 0.04 40 / 0.12);
   --ring: oklch(0.68 0.18 45);
 
-  --saffron: oklch(0.72 0.18 50);
-  --saffron-soft: oklch(0.72 0.18 50 / 0.1);
-  --gold: oklch(0.78 0.13 75);
-  --deep: oklch(0.32 0.08 35);
-  --cream: oklch(0.96 0.022 80);
+  --saffron: oklch(0.68 0.21 42);
+  --saffron-soft: oklch(0.68 0.21 42 / 0.1);
+  --gold: oklch(0.74 0.12 80);
+  --deep: oklch(0.36 0.13 28);
+  --maroon: oklch(0.36 0.13 28);
+  --cream: oklch(0.975 0.022 80);
+
+  --background: oklch(0.975 0.022 80);
 
   --font-display: 'Martel', Georgia, serif;
   --font-body: 'Hind', system-ui, sans-serif;
