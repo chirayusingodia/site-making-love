@@ -77,14 +77,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "पुण्यता — तीर्थ गुरु पुष्करराज से मासिक सेवा" },
+      { name: "description", content: "तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, गौ सेवा एवं ब्राह्मण भोज। WhatsApp पर Video Proof।" },
+      { property: "og:title", content: "पुण्यता — मासिक सेवा" },
+      { property: "og:description", content: "सनातन सेवा का सामूहिक यज्ञ — पूर्ण पारदर्शिता के साथ।" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
