@@ -9,9 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
+import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
 
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -22,35 +29,55 @@ const PlanPlanIdRoute = PlanPlanIdRouteImport.update({
   path: '/plan/$planId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutPlanIdRoute = CheckoutPlanIdRouteImport.update({
+  id: '/checkout/$planId',
+  path: '/checkout/$planId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/profile': typeof ProfileRoute
+  '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/profile': typeof ProfileRoute
+  '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/profile': typeof ProfileRoute
+  '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/plan/$planId'
+  fullPaths: '/' | '/profile' | '/checkout/$planId' | '/plan/$planId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/plan/$planId'
-  id: '__root__' | '/' | '/plan/$planId'
+  to: '/' | '/profile' | '/checkout/$planId' | '/plan/$planId'
+  id: '__root__' | '/' | '/profile' | '/checkout/$planId' | '/plan/$planId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProfileRoute: typeof ProfileRoute
+  CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -65,11 +92,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanPlanIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/$planId': {
+      id: '/checkout/$planId'
+      path: '/checkout/$planId'
+      fullPath: '/checkout/$planId'
+      preLoaderRoute: typeof CheckoutPlanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProfileRoute: ProfileRoute,
+  CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
 }
 export const routeTree = rootRouteImport
