@@ -1,25 +1,30 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, MessageCircle } from "lucide-react";
-import { getPlan, plans } from "@/lib/plans";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck } from "lucide-react";
+import { getPlan, plans, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/routes/index";
 
 export const Route = createFileRoute("/plan/$planId")({
-  loader: ({ params }) => {
-    const plan = getPlan(params.planId);
-    if (!plan) throw notFound();
-    return { plan };
-  },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `${loaderData?.plan.name ?? "Plan"} — पुण्यता` },
-      { name: "description", content: loaderData?.plan.tagline ?? "पुण्यता सेवा पैक" },
-    ],
-  }),
   component: PlanDetailPage,
 });
 
 function PlanDetailPage() {
-  const { plan } = Route.useLoaderData();
+  const { planId } = Route.useParams();
+  const plan: Plan | undefined = getPlan(planId);
+  if (!plan) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="max-w-2xl mx-auto px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold">Plan not found</h1>
+          <Link to="/" className="mt-4 inline-block text-brand font-semibold">Back to Plans</Link>
+        </main>
+      </div>
+    );
+  }
+  return <PlanDetail plan={plan} />;
+}
+
+function PlanDetail({ plan }: { plan: Plan }) {
   return (
     <div className="min-h-screen bg-background">
       <Header />
