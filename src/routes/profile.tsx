@@ -67,7 +67,7 @@ function LoggedOutView() {
 
 function LoggedInView() {
   // Static placeholder profile
-  const user = { name: "Rajesh Sharma", whatsapp: "+91 9876543210", plan: "गृह शांति ₹401/माह" };
+  const user = { name: "Rajesh Sharma", whatsapp: "+91 9876543210", plan: "गृह शांति ₹401/Monthly" };
   return (
     <div className="space-y-6">
       <div className="card-soft p-5 flex items-center gap-4">
