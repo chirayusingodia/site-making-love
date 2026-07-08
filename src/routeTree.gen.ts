@@ -9,14 +9,50 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SevasRouteImport } from './routes/sevas'
+import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PlansRouteImport } from './routes/plans'
+import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
 import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
 
+const SevasRoute = SevasRouteImport.update({
+  id: '/sevas',
+  path: '/sevas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlansRoute = PlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MySubscriptionRoute = MySubscriptionRouteImport.update({
+  id: '/my-subscription',
+  path: '/my-subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,45 +73,142 @@ const CheckoutPlanIdRoute = CheckoutPlanIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/faq': typeof FaqRoute
+  '/my-subscription': typeof MySubscriptionRoute
+  '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
+  '/reviews': typeof ReviewsRoute
+  '/sevas': typeof SevasRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/faq': typeof FaqRoute
+  '/my-subscription': typeof MySubscriptionRoute
+  '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
+  '/reviews': typeof ReviewsRoute
+  '/sevas': typeof SevasRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/faq': typeof FaqRoute
+  '/my-subscription': typeof MySubscriptionRoute
+  '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
+  '/reviews': typeof ReviewsRoute
+  '/sevas': typeof SevasRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/profile' | '/checkout/$planId' | '/plan/$planId'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/faq'
+    | '/my-subscription'
+    | '/plans'
+    | '/profile'
+    | '/reviews'
+    | '/sevas'
+    | '/checkout/$planId'
+    | '/plan/$planId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/profile' | '/checkout/$planId' | '/plan/$planId'
-  id: '__root__' | '/' | '/profile' | '/checkout/$planId' | '/plan/$planId'
+  to:
+    | '/'
+    | '/about'
+    | '/faq'
+    | '/my-subscription'
+    | '/plans'
+    | '/profile'
+    | '/reviews'
+    | '/sevas'
+    | '/checkout/$planId'
+    | '/plan/$planId'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/faq'
+    | '/my-subscription'
+    | '/plans'
+    | '/profile'
+    | '/reviews'
+    | '/sevas'
+    | '/checkout/$planId'
+    | '/plan/$planId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  FaqRoute: typeof FaqRoute
+  MySubscriptionRoute: typeof MySubscriptionRoute
+  PlansRoute: typeof PlansRoute
   ProfileRoute: typeof ProfileRoute
+  ReviewsRoute: typeof ReviewsRoute
+  SevasRoute: typeof SevasRoute
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sevas': {
+      id: '/sevas'
+      path: '/sevas'
+      fullPath: '/sevas'
+      preLoaderRoute: typeof SevasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plans': {
+      id: '/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-subscription': {
+      id: '/my-subscription'
+      path: '/my-subscription'
+      fullPath: '/my-subscription'
+      preLoaderRoute: typeof MySubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,7 +237,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  FaqRoute: FaqRoute,
+  MySubscriptionRoute: MySubscriptionRoute,
+  PlansRoute: PlansRoute,
   ProfileRoute: ProfileRoute,
+  ReviewsRoute: ReviewsRoute,
+  SevasRoute: SevasRoute,
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
 }
