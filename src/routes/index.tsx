@@ -229,7 +229,7 @@ function PlansPreview() {
             key={p.id}
             to="/plan/$planId"
             params={{ planId: p.id }}
-            className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow"
+            className="card-soft card-lift p-4 flex items-center gap-4"
           >
             <img src={p.image} alt={p.name} className="w-20 h-20 rounded-2xl object-cover shrink-0" />
             <div className="flex-1 min-w-0">
