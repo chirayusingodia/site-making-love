@@ -144,3 +144,20 @@
   border: 3px solid transparent;
   border-top-color: #a72638; border-right-color: #a72638;
 }
+
+/* Reveal on scroll */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+/* Button glow / lift */
+.btn-glow { transition: transform 200ms ease, box-shadow 200ms ease; }
+.btn-glow:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(232, 93, 31, 0.35); }
+
+.card-lift { transition: transform 220ms ease, box-shadow 220ms ease; }
+.card-lift:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(139, 79, 40, 0.14); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.is-visible { opacity: 1; transform: none; transition: none; }
+  .btn-glow:hover, .card-lift:hover { transform: none; }
+  .animate-fade-up, .animate-pulse-ring { animation: none !important; }
+}
