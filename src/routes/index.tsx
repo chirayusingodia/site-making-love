@@ -81,7 +81,7 @@ function Hero() {
       </p>
       <Link
         to="/plans"
-        className="mt-5 inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full hover:bg-brand-deep transition-colors shadow-lg shadow-brand/25"
+        className="mt-5 inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full shadow-lg shadow-brand/25 btn-glow"
       >
         See Plans — ₹251/Monthly से शुरू <ArrowRight size={18} />
       </Link>
