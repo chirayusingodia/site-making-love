@@ -40,7 +40,12 @@ const shloks = [
 function AboutPage() {
   return (
     <SiteChrome>
-      <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-14">
+      <div className="w-full">
+        <div className="max-w-5xl mx-auto md:px-4 md:pt-4">
+          <SlidingImageCard slides={storySlides} aspectRatio="video" rounded="md:rounded-3xl rounded-none" />
+        </div>
+      </div>
+      <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-8 space-y-14">
         {/* Hero */}
         <section className="text-center space-y-3 animate-fade-up">
           <div className="text-xs font-bold uppercase tracking-widest text-brand">पुण्यता — About Us</div>
