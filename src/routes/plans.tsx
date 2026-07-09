@@ -2,7 +2,27 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Wind, Sun as SunIcon } from "lucide-react";
 import { plans, sevaList, acharyas } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
+import { SlidingImageCard, themedImage, type Slide } from "@/components/SlidingImageCard";
 import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+
+const planSlides: Record<string, Slide[]> = {
+  // TODO: replace with real Punyata seva photography.
+  basic: [
+    { src: themedImage("sankalp pooja brass thali temple", 21), alt: "Sankalp pooja", title: "Sankalp • Aapke Naam Se", subtitle: "Har mahina naam-gotra se sankalp" },
+    { src: themedImage("temple flower offering chadava hands", 22), alt: "Chadava", title: "Chadava • Maa Ke Charno Mein", subtitle: "Pushp aur naivedya arpan" },
+    { src: themedImage("aarti thali diya incense temple", 23), alt: "Aarti thali", title: "Aarti • Divya Deepak", subtitle: "Har seva ke saath poorna aarti" },
+  ],
+  grah: [
+    { src: themedImage("hawan kund fire ceremony smoke", 31), alt: "Hawan", title: "Hawan • Agni Devta Ka Aashirwad", subtitle: "Vaidik mantron se grah shanti" },
+    { src: themedImage("hindu priest reading scripture book temple", 32), alt: "Sundarkand Paath", title: "Sundarkand Paath • Sankat Haran", subtitle: "Bigade kaam banane wala paath" },
+    { src: themedImage("feeding cow gau seva india", 33), alt: "Gau Seva", title: "Gau Seva • Gau Mata Ka Punya", subtitle: "Chara aur gud arpan" },
+  ],
+  varsh: [
+    { src: themedImage("feeding monkeys bananas india temple", 41), alt: "Vanara Seva", title: "Vanara Seva • Bajrangbali Ka Ashirwad", subtitle: "Kela evam chana arpan" },
+    { src: themedImage("indian priests eating meal temple feast", 42), alt: "Brahmin Bhojan", title: "Brahmin Bhojan • Anna Daan Ka Punya", subtitle: "Vidwan brahmanon ka satkar" },
+    { src: themedImage("row of diyas lit night temple", 43), alt: "Diya row", title: "Poore Saal Ka Punya, Ek Sath", subtitle: "12 mahine ka akhand sankalp" },
+  ],
+};
 
 export const Route = createFileRoute("/plans")({
   head: () => ({
@@ -113,17 +133,22 @@ function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
         ? "bg-success text-white"
         : "bg-gradient-to-r from-[#FDD9C3] to-[#F5A742] text-[#7A3A00]";
 
+  const slides = planSlides[plan.id] ?? [];
+
   return (
-    <article className="card-soft overflow-hidden relative animate-fade-up flex flex-col">
+    <article className="card-soft card-lift overflow-hidden relative animate-fade-up flex flex-col">
       <div className="relative">
         {plan.ribbon && <div className="ribbon">{plan.ribbon}</div>}
         {plan.badge && (
-          <div className={`absolute top-3 right-3 z-2 px-3 py-1.5 rounded-full text-xs font-bold ${badgeColor} shadow-md`}>
+          <div className={`absolute top-3 right-3 z-20 px-3 py-1.5 rounded-full text-xs font-bold ${badgeColor} shadow-md`}>
             {plan.badge.label}
           </div>
         )}
-        <img src={plan.image} alt={plan.name} className="w-full h-48 object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+        {slides.length > 0 ? (
+          <SlidingImageCard slides={slides} aspectRatio="4/5" rounded="rounded-none" />
+        ) : (
+          <img src={plan.image} alt={plan.name} className="w-full h-48 object-cover" />
+        )}
       </div>
 
       <div className="p-5 flex-1 flex flex-col">

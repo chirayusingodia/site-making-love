@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Search, User, Home, Sparkles, MessageSquareText, Info, MessageCircle } from "lucide-react";
+import { PunyataLogo } from "@/components/PunyataLogo";
 
 const WHATSAPP_RAW = "918005828548";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(
@@ -14,14 +16,28 @@ const NAV_LINKS = [
 ] as const;
 
 export function Header() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   return (
-    <header className="sticky top-0 z-40 bg-[#FDF1EC]/85 backdrop-blur-lg border-b border-black/5">
-      <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3 gap-3">
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center font-bold text-lg">
-            <span>🕉️</span>
-          </div>
-          <span className="text-xl font-bold text-brand tracking-tight">पुण्यता</span>
+    <header
+      className={`sticky top-0 z-40 bg-[#FDF1EC]/90 backdrop-blur-lg border-b border-black/5 transition-all duration-300 ${
+        scrolled ? "py-0 shadow-[0_4px_16px_rgba(139,79,40,0.08)]" : ""
+      }`}
+    >
+      <div className={`max-w-5xl mx-auto flex items-center justify-between px-4 gap-3 transition-all duration-300 ${scrolled ? "py-2" : "py-3"}`}>
+        <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
+          <PunyataLogo size={scrolled ? 36 : 44} className="transition-all duration-300 group-hover:scale-105" />
+          <span
+            className="font-extrabold text-brand tracking-tight leading-none text-2xl md:text-3xl"
+            style={{ fontFamily: "'Poppins', 'Noto Sans Devanagari', system-ui, sans-serif" }}
+          >
+            पुण्यता
+          </span>
         </Link>
 
         {/* Desktop nav */}
