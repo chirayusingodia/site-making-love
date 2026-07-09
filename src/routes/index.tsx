@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -16,6 +16,8 @@ import havanImg from "@/assets/havan.jpg";
 import gauImg from "@/assets/gau-seva.jpg";
 import { plans, testimonials, faqs } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
+import { SlidingImageCard, themedImage, type Slide } from "@/components/SlidingImageCard";
+import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,10 +29,26 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+// TODO: replace loremflickr placeholders with real Punyata/Pushkar photography.
+const heroSlides: Slide[] = [
+  { src: themedImage("pushkar lake ghat sunrise rajasthan", 11), alt: "Pushkar ghats at sunrise", title: "Pushkar Ke Pavitra Ghaton Se", subtitle: "Jahan har sankalp Tirth Guru Pushkarraj ke saamne liya jaata hai" },
+  { src: themedImage("indian pandit hawan fire ritual temple", 12), alt: "Pandit performing hawan", title: "Aapke Naam Aur Gotra Se", subtitle: "Har mahina asli pandit dwara vidhi-vidhan se pooja" },
+  { src: themedImage("indian family praying temple hands folded", 13), alt: "Family in prayer", title: "Family Ki Punya Yatra", subtitle: "4 parivarjan tak — ek subscription mein sabka punya" },
+  { src: themedImage("smartphone whatsapp photo notification hand", 14), alt: "WhatsApp proof on phone", title: "Seva Ka Living Proof", subtitle: "Har pooja ka photo/video seedha aapke WhatsApp par" },
+  { src: themedImage("diya aarti flame temple closeup night", 15), alt: "Diya flame close-up", title: "Bharat Ka Punya Bank", subtitle: "Ab sochna nahi padega — Punyata sambhaal lega" },
+];
+
 function HomePage() {
+  useRevealOnScroll();
   return (
     <SiteChrome>
-      <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-4 space-y-12">
+      {/* Full-width hero carousel — sits above the headline */}
+      <div className="w-full bg-background">
+        <div className="max-w-5xl mx-auto md:px-4 md:pt-4">
+          <SlidingImageCard slides={heroSlides} aspectRatio="video" rounded="md:rounded-3xl rounded-none" />
+        </div>
+      </div>
+      <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-12">
         <Hero />
         <Mission />
         <HowItWorks />
