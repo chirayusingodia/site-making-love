@@ -2,7 +2,27 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Wind, Sun as SunIcon } from "lucide-react";
 import { plans, sevaList, acharyas } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
+import { SlidingImageCard, themedImage, type Slide } from "@/components/SlidingImageCard";
 import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+
+const planSlides: Record<string, Slide[]> = {
+  // TODO: replace with real Punyata seva photography.
+  basic: [
+    { src: themedImage("sankalp pooja brass thali temple", 21), alt: "Sankalp pooja", title: "Sankalp • Aapke Naam Se", subtitle: "Har mahina naam-gotra se sankalp" },
+    { src: themedImage("temple flower offering chadava hands", 22), alt: "Chadava", title: "Chadava • Maa Ke Charno Mein", subtitle: "Pushp aur naivedya arpan" },
+    { src: themedImage("aarti thali diya incense temple", 23), alt: "Aarti thali", title: "Aarti • Divya Deepak", subtitle: "Har seva ke saath poorna aarti" },
+  ],
+  grah: [
+    { src: themedImage("hawan kund fire ceremony smoke", 31), alt: "Hawan", title: "Hawan • Agni Devta Ka Aashirwad", subtitle: "Vaidik mantron se grah shanti" },
+    { src: themedImage("hindu priest reading scripture book temple", 32), alt: "Sundarkand Paath", title: "Sundarkand Paath • Sankat Haran", subtitle: "Bigade kaam banane wala paath" },
+    { src: themedImage("feeding cow gau seva india", 33), alt: "Gau Seva", title: "Gau Seva • Gau Mata Ka Punya", subtitle: "Chara aur gud arpan" },
+  ],
+  varsh: [
+    { src: themedImage("feeding monkeys bananas india temple", 41), alt: "Vanara Seva", title: "Vanara Seva • Bajrangbali Ka Ashirwad", subtitle: "Kela evam chana arpan" },
+    { src: themedImage("indian priests eating meal temple feast", 42), alt: "Brahmin Bhojan", title: "Brahmin Bhojan • Anna Daan Ka Punya", subtitle: "Vidwan brahmanon ka satkar" },
+    { src: themedImage("row of diyas lit night temple", 43), alt: "Diya row", title: "Poore Saal Ka Punya, Ek Sath", subtitle: "12 mahine ka akhand sankalp" },
+  ],
+};
 
 export const Route = createFileRoute("/plans")({
   head: () => ({
