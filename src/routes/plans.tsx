@@ -133,17 +133,22 @@ function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
         ? "bg-success text-white"
         : "bg-gradient-to-r from-[#FDD9C3] to-[#F5A742] text-[#7A3A00]";
 
+  const slides = planSlides[plan.id] ?? [];
+
   return (
-    <article className="card-soft overflow-hidden relative animate-fade-up flex flex-col">
+    <article className="card-soft card-lift overflow-hidden relative animate-fade-up flex flex-col">
       <div className="relative">
         {plan.ribbon && <div className="ribbon">{plan.ribbon}</div>}
         {plan.badge && (
-          <div className={`absolute top-3 right-3 z-2 px-3 py-1.5 rounded-full text-xs font-bold ${badgeColor} shadow-md`}>
+          <div className={`absolute top-3 right-3 z-20 px-3 py-1.5 rounded-full text-xs font-bold ${badgeColor} shadow-md`}>
             {plan.badge.label}
           </div>
         )}
-        <img src={plan.image} alt={plan.name} className="w-full h-48 object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+        {slides.length > 0 ? (
+          <SlidingImageCard slides={slides} aspectRatio="4/5" rounded="rounded-none" />
+        ) : (
+          <img src={plan.image} alt={plan.name} className="w-full h-48 object-cover" />
+        )}
       </div>
 
       <div className="p-5 flex-1 flex flex-col">
