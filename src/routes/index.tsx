@@ -16,8 +16,13 @@ import havanImg from "@/assets/havan.jpg";
 import gauImg from "@/assets/gau-seva.jpg";
 import { plans, testimonials, faqs } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
-import { SlidingImageCard, themedImage, type Slide } from "@/components/SlidingImageCard";
+import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
+import heroPushkar from "@/assets/hero/pushkar-ghats.jpg";
+import heroPandit from "@/assets/hero/pandit-hawan.jpg";
+import heroFamily from "@/assets/hero/family-prayer.jpg";
+import heroWhatsapp from "@/assets/hero/whatsapp-proof.jpg";
+import heroDiya from "@/assets/hero/diya-aarti.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,13 +34,12 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-// TODO: replace loremflickr placeholders with real Punyata/Pushkar photography.
 const heroSlides: Slide[] = [
-  { src: themedImage("pushkar lake ghat sunrise rajasthan", 11), alt: "Pushkar ghats at sunrise", title: "Pushkar Ke Pavitra Ghaton Se", subtitle: "Jahan har sankalp Tirth Guru Pushkarraj ke saamne liya jaata hai" },
-  { src: themedImage("indian pandit hawan fire ritual temple", 12), alt: "Pandit performing hawan", title: "Aapke Naam Aur Gotra Se", subtitle: "Har mahina asli pandit dwara vidhi-vidhan se pooja" },
-  { src: themedImage("indian family praying temple hands folded", 13), alt: "Family in prayer", title: "Family Ki Punya Yatra", subtitle: "4 parivarjan tak — ek subscription mein sabka punya" },
-  { src: themedImage("smartphone whatsapp photo notification hand", 14), alt: "WhatsApp proof on phone", title: "Seva Ka Living Proof", subtitle: "Har pooja ka photo/video seedha aapke WhatsApp par" },
-  { src: themedImage("diya aarti flame temple closeup night", 15), alt: "Diya flame close-up", title: "Bharat Ka Punya Bank", subtitle: "Ab sochna nahi padega — Punyata sambhaal lega" },
+  { src: heroPushkar, alt: "Pushkar ghats at sunrise", title: "Pushkar Ke Pavitra Ghaton Se", subtitle: "Jahan har sankalp Tirth Guru Pushkarraj ke saamne liya jaata hai" },
+  { src: heroPandit, alt: "Pandit performing hawan", title: "Aapke Naam Aur Gotra Se", subtitle: "Har mahina asli pandit dwara vidhi-vidhan se pooja" },
+  { src: heroFamily, alt: "Indian family in prayer", title: "Family Ki Punya Yatra", subtitle: "4 parivarjan tak — ek subscription mein sabka punya" },
+  { src: heroWhatsapp, alt: "WhatsApp proof on phone", title: "Seva Ka Living Proof", subtitle: "Har pooja ka photo/video seedha aapke WhatsApp par" },
+  { src: heroDiya, alt: "Diya flame close-up", title: "Bharat Ka Punya Bank", subtitle: "Ab sochna nahi padega — Punyata sambhaal lega" },
 ];
 
 function HomePage() {
