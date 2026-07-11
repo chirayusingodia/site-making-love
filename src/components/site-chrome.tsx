@@ -1,5 +1,10 @@
+import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Search, User, Home, Sparkles, MessageSquareText, Info, MessageCircle } from "lucide-react";
+import { User, Home, Sparkles, MessageSquareText, Info, MessageCircle } from "lucide-react";
+import punyataLogoImg from "@/assets/punyata-logo.png";
+
+type Lang = "hindi" | "english";
+const LANG_KEY = "punyata:lang";
 
 const WHATSAPP_RAW = "918005828548";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(
@@ -13,15 +18,75 @@ const NAV_LINKS = [
   { to: "/faq", label: "FAQ" },
 ] as const;
 
-export function Header() {
+function LanguageToggle() {
+  const [lang, setLang] = useState<Lang>("hindi");
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LANG_KEY);
+      if (stored === "hindi" || stored === "english") setLang(stored);
+    } catch {}
+  }, []);
+  const update = (v: Lang) => {
+    setLang(v);
+    try { localStorage.setItem(LANG_KEY, v); } catch {}
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-lang", v);
+    }
+  };
   return (
-    <header className="sticky top-0 z-40 bg-[#FDF1EC]/85 backdrop-blur-lg border-b border-black/5">
-      <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3 gap-3">
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center font-bold text-lg">
-            <span>🕉️</span>
-          </div>
-          <span className="text-xl font-bold text-brand tracking-tight">पुण्यता</span>
+    <div
+      role="group"
+      aria-label="Language toggle"
+      className="inline-flex items-center bg-white border border-black/10 rounded-full p-0.5 shadow-sm"
+    >
+      {(["hindi", "english"] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => update(v)}
+          className={`px-2.5 md:px-3.5 py-1.5 text-[11px] md:text-xs font-bold rounded-full transition-all capitalize ${
+            lang === v
+              ? "bg-brand text-white shadow"
+              : "text-foreground/60 hover:text-brand"
+          }`}
+          aria-pressed={lang === v}
+        >
+          {v}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function Header() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <header
+      className={`sticky top-0 z-40 bg-[#FDF1EC]/90 backdrop-blur-lg border-b border-black/5 transition-all duration-300 ${
+        scrolled ? "py-0 shadow-[0_4px_16px_rgba(139,79,40,0.08)]" : ""
+      }`}
+    >
+      <div className={`max-w-5xl mx-auto flex items-center justify-between px-4 gap-2 md:gap-3 transition-all duration-300 ${scrolled ? "py-2" : "py-3"}`}>
+        <Link to="/" className="flex items-center gap-2 md:gap-2.5 shrink-0 group">
+          <img
+            src={punyataLogoImg}
+            alt="Punyata"
+            width={64}
+            height={64}
+            className={`rounded-full object-cover ring-1 ring-brand/20 shadow-sm transition-all duration-300 group-hover:scale-105 ${scrolled ? "w-9 h-9 md:w-10 md:h-10" : "w-11 h-11 md:w-12 md:h-12"}`}
+          />
+          <span
+            className="font-extrabold text-brand tracking-tight leading-none text-2xl md:text-4xl"
+            style={{ fontFamily: "'Poppins', 'Noto Sans Devanagari', system-ui, sans-serif" }}
+          >
+            पुण्यता
+          </span>
         </Link>
 
         {/* Desktop nav */}
@@ -39,13 +104,8 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            className="w-10 h-10 rounded-full bg-white border border-black/10 flex items-center justify-center hover:border-brand transition-colors"
-            aria-label="Search"
-          >
-            <Search size={18} className="text-foreground" />
-          </button>
-          <Link to="/profile" className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center" aria-label="Account">
+          <LanguageToggle />
+          <Link to="/profile" className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-black text-white flex items-center justify-center" aria-label="Account">
             <User size={18} />
           </Link>
         </div>

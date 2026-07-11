@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck } from "lucide-react";
 import { getPlan, plans, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/routes/index";
+import { SevaFlow } from "@/components/SevaFlow";
 
 export const Route = createFileRoute("/plan/$planId")({
   component: PlanDetailPage,
@@ -80,6 +81,11 @@ function PlanDetail({ plan }: { plan: Plan }) {
             ))}
           </div>
         </section>
+
+        {/* Dynamic seva flow — reads current plan's actual sevas */}
+        <SevaFlow sevaTitles={plan.detail.sevas.map((s) => s.title)} />
+
+
 
         {/* Benefits */}
         <section className="mt-6 space-y-3">

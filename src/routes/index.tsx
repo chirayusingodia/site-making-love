@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -16,6 +16,13 @@ import havanImg from "@/assets/havan.jpg";
 import gauImg from "@/assets/gau-seva.jpg";
 import { plans, testimonials, faqs } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
+import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
+import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
+import heroPushkar from "@/assets/hero/pushkar-ghats.jpg";
+import heroPandit from "@/assets/hero/pandit-hawan.jpg";
+import heroFamily from "@/assets/hero/family-prayer.jpg";
+import heroWhatsapp from "@/assets/hero/whatsapp-proof.jpg";
+import heroDiya from "@/assets/hero/diya-aarti.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,10 +34,25 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+const heroSlides: Slide[] = [
+  { src: heroPushkar, alt: "Pushkar ghats at sunrise", title: "Pushkar Ke Pavitra Ghaton Se", subtitle: "Jahan har sankalp Tirth Guru Pushkarraj ke saamne liya jaata hai" },
+  { src: heroPandit, alt: "Pandit performing hawan", title: "Aapke Naam Aur Gotra Se", subtitle: "Har mahina asli pandit dwara vidhi-vidhan se pooja" },
+  { src: heroFamily, alt: "Indian family in prayer", title: "Family Ki Punya Yatra", subtitle: "4 parivarjan tak — ek subscription mein sabka punya" },
+  { src: heroWhatsapp, alt: "WhatsApp proof on phone", title: "Seva Ka Living Proof", subtitle: "Har pooja ka photo/video seedha aapke WhatsApp par" },
+  { src: heroDiya, alt: "Diya flame close-up", title: "Bharat Ka Punya Bank", subtitle: "Ab sochna nahi padega — Punyata sambhaal lega" },
+];
+
 function HomePage() {
+  useRevealOnScroll();
   return (
     <SiteChrome>
-      <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-4 space-y-12">
+      {/* Full-width hero carousel — sits above the headline */}
+      <div className="w-full bg-background">
+        <div className="max-w-5xl mx-auto md:px-4 md:pt-4">
+          <SlidingImageCard slides={heroSlides} aspectRatio="video" rounded="md:rounded-3xl rounded-none" />
+        </div>
+      </div>
+      <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-12">
         <Hero />
         <Mission />
         <HowItWorks />
@@ -63,7 +85,7 @@ function Hero() {
       </p>
       <Link
         to="/plans"
-        className="mt-5 inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full hover:bg-brand-deep transition-colors shadow-lg shadow-brand/25"
+        className="mt-5 inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full shadow-lg shadow-brand/25 btn-glow"
       >
         See Plans — ₹251/Monthly से शुरू <ArrowRight size={18} />
       </Link>
@@ -211,7 +233,7 @@ function PlansPreview() {
             key={p.id}
             to="/plan/$planId"
             params={{ planId: p.id }}
-            className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow"
+            className="card-soft card-lift p-4 flex items-center gap-4"
           >
             <img src={p.image} alt={p.name} className="w-20 h-20 rounded-2xl object-cover shrink-0" />
             <div className="flex-1 min-w-0">

@@ -1,7 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ShieldCheck, MapPin, Video, Sparkles, Flame, BookOpen, Wind, Heart, Users, Sun } from "lucide-react";
 import { SiteChrome } from "@/components/site-chrome";
+import { SlidingImageCard, themedImage, type Slide } from "@/components/SlidingImageCard";
 import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+
+// TODO: replace loremflickr placeholders with real Punyata origin photos.
+const storySlides: Slide[] = [
+  { src: themedImage("pushkar brahma temple white dome exterior", 51), alt: "Pushkar Brahma temple", title: "Tirth Guru Pushkarraj", subtitle: "Jahan har sankalp shuru hota hai" },
+  { src: themedImage("elderly indian priest portrait traditional", 52), alt: "Elderly priest", title: "Anubhavi Pandit Samuday", subtitle: "Vidhi-vidhan se, poori shraddha ke saath" },
+  { src: themedImage("person looking at phone smiling outdoors india", 53), alt: "Devotee viewing proof", title: "Aapka Vishwas, Hamari Zimmedari", subtitle: "Har seva ka proof, seedha aapke paas" },
+  { src: themedImage("pushkar lake sunset golden hour", 54), alt: "Pushkar sunset", title: "Bharat Ka Punya Bank", subtitle: "Sewa Hamari, Punya Aapka" },
+];
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -31,7 +40,12 @@ const shloks = [
 function AboutPage() {
   return (
     <SiteChrome>
-      <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-14">
+      <div className="w-full">
+        <div className="max-w-5xl mx-auto md:px-4 md:pt-4">
+          <SlidingImageCard slides={storySlides} aspectRatio="video" rounded="md:rounded-3xl rounded-none" />
+        </div>
+      </div>
+      <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-8 space-y-14">
         {/* Hero */}
         <section className="text-center space-y-3 animate-fade-up">
           <div className="text-xs font-bold uppercase tracking-widest text-brand">पुण्यता — About Us</div>
