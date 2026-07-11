@@ -146,18 +146,44 @@
 }
 
 /* Reveal on scroll */
-.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .reveal.is-visible { opacity: 1; transform: translateY(0); }
 
+/* Custom Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.4s ease-out both; }
+
+@keyframes scale-up {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-up { animation: scale-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes slide-in-right {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in-right { animation: slide-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Page transition classes */
+.page-fade-exit { opacity: 1; }
+.page-fade-exit-active { opacity: 0; transition: opacity 200ms ease; }
+.page-fade-enter { opacity: 0; }
+.page-fade-enter-active { opacity: 1; transition: opacity 250ms ease-out; }
+
 /* Button glow / lift */
-.btn-glow { transition: transform 200ms ease, box-shadow 200ms ease; }
+.btn-glow { transition: transform 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 200ms ease; }
 .btn-glow:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(232, 93, 31, 0.35); }
 
-.card-lift { transition: transform 220ms ease, box-shadow 220ms ease; }
-.card-lift:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(139, 79, 40, 0.14); }
+.card-lift { transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease; }
+.card-lift:hover { transform: translateY(-8px); box-shadow: 0 20px 48px rgba(139, 79, 40, 0.16); }
 
 @media (prefers-reduced-motion: reduce) {
   .reveal, .reveal.is-visible { opacity: 1; transform: none; transition: none; }
   .btn-glow:hover, .card-lift:hover { transform: none; }
-  .animate-fade-up, .animate-pulse-ring { animation: none !important; }
+  .animate-fade-up, .animate-pulse-ring, .animate-fade-in, .animate-scale-up, .animate-slide-in-right { animation: none !important; }
 }
+

@@ -55,11 +55,11 @@ function HomePage() {
       <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-12">
         <Hero />
         <Mission />
+        <PlansPreview />
         <HowItWorks />
         <TrustPreview />
         <KaliyugShloks />
         <FamilySection />
-        <PlansPreview />
         <FaqSection />
         <ContactFooter />
       </main>
@@ -222,32 +222,76 @@ function FamilySection() {
 
 function PlansPreview() {
   return (
-    <section className="space-y-5">
+    <section className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold">Plans</h2>
         <p className="text-sm text-muted-foreground mt-1">₹251/Monthly से शुरू • 4 सदस्यों तक</p>
       </div>
-      <div className="grid grid-cols-1 gap-3">
-        {plans.map((p) => (
-          <Link
-            key={p.id}
-            to="/plan/$planId"
-            params={{ planId: p.id }}
-            className="card-soft card-lift p-4 flex items-center gap-4"
-          >
-            <img src={p.image} alt={p.name} className="w-20 h-20 rounded-2xl object-cover shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="font-bold truncate">{p.name}</div>
-              <div className="text-brand font-bold">
-                {p.price}<span className="text-xs text-muted-foreground font-medium">{p.cycle}</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {plans.map((p) => {
+          const isPopular = p.id === "grah";
+          const isAnnual = p.id === "varsh";
+          return (
+            <Link
+              key={p.id}
+              to="/plan/$planId"
+              params={{ planId: p.id }}
+              className={`card-soft card-lift overflow-hidden flex flex-col relative group border ${
+                isPopular ? "border-brand ring-2 ring-brand/10" : "border-black/5"
+              }`}
+            >
+              {isPopular && (
+                <div className="absolute top-3 right-3 z-10 bg-brand text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                  POPULAR
+                </div>
+              )}
+              {isAnnual && (
+                <div className="absolute top-3 right-3 z-10 bg-success text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                  SAVE
+                </div>
+              )}
+              
+              {/* Image Area */}
+              <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                <img
+                  src={p.image}
+                  alt={p.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
               </div>
-              <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                {p.serviceTags.join(" + ")}
+
+              {/* Card Body */}
+              <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-3">
+                  <h3 className="font-bold text-base text-foreground group-hover:text-brand transition-colors line-clamp-1">
+                    {p.name}
+                  </h3>
+                  
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold text-brand">{p.price}</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold">{p.cycle}</span>
+                    {p.strikePrice && (
+                      <span className="text-[10px] text-muted-foreground line-through ml-1">{p.strikePrice}</span>
+                    )}
+                  </div>
+
+                  <div className="text-[11px] text-muted-foreground leading-normal border-t border-black/5 pt-2.5">
+                    <div className="font-bold text-[9px] text-foreground/70 uppercase tracking-wider mb-0.5">सेवा सूची:</div>
+                    {p.serviceTags.join(" + ")}
+                  </div>
+                </div>
+
+                <div className="pt-2.5 border-t border-black/5 flex items-center justify-between text-[11px] font-bold text-brand group-hover:translate-x-1 transition-transform duration-200">
+                  <span>विवरण देखें</span>
+                  <div className="w-6 h-6 rounded-full bg-brand-soft flex items-center justify-center text-brand">
+                    <ArrowRight size={12} />
+                  </div>
+                </div>
               </div>
-            </div>
-            <ArrowRight size={18} className="text-brand shrink-0" />
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
       <div className="text-center">
         <Link to="/plans" className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-full hover:bg-brand-deep transition-colors">

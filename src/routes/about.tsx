@@ -1,15 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ShieldCheck, MapPin, Video, Sparkles, Flame, BookOpen, Wind, Heart, Users, Sun } from "lucide-react";
+import { ArrowRight, MapPin, Video, ShieldCheck, Sun, Flame, BookOpen, Sparkles, Heart, Users } from "lucide-react";
 import { SiteChrome } from "@/components/site-chrome";
-import { SlidingImageCard, themedImage, type Slide } from "@/components/SlidingImageCard";
+import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+import { CountUp } from "@/components/CountUp";
 
-// TODO: replace loremflickr placeholders with real Punyata origin photos.
+// Import local story images
+import story1 from "@/assets/about/story_1.png";
+import story2 from "@/assets/about/story_2.png";
+import story3 from "@/assets/about/story_3.png";
+import story4 from "@/assets/about/story_4.png";
+
 const storySlides: Slide[] = [
-  { src: themedImage("pushkar brahma temple white dome exterior", 51), alt: "Pushkar Brahma temple", title: "Tirth Guru Pushkarraj", subtitle: "Jahan har sankalp shuru hota hai" },
-  { src: themedImage("elderly indian priest portrait traditional", 52), alt: "Elderly priest", title: "Anubhavi Pandit Samuday", subtitle: "Vidhi-vidhan se, poori shraddha ke saath" },
-  { src: themedImage("person looking at phone smiling outdoors india", 53), alt: "Devotee viewing proof", title: "Aapka Vishwas, Hamari Zimmedari", subtitle: "Har seva ka proof, seedha aapke paas" },
-  { src: themedImage("pushkar lake sunset golden hour", 54), alt: "Pushkar sunset", title: "Bharat Ka Punya Bank", subtitle: "Sewa Hamari, Punya Aapka" },
+  { src: story1, alt: "Pushkar Brahma temple", title: "Tirth Guru Pushkarraj", subtitle: "Jahan har sankalp shuru hota hai" },
+  { src: story2, alt: "Elderly priest", title: "Anubhavi Pandit Samuday", subtitle: "Vidhi-vidhan se, poori shraddha ke saath" },
+  { src: story3, alt: "Devotee viewing proof", title: "Aapka Vishwas, Hamari Zimmedari", subtitle: "Har seva ka proof, seedha aapke paas" },
+  { src: story4, alt: "Pushkar sunset", title: "Bharat Ka Punya Bank", subtitle: "Sewa Hamari, Punya Aapka" },
 ];
 
 export const Route = createFileRoute("/about")({
@@ -28,13 +34,13 @@ const iconServices = [
   { Icon: BookOpen, label: "Pooja" },
   { Icon: Sparkles, label: "Chadava" },
   { Icon: Heart, label: "Daan" },
-  { Icon: Wind, label: "Sewa" },
+  { Icon: Users, label: "Sewa" },
 ];
 
 const shloks = [
   { t: "श्रीरामचरितमानस", s: "कलिजुग केवल हरि गुन गाहा। गावत नर पावहिं भव थाहा॥", m: "कलियुग में केवल भगवान श्रीहरि के गुण गान से ही मनुष्य भवसागर से पार हो जाता है।" },
   { t: "श्रीमद्भगवद्गीता 17.20", s: "दातव्यमिति यद्दानं दीयतेऽनुपकारिणे।\nदेशे काले च पात्रे च तद्दानं सात्त्विकं स्मृतम्॥", m: "योग्य पात्र को, उचित स्थान और समय पर, बिना प्रत्युपकार की आशा से दिया गया दान 'सात्त्विक दान' कहलाता है।" },
-  { t: "शास्त्र वचन", s: "दानेन तुल्यं सुकृतं न कच्चित्।", m: "दान के समान कोई पुण्य नहीं है — यह पुण्य आत्मा के साथ आगे भी चलता है।" },
+  { t: "शास्त्र वचन", s: "दानेन तुल्यं सुकृतं न कच्चित।", m: "दान के समान कोई पुण्य नहीं है — यह पुण्य आत्मा के साथ आगे भी चलता है।" },
 ];
 
 function AboutPage() {
@@ -133,12 +139,14 @@ function AboutPage() {
           <h2 className="text-2xl font-bold text-center">संख्या में पुण्यता</h2>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { n: "1,200+", l: "परिवार जुड़े" },
-              { n: "15,000+", l: "सेवाएँ सम्पन्न" },
-              { n: "100%", l: "Video Proof Delivery" },
+              { end: 1200, suffix: "+", l: "परिवार जुड़े" },
+              { end: 15000, suffix: "+", l: "सेवाएँ सम्पन्न" },
+              { end: 100, suffix: "%", l: "Video Proof Delivery" },
             ].map((s) => (
               <div key={s.l} className="card-soft p-4 text-center">
-                <div className="text-2xl font-bold text-brand">{s.n}</div>
+                <div className="text-2xl font-bold text-brand">
+                  <CountUp end={s.end} suffix={s.suffix} />
+                </div>
                 <div className="text-xs text-muted-foreground mt-1 leading-tight">{s.l}</div>
               </div>
             ))}

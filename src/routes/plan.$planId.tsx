@@ -1,8 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck } from "lucide-react";
-import { getPlan, plans, type Plan } from "@/lib/plans";
-import { Header, WhatsAppFloat } from "@/routes/index";
+import { getPlan, plans, sevaList, type Plan } from "@/lib/plans";
+import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
+import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
+
+// Import local hero images
+import h1 from "@/assets/plan-detail/hero_1.png";
+import h2 from "@/assets/plan-detail/hero_2.png";
+import h3 from "@/assets/plan-detail/hero_3.png";
+import h4 from "@/assets/plan-detail/hero_4.png";
+import h5 from "@/assets/plan-detail/hero_5.png";
+import h6 from "@/assets/plan-detail/hero_6.png";
+import h7 from "@/assets/plan-detail/hero_7.png";
+import h8 from "@/assets/plan-detail/hero_8.png";
+import h9 from "@/assets/plan-detail/hero_9.png";
+import h10 from "@/assets/plan-detail/hero_10.png";
+
+const heroImages = [h1, h2, h3, h4, h5, h6, h7, h8, h9, h10];
 
 export const Route = createFileRoute("/plan/$planId")({
   component: PlanDetailPage,
@@ -26,17 +41,33 @@ function PlanDetailPage() {
 }
 
 function PlanDetail({ plan }: { plan: Plan }) {
+  const slides: Slide[] = plan.slides.map((s) => ({
+    src: s.src,
+    alt: s.title,
+    title: s.title,
+    subtitle: s.subtitle,
+    step: s.step,
+    stepClass: s.stepClass,
+    titleClass: s.titleClass,
+    subtitleClass: s.subtitleClass,
+    scrimClass: s.scrimClass,
+  }));
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="max-w-2xl mx-auto px-4 pb-32 pt-4">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-brand mb-3">
+        <Link to="/plans" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-brand mb-3">
           <ArrowLeft size={16} /> Back to Plans
         </Link>
 
-        {/* Hero */}
-        <div className="card-soft overflow-hidden">
-          <img src={plan.image} alt={plan.name} className="w-full h-56 object-cover" />
+        {/* Hero Carousel */}
+        <div className="card-soft overflow-hidden flex flex-col">
+          {slides.length > 0 ? (
+            <SlidingImageCard slides={slides} aspectRatio="video" rounded="rounded-none" />
+          ) : (
+            <img src={plan.image} alt={plan.name} className="w-full h-56 object-cover" />
+          )}
           <div className="p-5">
             <h1 className="text-2xl font-bold text-foreground">{plan.detail.hero}</h1>
             <div className="flex items-baseline gap-3 mt-3">
@@ -84,8 +115,6 @@ function PlanDetail({ plan }: { plan: Plan }) {
 
         {/* Dynamic seva flow — reads current plan's actual sevas */}
         <SevaFlow sevaTitles={plan.detail.sevas.map((s) => s.title)} />
-
-
 
         {/* Benefits */}
         <section className="mt-6 space-y-3">

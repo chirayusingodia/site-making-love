@@ -1,8 +1,40 @@
-import heroImg from "@/assets/pushkar-hero.jpg";
-import havanImg from "@/assets/havan.jpg";
-import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+import basicImg1 from "@/assets/plans/basic_1.png";
+import basicImg2 from "@/assets/plans/basic_2.png";
+import basicImg3 from "@/assets/plans/basic_3.png";
+
+import grahImg1 from "@/assets/plans/grah_1.png";
+import grahImg2 from "@/assets/plans/grah_2.png";
+import grahImg3 from "@/assets/plans/grah_3.png";
+
+import varshImg1 from "@/assets/plans/varsh_1.png";
+import varshImg2 from "@/assets/plans/varsh_2.png";
+import varshImg3 from "@/assets/plans/varsh_3.png";
+
+// New plan specific slides imports
+import basicHero from "@/assets/plans/basic_hero.png";
+import basicSankalp from "@/assets/plans/basic_sankalp.png";
+import basicSeva from "@/assets/plans/basic_seva.png";
+import basicProof from "@/assets/plans/basic_proof.png";
+
+import premiumHero from "@/assets/plans/premium_hero.png";
+import premiumSankalp from "@/assets/plans/premium_sankalp.png";
+import premiumHawan from "@/assets/plans/premium_hawan.png";
+import premiumProof from "@/assets/plans/premium_proof.png";
+
+import annualHero from "@/assets/plans/annual_hero.png";
+import annualSankalp from "@/assets/plans/annual_sankalp.png";
+import annualHawan from "@/assets/plans/annual_hawan.png";
+import annualProof from "@/assets/plans/annual_proof.png";
+import annualBonus from "@/assets/plans/annual_bonus.png";
 
 export type PlanId = "basic" | "grah" | "varsh";
+
+export type PlanSlide = {
+  src: string;
+  title: string;
+  subtitle: string;
+  step?: string;
+};
 
 export type Plan = {
   id: PlanId;
@@ -12,7 +44,9 @@ export type Plan = {
   priceNumeric: number;
   cycle: string; // e.g. "/Monthly"
   strikePrice?: string;
-  image: string;
+  image: string; // fallback image
+  images: string[]; // mini-carousel images for listings
+  slides: PlanSlide[]; // custom distinct carousel slides
   ribbon?: string;
   badge?: { label: string; kind: "popular" | "save" | "max" };
   location: string;
@@ -36,7 +70,33 @@ export const plans: Plan[] = [
     price: "₹251",
     priceNumeric: 251,
     cycle: "/Monthly",
-    image: heroImg,
+    image: basicHero,
+    images: [basicImg1, basicImg2, basicImg3],
+    slides: [
+      {
+        src: basicHero,
+        title: "बेसिक सेवा — 4 सदस्यों तक के लिए",
+        subtitle: "सुंदरकांड पाठ • ब्राह्मण भोजन • वानर सेवा • गौ सेवा",
+      },
+      {
+        src: basicSankalp,
+        title: "संकल्प — आपके नाम व गोत्र से",
+        subtitle: "आपकी जानकारी हर माह सेवा में शामिल होती है",
+        step: "चरण 1",
+      },
+      {
+        src: basicSeva,
+        title: "पंडित जी द्वारा सेवा सम्पन्न",
+        subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में विधिपूर्वक",
+        step: "चरण 2",
+      },
+      {
+        src: basicProof,
+        title: "प्रमाण सीधे आपके व्हाट्सएप पर",
+        subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह आपकी सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
+        step: "चरण 3",
+      },
+    ],
     ribbon: "800+ परिवार जुड़े",
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",
     serviceTags: ["Pooja", "Chadava", "Daan", "Sewa", "Aarti"],
@@ -58,7 +118,7 @@ export const plans: Plan[] = [
         { title: "सुंदरकांड पाठ", note: "आपके नाम-गोत्र से — बिगड़े काम बनाने और ग्रह दोष शांत करने के लिए।" },
         { title: "आरती (Aarti)", note: "श्री हनुमान जी की आरती — हर अनुष्ठान का अंग।" },
         { title: "गौ माता सेवा", note: "गौशाला में चारा-गुड़ अर्पण — समस्त देवताओं की सेवा के समान।" },
-        { title: "वानर सेवा", note: "श्री हनुमान जी के प्रिय — केला एवं चना।" },
+        { title: "वानर सेवा", note: "श्री हनुमान जी के प्रिय — केला एवं चना। (Vanar Seva)" },
         { title: "ब्राह्मण भोजन", note: "5 ब्राह्मणों का सत्कार — पितृ आशीर्वाद।" },
       ],
       benefits: [
@@ -81,7 +141,33 @@ export const plans: Plan[] = [
     price: "₹401",
     priceNumeric: 401,
     cycle: "/Monthly",
-    image: havanImg,
+    image: premiumHero,
+    images: [grahImg1, grahImg2, grahImg3],
+    slides: [
+      {
+        src: premiumHero,
+        title: "प्रीमियम सेवा — हवन सहित सम्पूर्ण पूजा",
+        subtitle: "हवन एवं आहुति • सुंदरकांड पाठ • ब्राह्मण भोजन • वानर सेवा • गौ सेवा",
+      },
+      {
+        src: premiumSankalp,
+        title: "संकल्प — आपके नाम व गोत्र से",
+        subtitle: "हवन सहित सम्पूर्ण पूजा आपकी जानकारी के साथ",
+        step: "चरण 1",
+      },
+      {
+        src: premiumHawan,
+        title: "हवन — पंडित जी द्वारा विधिपूर्वक सम्पन्न",
+        subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में",
+        step: "चरण 2",
+      },
+      {
+        src: premiumProof,
+        title: "हर सेवा का प्रमाण — फोटो व वीडियो सहित",
+        subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह हवन सहित आपकी सम्पूर्ण सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
+        step: "चरण 3",
+      },
+    ],
     ribbon: "500+ परिवार जुड़े",
     badge: { label: "सबसे लोकप्रिय", kind: "popular" },
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",
@@ -101,11 +187,13 @@ export const plans: Plan[] = [
         "यह पैक विशेष रूप से उन परिवारों के लिए है जो चाहते हैं कि उनके घर की हर दीवार पर हनुमान जी की कृपा हो — रोग, शोक और वास्तु दोष का शमन।",
       ],
       sevas: [
-        { title: "सुंदरकांड पाठ (2×)", note: "पहले मंगलवार और महीने के अंतिम शनिवार को।" },
-        { title: "गृह शांति / सर्व रोग निवारण हवन", note: "वैदिक मंत्रों से — वास्तु एवं गृह-कलेश शमन।" },
+        { title: "सुंदरकांड पाठ", note: "माह में 2 बार आपके नाम-गोत्र से सुंदरकांड का विशेष पाठ।" },
+        { title: "गृह शांति हवन", note: "वैदिक मंत्रों से — वास्तु एवं गृह-कलेश शमन।" },
         { title: "आरती (Aarti)", note: "हर अनुष्ठान के साथ पूर्ण आरती।" },
-        { title: "हनुमान जी सिंदूर सेवा", note: "बजरंगबली को सिंदूर एवं चमेली तेल अर्पण।" },
-        { title: "गौ + वानर सेवा + ब्राह्मण भोजन", note: "मासिक — पुण्य का सतत् प्रवाह।" },
+        { title: "हनुमान जी चोला सेवा", note: "बजरंगबली को सिंदूर एवं चमेली तेल अर्पण (सिंदूर सेवा)।" },
+        { title: "गौ माता सेवा", note: "गौशाला में चारा-गुड़ अर्पण।" },
+        { title: "वानर सेवा", note: "केला एवं चना अर्पण।" },
+        { title: "ब्राह्मण भोजन", note: "मासिक ब्राह्मणों का सत्कार — पितृ आशीर्वाद।" },
       ],
       benefits: [
         "गृह-कलेश एवं वास्तु दोष का शमन",
@@ -128,7 +216,38 @@ export const plans: Plan[] = [
     priceNumeric: 4101,
     cycle: "/Yearly",
     strikePrice: "₹4,812",
-    image: pushkarGhatImg,
+    image: annualHero,
+    images: [varshImg1, varshImg2, varshImg3],
+    slides: [
+      {
+        src: annualHero,
+        title: "प्रीमियम वार्षिक — पूरे वर्ष की निश्चिंतता",
+        subtitle: "हवन एवं आहुति • सुंदरकांड • ब्राह्मण भोजन • वानर सेवा • गौ सेवा • संकल्प प्रमाणपत्र एवं प्रसाद",
+      },
+      {
+        src: annualSankalp,
+        title: "संकल्प — आपके नाम व गोत्र से",
+        subtitle: "हवन सहित सम्पूर्ण पूजा आपकी जानकारी के साथ",
+        step: "चरण 1",
+      },
+      {
+        src: annualHawan,
+        title: "हवन — पंडित जी द्वारा विधिपूर्वक सम्पन्न",
+        subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में",
+        step: "चरण 2",
+      },
+      {
+        src: annualProof,
+        title: "हर सेवा का प्रमाण — फोटो व वीडियो सहित",
+        subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह हवन सहित आपकी सम्पूर्ण सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
+        step: "चरण 3",
+      },
+      {
+        src: annualBonus,
+        title: "वार्षिक सदस्यों के लिए विशेष प्रसाद",
+        subtitle: "सरोवर जल, चंदन तिलक, अक्षत-कुमकुम एवं संकल्प प्रमाणपत्र",
+      },
+    ],
     ribbon: "सर्वाधिक पुण्यदायी",
     badge: { label: "₹711 की बचत", kind: "save" },
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",
@@ -148,12 +267,15 @@ export const plans: Plan[] = [
         "इस पैक में गृह शांति की सभी सेवाएँ 12 महीने + हनुमान जी की विशेष वार्षिक चोला सेवा एवं Quarterly Prasad Box शामिल है। ₹4,812 की सेवाएँ मात्र ₹4,101 में — बचत ₹711।",
       ],
       sevas: [
-        { title: "सुंदरकांड पाठ — 24 बार", note: "पूरे वर्ष अखंड जप।" },
-        { title: "गृह शांति / सर्व रोग निवारण हवन — 12 बार", note: "हर माह वैदिक हवन।" },
+        { title: "सुंदरकांड पाठ", note: "पूरे वर्ष अखंड जप (24 पाठ)।" },
+        { title: "गृह शांति हवन", note: "हर माह वैदिक हवन (12 बार)।" },
         { title: "आरती (Aarti)", note: "हर अनुष्ठान के साथ पूर्ण आरती।" },
-        { title: "हनुमान जी चोला सेवा (वार्षिक)", note: "बजरंगबली को विशेष चोला अर्पण।" },
+        { title: "हनुमान जी चोला सेवा", note: "बजरंगबली को विशेष चोला अर्पण (वार्षिक)।" },
+        { title: "सरोवर दीपदान", note: "संध्या समय पुष्कर सरोवर में दीपदान।" },
+        { title: "गौ माता सेवा", note: "पूरे वर्ष निरंतर गौशाला सेवा।" },
+        { title: "वानर सेवा", note: "पूरे वर्ष निरंतर वानर सेवा।" },
+        { title: "ब्राह्मण भोजन", note: "पूरे वर्ष निरंतर ब्राह्मण भोजन।" },
         { title: "Quarterly Prasad Box", note: "साल में 4 बार पवित्र प्रसाद आपके घर।" },
-        { title: "गौ + वानर सेवा + ब्राह्मण भोजन", note: "पूरे वर्ष निरंतर।" },
       ],
       benefits: [
         "अखंड वार्षिक पुण्य — विघ्न रहित संकल्प",
@@ -184,6 +306,10 @@ export const sevaList: SevaListItem[] = [
   { title: "गौ माता सेवा", desc: "स्थानीय गौशालाओं में गौ माता को हरा चारा एवं गुड़ का अर्पण — सीधा पुण्य।", iconKey: "Wind" },
   { title: "वानर सेवा", desc: "तीर्थ गुरु पुष्करराज में वानरों को केला एवं चना — श्री हनुमान जी के प्रिय।", iconKey: "Heart" },
   { title: "ब्राह्मण भोजन", desc: "विद्वान ब्राह्मणों को सात्विक भोजन एवं यथायोग्य सत्कार — पितृ आशीर्वाद।", iconKey: "Users" },
+  { title: "सरोवर दीपदान", desc: "पुष्कर सरोवर में संध्या समय दीप अर्पण — मोक्ष एवं सौभाग्य प्रदायक।", iconKey: "Sun" },
+  { title: "हनुमान जी चोला सेवा", desc: "श्री बजरंगबली को सिंदूर, चमेली तेल एवं चांदी का वर्क अर्पण — कष्ट निवारण हेतु।", iconKey: "Sparkles" },
+  { title: "भंडारा / प्रसाद सेवा", desc: "तीर्थ क्षेत्र में श्रद्धालुओं एवं जरूरतमंदों के बीच प्रसाद वितरण।", iconKey: "Heart" },
+  { title: "भव्य श्रृंगार", desc: "विशेष पर्वों पर भगवान का पुष्प एवं वस्त्रों से मन्त्रमुग्ध श्रृंगार।", iconKey: "Flame" },
 ];
 
 export const acharyas = [

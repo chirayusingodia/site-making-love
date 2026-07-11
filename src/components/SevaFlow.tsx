@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import {
   ScrollText,
   Flower2,
@@ -37,6 +37,51 @@ function chipFor(title: string) {
 
 export function SevaFlow({ sevaTitles }: Props) {
   const chips = useMemo(() => sevaTitles.map(chipFor), [sevaTitles]);
+  const containerRef = useRef<HTMLOListElement>(null);
+
+  // Track visibility of each node
+  const [visibleNodes, setVisibleNodes] = useState<Record<number, boolean>>({
+    0: false,
+    1: false,
+    2: false,
+  });
+
+  // State to check if IntersectionObserver is supported and running
+  const [hasObserver, setHasObserver] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const prefersReduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduce || !("IntersectionObserver" in window)) {
+      setHasObserver(false);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute("data-index"));
+            const delay = Number(entry.target.getAttribute("data-delay") ?? 0);
+
+            setTimeout(() => {
+              setVisibleNodes((prev) => ({ ...prev, [index]: true }));
+            }, delay);
+
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    const elements = containerRef.current?.querySelectorAll(".reveal-node");
+    elements?.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section className="mt-6 space-y-4">
       <h2 className="text-lg font-bold">आपकी सेवा कैसे सम्पन्न होती है</h2>
@@ -68,8 +113,16 @@ export function SevaFlow({ sevaTitles }: Props) {
         </svg>
 
         {/* Nodes — zigzag flex layout */}
-        <ol className="relative z-10 space-y-6 md:space-y-8">
-          <li className="flex justify-start reveal">
+        <ol ref={containerRef} className="relative z-10 space-y-6 md:space-y-8">
+          <li
+            data-index={0}
+            data-delay={0}
+            className={`flex justify-start reveal-node transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+              !hasObserver || visibleNodes[0]
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-5"
+            }`}
+          >
             <NodeBadge
               tone="lavender"
               Icon={ScrollText}
@@ -78,7 +131,15 @@ export function SevaFlow({ sevaTitles }: Props) {
             />
           </li>
 
-          <li className="flex justify-center reveal">
+          <li
+            data-index={1}
+            data-delay={150}
+            className={`flex justify-center reveal-node transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+              !hasObserver || visibleNodes[1]
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-5"
+            }`}
+          >
             <div className="w-full max-w-md">
               <NodeBadge
                 tone="peach"
@@ -106,7 +167,15 @@ export function SevaFlow({ sevaTitles }: Props) {
             </div>
           </li>
 
-          <li className="flex justify-end reveal">
+          <li
+            data-index={2}
+            data-delay={300}
+            className={`flex justify-end reveal-node transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+              !hasObserver || visibleNodes[2]
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-5"
+            }`}
+          >
             <NodeBadge
               tone="mint"
               Icon={CheckCircle2}
