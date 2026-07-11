@@ -41,18 +41,17 @@ function PlanDetailPage() {
 }
 
 function PlanDetail({ plan }: { plan: Plan }) {
-  // Dynamically build slides based on the sevas included in this plan
-  const slides: Slide[] = plan.detail.sevas.map((s) => {
-    // Find the index of the corresponding seva in the global sevaList to map the correct hero image
-    const globalIdx = sevaList.findIndex((item) => item.title === s.title || s.title.startsWith(item.title) || item.title.startsWith(s.title));
-    const src = globalIdx !== -1 ? heroImages[globalIdx] : plan.image;
-    return {
-      src,
-      alt: s.title,
-      title: s.title,
-      subtitle: s.note,
-    };
-  });
+  const slides: Slide[] = plan.slides.map((s) => ({
+    src: s.src,
+    alt: s.title,
+    title: s.title,
+    subtitle: s.subtitle,
+    step: s.step,
+    stepClass: s.stepClass,
+    titleClass: s.titleClass,
+    subtitleClass: s.subtitleClass,
+    scrimClass: s.scrimClass,
+  }));
 
   return (
     <div className="min-h-screen bg-background">

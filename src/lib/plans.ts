@@ -10,7 +10,31 @@ import varshImg1 from "@/assets/plans/varsh_1.png";
 import varshImg2 from "@/assets/plans/varsh_2.png";
 import varshImg3 from "@/assets/plans/varsh_3.png";
 
+// New plan specific slides imports
+import basicHero from "@/assets/plans/basic_hero.png";
+import basicSankalp from "@/assets/plans/basic_sankalp.png";
+import basicSeva from "@/assets/plans/basic_seva.png";
+import basicProof from "@/assets/plans/basic_proof.png";
+
+import premiumHero from "@/assets/plans/premium_hero.png";
+import premiumSankalp from "@/assets/plans/premium_sankalp.png";
+import premiumHawan from "@/assets/plans/premium_hawan.png";
+import premiumProof from "@/assets/plans/premium_proof.png";
+
+import annualHero from "@/assets/plans/annual_hero.png";
+import annualSankalp from "@/assets/plans/annual_sankalp.png";
+import annualHawan from "@/assets/plans/annual_hawan.png";
+import annualProof from "@/assets/plans/annual_proof.png";
+import annualBonus from "@/assets/plans/annual_bonus.png";
+
 export type PlanId = "basic" | "grah" | "varsh";
+
+export type PlanSlide = {
+  src: string;
+  title: string;
+  subtitle: string;
+  step?: string;
+};
 
 export type Plan = {
   id: PlanId;
@@ -21,7 +45,8 @@ export type Plan = {
   cycle: string; // e.g. "/Monthly"
   strikePrice?: string;
   image: string; // fallback image
-  images: string[]; // mini-carousel images
+  images: string[]; // mini-carousel images for listings
+  slides: PlanSlide[]; // custom distinct carousel slides
   ribbon?: string;
   badge?: { label: string; kind: "popular" | "save" | "max" };
   location: string;
@@ -45,8 +70,33 @@ export const plans: Plan[] = [
     price: "₹251",
     priceNumeric: 251,
     cycle: "/Monthly",
-    image: basicImg1,
+    image: basicHero,
     images: [basicImg1, basicImg2, basicImg3],
+    slides: [
+      {
+        src: basicHero,
+        title: "बेसिक सेवा — 4 सदस्यों तक के लिए",
+        subtitle: "सुंदरकांड पाठ • ब्राह्मण भोजन • वानर सेवा • गौ सेवा",
+      },
+      {
+        src: basicSankalp,
+        title: "संकल्प — आपके नाम व गोत्र से",
+        subtitle: "आपकी जानकारी हर माह सेवा में शामिल होती है",
+        step: "चरण 1",
+      },
+      {
+        src: basicSeva,
+        title: "पंडित जी द्वारा सेवा सम्पन्न",
+        subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में विधिपूर्वक",
+        step: "चरण 2",
+      },
+      {
+        src: basicProof,
+        title: "प्रमाण सीधे आपके व्हाट्सएप पर",
+        subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह आपकी सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
+        step: "चरण 3",
+      },
+    ],
     ribbon: "800+ परिवार जुड़े",
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",
     serviceTags: ["Pooja", "Chadava", "Daan", "Sewa", "Aarti"],
@@ -91,8 +141,33 @@ export const plans: Plan[] = [
     price: "₹401",
     priceNumeric: 401,
     cycle: "/Monthly",
-    image: grahImg1,
+    image: premiumHero,
     images: [grahImg1, grahImg2, grahImg3],
+    slides: [
+      {
+        src: premiumHero,
+        title: "प्रीमियम सेवा — हवन सहित सम्पूर्ण पूजा",
+        subtitle: "हवन एवं आहुति • सुंदरकांड पाठ • ब्राह्मण भोजन • वानर सेवा • गौ सेवा",
+      },
+      {
+        src: premiumSankalp,
+        title: "संकल्प — आपके नाम व गोत्र से",
+        subtitle: "हवन सहित सम्पूर्ण पूजा आपकी जानकारी के साथ",
+        step: "चरण 1",
+      },
+      {
+        src: premiumHawan,
+        title: "हवन — पंडित जी द्वारा विधिपूर्वक सम्पन्न",
+        subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में",
+        step: "चरण 2",
+      },
+      {
+        src: premiumProof,
+        title: "हर सेवा का प्रमाण — फोटो व वीडियो सहित",
+        subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह हवन सहित आपकी सम्पूर्ण सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
+        step: "चरण 3",
+      },
+    ],
     ribbon: "500+ परिवार जुड़े",
     badge: { label: "सबसे लोकप्रिय", kind: "popular" },
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",
@@ -141,8 +216,38 @@ export const plans: Plan[] = [
     priceNumeric: 4101,
     cycle: "/Yearly",
     strikePrice: "₹4,812",
-    image: varshImg1,
+    image: annualHero,
     images: [varshImg1, varshImg2, varshImg3],
+    slides: [
+      {
+        src: annualHero,
+        title: "प्रीमियम वार्षिक — पूरे वर्ष की निश्चिंतता",
+        subtitle: "हवन एवं आहुति • सुंदरकांड • ब्राह्मण भोजन • वानर सेवा • गौ सेवा • संकल्प प्रमाणपत्र एवं प्रसाद",
+      },
+      {
+        src: annualSankalp,
+        title: "संकल्प — आपके नाम व गोत्र से",
+        subtitle: "हवन सहित सम्पूर्ण पूजा आपकी जानकारी के साथ",
+        step: "चरण 1",
+      },
+      {
+        src: annualHawan,
+        title: "हवन — पंडित जी द्वारा विधिपूर्वक सम्पन्न",
+        subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में",
+        step: "चरण 2",
+      },
+      {
+        src: annualProof,
+        title: "हर सेवा का प्रमाण — फोटो व वीडियो सहित",
+        subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह हवन सहित आपकी सम्पूर्ण सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
+        step: "चरण 3",
+      },
+      {
+        src: annualBonus,
+        title: "वार्षिक सदस्यों के लिए विशेष प्रसाद",
+        subtitle: "सरोवर जल, चंदन तिलक, अक्षत-कुमकुम एवं संकल्प प्रमाणपत्र",
+      },
+    ],
     ribbon: "सर्वाधिक पुण्यदायी",
     badge: { label: "₹711 की बचत", kind: "save" },
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",

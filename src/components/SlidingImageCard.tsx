@@ -7,6 +7,11 @@ export type Slide = {
   alt: string;
   title: string;
   subtitle?: string;
+  step?: string;
+  stepClass?: string;
+  titleClass?: string;
+  subtitleClass?: string;
+  scrimClass?: string;
 };
 
 type Props = {
@@ -82,6 +87,11 @@ export function SlidingImageCard({
           style={{ transitionDuration: reducedMotion.current ? "0ms" : "600ms" }}
           aria-hidden={idx !== i}
         >
+          {s.step && (
+            <div className={`absolute top-3 left-3 z-20 text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md ${s.stepClass || "bg-brand text-white"}`}>
+              {s.step}
+            </div>
+          )}
           {!loaded[idx] && (
             <div className="absolute inset-0 bg-gradient-to-br from-brand-soft to-secondary animate-pulse" />
           )}
@@ -92,11 +102,11 @@ export function SlidingImageCard({
             className="w-full h-full object-cover"
             onLoad={() => setLoaded((m) => ({ ...m, [idx]: true }))}
           />
-          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-          <div className="absolute bottom-3 left-4 right-4 z-1 text-white">
-            <div className="font-bold text-[17px] md:text-[19px] leading-tight drop-shadow">{s.title}</div>
+          <div className={`absolute inset-x-0 bottom-0 ${s.scrimClass || "h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent"}`} />
+          <div className={`absolute bottom-3 left-4 right-4 z-10 ${s.titleClass?.includes("text-") ? "" : "text-white"}`}>
+            <div className={`font-bold text-[17px] md:text-[19px] leading-tight ${s.titleClass || "drop-shadow"}`}>{s.title}</div>
             {s.subtitle && (
-              <div className="text-[13px] md:text-sm text-white/85 mt-0.5 leading-snug drop-shadow">
+              <div className={`text-[13px] md:text-sm mt-0.5 leading-snug ${s.subtitleClass || "text-white/85 drop-shadow"}`}>
                 {s.subtitle}
               </div>
             )}
