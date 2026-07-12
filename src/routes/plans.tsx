@@ -3,6 +3,10 @@ import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Win
 import { plans, sevaList, acharyas } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, themedImage, type Slide } from "@/components/SlidingImageCard";
+import { LottieIcon } from "@/components/LottieIcon";
+import { CountUp } from "@/components/CountUp";
+import checkmark from "@/assets/lottie/checkmark.json";
+import giftBox from "@/assets/lottie/gift-box.json";
 import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
 
 const planSlides: Record<string, { title: string; subtitle: string }[]> = {
@@ -142,7 +146,7 @@ function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
   return (
     <article className="card-soft card-lift overflow-hidden relative animate-fade-up flex flex-col">
       <div className="relative">
-        {plan.ribbon && <div className="ribbon">{plan.ribbon}</div>}
+        {plan.ribbon && <PlanRibbon text={plan.ribbon} />}
         {plan.badge && (
           <div className={`absolute top-3 right-3 z-20 px-3 py-1.5 rounded-full text-xs font-bold ${badgeColor} shadow-md`}>
             {plan.badge.label}
@@ -188,12 +192,26 @@ function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
         </div>
 
         <div className="mt-4 border-t border-black/5 pt-4 space-y-2 flex-1">
-          {plan.features.map((f) => (
-            <div key={f} className="flex items-start gap-2 text-sm">
-              <Check size={16} className="text-success shrink-0 mt-0.5" />
-              <span className="text-foreground/85">{f}</span>
-            </div>
-          ))}
+          {plan.features.map((f) => {
+            const isPrasadBox = f.toLowerCase().includes("prasad box");
+            return (
+              <div key={f} className="flex items-start gap-2.5 text-sm">
+                {isPrasadBox ? (
+                  <LottieIcon
+                    animationData={giftBox}
+                    size={24}
+                    playOnView
+                    loop={false}
+                    className="shrink-0 -mt-0.5"
+                    fallback={<Check size={16} className="text-success shrink-0 mt-0.5" />}
+                  />
+                ) : (
+                  <Check size={16} className="text-success shrink-0 mt-0.5" />
+                )}
+                <span className="text-foreground/85">{f}</span>
+              </div>
+            );
+          })}
         </div>
 
         <Link
@@ -223,9 +241,36 @@ const ROWS: { label: string; basic: boolean | string; grah: boolean | string; va
   { label: "Billing", basic: "Monthly", grah: "Monthly", varsh: "Annual (2 months free)" },
 ];
 
-function Cell({ v }: { v: boolean | string }) {
+function PlanRibbon({ text }: { text: string }) {
+  const match = text.match(/^(\d+)\+(.*)$/);
+  if (match) {
+    const num = parseInt(match[1], 10);
+    const rest = match[2];
+    return (
+      <div className="ribbon flex items-center justify-center gap-1 font-bold">
+        <CountUp value={num} suffix="+" />
+        <span>{rest}</span>
+      </div>
+    );
+  }
+  return <div className="ribbon">{text}</div>;
+}
+
+function Cell({ v, rowIndex }: { v: boolean | string; rowIndex: number }) {
   if (typeof v === "boolean") {
-    return v ? <Check size={20} className="text-success mx-auto" /> : <X size={20} className="text-destructive/70 mx-auto" />;
+    return v ? (
+      <LottieIcon
+        animationData={checkmark}
+        size={24}
+        playOnView
+        loop={false}
+        delay={rowIndex * 50}
+        className="mx-auto"
+        fallback={<Check size={20} className="text-success mx-auto" />}
+      />
+    ) : (
+      <X size={20} className="text-destructive/70 mx-auto" />
+    );
   }
   return <span className="text-xs font-semibold text-foreground">{v}</span>;
 }
@@ -258,9 +303,9 @@ function ComparisonTable() {
               {ROWS.map((r, i) => (
                 <tr key={r.label} className={i % 2 === 0 ? "bg-white" : "bg-secondary/40"}>
                   <td className="px-4 py-3 text-foreground">{r.label}</td>
-                  <td className="px-3 py-3 text-center"><Cell v={r.basic} /></td>
-                  <td className="px-3 py-3 text-center bg-brand-soft/30"><Cell v={r.grah} /></td>
-                  <td className="px-3 py-3 text-center"><Cell v={r.varsh} /></td>
+                  <td className="px-3 py-3 text-center"><Cell v={r.basic} rowIndex={i} /></td>
+                  <td className="px-3 py-3 text-center bg-brand-soft/30"><Cell v={r.grah} rowIndex={i} /></td>
+                  <td className="px-3 py-3 text-center"><Cell v={r.varsh} rowIndex={i} /></td>
                 </tr>
               ))}
             </tbody>

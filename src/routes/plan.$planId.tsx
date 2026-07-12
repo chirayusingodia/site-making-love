@@ -4,6 +4,8 @@ import { getPlan, plans, sevaList, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
+import { CountUp } from "@/components/CountUp";
+import { useTranslation } from "@/lib/translations";
 
 // Import local hero images
 import h1 from "@/assets/plan-detail/hero_1.png";
@@ -41,6 +43,7 @@ function PlanDetailPage() {
 }
 
 function PlanDetail({ plan }: { plan: Plan }) {
+  const { lang } = useTranslation();
   const slides: Slide[] = plan.slides.map((s) => ({
     src: s.src,
     alt: s.title,
@@ -77,7 +80,7 @@ function PlanDetail({ plan }: { plan: Plan }) {
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <span className="inline-flex items-center gap-1 bg-brand-soft text-brand font-semibold px-3 py-1.5 rounded-full">
-                <ShieldCheck size={14} /> 1,200+ परिवार जुड़े
+                <ShieldCheck size={14} /> <CountUp value={1200} /> {lang === "hindi" ? "परिवार जुड़े" : "Families Connected"}
               </span>
               <span className="inline-flex items-center gap-1 bg-success/10 text-success font-semibold px-3 py-1.5 rounded-full">
                 <Video size={14} /> WhatsApp Video Proof

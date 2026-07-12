@@ -10,14 +10,22 @@ import {
   Users,
   ScrollText,
   ChevronDown,
+  Plus,
 } from "lucide-react";
-import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
-import havanImg from "@/assets/havan.jpg";
-import gauImg from "@/assets/gau-seva.jpg";
 import { plans, testimonials, faqs } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
+import { PunyaMeter } from "@/components/home/PunyaMeter";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
+import { useTranslation } from "@/lib/translations";
+import { LottieIcon } from "@/components/LottieIcon";
+import { CountUp } from "@/components/CountUp";
+import { ProofGallery } from "@/components/ProofGallery";
+import { motion } from "framer-motion";
+import namaste from "@/assets/lottie/namaste.json";
+import diya from "@/assets/lottie/diya.json";
+import whatsapp from "@/assets/lottie/whatsapp.json";
+import lockSecure from "@/assets/lottie/lock-secure.json";
 import heroPushkar from "@/assets/hero/pushkar-ghats.jpg";
 import heroPandit from "@/assets/hero/pandit-hawan.jpg";
 import heroFamily from "@/assets/hero/family-prayer.jpg";
@@ -54,6 +62,7 @@ function HomePage() {
       </div>
       <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-12">
         <Hero />
+        <PunyaMeter />
         <Mission />
         <PlansPreview />
         <HowItWorks />
@@ -68,122 +77,160 @@ function HomePage() {
 }
 
 function Hero() {
+  const { t, lang } = useTranslation();
   return (
     <section className="animate-fade-up">
       <div className="inline-flex items-center gap-2 bg-success/10 text-success text-xs font-bold px-3 py-1.5 rounded-full">
         <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-        1,200+ परिवार इस सेवा से जुड़े हैं
+        {lang === "hindi" ? (
+          <>
+            <CountUp value={1200} /> परिवार इस सेवा से जुड़े हैं
+          </>
+        ) : (
+          <>
+            <CountUp value={1200} /> Families Connected With Us
+          </>
+        )}
       </div>
       <p className="mt-3 text-xs font-semibold text-brand tracking-wide uppercase">
-        जय सियाराम • तीर्थ गुरु पुष्करराज से
+        {t("hero_sub")}
       </p>
       <h1 className="mt-2 text-3xl md:text-4xl leading-tight font-bold text-foreground">
-        पुण्य आपका,<br />सेवा हमारी। <span className="text-2xl">🕉️</span>
+        {lang === "hindi" ? (
+          <>पुण्य आपका,<br />सेवा हमारी। <span className="text-2xl">🕉️</span></>
+        ) : (
+          <>Punya Yours,<br />Service Ours. <span className="text-2xl">🕉️</span></>
+        )}
       </h1>
       <p className="mt-3 text-[15px] text-muted-foreground leading-relaxed">
-        व्यस्तता के कारण खुद दान-पुण्य, हवन, पूजा नहीं कर पाते? पुण्यता आपके नाम एवं गोत्र से तीर्थ गुरु पुष्करराज में यह ज़िम्मेदारी निभाता है — हर सेवा का प्रमाण सीधे आपके WhatsApp पर।
+        {t("hero_desc")}
       </p>
       <Link
         to="/plans"
         className="mt-5 inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full shadow-lg shadow-brand/25 btn-glow"
       >
-        See Plans — ₹251/Monthly से शुरू <ArrowRight size={18} />
+        {t("hero_cta")} <ArrowRight size={18} />
       </Link>
     </section>
   );
 }
 
 function Mission() {
+  const { t } = useTranslation();
   return (
     <section className="card-soft p-6 border border-brand/10 space-y-3">
-      <div className="text-xs font-bold uppercase tracking-widest text-brand">The Relief</div>
+      <div className="text-xs font-bold uppercase tracking-widest text-brand">{t("mission_relief")}</div>
       <h2 className="text-xl font-bold leading-snug">
-        व्यस्तता की वजह से पुण्य पीछे न रह जाए।
+        {t("mission_title")}
       </h2>
       <p className="text-[15px] text-foreground/80 leading-relaxed">
-        शहर की दौड़-भाग में हर घर अपने दान-पुण्य, हवन और पूजा से दूर होता जा रहा है। पुण्यता यह ज़िम्मेदारी अपने ऊपर लेता है — आपके नाम, आपके गोत्र, आपके संकल्प से।
+        {t("mission_desc")}
       </p>
       <p className="text-sm italic text-muted-foreground">
-        "हम आपकी ज़िम्मेदारी नहीं लेते — हम उसे आपकी ओर से निभाते हैं।"
+        {t("mission_quote")}
       </p>
     </section>
   );
 }
 
+const howItWorksContainerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const howItWorksCardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut",
+    },
+  },
+};
+
 function HowItWorks() {
+  const { t } = useTranslation();
   const steps = [
-    { n: 1, t: "संकल्प (Sankalp)", d: "अपने नाम एवं गोत्र से मासिक संकल्प लें।", Icon: ScrollText },
-    { n: 2, t: "सेवा (Seva)", d: "तीर्थ गुरु पुष्करराज में आपकी सेवा सम्पन्न होती है।", Icon: Sparkles },
-    { n: 3, t: "प्रमाण (Pramaan)", d: "हर अनुष्ठान का Video Proof आपके WhatsApp पर।", Icon: ClipboardCheck },
+    { n: 1, t: t("hiw_step_1_title"), d: t("hiw_step_1_desc"), LottieData: namaste, loop: false, playOnView: true, fallback: <ScrollText size={32} className="text-brand" /> },
+    { n: 2, t: t("hiw_step_2_title"), d: t("hiw_step_2_desc"), LottieData: diya, loop: true, playOnView: false, fallback: <Sparkles size={32} className="text-brand" /> },
+    { n: 3, t: t("hiw_step_3_title"), d: t("hiw_step_3_desc"), LottieData: whatsapp, loop: true, playOnView: false, fallback: <ClipboardCheck size={32} className="text-brand" /> },
   ];
   return (
     <section className="space-y-4">
-      <h2 className="text-2xl font-bold text-center">कैसे काम करता है</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {steps.map(({ n, t, d, Icon }) => (
-          <div key={n} className="card-soft p-5 text-center">
-            <div className="w-12 h-12 rounded-full bg-brand-soft flex items-center justify-center mx-auto">
-              <Icon size={22} className="text-brand" />
+      <h2 className="text-2xl font-bold text-center">{t("hiw_title")}</h2>
+      <motion.div
+        variants={howItWorksContainerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.15 }}
+        className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+      >
+        {steps.map(({ n, t: stepTitle, d, LottieData, loop, playOnView, fallback }) => (
+          <motion.div
+            key={n}
+            variants={howItWorksCardVariants}
+            className="card-soft p-5 text-center flex flex-col items-center justify-between"
+          >
+            <div className="w-20 h-20 bg-brand-soft rounded-full flex items-center justify-center">
+              <LottieIcon
+                animationData={LottieData}
+                size={80}
+                loop={loop}
+                playOnView={playOnView}
+                className="mx-auto"
+                fallback={fallback}
+              />
             </div>
-            <div className="mt-3 text-xs font-bold text-brand">STEP {n}</div>
-            <div className="mt-1 font-bold">{t}</div>
+            <div className="mt-3 text-xs font-bold text-brand">{t("hiw_step")} {n}</div>
+            <div className="mt-1 font-bold">{stepTitle}</div>
             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{d}</p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }
 
 function TrustPreview() {
-  const imgs = [pushkarGhatImg, havanImg, gauImg];
-  return (
-    <section className="space-y-4">
-      <div className="flex items-end justify-between">
-        <h2 className="text-2xl font-bold">Proof Gallery</h2>
-        <Link to="/reviews" className="text-sm font-bold text-brand">See All →</Link>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        {imgs.map((src, i) => (
-          <div key={i} className="relative rounded-xl overflow-hidden aspect-square">
-            <img src={src} alt="Proof" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/20" />
-            <div className="absolute bottom-1.5 left-1.5 text-[10px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">
-              <Video size={10} className="inline mr-0.5" /> Video
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="text-xs text-center text-muted-foreground">
-        हर सेवा का Live/Video Proof — WhatsApp पर हर माह।
-      </p>
-    </section>
-  );
+  return <ProofGallery />;
 }
 
 function KaliyugShloks() {
+  const { t, lang } = useTranslation();
   const shloks = [
     {
-      t: "श्रीरामचरितमानस",
+      t: lang === "hindi" ? "श्रीरामचरितमानस" : "Ramcharitmanas",
       s: "कलिजुग केवल हरि गुन गाहा। गावत नर पावहिं भव थाहा॥",
-      m: "कलियुग में केवल भगवान श्रीहरि के गुण गान से ही मनुष्य भवसागर से पार हो जाता है।",
+      m: lang === "hindi" 
+        ? "कलियुग में केवल भगवान श्रीहरि के गुण गान से ही मनुष्य भवसागर से पार हो जाता है।"
+        : "In Kaliyug, simply singing the glories of Lord Hari carries a person across the ocean of worldly existence.",
     },
     {
-      t: "श्रीमद्भगवद्गीता 17.20",
+      t: lang === "hindi" ? "श्रीमद्भगवद्गीता 17.20" : "Bhagavad Gita 17.20",
       s: "दातव्यमिति यद्दानं दीयतेऽनुपकारिणे।\nदेशे काले च पात्रे च तद्दानं सात्त्विकं स्मृतम्॥",
-      m: "योग्य पात्र को, उचित स्थान और समय पर, बिना किसी प्रत्युपकार की आशा से दिया गया दान 'सात्त्विक दान' कहलाता है।",
+      m: lang === "hindi"
+        ? "योग्य पात्र को, उचित स्थान और समय पर, बिना किसी प्रत्युपकार की आशा से दिया गया दान 'सात्त्विक दान' कहलाता है।"
+        : "Charity given to a worthy person, at the right place and time, without expecting anything in return, is considered pure (Sattvik).",
     },
     {
-      t: "शास्त्र वचन",
+      t: lang === "hindi" ? "शास्त्र वचन" : "Scriptures Say",
       s: "दानेन तुल्यं सुकृतं न कच्चित्।",
-      m: "दान के समान कोई पुण्य नहीं है। यह पुण्य केवल इस जन्म तक सीमित नहीं — शास्त्रों के अनुसार आत्मा के साथ आगे भी चलता है।",
+      m: lang === "hindi"
+        ? "दान के समान कोई पुण्य नहीं है। यह पुण्य केवल इस जन्म तक सीमित नहीं — शास्त्रों के अनुसार आत्मा के साथ आगे भी चलता है।"
+        : "There is no merit equal to charity. According to the scriptures, this merit is not limited to this life; it travels onward with the soul.",
     },
   ];
   return (
     <section className="rounded-3xl overflow-hidden bg-gradient-to-b from-[#5B1A1A] to-[#3D0F0F] text-white p-6 space-y-5">
       <div className="text-center">
-        <div className="text-xs font-bold uppercase tracking-widest text-[#F5A742]">कलियुग में दान-पुण्य</div>
-        <h2 className="mt-2 text-2xl font-bold leading-snug">पुण्य ही एकमात्र संचित धन है।</h2>
+        <div className="text-xs font-bold uppercase tracking-widest text-[#F5A742]">{t("kaliyug_badge")}</div>
+        <h2 className="mt-2 text-2xl font-bold leading-snug">{t("kaliyug_title")}</h2>
       </div>
       <div className="space-y-3">
         {shloks.map((sh) => (
@@ -195,19 +242,20 @@ function KaliyugShloks() {
         ))}
       </div>
       <p className="text-center text-[13px] text-white/75 italic leading-relaxed pt-2">
-        जब हम स्वयं दान-पुण्य नहीं कर पाते — तो पुण्यता यह पवित्र कर्तव्य आपके नाम से निभाता है।
+        {t("kaliyug_footer")}
       </p>
     </section>
   );
 }
 
 function FamilySection() {
+  const { t } = useTranslation();
   return (
     <section className="card-soft p-6 text-center space-y-3 border border-brand/10">
       <Users size={32} className="text-brand mx-auto" />
-      <h2 className="text-xl font-bold">पूरे परिवार के लिए</h2>
+      <h2 className="text-xl font-bold">{t("family_title")}</h2>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        एक सदस्यता — 4 सदस्यों तक का संकल्प। हर व्यक्ति का नाम एवं गोत्र संकल्प में बोला जाता है।
+        {t("family_desc")}
       </p>
       <div className="flex justify-center -space-x-2 pt-2">
         {["#F5A742", "#E85D1F", "#3FAE55", "#C0362C"].map((c, i) => (
@@ -221,11 +269,12 @@ function FamilySection() {
 }
 
 function PlansPreview() {
+  const { t } = useTranslation();
   return (
-    <section className="space-y-6">
+    <section id="plans" className="space-y-6 scroll-mt-20">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Plans</h2>
-        <p className="text-sm text-muted-foreground mt-1">₹251/Monthly से शुरू • 4 सदस्यों तक</p>
+        <h2 className="text-2xl font-bold">{t("nav_plans")}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t("plans_sub")}</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((p) => {
@@ -298,10 +347,17 @@ function PlansPreview() {
           See Full Plans <ArrowRight size={16} />
         </Link>
       </div>
-      <p className="text-center text-[11px] text-muted-foreground">
-        <ShieldCheck size={12} className="inline mr-1" />
-        कोई Hidden Charges नहीं · कभी भी Cancel · 100% Secure via Razorpay
-      </p>
+      <div className="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1.5">
+        <LottieIcon
+          animationData={lockSecure}
+          size={20}
+          loop
+          autoplay
+          className="shrink-0 animate-pulse"
+          fallback={<ShieldCheck size={12} className="text-success shrink-0" />}
+        />
+        <span>{t("plans_footer")}</span>
+      </div>
     </section>
   );
 }
@@ -321,7 +377,7 @@ function FaqSection() {
                 className="w-full flex items-center justify-between text-left px-5 py-4 gap-3"
               >
                 <span className="font-bold text-foreground">{f.q}</span>
-                <ChevronDown size={20} className={`text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                <Plus size={20} className={`text-muted-foreground shrink-0 transition-transform duration-300 ${isOpen ? "rotate-45" : ""}`} />
               </button>
               <div className={`grid transition-all duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                 <div className="overflow-hidden">
