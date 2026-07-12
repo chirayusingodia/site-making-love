@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Plus } from "lucide-react";
 import { faqs } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 
@@ -33,7 +33,7 @@ function FaqPage() {
                   className="w-full flex items-center justify-between text-left px-5 py-4 gap-3"
                 >
                   <span className="font-bold text-foreground">{f.q}</span>
-                  <ChevronDown size={20} className={`text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                  <Plus size={20} className={`text-muted-foreground shrink-0 transition-transform duration-300 ${isOpen ? "rotate-45" : ""}`} />
                 </button>
                 <div className={`grid transition-all duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                   <div className="overflow-hidden">

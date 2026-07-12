@@ -14,6 +14,10 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { LottieIcon } from "./LottieIcon";
+import namaste from "@/assets/lottie/namaste.json";
+import diya from "@/assets/lottie/diya.json";
+import whatsapp from "@/assets/lottie/whatsapp.json";
 
 type Props = { sevaTitles: string[] };
 
@@ -125,9 +129,10 @@ export function SevaFlow({ sevaTitles }: Props) {
           >
             <NodeBadge
               tone="lavender"
-              Icon={ScrollText}
               title="संकल्प लिया"
               subtitle="आपके नाम और गोत्र से संकल्प दर्ज हुआ"
+              lottieData={namaste}
+              fallback={<ScrollText size={24} />}
             />
           </li>
 
@@ -143,9 +148,10 @@ export function SevaFlow({ sevaTitles }: Props) {
             <div className="w-full max-w-md">
               <NodeBadge
                 tone="peach"
-                Icon={Sparkles}
                 title="पंडित जी ने सेवा की"
                 subtitle="तीर्थ गुरु पुष्करराज में वैदिक विधि-विधान से"
+                lottieData={diya}
+                fallback={<Sparkles size={24} />}
               />
               {/* seva chips row */}
               <div className="mt-3 flex flex-wrap gap-2 justify-center px-1">
@@ -178,10 +184,11 @@ export function SevaFlow({ sevaTitles }: Props) {
           >
             <NodeBadge
               tone="mint"
-              Icon={CheckCircle2}
               title="प्रमाण मिला"
               subtitle="हर माह Video/Photo Proof सीधे WhatsApp पर"
               corner="WA"
+              lottieData={whatsapp}
+              fallback={<CheckCircle2 size={24} />}
             />
           </li>
         </ol>
@@ -192,16 +199,18 @@ export function SevaFlow({ sevaTitles }: Props) {
 
 function NodeBadge({
   tone,
-  Icon,
   title,
   subtitle,
   corner,
+  lottieData,
+  fallback,
 }: {
   tone: "lavender" | "peach" | "mint";
-  Icon: LucideIcon;
   title: string;
   subtitle: string;
   corner?: string;
+  lottieData: any;
+  fallback: React.ReactNode;
 }) {
   const toneClass = {
     lavender: "bg-[#EEE6F5] text-[#5B3A82]",
@@ -209,15 +218,15 @@ function NodeBadge({
     mint: "bg-[#DDF1E2] text-[#1E6B3A]",
   }[tone];
   return (
-    <div className={`relative rounded-2xl px-4 py-3 md:px-5 md:py-4 shadow-sm ${toneClass} max-w-[92%]`}>
+    <div className={`relative rounded-2xl px-4 py-3 md:px-5 md:py-4 shadow-sm ${toneClass} max-w-[92%] flex items-center justify-between`}>
       {corner && (
         <span className="absolute -top-1.5 -right-1.5 bg-whatsapp text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
           {corner}
         </span>
       )}
-      <div className="flex items-start gap-3">
-        <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/70 flex items-center justify-center shrink-0">
-          <Icon size={18} />
+      <div className="flex items-center gap-3">
+        <div className="w-14 h-14 rounded-full bg-white/70 flex items-center justify-center shrink-0 overflow-hidden">
+          <LottieIcon animationData={lottieData} size={56} playOnView loop={false} fallback={fallback} />
         </div>
         <div>
           <div className="font-bold text-[15px] leading-snug">{title}</div>

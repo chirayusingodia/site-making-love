@@ -1,33 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useMotionValue, animate, useInView } from "framer-motion";
 
-type CountUpProps = {
-  end: number;
-  duration?: number;
+interface CountUpProps {
+  value: number;
   suffix?: string;
   className?: string;
-};
+}
 
-export function CountUp({ end, duration = 2000, suffix = "", className = "" }: CountUpProps) {
-  const [count, setCount] = useState(0);
+export function CountUp({ value, suffix = "+", className = "" }: CountUpProps) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const motionValue = useMotionValue(0);
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
 
   useEffect(() => {
-    let startTime: number | null = null;
-    const startValue = 0;
+    if (isInView) {
+      const controls = animate(motionValue, value, {
+        duration: 1.5,
+        ease: "easeOut",
+        onUpdate: (latest) => {
+          if (ref.current) {
+            ref.current.textContent = Math.round(latest).toLocaleString();
+          }
+        },
+      });
+      return () => controls.stop();
+    }
+  }, [isInView, motionValue, value]);
 
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      // Quad ease-out formula
-      const easeProgress = progress * (2 - progress);
-      setCount(Math.floor(easeProgress * (end - startValue) + startValue));
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }, [end, duration]);
-
-  return <span className={className}>{count.toLocaleString()}{suffix}</span>;
+  return (
+    <span className={`inline-flex items-center ${className}`}>
+      <span ref={ref}>0</span>
+      {suffix}
+    </span>
+  );
 }

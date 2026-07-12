@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { User, Home, Sparkles, MessageSquareText, Info, MessageCircle } from "lucide-react";
 import punyataLogoImg from "@/assets/punyata-logo.png";
-
-type Lang = "hindi" | "english";
-const LANG_KEY = "punyata:lang";
+import { useLanguage, useTranslation, LANG_KEY, type Lang } from "@/lib/translations";
+import { LottieIcon } from "@/components/LottieIcon";
+import whatsapp from "@/assets/lottie/whatsapp.json";
 
 const WHATSAPP_RAW = "918005828548";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(
@@ -12,26 +12,22 @@ export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURICompo
 )}`;
 
 const NAV_LINKS = [
+  { to: "/", label: "Home" },
   { to: "/plans", label: "Plans" },
   { to: "/sevas", label: "Our Sevas" },
   { to: "/reviews", label: "Reviews" },
+  { to: "/about", label: "About Us" },
   { to: "/faq", label: "FAQ" },
 ] as const;
 
 function LanguageToggle() {
-  const [lang, setLang] = useState<Lang>("hindi");
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LANG_KEY);
-      if (stored === "hindi" || stored === "english") setLang(stored);
-    } catch {}
-  }, []);
+  const lang = useLanguage();
   const update = (v: Lang) => {
-    setLang(v);
     try { localStorage.setItem(LANG_KEY, v); } catch {}
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("data-lang", v);
     }
+    window.dispatchEvent(new CustomEvent("punyata:lang-change", { detail: v }));
   };
   return (
     <div
@@ -59,6 +55,7 @@ function LanguageToggle() {
 }
 
 export function Header() {
+  const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -163,7 +160,13 @@ export function WhatsAppFloat() {
       aria-label="WhatsApp"
       className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 w-14 h-14 rounded-full bg-whatsapp text-white flex items-center justify-center shadow-xl animate-pulse-ring"
     >
-      <MessageCircle size={26} fill="white" />
+      <LottieIcon
+        animationData={whatsapp}
+        size={32}
+        loop
+        autoplay
+        fallback={<MessageCircle size={26} fill="white" />}
+      />
     </a>
   );
 }

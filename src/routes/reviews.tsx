@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Star } from "lucide-react";
 import { testimonials } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
+import { ProofGallery } from "@/components/ProofGallery";
 
 export const Route = createFileRoute("/reviews")({
   head: () => ({
@@ -24,6 +25,11 @@ function ReviewsPage() {
             1,200+ परिवारों की सच्ची प्रतिक्रिया — हर सेवा के Video Proof के बाद।
           </p>
         </header>
+
+        <div className="bg-white/50 backdrop-blur-sm border border-[#F0DFC8]/65 rounded-3xl p-5 shadow-sm">
+          <ProofGallery />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {testimonials.map((t, i) => {
             const initials = t.n.split(" ").map((w) => w[0]).join("").slice(0, 2);
