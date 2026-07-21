@@ -12,6 +12,7 @@ export function ComparisonTable() {
     { key: "vanarSeva", label: "Vanar Seva" },
     { key: "grihaShantiHawan", label: "Griha Shanti Hawan" },
     { key: "sarvRogNivaranHawan", label: "Sarv Rog Nivaran Hawan" },
+    { key: "cholaSeva", label: "Hanuman Ji Chola Seva" },
     { key: "aarti", label: "Aarti" },
     { key: "proof", label: "WhatsApp Photo/Video Proof" },
     { key: "family", label: "Family Members Included" },
