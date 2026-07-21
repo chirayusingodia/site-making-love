@@ -6,6 +6,11 @@ import { SevaFlow } from "@/components/SevaFlow";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { CountUp } from "@/components/CountUp";
 import { useTranslation } from "@/lib/translations";
+import { LottieIcon } from "@/components/LottieIcon";
+import { PizzaComparison } from "@/components/PizzaComparison";
+import { ComparisonTable } from "@/components/ComparisonTable";
+import diya from "@/assets/lottie/diya.json";
+import { motion } from "framer-motion";
 
 // Import local hero images
 import h1 from "@/assets/plan-detail/hero_1.png";
@@ -72,12 +77,15 @@ function PlanDetail({ plan }: { plan: Plan }) {
             <img src={plan.image} alt={plan.name} className="w-full h-56 object-cover" />
           )}
           <div className="p-5">
-            <h1 className="text-2xl font-bold text-foreground">{plan.detail.hero}</h1>
+            <h1 className="text-xl font-extrabold text-foreground leading-snug">{plan.heading}</h1>
+            <p className="text-xs text-muted-foreground mt-1.5 leading-normal">{plan.subheading}</p>
             <div className="flex items-baseline gap-3 mt-3">
               <span className="text-3xl font-bold text-brand">{plan.price}</span>
               <span className="text-muted-foreground">{plan.cycle}</span>
               {plan.strikePrice && <span className="text-sm text-muted-foreground line-through">{plan.strikePrice}</span>}
             </div>
+            
+
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <span className="inline-flex items-center gap-1 bg-brand-soft text-brand font-semibold px-3 py-1.5 rounded-full">
                 <ShieldCheck size={14} /> <CountUp value={1200} /> {lang === "hindi" ? "परिवार जुड़े" : "Families Connected"}
@@ -119,6 +127,70 @@ function PlanDetail({ plan }: { plan: Plan }) {
         {/* Dynamic seva flow — reads current plan's actual sevas */}
         <SevaFlow sevaTitles={plan.detail.sevas.map((s) => s.title)} />
 
+        {/* Aapki Sewa Kaise Sampann Hoti Hai section */}
+        <section className="mt-8 space-y-4">
+          <h2 className="text-lg font-bold text-center text-[#5B1A1A]">
+            {lang === "hindi" ? "आपकी सेवा कैसे संपन्न होती है" : "How Your Seva is Performed"}
+          </h2>
+          
+          <motion.div
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.15 }
+              }
+            }}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.1 }}
+            className="space-y-4 relative before:absolute before:left-[17px] before:top-2 before:bottom-2 before:w-[2px] before:bg-brand/20"
+          >
+            {[
+              {
+                step: "1",
+                title: lang === "hindi" ? "सदस्यता लें (Subscribe)" : "Subscribe",
+                desc: lang === "hindi" ? "अपनी इच्छानुसार मासिक या वार्षिक संकल्प सदस्यता चुनें।" : "Choose your desired monthly or yearly sankalp subscription."
+              },
+              {
+                step: "2",
+                title: lang === "hindi" ? "संकल्प और पूजन (Puja & Sankalp)" : "Name & Gotra Sankalp",
+                desc: lang === "hindi" ? "तीर्थ गुरु पुष्करराज में पंडित जी आपके नाम-गोत्र से वैदिक विधि-विधान से पूजा और संकल्प करेंगे।" : "Pandit ji performs puja and speaks your name and gotra in the sankalp at Pushkarraj."
+              },
+              {
+                step: "3",
+                title: lang === "hindi" ? "वीडियो प्रमाण (Video Proof)" : "Recording the Proof",
+                desc: lang === "hindi" ? "संकल्प और सेवा का स्पष्ट वीडियो प्रमाण रिकॉर्ड किया जाएगा।" : "A clear, personalized video proof is recorded for every seva."
+              },
+              {
+                step: "4",
+                title: lang === "hindi" ? "व्हाट्सएप पर प्राप्ति (WhatsApp Delivery)" : "WhatsApp Delivery",
+                desc: lang === "hindi" ? "पूजा का वीडियो और प्रसाद की जानकारी सीधे आपके WhatsApp पर भेजी जाएगी।" : "The verification video is sent directly to your phone."
+              }
+            ].map((s) => (
+              <motion.div
+                key={s.step}
+                variants={{
+                  hidden: { opacity: 0, x: -10 },
+                  visible: { opacity: 1, x: 0, transition: { duration: 0.4 } }
+                }}
+                className="flex gap-4 relative z-10"
+              >
+                <div className="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                  {s.step}
+                </div>
+                <div className="card-soft p-4 flex-1">
+                  <h3 className="font-extrabold text-foreground text-sm leading-snug">{s.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Visual Pizza/Dinner Comparison */}
+          <PizzaComparison planId={plan.id} price={plan.price} cycle={plan.cycle} size="lg" />
+        </section>
+
         {/* Benefits */}
         <section className="mt-6 space-y-3">
           <h2 className="text-lg font-bold">इस संकल्प के फायदे</h2>
@@ -156,16 +228,29 @@ function PlanDetail({ plan }: { plan: Plan }) {
         {/* Related plans */}
         <section className="mt-8">
           <h2 className="text-lg font-bold mb-3">अन्य पैक देखें</h2>
-          <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4">
-            {plans.filter((p) => p.id !== plan.id).map((p) => (
-              <Link key={p.id} to="/plan/$planId" params={{ planId: p.id }} className="card-soft p-3 min-w-[60%] shrink-0">
-                <img src={p.image} className="w-full h-24 object-cover rounded-xl" alt={p.name} />
-                <div className="mt-2 font-bold text-sm">{p.name}</div>
-                <div className="text-brand font-bold text-sm">{p.price}<span className="text-xs text-muted-foreground">{p.cycle}</span></div>
+          <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2">
+            {plans.filter((p) => p.id !== plan.id && p.isVisible !== false).map((p) => (
+              <Link key={p.id} to="/plan/$planId" params={{ planId: p.id }} className="card-soft p-3 w-[260px] min-w-[260px] shrink-0 flex flex-col justify-between border border-black/5 hover:border-brand/20 transition-all">
+                <div>
+                  <div className="h-28 overflow-hidden rounded-xl bg-muted">
+                    <img src={p.image} className="w-full h-full object-cover" alt={p.name} />
+                  </div>
+                  <div className="mt-2 font-extrabold text-sm text-foreground line-clamp-1">{p.name}</div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 leading-tight h-7">{p.subheading}</p>
+                </div>
+                <div className="mt-2 pt-2 border-t border-black/5 flex items-baseline justify-between">
+                  <span className="text-brand font-black text-sm">{p.price}<span className="text-[10px] text-muted-foreground font-semibold">{p.cycle}</span></span>
+                  <span className="text-[10px] font-bold text-brand hover:underline">View →</span>
+                </div>
               </Link>
             ))}
           </div>
         </section>
+
+        {/* Plan Comparison Section */}
+        <div className="pt-8 border-t border-black/5 mt-8 pb-12">
+          <ComparisonTable />
+        </div>
       </main>
 
       {/* Sticky CTA */}
@@ -175,8 +260,12 @@ function PlanDetail({ plan }: { plan: Plan }) {
             <div className="text-xs text-muted-foreground">कुल राशि</div>
             <div className="font-bold text-foreground">{plan.price}<span className="text-sm text-muted-foreground font-medium">{plan.cycle}</span></div>
           </div>
-          <Link to="/checkout/$planId" params={{ planId: plan.id }} className="bg-brand text-white font-bold px-6 py-3.5 rounded-full flex items-center gap-2 hover:bg-brand-deep transition-colors">
-            Proceed to Book <ArrowRight size={18} />
+          <Link
+            to="/checkout/$planId"
+            params={{ planId: plan.id }}
+            className="flex items-center justify-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-full hover:bg-brand-deep transition-colors text-sm shadow-md shadow-brand/10 btn-glow primary-btn-glow"
+          >
+            {lang === "hindi" ? "पुण्य शुरू करें" : "Punya Start Kare"} <ArrowRight size={18} />
           </Link>
         </div>
       </div>

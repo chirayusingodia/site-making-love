@@ -8,10 +8,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { PunyataLogo } from "@/components/PunyataLogo";
 
 function NotFoundComponent() {
   return (
@@ -79,13 +80,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "पुण्यता — तीर्थ गुरु पुष्करराज से मासिक सेवा" },
-      { name: "description", content: "तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, गौ सेवा एवं ब्राह्मण भोज। WhatsApp पर Video Proof।" },
+      { name: "description", content: "तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, गौ सेवा एवं साधु संतों को भोजन। WhatsApp पर Video Proof।" },
       { property: "og:title", content: "पुण्यता — मासिक सेवा" },
       { property: "og:description", content: "सनातन सेवा का सामूहिक यज्ञ — पूर्ण पारदर्शिता के साथ।" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
     links: [
+      { rel: "icon", type: "image/svg+xml", href: "/punyata-logo.svg?v=2" },
+      { rel: "icon", type: "image/png", href: "/favicon.png?v=2" },
+      { rel: "shortcut icon", href: "/favicon.ico?v=2" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -118,6 +123,21 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#FCFAF5] flex flex-col items-center justify-center gap-4">
+        <PunyataLogo className="w-32 h-32" />
+        <div className="text-brand font-extrabold text-lg tracking-wider animate-pulse">पुण्यता</div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

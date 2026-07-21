@@ -34,11 +34,19 @@ export type PlanSlide = {
   title: string;
   subtitle: string;
   step?: string;
+  stepClass?: string;
+  titleClass?: string;
+  subtitleClass?: string;
+  scrimClass?: string;
 };
 
 export type Plan = {
   id: PlanId;
   name: string;
+  heading: string;
+  subheading: string;
+  comparisonLine: string;
+  isVisible?: boolean;
   tagline: string;
   price: string;
   priceNumeric: number;
@@ -53,6 +61,7 @@ export type Plan = {
   serviceTags: string[]; // Pooja + Chadava + Hawan + Aarti + Daan + Sewa etc.
   features: string[];
   extra: string[];
+  comparison?: Record<string, any>;
   detail: {
     hero: string;
     description: string[];
@@ -65,8 +74,12 @@ export type Plan = {
 export const plans: Plan[] = [
   {
     id: "basic",
-    name: "मूल संकल्प",
-    tagline: "सेवा की शुरुआत — ₹251/Monthly में मासिक सुंदरकांड, गौ सेवा, वानर सेवा, आरती एवं ब्राह्मण भोजन।",
+    name: "BASIC",
+    heading: "Monthly Sundarkand Path, Gau Seva and Vanar Seva — 1st Tuesday of Every Month Sankalp",
+    subheading: "Family ki suraksha, swasthya aur samriddhi ke liye har mahine aapke naam evam gotra se sankalp",
+    comparisonLine: "₹251 mein — ek pizza se bhi kam mein — poore mahine ka daan-punya",
+    isVisible: true,
+    tagline: "सेवा की शुरुआत — ₹251/Monthly में मासिक सुंदरकांड, गौ सेवा एवं वानर सेवा (1st Tuesday only)।",
     price: "₹251",
     priceNumeric: 251,
     cycle: "/Monthly",
@@ -76,7 +89,7 @@ export const plans: Plan[] = [
       {
         src: basicHero,
         title: "बेसिक सेवा — 4 सदस्यों तक के लिए",
-        subtitle: "सुंदरकांड पाठ • ब्राह्मण भोजन • वानर सेवा • गौ सेवा",
+        subtitle: "सुंदरकांड पाठ • वानर सेवा • गौ सेवा",
       },
       {
         src: basicSankalp,
@@ -101,29 +114,41 @@ export const plans: Plan[] = [
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",
     serviceTags: ["Pooja", "Chadava", "Daan", "Sewa", "Aarti"],
     features: [
-      "सुंदरकांड पाठ — हर माह",
+      "सुंदरकांड पाठ — हर माह (1st Tuesday)",
+      "गौ सेवा — हर माह (1st Tuesday)",
+      "वानर सेवा — हर माह (1st Tuesday)",
       "आरती (Aarti) — हर सेवा के साथ",
-      "गौ सेवा + वानर सेवा",
-      "ब्राह्मण भोजन — 5 ब्राह्मण",
       "WhatsApp Video Proof",
     ],
     extra: ["परिवार के 4 सदस्यों का संकल्प"],
+    comparison: {
+      sundarkand: { has: true, frequency: "1 time a month" },
+      gauSeva: { has: true, frequency: "1 time a month" },
+      vanarSeva: { has: true, frequency: "1 time a month" },
+      sadhuBhojan: { has: false },
+      grihaShantiHawan: { has: false },
+      sarvRogNivaranHawan: { has: false },
+      aarti: { has: true, frequency: "1 time a month" },
+      proof: { has: true },
+      family: { has: true, label: "Up to 4" },
+      prasadBox: { has: false },
+      billing: { has: true, label: "Monthly" }
+    },
     detail: {
       hero: "मूल संकल्प — सेवा की शुरुआत",
       description: [
-        "जब आप मूल संकल्प लेते हैं, तो आपके नाम एवं गोत्र से हर माह श्री हनुमान जी को समर्पित सुंदरकांड पाठ एवं आरती होती है — यह पुण्य आपके परिवार में शांति, सुरक्षा और समृद्धि लाता है।",
-        "इस पैक में शामिल है — मासिक सुंदरकांड पाठ, आरती, गौ सेवा, वानर सेवा एवं ब्राह्मण भोजन। प्रत्येक सेवा का Video Proof आपके WhatsApp पर।",
+        "जब आप मूल संकल्प लेते हैं, तो आपके नाम एवं गोत्र से हर माह पहले मंगलवार को श्री हनुमान जी को समर्पित सुंदरकांड पाठ एवं आरती होती है — यह पुण्य आपके परिवार में शांति, सुरक्षा और समृद्धि लाता है।",
+        "इस पैक में शामिल है — सुंदरकांड पाठ, आरती, गौ सेवा एवं वानर सेवा। प्रत्येक सेवा का Video Proof आपके WhatsApp पर।",
       ],
       sevas: [
-        { title: "सुंदरकांड पाठ", note: "आपके नाम-गोत्र से — बिगड़े काम बनाने और ग्रह दोष शांत करने के लिए।" },
+        { title: "सुंदरकांड पाठ", note: "आपके नाम-गोत्र से — बिगड़े काम बनाने और ग्रह दोष शांत करने के लिए (1st Tuesday only)।" },
         { title: "आरती (Aarti)", note: "श्री हनुमान जी की आरती — हर अनुष्ठान का अंग।" },
-        { title: "गौ माता सेवा", note: "गौशाला में चारा-गुड़ अर्पण — समस्त देवताओं की सेवा के समान।" },
-        { title: "वानर सेवा", note: "श्री हनुमान जी के प्रिय — केला एवं चना। (Vanar Seva)" },
-        { title: "ब्राह्मण भोजन", note: "5 ब्राह्मणों का सत्कार — पितृ आशीर्वाद।" },
+        { title: "गौ माता सेवा", note: "गौशाला में चारा-गुड़ अर्पण — समस्त देवताओं की सेवा के समान (1st Tuesday only)।" },
+        { title: "वानर सेवा", note: "श्री हनुमान जी के प्रिय — केला एवं चना (1st Tuesday only)。" },
       ],
       benefits: [
         "परिवार में सकारात्मक ऊर्जा एवं मानसिक शांति",
-        "पितृ दोष एवं ग्रह दोष का शमन",
+        "ग्रह दोष का शमन",
         "श्री हनुमान जी की कृपा से भय एवं संकट का नाश",
         "प्रत्यक्ष दान-पुण्य का सतत् प्रवाह",
       ],
@@ -136,10 +161,14 @@ export const plans: Plan[] = [
   },
   {
     id: "grah",
-    name: "गृह शांति",
-    tagline: "सम्पूर्ण पारिवारिक सेवा — 2 सुंदरकांड, हवन, आरती एवं हनुमान जी सिंदूर सेवा हर माह।",
-    price: "₹401",
-    priceNumeric: 401,
+    name: "PREMIUM",
+    heading: "Monthly Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan — 1st Tuesday of Every Month and Last Saturday of Every Month Sankalp",
+    subheading: "Do sankalp har mahine — do alag hawan ke saath ghar mein shanti evam rog-badha nivaran",
+    comparisonLine: "₹399 mein — ek family pizza se bhi kam mein — poore mahine ka daan-punya",
+    isVisible: true,
+    tagline: "सम्पूर्ण पारिवारिक सेवा — 2 सुंदरकांड, 2 अलग हवन (Griha Shanti & Sarv Rog Nivaran), Saadhu Santo Ko Bhojan एवं गौ/वानर सेवा हर माह।",
+    price: "₹399",
+    priceNumeric: 399,
     cycle: "/Monthly",
     image: premiumHero,
     images: [grahImg1, grahImg2, grahImg3],
@@ -147,7 +176,7 @@ export const plans: Plan[] = [
       {
         src: premiumHero,
         title: "प्रीमियम सेवा — हवन सहित सम्पूर्ण पूजा",
-        subtitle: "हवन एवं आहुति • सुंदरकांड पाठ • ब्राह्मण भोजन • वानर सेवा • गौ सेवा",
+        subtitle: "हवन एवं आहुति • सुंदरकांड पाठ • Saadhu Santo Ko Bhojan • वानर सेवा • गौ सेवा",
       },
       {
         src: premiumSankalp,
@@ -173,45 +202,63 @@ export const plans: Plan[] = [
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",
     serviceTags: ["Pooja", "Chadava", "Hawan", "Aarti", "Daan", "Sewa"],
     features: [
-      "सुंदरकांड — 2× हर माह",
-      "गृह शांति / सर्व रोग निवारण हवन",
-      "आरती (Aarti) — हर सेवा के साथ",
-      "हनुमान जी सिंदूर सेवा",
+      "सुnderkand — 2× हर माह (1st Tuesday & Last Saturday)",
+      "Griha Shanti Hawan (1st Tuesday only)",
+      "Sarv Rog Nivaran Hawan (Last Saturday only)",
+      "Saadhu Santo Ko Bhojan — 2× हर माह",
+      "गौ + वानर सेवा — 2× हर माह",
       "WhatsApp Video Proof सभी सेवाओं का",
     ],
     extra: ["परिवार के 4 सदस्यों का संकल्प"],
+    comparison: {
+      sundarkand: { has: true, frequency: "1 time a month" },
+      gauSeva: { has: true, frequency: "1 time a month" },
+      vanarSeva: { has: true, frequency: "1 time a month" },
+      sadhuBhojan: { has: true, frequency: "2 times a month" },
+      grihaShantiHawan: { has: true, frequency: "1 time a month" },
+      sarvRogNivaranHawan: { has: true, frequency: "1 time a month" },
+      aarti: { has: true, frequency: "2 times a month" },
+      proof: { has: true },
+      family: { has: true, label: "Up to 4" },
+      prasadBox: { has: false },
+      billing: { has: true, label: "Monthly" }
+    },
     detail: {
       hero: "गृह शांति — सम्पूर्ण पारिवारिक कवच",
       description: [
-        "गृह शांति संकल्प आपके परिवार के लिए एक आध्यात्मिक कवच है — हर माह दो सुंदरकांड पाठ, गृह शांति हवन, आरती और हनुमान जी की सिंदूर सेवा से आपके घर में मंगल का सतत् वास होता है।",
-        "यह पैक विशेष रूप से उन परिवारों के लिए है जो चाहते हैं कि उनके घर की हर दीवार पर हनुमान जी की कृपा हो — रोग, शोक और वास्तु दोष का शमन।",
+        "गृह शांति संकल्प आपके परिवार के लिए एक आध्यात्मिक कवच है — हर माह दो सुंदरकांड पाठ, दो अलग हवन (गृह शांति और सर्व रोग निवारण), आरती, साधु संतों को भोजन और गौ-वानर सेवा से आपके घर में मंगल का वास होता है।",
+        "यह पैक विशेष रूप से उन परिवारों के लिए है जो चाहते हैं कि उनके घर में सकारात्मक ऊर्जा हो और रोग, शोक तथा वास्तु दोष का शमन हो।",
       ],
       sevas: [
-        { title: "सुंदरकांड पाठ", note: "माह में 2 बार आपके नाम-गोत्र से सुंदरकांड का विशेष पाठ।" },
-        { title: "गृह शांति हवन", note: "वैदिक मंत्रों से — वास्तु एवं गृह-कलेश शमन।" },
+        { title: "सुंदरकांड पाठ", note: "माह में 2 बार (1st Tuesday & Last Saturday) आपके नाम-गोत्र से सुंदरकांड पाठ।" },
+        { title: "Griha Shanti Hawan", note: "वैदिक मंत्रों से — 1st Tuesday of every month only।" },
+        { title: "Sarv Rog Nivaran Hawan", note: "वैदिक मंत्रों से — Last Saturday of every month only।" },
+        { title: "Saadhu Santo Ko Bhojan", note: "माह में 2 बार (1st Tuesday & Last Saturday) साधु संतों को सात्विक भोजन सत्कार।" },
         { title: "आरती (Aarti)", note: "हर अनुष्ठान के साथ पूर्ण आरती।" },
-        { title: "हनुमान जी चोला सेवा", note: "बजरंगबली को सिंदूर एवं चमेली तेल अर्पण (सिंदूर सेवा)।" },
-        { title: "गौ माता सेवा", note: "गौशाला में चारा-गुड़ अर्पण।" },
-        { title: "वानर सेवा", note: "केला एवं चना अर्पण।" },
-        { title: "ब्राह्मण भोजन", note: "मासिक ब्राह्मणों का सत्कार — पितृ आशीर्वाद।" },
+        { title: "गौ माता सेवा", note: "माह में 2 बार गौशाला में चारा-गुड़ अर्पण।" },
+        { title: "वानर सेवा", note: "माह में 2 बार केला एवं चना अर्पण।" },
       ],
       benefits: [
         "गृह-कलेश एवं वास्तु दोष का शमन",
         "परिवार के सभी सदस्यों पर हनुमान जी की कृपा",
-        "आर्थिक बाधा एवं दरिद्रता का नाश",
+        "आर्थिक बाधा एवं रोग-बाधा का निवारण",
         "पूर्वजों की तृप्ति एवं आशीर्वाद",
       ],
       reviews: [
         { n: "Meena Patel", city: "Ahmedabad", q: "पिताजी की स्मृति में हर माह सुंदरकांड — video में उनका नाम सुनकर आँखें भर आती हैं।", stars: 5 },
-        { n: "Amit Khandelwal", city: "Jaipur", q: "गृह शांति हवन के बाद घर का माहौल पूरा बदल गया।", stars: 5 },
+        { n: "Amit Khandelwal", city: "Jaipur", q: "हवन के बाद घर का माहौल पूरा बदल गया। बहुत ही दिव्य अनुभव है।", stars: 5 },
         { n: "Neha Joshi", city: "Pune", q: "पूरे परिवार के लिए सबसे संतुलित पैक — हर पैसे का हिसाब video से।", stars: 5 },
       ],
     },
   },
   {
     id: "varsh",
-    name: "वार्षिक महासंकल्प",
-    tagline: "पूरे वर्ष का संकल्प — ₹401 वाली सभी सेवाएं 12 माह + हनुमान जी चोला सेवा + Prasad Box।",
+    name: "PREMIUM ANNUAL",
+    heading: "12 Month Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan Sankalp — 24 Sankalp Yearly with Prasad and Certificate",
+    subheading: "Poore saal ka sanchit punya — Prasad evam Sankalp Certificate ke saath ghar tak pahunchega",
+    comparisonLine: "₹4,101 mein — poore saal ka sanchit punya, ek baar ke family dinner se bhi kam mein",
+    isVisible: true,
+    tagline: "पूरे वर्ष का संकल्प — ₹399 वाली सभी सेवाएं 12 माह + हनुमान जी चोला सेवा + Prasad Box।",
     price: "₹4,101",
     priceNumeric: 4101,
     cycle: "/Yearly",
@@ -222,7 +269,7 @@ export const plans: Plan[] = [
       {
         src: annualHero,
         title: "प्रीमियम वार्षिक — पूरे वर्ष की निश्चिंतता",
-        subtitle: "हवन एवं आहुति • सुंदरकांड • ब्राह्मण भोजन • वानर सेवा • गौ सेवा • संकल्प प्रमाणपत्र एवं प्रसाद",
+        subtitle: "हवन एवं आहुति • सुंदरकांड • Saadhu Santo Ko Bhojan • वानर सेवा • गौ सेवा • संकल्प प्रमाणपत्र एवं प्रसाद",
       },
       {
         src: annualSankalp,
@@ -253,13 +300,26 @@ export const plans: Plan[] = [
     location: "तीर्थ गुरु पुष्करराज, पुष्कर",
     serviceTags: ["Pooja", "Chadava", "Hawan", "Aarti", "Daan", "Sewa", "Prasad Box"],
     features: [
-      "₹401 प्लान की सभी सेवाएं — 12 माह",
+      "₹399 प्लान की सभी सेवाएं — 12 माह",
       "सुंदरकांड — 24 पाठ (2/माह)",
       "आरती (Aarti) — हर सेवा के साथ",
       "हनुमान जी चोला सेवा — वार्षिक",
       "Quarterly Prasad Box — घर पर डाक द्वारा",
     ],
     extra: ["परिवार के 4 सदस्यों का संकल्प"],
+    comparison: {
+      sundarkand: { has: true, frequency: "1 time a month" },
+      gauSeva: { has: true, frequency: "1 time a month" },
+      vanarSeva: { has: true, frequency: "1 time a month" },
+      sadhuBhojan: { has: true, frequency: "2 times a month" },
+      grihaShantiHawan: { has: true, frequency: "1 time a month" },
+      sarvRogNivaranHawan: { has: true, frequency: "1 time a month" },
+      aarti: { has: true, frequency: "2 times a month" },
+      proof: { has: true },
+      family: { has: true, label: "Up to 4" },
+      prasadBox: { has: true },
+      billing: { has: true, label: "Yearly" }
+    },
     detail: {
       hero: "वार्षिक महासंकल्प — पूरे वर्ष का पुण्य",
       description: [
@@ -305,7 +365,7 @@ export const sevaList: SevaListItem[] = [
   { title: "आरती (Aarti)", desc: "हर अनुष्ठान के साथ पूर्ण आरती — दीप, धूप एवं भजन के साथ।", iconKey: "Sun" },
   { title: "गौ माता सेवा", desc: "स्थानीय गौशालाओं में गौ माता को हरा चारा एवं गुड़ का अर्पण — सीधा पुण्य।", iconKey: "Wind" },
   { title: "वानर सेवा", desc: "तीर्थ गुरु पुष्करराज में वानरों को केला एवं चना — श्री हनुमान जी के प्रिय।", iconKey: "Heart" },
-  { title: "ब्राह्मण भोजन", desc: "विद्वान ब्राह्मणों को सात्विक भोजन एवं यथायोग्य सत्कार — पितृ आशीर्वाद।", iconKey: "Users" },
+  { title: "साधु संतों को भोजन", desc: "विद्वान साधु संतों को सात्विक भोजन एवं यथायोग्य सत्कार — पितृ आशीर्वाद।", iconKey: "Users" },
   { title: "सरोवर दीपदान", desc: "पुष्कर सरोवर में संध्या समय दीप अर्पण — मोक्ष एवं सौभाग्य प्रदायक।", iconKey: "Sun" },
   { title: "हनुमान जी चोला सेवा", desc: "श्री बजरंगबली को सिंदूर, चमेली तेल एवं चांदी का वर्क अर्पण — कष्ट निवारण हेतु।", iconKey: "Sparkles" },
   { title: "भंडारा / प्रसाद सेवा", desc: "तीर्थ क्षेत्र में श्रद्धालुओं एवं जरूरतमंदों के बीच प्रसाद वितरण।", iconKey: "Heart" },
@@ -315,7 +375,7 @@ export const sevaList: SevaListItem[] = [
 export const acharyas = [
   { initials: "रा", name: "पं. रामस्वरूप शर्मा", role: "मुख्य आचार्य — तीर्थ गुरु पुष्करराज", bio: "22 वर्षों से तीर्थ गुरु पुष्करराज में सेवारत। हवन विशेषज्ञ। काशी विद्यापीठ से वेद-शास्त्र में स्नातक।", quote: "सेवा ही हमारा धर्म है।" },
   { initials: "वि", name: "पं. विनायक जी", role: "सुंदरकांड प्रमुख", bio: "8 वर्षों से सुंदरकांड पाठ में विशेषज्ञ। सस्वर एवं संकल्प-सम्मत पाठ के आचार्य।", quote: "राम नाम सबसे बड़ा मंत्र।" },
-  { initials: "गो", name: "पं. गोविंद प्रसाद तिवारी", role: "गौ सेवा एवं अनुष्ठान प्रमुख", bio: "15 वर्षों से गौशाला सेवा। वानर सेवा एवं ब्राह्मण भोज के संयोजक।", quote: "गौ माता की सेवा में ही समस्त देवताओं की सेवा है।" },
+  { initials: "गो", name: "पं. गोविंद प्रसाद तिवारी", role: "गौ सेवा एवं अनुष्ठान प्रमुख", bio: "15 वर्षों से गौशाला सेवा। वानर सेवा एवं साधु संतों को भोजन के संयोजक।", quote: "गौ माता की सेवा में ही समस्त देवताओं की सेवा है।" },
 ];
 
 export const testimonials = [
@@ -328,10 +388,10 @@ export const testimonials = [
 
 export const faqs = [
   { q: "इतने सस्ते में कैसे करवा पा रहे हो यह सब?", a: "सभी के नाम का संकल्प साथ में लिया जाएगा। हर व्यक्ति का नाम और गोत्र अलग-अलग बोला जाएगा, लेकिन पंडित जी एक ही बार में सबके संकल्प सामूहिक रूप से ले लेंगे। इसीलिए यह सेवा सभी के लिए सुलभ और सस्ती रखी गई है।" },
-  { q: "पहली सेवा कब शुरू होगी?", a: "आपकी सदस्यता शुरू होते ही वानर सेवा, गौ सेवा और ब्राह्मण भोजन उसी सप्ताह से शुरू हो जाते हैं। सुंदरकांड पाठ हर महीने के पहले मंगलवार को होता है।" },
+  { q: "पहली सेवा कब शुरू होगी?", a: "अगर आप महीने के पहले मंगलवार से पहले सब्सक्राइब करते हैं, तो आपकी पहली सेवा उसी महीने के पहले मंगलवार को होती है — आपके प्लान की सभी सेवाओं के साथ। Premium और Premium Annual सदस्यों को उसी महीने के आखिरी शनिवार को अतिरिक्त सेवाएं (Saadhu Santo Ko Bhojan दोबारा + Sarv Rog Nivaran Hawan) भी मिलती हैं। अगर आप पहले मंगलवार के बाद जॉइन करते हैं, तो Basic सदस्यों को अगले महीने के पहले मंगलवार का इंतज़ार करना होता है (हालांकि इस बीच उसी महीने के आखिरी शनिवार में एक बार शामिल कर लिया जाता है, Hawan को छोड़कर)।" },
   { q: "Refund Policy क्या है?", a: "अगर किसी कारणवश सेवा न हो सके तो पूरा धन वापस किया जाएगा।" },
   { q: "क्या मुझे प्रत्येक सेवा का प्रमाण मिलेगा?", a: "जी हाँ। प्रत्येक अनुष्ठान का Live या Video Proof सीधे आपके WhatsApp पर भेजा जाता है।" },
-  { q: "क्या यह कोई business है?", a: "नहीं। यह सनातन सेवा का एक सामूहिक यज्ञ है। आपकी सेवा राशि का एक-एक पैसा सीधे गौ-माता के चारे, वानरों के फल, ब्राह्मण भोज एवं अनुष्ठान सामग्री में लगाया जाता है।" },
+  { q: "क्या यह कोई business है?", a: "नहीं। यह सनातन सेवा का एक सामूहिक यज्ञ है। आपकी सेवा राशि का एक-एक पैसा सीधे गौ-माता के चारे, वानरों के फल, साधु संतों को भोजन एवं अनुष्ठान सामग्री में लगाया जाता है।" },
   { q: "क्या मैं अपने माता-पिता के नाम से संकल्प ले सकता हूँ?", a: "अवश्य। आप अपने माता-पिता, स्वर्गीय प्रियजनों या किसी भी सदस्य के नाम और गोत्र से यह मासिक संकल्प आरंभ कर सकते हैं।" },
   { q: "क्या मैं किसी भी समय cancel कर सकता हूँ?", a: "जी हाँ, बिना किसी शुल्क या प्रश्न के आप अपना मासिक योगदान कभी भी रोक सकते हैं।" },
 ];

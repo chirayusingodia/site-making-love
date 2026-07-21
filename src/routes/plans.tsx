@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Wind, Sun as SunIcon } from "lucide-react";
-import { plans, sevaList, acharyas } from "@/lib/plans";
+import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Sun as SunIcon } from "lucide-react";
+import { ComparisonTable } from "@/components/ComparisonTable";
+import { plans, sevaList, acharyas, type Plan } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
-import { SlidingImageCard, themedImage, type Slide } from "@/components/SlidingImageCard";
+import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { LottieIcon } from "@/components/LottieIcon";
 import { CountUp } from "@/components/CountUp";
+import { PizzaComparison } from "@/components/PizzaComparison";
 import checkmark from "@/assets/lottie/checkmark.json";
 import giftBox from "@/assets/lottie/gift-box.json";
+import diya from "@/assets/lottie/diya.json";
 import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+import { useTranslation } from "@/lib/translations";
 
 const planSlides: Record<string, { title: string; subtitle: string }[]> = {
   basic: [
@@ -22,7 +26,7 @@ const planSlides: Record<string, { title: string; subtitle: string }[]> = {
   ],
   varsh: [
     { title: "Vanara Seva • Bajrangbali Ka Ashirwad", subtitle: "Kela evam chana arpan" },
-    { title: "Brahmin Bhojan • Anna Daan Ka Punya", subtitle: "Vidwan brahmanon ka satkar" },
+    { title: "Saadhu Santo Ko Bhojan • Anna Daan", subtitle: "Saadhu santon ko bhojan aur satkar" },
     { title: "Poore Saal Ka Punya, Ek Sath", subtitle: "12 mahine ka akhand sankalp" },
   ],
 };
@@ -37,9 +41,11 @@ export const Route = createFileRoute("/plans")({
   component: PlansPage,
 });
 
-const iconMap = { BookOpen, Flame, Sun: SunIcon, Wind, Heart, Users };
+const iconMap = { BookOpen, Flame, Sun: SunIcon, Wind: Heart, Heart, Users };
 
 function PlansPage() {
+  const visiblePlans = plans.filter((p) => p.isVisible !== false);
+
   return (
     <SiteChrome>
       <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-4 space-y-12">
@@ -52,13 +58,19 @@ function PlansPage() {
         </header>
 
         {/* Plan cards */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {plans.map((p) => (
+        <section
+          className={`grid grid-cols-1 gap-5 ${
+            visiblePlans.length === 1 ? "md:grid-cols-1" :
+            visiblePlans.length === 2 ? "md:grid-cols-2" :
+            "md:grid-cols-3"
+          }`}
+        >
+          {visiblePlans.map((p) => (
             <PlanCard key={p.id} plan={p} />
           ))}
         </section>
 
-        {/* Comparison Table */}
+        {/* Shared Plan Comparison Table */}
         <ComparisonTable />
 
         {/* Sundarkand Mahatmya */}
@@ -128,6 +140,8 @@ function PlansPage() {
   );
 }
 
+
+
 function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
   const badgeColor =
     plan.badge?.kind === "popular"
@@ -135,6 +149,8 @@ function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
       : plan.badge?.kind === "save"
         ? "bg-success text-white"
         : "bg-gradient-to-r from-[#FDD9C3] to-[#F5A742] text-[#7A3A00]";
+
+  const { t, lang } = useTranslation();
 
   const slides = (planSlides[plan.id] ?? []).map((slide, idx) => ({
     src: plan.images[idx] || plan.image,
@@ -159,44 +175,50 @@ function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
         )}
       </div>
 
-      <div className="p-5 flex-1 flex flex-col">
-        {/* Service tag pill row */}
-        <div className="inline-flex items-center gap-1.5 bg-brand-soft border border-brand/20 text-brand text-[11px] font-bold px-3 py-1.5 rounded-full self-start">
-          🪔 {plan.serviceTags.join(" + ")}
-        </div>
+      <div className="p-5 flex-1 flex flex-col justify-between">
+        <div className="space-y-3.5">
+          {/* Service tag pill row */}
+          <div className="inline-flex items-center gap-1.5 bg-brand-soft border border-brand/20 text-brand text-[11px] font-bold px-3 py-1.5 rounded-full self-start">
+            🪔 {plan.serviceTags.join(" + ")}
+          </div>
 
-        <h3 className="mt-3 text-xl font-bold leading-tight">{plan.name}</h3>
+          <h3 className="text-base font-extrabold leading-snug text-foreground text-left">
+            {plan.heading}
+          </h3>
+          
+          <p className="text-xs text-muted-foreground leading-normal text-left">
+            {plan.subheading}
+          </p>
 
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-brand">{plan.price}</span>
-          <span className="text-sm text-muted-foreground font-medium">{plan.cycle}</span>
-          {plan.strikePrice && <span className="text-xs text-muted-foreground line-through">{plan.strikePrice}</span>}
-        </div>
-        <div className="text-[11px] text-muted-foreground mt-0.5">Pooja + Chadava दोनों का package</div>
+          {/* Visual Pizza/Dinner Comparison */}
+          <PizzaComparison planId={plan.id} price={plan.price} cycle={plan.cycle} />
 
-        {/* Badges */}
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <span className="inline-flex items-center gap-1 bg-[#5B1A1A] text-[#F5A742] text-[10px] font-bold px-2 py-1 rounded-full">
-            Daan-Punya एक साथ
-          </span>
-          <span className="inline-flex items-center gap-1 bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full">
-            <Video size={10} /> Video Proof
-          </span>
-        </div>
+          {/* Badges */}
+          <div className="flex flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1 bg-[#5B1A1A] text-[#F5A742] text-[10px] font-bold px-2 py-1 rounded-full">
+              Daan-Punya एक साथ
+            </span>
+            <span className="inline-flex items-center gap-1 bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full">
+              <Video size={10} /> Video Proof
+            </span>
+          </div>
 
-        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{plan.tagline}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{plan.tagline}</p>
 
-        <div className="mt-3 flex items-center gap-1.5 text-xs">
-          <MapPin size={12} className="text-brand" />
-          <span className="text-foreground">{plan.location}</span>
-        </div>
+          <div className="flex items-center gap-1.5 text-xs">
+            <MapPin size={12} className="text-brand" />
+            <span className="text-foreground">{plan.location}</span>
+          </div>
 
-        <div className="mt-4 border-t border-black/5 pt-4 space-y-2 flex-1">
-          {plan.features.map((f) => {
-            const isPrasadBox = f.toLowerCase().includes("prasad box");
-            return (
-              <div key={f} className="flex items-start gap-2.5 text-sm">
-                {isPrasadBox ? (
+          <div className="border-t border-black/5 pt-4 space-y-2">
+            {plan.features.map((f) => {
+              const lower = f.toLowerCase();
+              const isPrasadBox = lower.includes("prasad box") || lower.includes("prasad & certificate");
+              
+              let iconElement = <Check size={16} className="text-success shrink-0 mt-0.5" />;
+              
+              if (isPrasadBox) {
+                iconElement = (
                   <LottieIcon
                     animationData={giftBox}
                     size={24}
@@ -205,41 +227,40 @@ function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
                     className="shrink-0 -mt-0.5"
                     fallback={<Check size={16} className="text-success shrink-0 mt-0.5" />}
                   />
-                ) : (
-                  <Check size={16} className="text-success shrink-0 mt-0.5" />
-                )}
-                <span className="text-foreground/85">{f}</span>
-              </div>
-            );
-          })}
+                );
+              } else if (lower.includes("sundarkand") || lower.includes("सुंदरकांड")) {
+                iconElement = <BookOpen size={16} className="text-brand shrink-0 mt-0.5" />;
+              } else if (lower.includes("hawan") || lower.includes("हवन") || lower.includes("aarti") || lower.includes("आरती")) {
+                iconElement = <Flame size={16} className="text-[#D85A30] shrink-0 mt-0.5" />;
+              } else if (lower.includes("gau") || lower.includes("गौ") || lower.includes("vanar") || lower.includes("वानर")) {
+                iconElement = <Heart size={16} className="text-[#3FAE55] shrink-0 mt-0.5" />;
+              } else if (lower.includes("bhojan") || lower.includes("भोजन") || lower.includes("sant") || lower.includes("साधु")) {
+                iconElement = <Users size={16} className="text-brand shrink-0 mt-0.5" />;
+              } else if (lower.includes("proof") || lower.includes("प्रमाण") || lower.includes("video") || lower.includes("whatsapp")) {
+                iconElement = <Video size={16} className="text-[#25D366] shrink-0 mt-0.5" />;
+              }
+              
+              return (
+                <div key={f} className="flex items-start gap-2.5 text-sm">
+                  {iconElement}
+                  <span className="text-foreground/85 text-xs">{f}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <Link
           to="/plan/$planId"
           params={{ planId: plan.id }}
-          className="mt-5 w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-3 rounded-full hover:bg-brand-deep transition-colors"
+          className="mt-5 w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-3 rounded-full hover:bg-brand-deep transition-colors primary-btn-glow"
         >
-          Choose This Plan <ArrowRight size={18} />
+          {lang === "hindi" ? "पुण्य शुरू करें" : "Punya Start Kare"} <ArrowRight size={18} />
         </Link>
       </div>
     </article>
   );
 }
-
-const ROWS: { label: string; basic: boolean | string; grah: boolean | string; varsh: boolean | string }[] = [
-  { label: "सुंदरकांड पाठ (Sankalp)", basic: true, grah: true, varsh: true },
-  { label: "ब्राह्मण भोजन", basic: true, grah: true, varsh: true },
-  { label: "गौ माता सेवा", basic: true, grah: true, varsh: true },
-  { label: "वानर सेवा", basic: true, grah: true, varsh: true },
-  { label: "आरती (Aarti)", basic: true, grah: true, varsh: true },
-  { label: "गृह शांति / सर्व रोग निवारण हवन", basic: false, grah: true, varsh: true },
-  { label: "WhatsApp Photo/Video Proof", basic: true, grah: true, varsh: true },
-  { label: "Family Members Included", basic: "Up to 4", grah: "Up to 4", varsh: "Up to 4" },
-  { label: "Quarterly Prasad Box (post)", basic: false, grah: false, varsh: true },
-  { label: "दीपदान", basic: false, grah: "Seasonal add-on", varsh: true },
-  { label: "Priority Proof Delivery", basic: false, grah: false, varsh: true },
-  { label: "Billing", basic: "Monthly", grah: "Monthly", varsh: "Annual (2 months free)" },
-];
 
 function PlanRibbon({ text }: { text: string }) {
   const match = text.match(/^(\d+)\+(.*)$/);
@@ -256,77 +277,4 @@ function PlanRibbon({ text }: { text: string }) {
   return <div className="ribbon">{text}</div>;
 }
 
-function Cell({ v, rowIndex }: { v: boolean | string; rowIndex: number }) {
-  if (typeof v === "boolean") {
-    return v ? (
-      <LottieIcon
-        animationData={checkmark}
-        size={24}
-        playOnView
-        loop={false}
-        delay={rowIndex * 50}
-        className="mx-auto"
-        fallback={<Check size={20} className="text-success mx-auto" />}
-      />
-    ) : (
-      <X size={20} className="text-destructive/70 mx-auto" />
-    );
-  }
-  return <span className="text-xs font-semibold text-foreground">{v}</span>;
-}
 
-function ComparisonTable() {
-  return (
-    <section className="space-y-4">
-      <h2 className="text-2xl font-bold text-center">Compare Plans</h2>
-      <div className="card-soft overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-brand-soft">
-              <tr>
-                <th className="text-left px-4 py-3 font-bold text-foreground min-w-[180px]">Feature</th>
-                <th className="px-3 py-3 font-bold text-foreground text-center">
-                  <div>Basic</div>
-                  <div className="text-xs font-semibold text-brand">₹251/Monthly</div>
-                </th>
-                <th className="px-3 py-3 font-bold text-foreground text-center bg-brand-soft/60">
-                  <div>Premium</div>
-                  <div className="text-xs font-semibold text-brand">₹401/Monthly</div>
-                </th>
-                <th className="px-3 py-3 font-bold text-foreground text-center">
-                  <div>Annual</div>
-                  <div className="text-xs font-semibold text-brand">₹4,101/Yearly</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {ROWS.map((r, i) => (
-                <tr key={r.label} className={i % 2 === 0 ? "bg-white" : "bg-secondary/40"}>
-                  <td className="px-4 py-3 text-foreground">{r.label}</td>
-                  <td className="px-3 py-3 text-center"><Cell v={r.basic} rowIndex={i} /></td>
-                  <td className="px-3 py-3 text-center bg-brand-soft/30"><Cell v={r.grah} rowIndex={i} /></td>
-                  <td className="px-3 py-3 text-center"><Cell v={r.varsh} rowIndex={i} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="bg-success text-white text-center px-4 py-3 text-sm font-bold">
-          वार्षिक प्लान = मात्र ₹340/माह के बराबर — एक बार में पूरे साल की चिंता खत्म।
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-3 bg-white">
-          {plans.map((p) => (
-            <Link
-              key={p.id}
-              to="/plan/$planId"
-              params={{ planId: p.id }}
-              className="w-full text-center bg-brand text-white font-bold py-2.5 rounded-full text-sm hover:bg-brand-deep transition-colors"
-            >
-              Choose {p.name}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}

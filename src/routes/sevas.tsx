@@ -49,7 +49,7 @@ export const Route = createFileRoute("/sevas")({
   head: () => ({
     meta: [
       { title: "Our Sevas — पुण्यता | सुंदरकांड, हवन, आरती, गौ सेवा, वानर सेवा" },
-      { name: "description", content: "पुण्यता की सभी सेवाओं की विस्तृत सूची — सुंदरकांड पाठ, गृह शांति हवन, आरती, गौ माता सेवा, वानर सेवा एवं ब्राह्मण भोजन।" },
+      { name: "description", content: "पुण्यता की सभी सेवाओं की विस्तृत सूची — सुंदरकांड पाठ, गृह शांति हवन, आरती, गौ माता सेवा, वानर सेवा एवं साधु संतों को भोजन।" },
     ],
   }),
   component: SevasPage,
@@ -82,7 +82,7 @@ const sevaMedia: Record<number, SevaStaticMedia> = {
   },
   5: {
     images: [s6v1, s6v2, s6v3],
-    captions: ["Brahmin Bhojan • Pitru Aashirwad", "Anna Daan Mahadan", "Satvik Bhojan Satkar"],
+    captions: ["Saadhu Santo Ko Bhojan • Pitru Aashirwad", "Anna Daan Mahadan", "Satvik Bhojan Satkar"],
   },
   6: {
     images: [s7v1, s7v2, s7v3],

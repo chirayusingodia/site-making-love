@@ -1,63 +1,182 @@
-type Props = { size?: number; className?: string };
+import React from "react";
 
-/**
- * Punyata emblem — stylized diya + temple shikhara inside a saffron gradient circle.
- * Single accent color, transparent background, works on light & dark.
- */
-export function PunyataLogo({ size = 40, className = "" }: Props) {
+interface PunyataLogoProps {
+  className?: string;
+}
+
+export function PunyataLogo({ className = "w-12 h-12" }: PunyataLogoProps) {
   return (
     <svg
-      width={size}
-      height={size}
-      viewBox="0 0 64 64"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      viewBox="105 380 520 675"
       role="img"
-      aria-label="Punyata"
+      aria-labelledby="logo-title logo-desc"
+      className={`${className} overflow-visible`}
     >
+      <title id="logo-title">Animated Punyata logo</title>
+      <desc id="logo-desc">
+        The Punyata hand-shaped sprout draws itself, then the leaf softly glows.
+      </desc>
       <defs>
-        <linearGradient id="pnyBadge" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#F5A742" />
-          <stop offset="100%" stopColor="#E85D1F" />
-        </linearGradient>
-        <linearGradient id="pnyFlame" x1="32" y1="10" x2="32" y2="28" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFF3C4" />
-          <stop offset="100%" stopColor="#FFB84D" />
-        </linearGradient>
+        <filter
+          id="punyata-relief"
+          x="-12%"
+          y="-12%"
+          width="136%"
+          height="142%"
+          colorInterpolationFilters="sRGB"
+        >
+          <feDropShadow
+            dx="8"
+            dy="11"
+            stdDeviation="5"
+            floodColor="#2d2b27"
+            floodOpacity={0.25}
+          />
+          <feDropShadow
+            dx="-1"
+            dy="-1"
+            stdDeviation="1.2"
+            floodColor="#ffffff"
+            floodOpacity={0.7}
+          />
+        </filter>
+        <filter id="punyata-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
+      <style>
+        {`
+          .logo-inner-group {
+            animation: logoCycle 7s ease-in-out infinite;
+          }
+          .trace {
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
+            animation: logoDraw 7s ease-in-out infinite;
+          }
+          .earth { animation-delay: 0s; }
+          .stem { animation-delay: 0.3s; }
+          
+          .hand {
+            fill: #D85A30;
+            fill-opacity: 0;
+            animation: logoDraw 7s ease-in-out infinite, fillFadeHand 7s ease-in-out infinite;
+            animation-delay: 0s, 0s;
+          }
+          
+          .leaf {
+            fill: #F5A742;
+            fill-opacity: 0;
+            animation: logoDraw 7s ease-in-out infinite, fillFadeLeaf 7s ease-in-out infinite;
+            animation-delay: 0s, 0s;
+          }
+          
+          .leaf-glow {
+            opacity: 0;
+            animation: logoGlow 7s ease-in-out infinite;
+          }
+          
+          @keyframes logoCycle {
+            0%, 78% { opacity: 1; }
+            85%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+          }
+          
+          @keyframes logoDraw {
+            0% { stroke-dashoffset: 1; }
+            17%, 78% { stroke-dashoffset: 0; }
+            85%, 100% { stroke-dashoffset: 1; }
+          }
+          
+          @keyframes fillFadeHand {
+            0%, 15% { fill-opacity: 0; }
+            22%, 78% { fill-opacity: 1; }
+            85%, 100% { fill-opacity: 0; }
+          }
+          
+          @keyframes fillFadeLeaf {
+            0%, 19% { fill-opacity: 0; }
+            26%, 78% { fill-opacity: 1; }
+            85%, 100% { fill-opacity: 0; }
+          }
+          
+          @keyframes logoGlow {
+            0%, 25%, 78% { opacity: 0; }
+            35%, 65% { opacity: 0.85; }
+            85%, 100% { opacity: 0; }
+          }
+          
+          @media (prefers-reduced-motion: reduce) {
+            .trace { animation: none; stroke-dashoffset: 0; }
+            .hand { fill-opacity: 1; }
+            .leaf { fill-opacity: 1; }
+            .leaf-glow { animation: none; opacity: 0; }
+          }
+        `}
+      </style>
+      
+      <g className="logo-inner-group">
+        {/* Saffron components: Earth, Stem, Hand */}
+        <g
+          fill="none"
+          stroke="#D85A30"
+          strokeWidth={13}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter="url(#punyata-relief)"
+        >
+          <path
+            className="trace earth"
+            strokeWidth={26}
+            pathLength={1}
+            d="M142 1020C270 929 447 929 607 1020"
+          />
+          <path
+            className="trace stem"
+            strokeWidth={26}
+            pathLength={1}
+            d="M357 954V687C364 630 398 552 460 492"
+          />
+          <path
+            className="trace hand"
+            pathLength={1}
+            d="M357 687C340 649 309 620 274 606C244 594 211 581 190 560C169 539 155 508 148 479C147 475 151 474 154 477C174 493 179 522 198 541C213 556 229 567 245 572C250 574 253 570 250 565C240 550 231 535 229 521C229 516 233 515 236 518C254 531 270 536 288 547C332 573 355 620 357 687Z"
+          />
+        </g>
 
-      {/* Saffron circle badge */}
-      <circle cx="32" cy="32" r="30" fill="url(#pnyBadge)" />
-      <circle cx="32" cy="32" r="30" stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="1.5" />
+        {/* Golden sprout leaf */}
+        <g
+          fill="none"
+          stroke="#F5A742"
+          strokeWidth={13}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter="url(#punyata-relief)"
+        >
+          <path
+            className="trace leaf"
+            pathLength={1}
+            d="M370 566C369 487 408 422 514 402C510 484 468 551 370 566Z"
+          />
+        </g>
 
-      {/* Flame (top) */}
-      <path
-        d="M32 12 C29 18 27 20 27 23.5 C27 26.5 29.2 28.5 32 28.5 C34.8 28.5 37 26.5 37 23.5 C37 20 35 18 32 12 Z"
-        fill="url(#pnyFlame)"
-      />
-
-      {/* Temple shikhara silhouette (inside diya bowl area) */}
-      <g fill="#FFFFFF">
-        {/* central shikhara */}
-        <path d="M32 32 L28 40 L36 40 Z" />
-        <rect x="30" y="40" width="4" height="6" />
-        {/* left small spire */}
-        <path d="M24 36 L21.5 42 L26.5 42 Z" />
-        <rect x="22.5" y="42" width="3" height="4" />
-        {/* right small spire */}
-        <path d="M40 36 L37.5 42 L42.5 42 Z" />
-        <rect x="38.5" y="42" width="3" height="4" />
-        {/* platform */}
-        <rect x="18" y="46" width="28" height="3" rx="1" />
+        {/* Glowing Leaf overlay (Golden-yellow glow) */}
+        <path
+          className="leaf-glow"
+          d="M370 566C369 487 408 422 514 402C510 484 468 551 370 566Z"
+          fill="none"
+          stroke="#FBD38D"
+          strokeWidth={4.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter="url(#punyata-glow)"
+        />
       </g>
-
-      {/* Diya bowl */}
-      <path
-        d="M14 49 Q32 60 50 49 L46 52 Q32 58 18 52 Z"
-        fill="#FFFFFF"
-        opacity="0.95"
-      />
     </svg>
   );
 }

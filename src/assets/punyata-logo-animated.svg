@@ -1,0 +1,42 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="105 380 520 675" role="img" aria-labelledby="title desc">
+  <title id="title">Animated Punyata logo</title>
+  <desc id="desc">The Punyata hand-shaped sprout draws itself, then the leaf softly glows.</desc>
+  <defs>
+    <linearGradient id="punyata-metal" x1="0" y1="0" x2="0.78" y2="1">
+      <stop offset="0" stop-color="#fbfaf6"/>
+      <stop offset="0.23" stop-color="#c7c5bd"/>
+      <stop offset="0.5" stop-color="#74726b"/>
+      <stop offset="0.73" stop-color="#aaa89f"/>
+      <stop offset="1" stop-color="#f1f0eb"/>
+    </linearGradient>
+    <filter id="punyata-relief" x="-12%" y="-12%" width="136%" height="142%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="8" dy="11" stdDeviation="5" flood-color="#2d2b27" flood-opacity=".34"/>
+      <feDropShadow dx="-1" dy="-1" stdDeviation="1.2" flood-color="#ffffff" flood-opacity=".78"/>
+    </filter>
+    <filter id="punyata-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <style>
+    .trace { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.05s cubic-bezier(.22,.7,.25,1) forwards; }
+    .earth { animation-delay: 0s; }
+    .stem { animation-delay: .33s; }
+    .hand { animation-delay: .72s; }
+    .leaf { animation-delay: 1.02s; }
+    .leaf-glow { opacity: 0; animation: glow 3.8s 2.1s ease-in-out infinite; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    @keyframes glow { 0%, 68%, 100% { opacity: 0; } 18%, 43% { opacity: .82; } }
+    @media (prefers-reduced-motion: reduce) {
+      .trace { animation: none; stroke-dashoffset: 0; }
+      .leaf-glow { animation: none; opacity: 0; }
+    }
+  </style>
+  <g fill="none" stroke="url(#punyata-metal)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" filter="url(#punyata-relief)">
+    <path class="trace earth" pathLength="1" d="M142 1020C270 929 447 929 607 1020"/>
+    <path class="trace leaf" pathLength="1" d="M370 566C369 487 408 422 514 402C510 484 468 551 370 566Z"/>
+    <path class="trace stem" pathLength="1" d="M357 954V687C364 630 398 552 460 492"/>
+    <path class="trace hand" pathLength="1" d="M357 687C340 649 309 620 274 606C244 594 211 581 190 560C169 539 155 508 148 479C147 475 151 474 154 477C174 493 179 522 198 541C213 556 229 567 245 572C250 574 253 570 250 565C240 550 231 535 229 521C229 516 233 515 236 518C254 531 270 536 288 547C332 573 355 620 357 687Z"/>
+  </g>
+  <path class="leaf-glow" d="M370 566C369 487 408 422 514 402C510 484 468 551 370 566Z" fill="none" stroke="#f3d17a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#punyata-glow)"/>
+</svg>
