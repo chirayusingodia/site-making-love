@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { User, Home, Sparkles, MessageSquareText, Info, MessageCircle } from "lucide-react";
-import punyataLogoImg from "@/assets/punyata-logo.png";
+import { PunyataLogo } from "@/components/PunyataLogo";
 import { useLanguage, useTranslation, LANG_KEY, type Lang } from "@/lib/translations";
 import { LottieIcon } from "@/components/LottieIcon";
 import whatsapp from "@/assets/lottie/whatsapp.json";
@@ -70,16 +70,12 @@ export function Header() {
       }`}
     >
       <div className={`max-w-5xl mx-auto flex items-center justify-between px-4 gap-2 md:gap-3 transition-all duration-300 ${scrolled ? "py-2" : "py-3"}`}>
-        <Link to="/" className="flex items-center gap-2 md:gap-2.5 shrink-0 group">
-          <img
-            src={punyataLogoImg}
-            alt="Punyata"
-            width={64}
-            height={64}
-            className={`rounded-full object-cover ring-1 ring-brand/20 shadow-sm transition-all duration-300 group-hover:scale-105 ${scrolled ? "w-9 h-9 md:w-10 md:h-10" : "w-11 h-11 md:w-12 md:h-12"}`}
+        <Link to="/" className="flex items-center gap-2 md:gap-3 shrink-0 group">
+          <PunyataLogo
+            className={`transition-all duration-300 group-hover:scale-105 ${scrolled ? "w-12 h-12 md:w-13 md:h-13" : "w-15 h-15 md:w-16 md:h-16"}`}
           />
           <span
-            className="font-extrabold text-brand tracking-tight leading-none text-2xl md:text-4xl"
+            className={`font-extrabold text-brand tracking-tight leading-none transition-all duration-300 ${scrolled ? "text-2xl md:text-3xl" : "text-3xl md:text-5xl"}`}
             style={{ fontFamily: "'Poppins', 'Noto Sans Devanagari', system-ui, sans-serif" }}
           >
             पुण्यता

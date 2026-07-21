@@ -8,6 +8,7 @@ export function PunyaMeter() {
   const { t, lang } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<boolean[]>([]);
+  const [selectedValue, setSelectedValue] = useState<boolean | null>(null);
   const [isFinished, setIsFinished] = useState(false);
 
   // States for Lottie JSON payloads
@@ -16,6 +17,7 @@ export function PunyaMeter() {
 
   // Dynamically populated questions and benefits based on current language
   const QUESTIONS = [
+    t("pm_ques_parent"),
     t("pm_ques_1"),
     t("pm_ques_2"),
     t("pm_ques_3"),
@@ -65,9 +67,11 @@ export function PunyaMeter() {
       });
   }, []);
 
-  const handleAnswer = (answer: boolean) => {
-    const updatedAnswers = [...answers, answer];
+  const handleNext = () => {
+    if (selectedValue === null) return;
+    const updatedAnswers = [...answers, selectedValue];
     setAnswers(updatedAnswers);
+    setSelectedValue(null);
 
     if (currentIndex < QUESTIONS.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -79,6 +83,7 @@ export function PunyaMeter() {
   const handleReset = () => {
     setCurrentIndex(0);
     setAnswers([]);
+    setSelectedValue(null);
     setIsFinished(false);
   };
 
@@ -149,39 +154,34 @@ export function PunyaMeter() {
                 exit={{ opacity: 0 }}
                 className="space-y-6"
               >
-                {/* Progress Bar */}
-                <div className="flex gap-1.5 w-full">
-                  {Array.from({ length: QUESTIONS.length }).map((_, idx) => {
-                    const isFilled = idx < currentIndex;
-                    const isActive = idx === currentIndex;
-                    return (
-                      <div
-                        key={idx}
-                        className={`h-1.5 flex-1 rounded-full overflow-hidden transition-all duration-300 ${
-                          isActive
-                            ? "ring-2 ring-[#D85A30]/30 bg-[#D85A30]/20"
-                            : "bg-black/5"
-                        }`}
-                      >
-                        <motion.div
-                          initial={{ width: "0%" }}
-                          animate={{ width: isFilled ? "100%" : "0%" }}
-                          transition={{ duration: 0.3, ease: "easeInOut" }}
-                          className="h-full bg-[#D85A30]"
-                        />
-                      </div>
-                    );
-                  })}
+                {/* Form header step indicator */}
+                <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-widest px-0.5">
+                  <span>{lang === "hindi" ? "पुण्य मापन फॉर्म" : "Punya Assessment"}</span>
+                  <span className="text-[#D85A30]">
+                    {lang === "hindi" 
+                      ? `प्रश्न ${currentIndex + 1} / ${QUESTIONS.length}`
+                      : `Question ${currentIndex + 1} / ${QUESTIONS.length}`
+                    }
+                  </span>
+                </div>
+
+                {/* Segmented Progress Bar */}
+                <div className="relative h-2 w-full bg-black/5 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${((currentIndex + 1) / QUESTIONS.length) * 100}%` }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="h-full bg-[#D85A30]"
+                  />
+                  <div className="absolute inset-0 flex justify-between pointer-events-none">
+                    {Array.from({ length: QUESTIONS.length - 1 }).map((_, idx) => (
+                      <div key={idx} className="w-[1.5px] h-full bg-white/50" />
+                    ))}
+                  </div>
                 </div>
 
                 {/* Inner Question Card */}
-                <div className="bg-white border border-[#F0DFC8] rounded-xl p-5 min-h-[120px] flex flex-col justify-center shadow-inner relative overflow-hidden">
-                  <div className="absolute top-2 right-3 text-[10px] font-bold text-[#D85A30]/60 uppercase tracking-widest">
-                    {lang === "hindi" 
-                      ? `प्रश्न ${currentIndex + 1} of ${QUESTIONS.length}`
-                      : `Question ${currentIndex + 1} of ${QUESTIONS.length}`
-                    }
-                  </div>
+                <div className="bg-white border border-[#F0DFC8] rounded-xl p-6 min-h-[130px] flex flex-col justify-center shadow-inner relative overflow-hidden">
                   <AnimatePresence mode="wait">
                     <motion.p
                       key={currentIndex}
@@ -189,28 +189,49 @@ export function PunyaMeter() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.2 }}
-                      className="text-base font-bold text-[#1A1A1A] leading-relaxed text-center"
+                      className="text-lg md:text-xl font-extrabold text-[#1A1A1A] leading-relaxed text-center font-display"
                     >
                       {QUESTIONS[currentIndex]}
                     </motion.p>
                   </AnimatePresence>
                 </div>
 
-                {/* Buttons */}
+                {/* Selection buttons */}
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => handleAnswer(true)}
-                    className="py-3 px-4 border-2 border-[#D85A30] text-[#D85A30] font-bold rounded-xl bg-white hover:bg-[#D85A30]/5 active:scale-95 transition-all text-sm shadow-sm"
+                    onClick={() => setSelectedValue(true)}
+                    className={`py-3.5 px-4 border-2 font-black rounded-xl active:scale-95 transition-all text-sm shadow-sm ${
+                      selectedValue === true
+                        ? "bg-white border-[#D85A30] text-[#D85A30] active-border-glow scale-[1.02]"
+                        : "bg-white border-[#F0DFC8] text-gray-500 hover:bg-[#D85A30]/5 breathing-saffron-glow"
+                    }`}
                   >
                     {t("pm_yes")}
                   </button>
                   <button
-                    onClick={() => handleAnswer(false)}
-                    className="py-3 px-4 border-2 border-gray-300 text-gray-500 font-bold rounded-xl bg-white hover:bg-gray-50 active:scale-95 transition-all text-sm shadow-sm"
+                    onClick={() => setSelectedValue(false)}
+                    className={`py-3.5 px-4 border-2 font-black rounded-xl active:scale-95 transition-all text-sm shadow-sm ${
+                      selectedValue === false
+                        ? "bg-white border-[#D85A30] text-[#D85A30] active-border-glow scale-[1.02]"
+                        : "bg-white border-[#F0DFC8] text-gray-500 hover:bg-[#D85A30]/5 breathing-saffron-glow"
+                    }`}
                   >
                     {t("pm_no")}
                   </button>
                 </div>
+
+                {/* Next button */}
+                <button
+                  disabled={selectedValue === null}
+                  onClick={handleNext}
+                  className={`w-full py-3.5 px-4 font-bold rounded-full transition-all text-sm shadow-md flex items-center justify-center gap-2 ${
+                    selectedValue !== null
+                      ? "bg-[#D85A30] hover:bg-[#B8460F] text-white active:scale-98 primary-btn-glow"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {lang === "hindi" ? "आगे बढ़ें" : "Next"} <ArrowRight size={16} />
+                </button>
               </motion.div>
             ) : (
               <motion.div
@@ -268,7 +289,7 @@ export function PunyaMeter() {
                     <a
                       href="#plans"
                       onClick={handleScrollToPlans}
-                      className="inline-flex items-center justify-center gap-2 bg-[#D85A30] text-white font-bold px-6 py-3.5 rounded-full shadow-lg shadow-[#D85A30]/25 btn-glow w-full sm:w-auto"
+                      className="inline-flex items-center justify-center gap-2 bg-[#D85A30] text-white font-bold px-6 py-3.5 rounded-full shadow-lg shadow-[#D85A30]/25 btn-glow btn-glow-pulse w-full sm:w-auto"
                     >
                       {t("pm_cta")} <ArrowRight size={18} />
                     </a>

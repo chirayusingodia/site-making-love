@@ -23,7 +23,7 @@ function MySubscriptionPage() {
           <div className="space-y-5">
             <div className="card-soft p-5">
               <div className="text-xs font-bold text-brand">Active Plan</div>
-              <div className="font-bold text-lg mt-1">गृह शांति ₹401/Monthly</div>
+              <div className="font-bold text-lg mt-1">Premium ₹399/Monthly</div>
               <div className="text-xs text-muted-foreground mt-1">Next billing: 1st of next month</div>
             </div>
             <div className="card-soft p-5">

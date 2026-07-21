@@ -32,7 +32,7 @@ const ICON_MAP: { match: RegExp; Icon: LucideIcon; label: string }[] = [
   { match: /(सुंदरकांड|sundarkand|पाठ)/i, Icon: BookOpen, label: "Sundarkand" },
   { match: /(गौ|gau|cow)/i, Icon: Cow, label: "Gau Seva" },
   { match: /(वानर|vanara|monkey)/i, Icon: Banana, label: "Vanara" },
-  { match: /(ब्राह्मण|brahmin|भोजन|bhojan)/i, Icon: UtensilsCrossed, label: "Bhojan" },
+  { match: /(sadhu|santo|ब्राह्मण|brahmin|भोजन|bhojan)/i, Icon: UtensilsCrossed, label: "Saadhu Santo Ko Bhojan" },
 ];
 
 function chipFor(title: string) {

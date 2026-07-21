@@ -13,6 +13,7 @@ import {
   Plus,
 } from "lucide-react";
 import { plans, testimonials, faqs } from "@/lib/plans";
+import { PizzaComparison } from "@/components/PizzaComparison";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { PunyaMeter } from "@/components/home/PunyaMeter";
@@ -31,12 +32,13 @@ import heroPandit from "@/assets/hero/pandit-hawan.jpg";
 import heroFamily from "@/assets/hero/family-prayer.jpg";
 import heroWhatsapp from "@/assets/hero/whatsapp-proof.jpg";
 import heroDiya from "@/assets/hero/diya-aarti.jpg";
+import punyataStaticLogo from "@/assets/punyata-logo.svg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "पुण्यता — भारत का पुण्य साथी | तीर्थ गुरु पुष्करराज से मासिक सेवा" },
-      { name: "description", content: "पुण्यता — अब भारत करेगा पुण्यता। तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, आरती, गौ सेवा एवं ब्राह्मण भोज। WhatsApp पर Video Proof।" },
+      { name: "description", content: "पुण्यता — अब भारत करेगा पुण्यता। तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, आरती, गौ सेवा एवं साधु संतों को भोजन। WhatsApp पर Video Proof।" },
     ],
   }),
   component: HomePage,
@@ -140,7 +142,7 @@ const howItWorksContainerVariants = {
       staggerChildren: 0.1,
     },
   },
-};
+} as const;
 
 const howItWorksCardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -152,7 +154,7 @@ const howItWorksCardVariants = {
       ease: "easeOut",
     },
   },
-};
+} as const;
 
 function HowItWorks() {
   const { t } = useTranslation();
@@ -270,14 +272,22 @@ function FamilySection() {
 
 function PlansPreview() {
   const { t } = useTranslation();
+  const visiblePlans = plans.filter((p) => p.isVisible !== false);
+
   return (
     <section id="plans" className="space-y-6 scroll-mt-20">
       <div className="text-center">
         <h2 className="text-2xl font-bold">{t("nav_plans")}</h2>
         <p className="text-sm text-muted-foreground mt-1">{t("plans_sub")}</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map((p) => {
+      <div
+        className={`grid grid-cols-1 gap-6 ${
+          visiblePlans.length === 1 ? "md:grid-cols-1" :
+          visiblePlans.length === 2 ? "md:grid-cols-2" :
+          "md:grid-cols-3"
+        }`}
+      >
+        {visiblePlans.map((p) => {
           const isPopular = p.id === "grah";
           const isAnnual = p.id === "varsh";
           return (
@@ -311,24 +321,23 @@ function PlansPreview() {
               </div>
 
               {/* Card Body */}
-              <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-3">
-                  <h3 className="font-bold text-base text-foreground group-hover:text-brand transition-colors line-clamp-1">
-                    {p.name}
+              <div className="p-4 flex-1 flex flex-col justify-between space-y-3.5">
+                <div className="space-y-2">
+                  <h3 className="font-extrabold text-sm text-foreground group-hover:text-brand transition-colors line-clamp-2">
+                    {p.heading}
                   </h3>
                   
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-brand">{p.price}</span>
-                    <span className="text-[10px] text-muted-foreground font-semibold">{p.cycle}</span>
-                    {p.strikePrice && (
-                      <span className="text-[10px] text-muted-foreground line-through ml-1">{p.strikePrice}</span>
-                    )}
-                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-normal line-clamp-2">
+                    {p.subheading}
+                  </p>
+                </div>
 
-                  <div className="text-[11px] text-muted-foreground leading-normal border-t border-black/5 pt-2.5">
-                    <div className="font-bold text-[9px] text-foreground/70 uppercase tracking-wider mb-0.5">सेवा सूची:</div>
-                    {p.serviceTags.join(" + ")}
-                  </div>
+                {/* Visual Pizza/Dinner Comparison */}
+                <PizzaComparison planId={p.id} price={p.price} cycle={p.cycle} size="sm" />
+
+                <div className="text-[11px] text-muted-foreground leading-normal border-t border-black/5 pt-2.5">
+                  <div className="font-bold text-[9px] text-foreground/70 uppercase tracking-wider mb-0.5">सेवा सूची:</div>
+                  {p.serviceTags.join(" + ")}
                 </div>
 
                 <div className="pt-2.5 border-t border-black/5 flex items-center justify-between text-[11px] font-bold text-brand group-hover:translate-x-1 transition-transform duration-200">
@@ -343,7 +352,7 @@ function PlansPreview() {
         })}
       </div>
       <div className="text-center">
-        <Link to="/plans" className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-full hover:bg-brand-deep transition-colors">
+        <Link to="/plans" className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-full hover:bg-brand-deep transition-colors primary-btn-glow">
           See Full Plans <ArrowRight size={16} />
         </Link>
       </div>
@@ -395,7 +404,10 @@ function FaqSection() {
 function ContactFooter() {
   return (
     <footer className="pt-4 pb-4 text-center space-y-2 text-sm text-muted-foreground">
-      <div className="font-bold text-brand text-base">पुण्यता</div>
+      <div className="flex flex-col items-center justify-center gap-1.5">
+        <img src={punyataStaticLogo} alt="Punyata Logo" className="w-10 h-10" />
+        <div className="font-bold text-brand text-base leading-none">पुण्यता</div>
+      </div>
       <div>तीर्थ गुरु पुष्करराज, राजस्थान — 305022</div>
       <div className="flex justify-center gap-4 text-xs pt-2">
         <Link to="/about" className="hover:text-brand">About</Link>

@@ -67,7 +67,7 @@ function AboutPage() {
           <h2 className="text-2xl font-bold">हमारा मिशन</h2>
           <div className="card-soft p-6 space-y-3 text-[15px] text-foreground/85 leading-relaxed">
             <p>शहरों की व्यस्त ज़िंदगी में — office, बच्चों की पढ़ाई, ट्रैफ़िक, यात्रा — हर परिवार अपने धार्मिक कर्तव्यों से धीरे-धीरे दूर होता जा रहा है। तीर्थ स्थल दूर हैं, समय कम है, और पंडित जी का शुल्क अलग।</p>
-            <p>पुण्यता इसी खाई को भरने के लिए बना है। हम तीर्थ गुरु पुष्करराज में बैठे हुए विद्वान आचार्यों के साथ मिलकर — आपके नाम, आपके गोत्र, आपके संकल्प से — सुंदरकांड, हवन, आरती, दान-पुण्य एवं ब्राह्मण भोज सम्पन्न करवाते हैं।</p>
+            <p>पुण्यता इसी खाई को भरने के लिए बना है। हम तीर्थ गुरु पुष्करराज में बैठे हुए विद्वान आचार्यों के साथ मिलकर — आपके नाम, आपके गोत्र, आपके संकल्प से — सुंदरकांड, हवन, आरती, दान-पुण्य एवं साधु संतों को भोजन सम्पन्न करवाते हैं।</p>
             <p className="italic text-brand font-semibold">"हम आपकी ज़िम्मेदारी नहीं लेते — हम उसे आपकी ओर से निभाते हैं।"</p>
           </div>
         </section>
@@ -139,13 +139,13 @@ function AboutPage() {
           <h2 className="text-2xl font-bold text-center">संख्या में पुण्यता</h2>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { end: 1200, suffix: "+", l: "परिवार जुड़े" },
-              { end: 15000, suffix: "+", l: "सेवाएँ सम्पन्न" },
-              { end: 100, suffix: "%", l: "Video Proof Delivery" },
+              { value: 1200, suffix: "+", l: "परिवार जुड़े" },
+              { value: 15000, suffix: "+", l: "सेवाएँ सम्पन्न" },
+              { value: 100, suffix: "%", l: "Video Proof Delivery" },
             ].map((s) => (
               <div key={s.l} className="card-soft p-4 text-center">
                 <div className="text-2xl font-bold text-brand">
-                  <CountUp end={s.end} suffix={s.suffix} />
+                  <CountUp value={s.value} suffix={s.suffix} />
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 leading-tight">{s.l}</div>
               </div>

@@ -1,0 +1,27 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="105 380 520 675" role="img" aria-labelledby="title desc">
+  <title id="title">Punyata logo</title>
+  <desc id="desc">A hand-shaped sprout rising from a curved earth line.</desc>
+  <defs>
+    <linearGradient id="punyata-metal" x1="0" y1="0" x2="0.78" y2="1">
+      <stop offset="0" stop-color="#fbfaf6"/>
+      <stop offset="0.23" stop-color="#c7c5bd"/>
+      <stop offset="0.5" stop-color="#74726b"/>
+      <stop offset="0.73" stop-color="#aaa89f"/>
+      <stop offset="1" stop-color="#f1f0eb"/>
+    </linearGradient>
+    <filter id="punyata-relief" x="-12%" y="-12%" width="136%" height="142%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="8" dy="11" stdDeviation="5" flood-color="#2d2b27" flood-opacity=".34"/>
+      <feDropShadow dx="-1" dy="-1" stdDeviation="1.2" flood-color="#ffffff" flood-opacity=".78"/>
+    </filter>
+  </defs>
+  <g fill="none" stroke="url(#punyata-metal)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" filter="url(#punyata-relief)">
+    <!-- Earth -->
+    <path d="M142 1020C270 929 447 929 607 1020"/>
+    <!-- Leaf outline -->
+    <path d="M370 566C369 487 408 422 514 402C510 484 468 551 370 566Z"/>
+    <!-- Stem continues naturally into the leaf vein -->
+    <path d="M357 954V687C364 630 398 552 460 492"/>
+    <!-- Continuous hand: the concave notch is the intentional open gap -->
+    <path d="M357 687C340 649 309 620 274 606C244 594 211 581 190 560C169 539 155 508 148 479C147 475 151 474 154 477C174 493 179 522 198 541C213 556 229 567 245 572C250 574 253 570 250 565C240 550 231 535 229 521C229 516 233 515 236 518C254 531 270 536 288 547C332 573 355 620 357 687Z"/>
+  </g>
+</svg>
