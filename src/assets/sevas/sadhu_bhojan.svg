@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF8F0"/>
+      <stop offset="50%" stop-color="#FDF3EB"/>
+      <stop offset="100%" stop-color="#FBE6D5"/>
+    </linearGradient>
+    <linearGradient id="saffronGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E86A38"/>
+      <stop offset="100%" stop-color="#D85A30"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F7C873"/>
+      <stop offset="100%" stop-color="#E5A638"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#D85A30" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="800" fill="url(#bgGrad)" rx="32"/>
+
+  <!-- Decorative Border -->
+  <rect x="24" y="24" width="752" height="752" rx="24" fill="none" stroke="#D85A30" stroke-width="2" stroke-opacity="0.2"/>
+  <rect x="36" y="36" width="728" height="728" rx="20" fill="none" stroke="#E5A638" stroke-width="1" stroke-opacity="0.3" stroke-dasharray="8 6"/>
+
+  <!-- Header Banner Badge -->
+  <g transform="translate(100, 70)">
+    <rect width="600" height="70" rx="35" fill="url(#saffronGrad)" filter="url(#shadow)"/>
+    <text x="300" y="44" font-family="'Hind', 'Mukta', sans-serif" font-size="28" font-weight="800" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">
+      साधु संतों को भोजन एवं दिव्य आशीर्वाद
+    </text>
+  </g>
+
+  <!-- Center Artwork: 5 Sadhus & Pattal Leaf Feast Symbolism -->
+  <g transform="translate(400, 390)" text-anchor="middle">
+    <!-- Pushkar Lake & Ghat Waves Background -->
+    <path d="M-300,140 Q-150,110 0,140 T300,140 L300,220 L-300,220 Z" fill="#E5A638" opacity="0.15"/>
+    <path d="M-320,170 Q-160,140 0,170 T320,170 L320,240 L-320,240 Z" fill="#D85A30" opacity="0.1"/>
+
+    <!-- 5 Sadhu Icons (Saffron Robes + Blessing Hands) -->
+    <!-- Sadhu 1 -->
+    <g transform="translate(-240, -60)">
+      <circle cx="0" cy="-30" r="28" fill="#D85A30" opacity="0.9"/>
+      <path d="M-35,35 Q0,-10 35,35 Z" fill="#E86A38"/>
+      <!-- Blessing Hand -->
+      <path d="M25,-10 Q35,-30 40,-15" stroke="#E5A638" stroke-width="4" stroke-linecap="round" fill="none"/>
+    </g>
+
+    <!-- Sadhu 2 -->
+    <g transform="translate(-120, -80)">
+      <circle cx="0" cy="-32" r="32" fill="#D85A30"/>
+      <path d="M-40,40 Q0,-12 40,40 Z" fill="#E86A38"/>
+      <!-- Blessing Hand -->
+      <path d="M28,-15 Q40,-35 42,-18" stroke="#E5A638" stroke-width="5" stroke-linecap="round" fill="none"/>
+    </g>
+
+    <!-- Sadhu 3 (Center Lead Sadhu) -->
+    <g transform="translate(0, -100)">
+      <circle cx="0" cy="-38" r="38" fill="#D85A30"/>
+      <!-- Tilak -->
+      <path d="M-6,-50 L0,-62 L6,-50 Z" fill="#E5A638"/>
+      <path d="M-48,50 Q0,-15 48,50 Z" fill="#D85A30"/>
+      <!-- Raised Blessing Abhaya Mudra Hand -->
+      <g transform="translate(35, -25)">
+        <circle cx="0" cy="0" r="16" fill="#F7C873" opacity="0.3"/>
+        <path d="M-6,10 L-6,-10 C-6,-15 -2,-18 2,-18 C6,-18 10,-15 10,-10 L10,10" stroke="#D85A30" stroke-width="4" fill="none"/>
+      </g>
+    </g>
+
+    <!-- Sadhu 4 -->
+    <g transform="translate(120, -80)">
+      <circle cx="0" cy="-32" r="32" fill="#D85A30"/>
+      <path d="M-40,40 Q0,-12 40,40 Z" fill="#E86A38"/>
+      <path d="M-28,-15 Q-40,-35 -42,-18" stroke="#E5A638" stroke-width="5" stroke-linecap="round" fill="none"/>
+    </g>
+
+    <!-- Sadhu 5 -->
+    <g transform="translate(240, -60)">
+      <circle cx="0" cy="-28" r="28" fill="#D85A30" opacity="0.9"/>
+      <path d="M-35,35 Q0,-10 35,35 Z" fill="#E86A38"/>
+      <path d="M-25,-10 Q-35,-30 -40,-15" stroke="#E5A638" stroke-width="4" stroke-linecap="round" fill="none"/>
+    </g>
+
+    <!-- Pattal Leaf Plates & Sattvik Feast Row -->
+    <g transform="translate(0, 70)">
+      <!-- Green Leaf Pattal -->
+      <ellipse cx="0" cy="0" rx="280" ry="40" fill="#2E7D32" opacity="0.85"/>
+      <ellipse cx="0" cy="0" rx="260" ry="32" fill="#388E3C"/>
+      <!-- Sattvik Food Items: Puris, Kheer, Sweets -->
+      <circle cx="-180" cy="-5" r="14" fill="#F7C873"/>
+      <circle cx="-120" cy="0" r="16" fill="#FFF3E0"/>
+      <circle cx="-50" cy="-5" r="18" fill="#F7C873"/>
+      <circle cx="20" cy="0" r="15" fill="#E5A638"/>
+      <circle cx="100" cy="-5" r="17" fill="#FFF3E0"/>
+      <circle cx="170" cy="0" r="14" fill="#F7C873"/>
+    </g>
+  </g>
+
+  <!-- Subtitle Text Card -->
+  <g transform="translate(400, 680)" text-anchor="middle">
+    <rect x="-260" y="-35" width="520" height="60" rx="16" fill="#FFFFFF" filter="url(#shadow)"/>
+    <text y="3" font-family="'Hind', sans-serif" font-size="20" font-weight="700" fill="#D85A30">
+      पत्तल पर सात्विक भोजन सत्कार एवं हस्त-आशीर्वाद
+    </text>
+    <text y="24" font-family="'Hind', sans-serif" font-size="14" font-weight="500" fill="#718096">
+      तीर्थ गुरु पुष्करराज घाट • अन्नदान महादान
+    </text>
+  </g>
+</svg>

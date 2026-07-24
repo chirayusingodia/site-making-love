@@ -152,11 +152,12 @@ function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
 
   const { t, lang } = useTranslation();
 
-  const slides = (planSlides[plan.id] ?? []).map((slide, idx) => ({
-    src: plan.images[idx] || plan.image,
+  const slides = (plan.slides ?? []).map((slide) => ({
+    src: slide.src,
     alt: slide.title,
     title: slide.title,
     subtitle: slide.subtitle,
+    step: slide.step,
   }));
 
   return (

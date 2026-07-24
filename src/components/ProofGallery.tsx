@@ -8,6 +8,7 @@ import checkmark from "@/assets/lottie/checkmark.json";
 import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
 import havanImg from "@/assets/havan.jpg";
 import gauImg from "@/assets/gau-seva.jpg";
+import whatsappProofImg from "@/assets/hero/whatsapp-proof.jpg";
 
 function VideoThumbnailCard({ src }: { src: string }) {
   const lottieRef = useRef<any>(null);
@@ -15,7 +16,6 @@ function VideoThumbnailCard({ src }: { src: string }) {
 
   const handleMouseEnter = () => {
     setHovered(true);
-    // Give state updates a tiny tick to ensure ref is mounted
     setTimeout(() => {
       if (lottieRef.current) {
         lottieRef.current.goToAndPlay(0, true);
@@ -43,7 +43,6 @@ function VideoThumbnailCard({ src }: { src: string }) {
       />
       <div className="absolute inset-0 bg-black/20 group-hover:bg-black/25 transition-colors duration-300" />
       
-      {/* Small badge top-right corner on hover */}
       {hovered && (
         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-0.5 shadow-md z-10 animate-scale-up">
           <LottieIcon
@@ -58,9 +57,9 @@ function VideoThumbnailCard({ src }: { src: string }) {
         </div>
       )}
 
-      <div className="absolute bottom-1.5 left-1.5 text-[10px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded flex items-center gap-1">
+      <div className="absolute bottom-1.5 left-1.5 text-[10px] font-bold text-white bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-1">
         <Video size={10} className="shrink-0" />
-        <span>Video</span>
+        <span>Video Proof</span>
       </div>
     </div>
   );
@@ -68,7 +67,7 @@ function VideoThumbnailCard({ src }: { src: string }) {
 
 export function ProofGallery() {
   const { t } = useTranslation();
-  const imgs = [pushkarGhatImg, havanImg, gauImg];
+  const imgs = [pushkarGhatImg, havanImg, whatsappProofImg, gauImg];
 
   return (
     <section className="space-y-4">
@@ -78,7 +77,7 @@ export function ProofGallery() {
           {t("gallery_see_all")}
         </Link>
       </div>
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
         {imgs.map((src, i) => (
           <VideoThumbnailCard key={i} src={src} />
         ))}

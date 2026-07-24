@@ -4,46 +4,12 @@ import { sevaList } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 
-// Import all 30 local seva images
-import s1v1 from "@/assets/sevas/seva_1_var1.png";
-import s1v2 from "@/assets/sevas/seva_1_var2.png";
-import s1v3 from "@/assets/sevas/seva_1_var3.png";
-
-import s2v1 from "@/assets/sevas/seva_2_var1.png";
-import s2v2 from "@/assets/sevas/seva_2_var2.png";
-import s2v3 from "@/assets/sevas/seva_2_var3.png";
-
-import s3v1 from "@/assets/sevas/seva_3_var1.png";
-import s3v2 from "@/assets/sevas/seva_3_var2.png";
-import s3v3 from "@/assets/sevas/seva_3_var3.png";
-
-import s4v1 from "@/assets/sevas/seva_4_var1.png";
-import s4v2 from "@/assets/sevas/seva_4_var2.png";
-import s4v3 from "@/assets/sevas/seva_4_var3.png";
-
-import s5v1 from "@/assets/sevas/seva_5_var1.png";
-import s5v2 from "@/assets/sevas/seva_5_var2.png";
-import s5v3 from "@/assets/sevas/seva_5_var3.png";
-
-import s6v1 from "@/assets/sevas/seva_6_var1.png";
-import s6v2 from "@/assets/sevas/seva_6_var2.png";
-import s6v3 from "@/assets/sevas/seva_6_var3.png";
-
-import s7v1 from "@/assets/sevas/seva_7_var1.png";
-import s7v2 from "@/assets/sevas/seva_7_var2.png";
-import s7v3 from "@/assets/sevas/seva_7_var3.png";
-
-import s8v1 from "@/assets/sevas/seva_8_var1.png";
-import s8v2 from "@/assets/sevas/seva_8_var2.png";
-import s8v3 from "@/assets/sevas/seva_8_var3.png";
-
-import s9v1 from "@/assets/sevas/seva_9_var1.png";
-import s9v2 from "@/assets/sevas/seva_9_var2.png";
-import s9v3 from "@/assets/sevas/seva_9_var3.png";
-
-import s10v1 from "@/assets/sevas/seva_10_var1.png";
-import s10v2 from "@/assets/sevas/seva_10_var2.png";
-import s10v3 from "@/assets/sevas/seva_10_var3.png";
+import sundarkandImg from "@/assets/sevas/sundarkand.png";
+import gauSevaImg from "@/assets/sevas/gau_seva.png";
+import prasadSevaImg from "@/assets/sevas/prasad_seva.png";
+import sarovarDeepdaanImg from "@/assets/sevas/sarovar_deepdaan.png";
+import sadhuBhojanImg from "@/assets/sevas/sadhu_bhojan.png";
+import hawanImg from "@/assets/sevas/hawan.png";
 
 export const Route = createFileRoute("/sevas")({
   head: () => ({
@@ -57,48 +23,48 @@ export const Route = createFileRoute("/sevas")({
 
 const iconMap: Record<string, any> = { BookOpen, Flame, Sun, Wind, Heart, Users, Sparkles };
 
-type SevaStaticMedia = { images: string[]; captions: [string, string, string] };
+type SevaStaticMedia = { images: string[]; captions: string[] };
 
 const sevaMedia: Record<number, SevaStaticMedia> = {
   0: {
-    images: [s1v1, s1v2, s1v3],
-    captions: ["Sundarkand • Sankat Haran", "Naam-Gotra Se Sankalp", "Bajrangbali Ki Kripa"],
+    images: [sundarkandImg],
+    captions: ["सुंदरकांड पाठ — आपके नाम व गोत्र से संकट हरण पाठ"],
   },
   1: {
-    images: [s2v1, s2v2, s2v3],
-    captions: ["Hawan • Ghar Mein Shanti", "Vaidik Mantra Uchcharan", "Sarva Rog Nivaran"],
+    images: [hawanImg],
+    captions: ["गृह शांति एवं सर्व रोग निवारण हवन — वैदिक आहुति"],
   },
   2: {
-    images: [s3v1, s3v2, s3v3],
-    captions: ["Aarti • Divya Prakash", "Sandhya Deepdaan", "Poorna Aashirwad"],
+    images: [sarovarDeepdaanImg],
+    captions: ["आरती (Aarti) — दीप, धूप एवं भजन के साथ"],
   },
   3: {
-    images: [s4v1, s4v2, s4v3],
-    captions: ["Gau Seva • Samast Devon Ki Seva", "Chara Aur Gud Arpan", "Gau Mata Ka Aashirwad"],
+    images: [gauSevaImg],
+    captions: ["गौ माता सेवा — हरा चारा एवं गुड़ अर्पण"],
   },
   4: {
-    images: [s5v1, s5v2, s5v3],
-    captions: ["Vanara Seva • Hanuman Ji Ke Priya", "Kela Aur Chana Arpan", "Bajrangbali Ka Punya"],
+    images: [sundarkandImg],
+    captions: ["वानर सेवा — श्री हनुमान जी के प्रिय फल व चना अर्पण"],
   },
   5: {
-    images: [s6v1, s6v2, s6v3],
-    captions: ["Saadhu Santo Ko Bhojan • Pitru Aashirwad", "Anna Daan Mahadan", "Satvik Bhojan Satkar"],
+    images: [sadhuBhojanImg],
+    captions: ["साधु संतों को भोजन — पुष्कर क्षेत्र साधु सत्कार"],
   },
   6: {
-    images: [s7v1, s7v2, s7v3],
-    captions: ["Sarovar Deepdaan • Pushkarraj", "Sandhya Lake Deepa", "Moksha Kripa"],
+    images: [sarovarDeepdaanImg],
+    captions: ["सरोवर दीपदान — पुष्कर सरोवर में संध्या दीप अर्पण"],
   },
   7: {
-    images: [s8v1, s8v2, s8v3],
-    captions: ["Chola Seva • Kasht Nivaran", "Bajariangbali Sindoor Puja", "Shringar Puja"],
+    images: [sundarkandImg],
+    captions: ["हनुमान जी चोला सेवा — सिंदूर व चमेली तेल अर्पण"],
   },
   8: {
-    images: [s9v1, s9v2, s9v3],
-    captions: ["Prasad Vitran • Anna Daan", "Laddoo Prasad Blessing", "Shraddhalu Sewa"],
+    images: [prasadSevaImg],
+    captions: ["भंडारा / प्रसाद सेवा — पवित्र पुष्कर प्रसाद वितरण"],
   },
   9: {
-    images: [s10v1, s10v2, s10v3],
-    captions: ["Bhavy Shringar • Alankar Puja", "Pushpa Shringar Temple", "Darshan Kripa"],
+    images: [hawanImg],
+    captions: ["भव्य श्रृंगार — पुष्प व वस्त्रों से आलौकिक श्रृंगार"],
   },
 };
 

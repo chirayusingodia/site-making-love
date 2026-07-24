@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PunyataLogo } from "./PunyataLogo";
 
 export type Slide = {
   /** Image URL. TODO: replace with real Punyata/Pushkar seva photo. */
@@ -82,7 +83,7 @@ export function SlidingImageCard({
         <div
           key={idx}
           className={`absolute inset-0 transition-all ease-in-out ${
-            idx === i ? "opacity-100 scale-[1.03] z-10" : "opacity-0 scale-100 z-0"
+            idx === i ? "opacity-100 z-10" : "opacity-0 z-0"
           }`}
           style={{ transitionDuration: reducedMotion.current ? "0ms" : "600ms" }}
           aria-hidden={idx !== i}
@@ -92,6 +93,10 @@ export function SlidingImageCard({
               {s.step}
             </div>
           )}
+          <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm border border-brand/20">
+            <PunyataLogo className="w-5 h-5" />
+            <span className="text-[11px] font-extrabold text-brand tracking-tight">पुण्यता:</span>
+          </div>
           {!loaded[idx] && (
             <div className="absolute inset-0 bg-gradient-to-br from-brand-soft to-secondary animate-pulse" />
           )}
@@ -99,18 +104,22 @@ export function SlidingImageCard({
             src={s.src}
             alt={s.alt}
             loading="lazy"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain bg-[#FDF3EB] object-center"
             onLoad={() => setLoaded((m) => ({ ...m, [idx]: true }))}
           />
-          <div className={`absolute inset-x-0 bottom-0 ${s.scrimClass || "h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent"}`} />
-          <div className={`absolute bottom-3 left-4 right-4 z-10 ${s.titleClass?.includes("text-") ? "" : "text-white"}`}>
-            <div className={`font-bold text-[17px] md:text-[19px] leading-tight ${s.titleClass || "drop-shadow"}`}>{s.title}</div>
-            {s.subtitle && (
-              <div className={`text-[13px] md:text-sm mt-0.5 leading-snug ${s.subtitleClass || "text-white/85 drop-shadow"}`}>
-                {s.subtitle}
+          {(s.title || s.subtitle) && (
+            <>
+              <div className={`absolute inset-x-0 bottom-0 pointer-events-none ${s.scrimClass || "h-1/4 bg-gradient-to-t from-black/60 to-transparent"}`} />
+              <div className={`absolute bottom-3 left-4 right-4 z-10 pointer-events-none ${s.titleClass?.includes("text-") ? "" : "text-white"}`}>
+                {s.title && <div className={`font-bold text-[14px] md:text-[16px] leading-tight ${s.titleClass || "drop-shadow"}`}>{s.title}</div>}
+                {s.subtitle && (
+                  <div className={`text-[11px] md:text-xs mt-0.5 leading-snug ${s.subtitleClass || "text-white/85 drop-shadow"}`}>
+                    {s.subtitle}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       ))}
 
