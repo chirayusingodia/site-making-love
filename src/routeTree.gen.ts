@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
 import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
+import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
 
 const SevasRoute = SevasRouteImport.update({
@@ -83,6 +84,11 @@ const CheckoutPlanIdRoute = CheckoutPlanIdRouteImport.update({
   path: '/checkout/$planId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
+  id: '/subscribers',
+  path: '/subscribers',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOverviewRoute = AdminOverviewRouteImport.update({
   id: '/overview',
   path: '/overview',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
+  '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
+  '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin': typeof AdminIndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
+  '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/sevas'
     | '/admin/overview'
+    | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/admin/'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/sevas'
     | '/admin/overview'
+    | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/admin'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/sevas'
     | '/admin/overview'
+    | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/admin/'
@@ -281,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutPlanIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/subscribers': {
+      id: '/admin/subscribers'
+      path: '/subscribers'
+      fullPath: '/admin/subscribers'
+      preLoaderRoute: typeof AdminSubscribersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/overview': {
       id: '/admin/overview'
       path: '/overview'
@@ -293,11 +312,13 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminOverviewRoute: typeof AdminOverviewRoute
+  AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminOverviewRoute: AdminOverviewRoute,
+  AdminSubscribersRoute: AdminSubscribersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

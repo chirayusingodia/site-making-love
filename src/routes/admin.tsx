@@ -12,7 +12,7 @@ function AdminLayout() {
 
   const navItems = [
     { label: "Overview", href: "/admin/overview", icon: LayoutDashboard },
-    { label: "Subscriptions", href: "/admin/subscriptions", icon: Users, badge: "Session 2" },
+    { label: "Subscribers", href: "/admin/subscribers", icon: Users },
     { label: "Sankalp Batches", href: "/admin/batches", icon: Flame, badge: "Session 4" },
     { label: "Seva Proofs", href: "/admin/proofs", icon: Video, badge: "Session 0.5" },
     { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 5" },
