@@ -28,10 +28,13 @@ import diya from "@/assets/lottie/diya.json";
 import whatsapp from "@/assets/lottie/whatsapp.json";
 import lockSecure from "@/assets/lottie/lock-secure.json";
 import heroPushkar from "@/assets/hero/pushkar-ghats.jpg";
-import heroPandit from "@/assets/hero/pandit-hawan.jpg";
-import heroFamily from "@/assets/hero/family-prayer.jpg";
+import sundarkandSlideImg from "@/assets/plans/basic_seva.png";
+import hawanSlideImg from "@/assets/sevas/hawan.png";
+import gauSevaSlideImg from "@/assets/sevas/gau_seva.png";
+import sadhuBhojanSlideImg from "@/assets/sevas/sadhu_bhojan.png";
+import vanarSevaSlideImg from "@/assets/plans/varsh_1.png";
+import deepdaanSlideImg from "@/assets/sevas/sarovar_deepdaan.png";
 import heroWhatsapp from "@/assets/hero/whatsapp-proof.jpg";
-import heroDiya from "@/assets/hero/diya-aarti.jpg";
 import punyataStaticLogo from "@/assets/punyata-logo.svg";
 
 export const Route = createFileRoute("/")({
@@ -45,11 +48,14 @@ export const Route = createFileRoute("/")({
 });
 
 const heroSlides: Slide[] = [
-  { src: heroPushkar, alt: "Pushkar ghats at sunrise", title: "Pushkar Ke Pavitra Ghaton Se", subtitle: "Jahan har sankalp Tirth Guru Pushkarraj ke saamne liya jaata hai" },
-  { src: heroPandit, alt: "Pandit performing hawan", title: "Aapke Naam Aur Gotra Se", subtitle: "Har mahina asli pandit dwara vidhi-vidhan se pooja" },
-  { src: heroFamily, alt: "Indian family in prayer", title: "Family Ki Punya Yatra", subtitle: "4 parivarjan tak — ek subscription mein sabka punya" },
-  { src: heroWhatsapp, alt: "WhatsApp proof on phone", title: "Seva Ka Living Proof", subtitle: "Har pooja ka photo/video seedha aapke WhatsApp par" },
-  { src: heroDiya, alt: "Diya flame close-up", title: "Bharat Ka Punya Bank", subtitle: "Ab sochna nahi padega — Punyata sambhaal lega" },
+  { src: heroPushkar, alt: "तीर्थ गुरु पुष्करराज — पवित्र सरोवर एवं संध्या दीपदर्शन", title: "", subtitle: "" },
+  { src: sundarkandSlideImg, alt: "आपके नाम व गोत्र से संकल्पबद्ध सुंदरकांड पाठ", title: "", subtitle: "" },
+  { src: hawanSlideImg, alt: "वैदिक आहुति — गृह शांति एवं सर्व रोग निवारण हवन", title: "", subtitle: "" },
+  { src: gauSevaSlideImg, alt: "गौ माता सेवा — हरा चारा एवं गुड़ अर्पण", title: "", subtitle: "" },
+  { src: sadhuBhojanSlideImg, alt: "साधु संतों को भोजन — पुष्कर क्षेत्र सात्विक भोजन सत्कार", title: "", subtitle: "" },
+  { src: vanarSevaSlideImg, alt: "वानर सेवा — श्री हनुमान जी के प्रिय फल व चना अर्पण", title: "", subtitle: "" },
+  { src: deepdaanSlideImg, alt: "सरोवर दीपदान — पुष्कर सरोवर में मोक्ष प्रदायक दीप अर्पण", title: "", subtitle: "" },
+  { src: heroWhatsapp, alt: "100% पारदर्शिता — हर सेवा का WhatsApp Video Proof", title: "", subtitle: "" },
 ];
 
 function HomePage() {
