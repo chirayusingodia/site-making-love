@@ -212,10 +212,8 @@ function StatusBadge({ status }: { status: string }) {
 // Centralised so list query, count query, and CSV query all apply
 // identical filters consistently.
 
-function applyFilters(
-  query: ReturnType<typeof supabase.from>,
-  filters: FilterState
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyFilters(query: any, filters: FilterState): any {
   if (filters.status !== "all") query = query.eq("status", filters.status);
   if (filters.planId !== "all") query = query.eq("plan_id", filters.planId);
   if (filters.agentId !== "all") query = query.eq("agent_id", filters.agentId);
@@ -380,7 +378,7 @@ function Subscriber360Modal({
         }
       }
       setSevaProofs(proofsList);
-      setPlanHistory(histRes.data as PlanHistoryEntry[] || []);
+      setPlanHistory((histRes.data as unknown as PlanHistoryEntry[]) || []);
       setLoading360(false);
     };
     fetchDetail();
@@ -403,7 +401,7 @@ function Subscriber360Modal({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-slate-900">
-                {primary?.full_name || sub.primary_member_name || "Unknown Subscriber"}
+                {primary?.full_name || "Unknown Subscriber"}
               </h2>
               <StatusBadge status={sub.status} />
             </div>
