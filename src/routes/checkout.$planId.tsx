@@ -10,7 +10,16 @@ export const Route = createFileRoute("/checkout/$planId")({
 
 type Step = 1 | 2 | 3;
 type Member = { name: string; gotra: string; relation: string; noGotra: boolean };
-type FormData = { members: Member[]; whatsapp: string; email: string; city: string };
+type FormData = {
+  members: Member[];
+  whatsapp: string;
+  email: string;
+  city: string;
+  addressLine1: string;
+  addressLine2: string;
+  state: string;
+  pincode: string;
+};
 
 const RELATIONS = ["Self", "Spouse", "Parent", "Child", "Other"] as const;
 
@@ -25,6 +34,10 @@ function CheckoutPage() {
     whatsapp: "",
     email: "",
     city: "",
+    addressLine1: "",
+    addressLine2: "",
+    state: "",
+    pincode: "",
   });
   const [paid, setPaid] = useState(false);
 
@@ -98,9 +111,21 @@ function CheckoutPage() {
 }
 
 function StepSankalpForm({ form, setForm, plan, onNext }: { form: FormData; setForm: React.Dispatch<React.SetStateAction<FormData>>; plan: Plan; onNext: () => void }) {
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const handleBlur = (field: string) => setTouched((t) => ({ ...t, [field]: true }));
+
   const canAddMore = form.members.length < 4;
   const membersValid = form.members.every((m) => m.name.trim() && (m.noGotra || m.gotra.trim()));
-  const valid = form.whatsapp.length >= 10 && form.email.trim() && form.city.trim() && membersValid;
+
+  const isAddress1Valid = form.addressLine1.trim().length >= 5;
+  const isStateValid = form.state.trim().length > 0;
+  const isPincodeValid = /^\d{6}$/.test(form.pincode.trim());
+
+  const address1Error = touched.addressLine1 && (!form.addressLine1.trim() ? "पता आवश्यक है" : form.addressLine1.trim().length < 5 ? "कम से कम 5 अक्षर लिखें" : "");
+  const stateError = touched.state && !form.state.trim() ? "राज्य आवश्यक है" : "";
+  const pincodeError = touched.pincode && (!form.pincode.trim() ? "पिन कोड आवश्यक है" : form.pincode.trim().length !== 6 ? "पिन कोड 6 अंकों का होना चाहिए" : "");
+
+  const valid = form.whatsapp.length >= 10 && form.email.trim() && form.city.trim() && isAddress1Valid && isStateValid && isPincodeValid && membersValid;
 
   const updateMember = (idx: number, patch: Partial<Member>) => {
     setForm((f) => ({ ...f, members: f.members.map((m, i) => (i === idx ? { ...m, ...patch } : m)) }));
@@ -214,6 +239,62 @@ function StepSankalpForm({ form, setForm, plan, onNext }: { form: FormData; setF
             onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-foreground mb-1">
+            पता (Address) <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="मकान नंबर, गली, इलाका"
+            value={form.addressLine1}
+            onChange={(e) => setForm((f) => ({ ...f, addressLine1: e.target.value }))}
+            onBlur={() => handleBlur("addressLine1")}
+            className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
+          />
+          <p className="text-xs text-muted-foreground mt-1">प्रसाद की होम डिलीवरी इसी पते पर की जाएगी।</p>
+          {address1Error && <p className="text-xs text-destructive mt-1">{address1Error}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-foreground mb-1">
+            पता जारी (Landmark, Area)
+          </label>
+          <input
+            type="text"
+            placeholder=""
+            value={form.addressLine2}
+            onChange={(e) => setForm((f) => ({ ...f, addressLine2: e.target.value }))}
+            className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-foreground mb-1">
+            राज्य (State) <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="जैसे — Rajasthan"
+            value={form.state}
+            onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
+            onBlur={() => handleBlur("state")}
+            className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
+          />
+          {stateError && <p className="text-xs text-destructive mt-1">{stateError}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-foreground mb-1">
+            पिन कोड (Pincode) <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="302001"
+            value={form.pincode}
+            onChange={(e) => setForm((f) => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+            onBlur={() => handleBlur("pincode")}
+            className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
+          />
+          {pincodeError && <p className="text-xs text-destructive mt-1">{pincodeError}</p>}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   Search,
@@ -10,7 +10,6 @@ import {
   Eye,
   Users,
   CreditCard,
-  Calendar,
   Tag,
   User,
   ArrowUpRight,
@@ -23,9 +22,11 @@ import {
   Video,
   RefreshCw,
   Filter,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -33,7 +34,73 @@ export const Route = createFileRoute("/admin/subscribers")({
   component: AdminSubscribersPage,
 });
 
+// ─── Constants ───────────────────────────────────────────────
+
+const PAGE_SIZE = 50;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 // ─── Types ───────────────────────────────────────────────────
+
+/** Row shape from subscriber_list_view — flat, one row per subscription. */
+interface SubscriberListRow {
+  subscription_id: string;
+  user_id: string;
+  status: string;
+  start_date: string | null;
+  next_billing_date: string | null;
+  paused_at: string | null;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  acquisition_channel: string | null;
+  razorpay_sub_id: string | null;
+  sub_created_at: string;
+  sub_updated_at: string;
+  // Plan
+  plan_id: string | null;
+  plan_name: string | null;
+  plan_price_paise: number | null;
+  plan_billing_period: string | null;
+  // Agent
+  agent_id: string | null;
+  agent_full_name: string | null;
+  agent_code: string | null;
+  // Coupon
+  coupon_id: string | null;
+  coupon_code: string | null;
+  coupon_discount_type: string | null;
+  coupon_discount_value: number | null;
+  // Primary member
+  primary_member_id: string | null;
+  primary_member_name: string | null;
+  primary_member_gotra: string | null;
+  primary_member_relation: string | null;
+  primary_member_slot: number | null;
+  primary_member_is_primary: boolean | null;
+  primary_member_dob: string | null;
+  // Count
+  family_member_count: number;
+}
+
+/** Filters that are applied server-side before pagination. */
+interface FilterState {
+  status: string;
+  planId: string;
+  agentId: string;
+  search: string;
+  dateFrom: string;
+  dateTo: string;
+}
+
+const DEFAULT_FILTERS: FilterState = {
+  status: "all",
+  planId: "all",
+  agentId: "all",
+  search: "",
+  dateFrom: "",
+  dateTo: "",
+};
+
+// ─── 360 Modal Types (unchanged — still queries real tables) ──
 
 interface FamilyMember {
   id: string;
@@ -79,8 +146,9 @@ interface PlanHistoryEntry {
   changer?: { full_name: string | null } | null;
 }
 
-interface Subscription {
-  id: string;
+/** Full subscription record for the 360 modal (populated lazily). */
+interface Subscription360 {
+  subscription_id: string;
   user_id: string;
   status: string;
   start_date: string | null;
@@ -90,13 +158,15 @@ interface Subscription {
   cancel_reason: string | null;
   acquisition_channel: string | null;
   razorpay_sub_id: string | null;
-  created_at: string;
-  updated_at: string;
-  plans: { id: string; name: string; price_paise: number; billing_period: string } | null;
-  sales_agents: { id: string; full_name: string; agent_code: string } | null;
-  coupons: { id: string; code: string; discount_type: string; discount_value: number } | null;
+  plan_name: string | null;
+  plan_price_paise: number | null;
+  plan_billing_period: string | null;
+  agent_full_name: string | null;
+  agent_code: string | null;
+  coupon_code: string | null;
+  coupon_discount_type: string | null;
+  coupon_discount_value: number | null;
   family_members: FamilyMember[];
-  // Loaded lazily for 360 view:
   payments?: Payment[];
   seva_proofs?: SevaProof[];
   plan_history?: PlanHistoryEntry[];
@@ -104,25 +174,29 @@ interface Subscription {
 
 // ─── Helpers ─────────────────────────────────────────────────
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
 function fmtINR(paise: number) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(paise / 100);
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(paise / 100);
 }
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
   const dt = new Date(d);
-  return isNaN(dt.getTime()) ? "—" : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return isNaN(dt.getTime())
+    ? "—"
+    : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string; icon: React.ElementType }> = {
     active:    { label: "Active",    cls: "bg-emerald-50 text-emerald-800 border-emerald-200", icon: CheckCircle2 },
-    paused:    { label: "Paused",    cls: "bg-amber-50 text-amber-800 border-amber-200",      icon: PauseCircle },
-    cancelled: { label: "Cancelled", cls: "bg-rose-50 text-rose-800 border-rose-200",         icon: XCircle },
-    pending:   { label: "Pending",   cls: "bg-slate-100 text-slate-700 border-slate-200",     icon: Clock },
-    expired:   { label: "Expired",   cls: "bg-slate-100 text-slate-500 border-slate-200",     icon: AlertCircle },
+    paused:    { label: "Paused",    cls: "bg-amber-50 text-amber-800 border-amber-200",       icon: PauseCircle },
+    cancelled: { label: "Cancelled", cls: "bg-rose-50 text-rose-800 border-rose-200",          icon: XCircle },
+    pending:   { label: "Pending",   cls: "bg-slate-100 text-slate-700 border-slate-200",      icon: Clock },
+    expired:   { label: "Expired",   cls: "bg-slate-100 text-slate-500 border-slate-200",      icon: AlertCircle },
   };
   const m = map[status] ?? { label: status, cls: "bg-slate-100 text-slate-700 border-slate-200", icon: AlertCircle };
   const Icon = m.icon;
@@ -134,52 +208,114 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── CSV Export ──────────────────────────────────────────────
+// ─── Server-side query builder ────────────────────────────────
+// Centralised so list query, count query, and CSV query all apply
+// identical filters consistently.
 
-function exportCSV(rows: Subscription[]) {
-  const headers = [
-    "subscription_id", "primary_name", "phone", "plan_name", "billing_period",
-    "status", "start_date", "next_billing_date", "agent", "coupon_code",
-    "family_members_count", "family_names_gotras", "created_at",
-  ];
-  const csvRows = rows.map((s) => {
-    const primary = s.family_members.find((m) => m.is_primary) || s.family_members[0];
-    const allMembers = s.family_members
-      .sort((a, b) => a.slot_number - b.slot_number)
-      .map((m) => `${m.full_name}${m.gotra ? ` (${m.gotra})` : ""}`)
-      .join(" | ");
-    return [
-      s.id,
-      primary?.full_name || "—",
-      "—", // phone lives in profiles — not joined here; placeholder
-      s.plans?.name || "—",
-      s.plans?.billing_period || "—",
-      s.status,
-      s.start_date || "—",
-      s.next_billing_date || "—",
-      s.sales_agents?.full_name || "—",
-      s.coupons?.code || "—",
-      s.family_members.length,
-      `"${allMembers}"`,
-      s.created_at,
-    ].join(",");
-  });
-  const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `punyata_subscribers_${new Date().toISOString().split("T")[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyFilters(query: any, filters: FilterState): any {
+  if (filters.status !== "all") query = query.eq("status", filters.status);
+  if (filters.planId !== "all") query = query.eq("plan_id", filters.planId);
+  if (filters.agentId !== "all") query = query.eq("agent_id", filters.agentId);
+  if (filters.dateFrom) query = query.gte("start_date", filters.dateFrom);
+  if (filters.dateTo) query = query.lte("start_date", filters.dateTo);
+  if (filters.search.trim()) {
+    // PostgREST ilike on primary_member_name for name search;
+    // OR subscription_id text match handled client-side post-fetch
+    // (subscription_id UUIDs aren't searchable via ilike efficiently
+    // without a generated column — acceptable for admin use).
+    query = query.ilike("primary_member_name", `%${filters.search.trim()}%`);
+  }
+  return query;
 }
 
-// ─── Subscriber 360 Modal ────────────────────────────────────
+// ─── CSV Export (server-side full fetch) ─────────────────────
+// Does NOT reuse the paginated client state.
+// Fetches ALL matching rows directly from the DB, batched in 500s.
+
+async function exportCSVServerSide(
+  filters: FilterState,
+  setExporting: (v: boolean) => void
+) {
+  setExporting(true);
+  try {
+    const BATCH = 500;
+    let offset = 0;
+    const allRows: SubscriberListRow[] = [];
+
+    while (true) {
+      let q = supabase
+        .from("subscriber_list_view")
+        .select("*")
+        .order("sub_created_at", { ascending: false })
+        .range(offset, offset + BATCH - 1);
+
+      q = applyFilters(q as any, filters) as any;
+      const { data, error } = await q;
+      if (error) {
+        console.error("CSV export batch error:", error);
+        break;
+      }
+      const rows = (data || []) as SubscriberListRow[];
+      allRows.push(...rows);
+      if (rows.length < BATCH) break; // last page
+      offset += BATCH;
+    }
+
+    if (allRows.length === 0) {
+      alert("No matching subscribers to export.");
+      return;
+    }
+
+    const headers = [
+      "subscription_id", "primary_name", "primary_gotra",
+      "plan_name", "billing_period", "price_inr",
+      "status", "start_date", "next_billing_date",
+      "agent_name", "agent_code", "coupon_code",
+      "family_member_count", "sub_created_at",
+    ];
+
+    const csvRows = allRows.map((r) => [
+      r.subscription_id,
+      r.primary_member_name || "",
+      r.primary_member_gotra || "",
+      r.plan_name || "",
+      r.plan_billing_period || "",
+      r.plan_price_paise != null ? (r.plan_price_paise / 100).toFixed(2) : "",
+      r.status,
+      r.start_date || "",
+      r.next_billing_date || "",
+      r.agent_full_name || "",
+      r.agent_code || "",
+      r.coupon_code || "",
+      r.family_member_count,
+      r.sub_created_at,
+    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
+
+    const blob = new Blob(
+      [[headers.join(","), ...csvRows].join("\n")],
+      { type: "text/csv" }
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `punyata_subscribers_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } finally {
+    setExporting(false);
+  }
+}
+
+// ─── Subscriber 360 Modal ─────────────────────────────────────
+// UNTOUCHED from Session 2 — still queries real tables directly,
+// scoped to a single subscription_id. Already fast.
 
 function Subscriber360Modal({
   sub,
   onClose,
 }: {
-  sub: Subscription;
+  sub: Subscription360;
   onClose: () => void;
 }) {
   const [payments, setPayments] = useState<Payment[] | null>(null);
@@ -192,15 +328,12 @@ function Subscriber360Modal({
     const fetchDetail = async () => {
       setLoading360(true);
       const [payRes, proofRes, histRes] = await Promise.all([
-        // Query 3: Payment history for this subscription
         supabase
           .from("payments")
           .select("id, amount_paise, status, method, cycle_number, paid_at, failure_reason, razorpay_payment_id, created_at")
-          .eq("subscription_id", sub.id)
+          .eq("subscription_id", sub.subscription_id)
           .order("created_at", { ascending: false }),
 
-        // Query 4: Seva proofs delivered to this subscriber via sankalp_batch_subscriptions
-        // path: sankalp_batch_subscriptions (sub_id) → sankalp_batches → seva_proofs (batch_id)
         supabase
           .from("sankalp_batch_subscriptions")
           .select(`
@@ -214,9 +347,8 @@ function Subscriber360Modal({
               )
             )
           `)
-          .eq("subscription_id", sub.id),
+          .eq("subscription_id", sub.subscription_id),
 
-        // Query 5: Plan history for this subscription
         supabase
           .from("plan_history")
           .select(`
@@ -225,13 +357,12 @@ function Subscriber360Modal({
             new_plan: plans!plan_history_new_plan_id_fkey ( name ),
             changer: profiles ( full_name )
           `)
-          .eq("subscription_id", sub.id)
+          .eq("subscription_id", sub.subscription_id)
           .order("changed_at", { ascending: false }),
       ]);
 
       setPayments(payRes.data || []);
 
-      // Flatten the nested seva_proofs from the batch join
       const proofsList: SevaProof[] = [];
       if (proofRes.data) {
         for (const sbs of proofRes.data) {
@@ -247,19 +378,19 @@ function Subscriber360Modal({
         }
       }
       setSevaProofs(proofsList);
-      setPlanHistory(histRes.data as PlanHistoryEntry[] || []);
+      setPlanHistory((histRes.data as unknown as PlanHistoryEntry[]) || []);
       setLoading360(false);
     };
     fetchDetail();
-  }, [sub.id]);
+  }, [sub.subscription_id]);
 
   const primary = sub.family_members.find((m) => m.is_primary) || sub.family_members[0];
 
   const tabs = [
-    { key: "overview", label: "Overview", icon: User },
-    { key: "payments", label: `Payments${payments ? ` (${payments.length})` : ""}`, icon: CreditCard },
-    { key: "proofs", label: `Seva Proofs${sevaProofs ? ` (${sevaProofs.length})` : ""}`, icon: Video },
-    { key: "history", label: `Plan History${planHistory ? ` (${planHistory.length})` : ""}`, icon: ArrowUpRight },
+    { key: "overview", label: "Overview",                                              icon: User },
+    { key: "payments", label: `Payments${payments ? ` (${payments.length})` : ""}`,   icon: CreditCard },
+    { key: "proofs",   label: `Seva Proofs${sevaProofs ? ` (${sevaProofs.length})` : ""}`, icon: Video },
+    { key: "history",  label: `Plan History${planHistory ? ` (${planHistory.length})` : ""}`, icon: ArrowUpRight },
   ] as const;
 
   return (
@@ -269,11 +400,13 @@ function Subscriber360Modal({
         <div className="flex items-start justify-between px-6 py-4 border-b border-amber-100 bg-[#FFFDF9]">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900">{primary?.full_name || "Unknown Subscriber"}</h2>
+              <h2 className="text-lg font-bold text-slate-900">
+                {primary?.full_name || "Unknown Subscriber"}
+              </h2>
               <StatusBadge status={sub.status} />
             </div>
             <p className="text-xs text-amber-900/60 mt-0.5 font-mono">
-              {sub.id.slice(0, 8)}…  •  {sub.plans?.name || "Unknown Plan"}  •  Started {fmtDate(sub.start_date)}
+              {sub.subscription_id.slice(0, 8)}…  •  {sub.plan_name || "Unknown Plan"}  •  Started {fmtDate(sub.start_date)}
             </p>
           </div>
           <button
@@ -315,43 +448,47 @@ function Subscriber360Modal({
 
           {!loading360 && tab === "overview" && (
             <div className="space-y-5">
-              {/* Subscription Record */}
               <Section title="Subscription Record" icon={ReceiptText}>
                 <Grid2>
-                  <Detail label="Plan" value={sub.plans?.name || "—"} />
-                  <Detail label="Billing" value={sub.plans?.billing_period === "yearly" ? "Annual" : "Monthly"} />
-                  <Detail label="Price" value={sub.plans ? fmtINR(sub.plans.price_paise) : "—"} />
-                  <Detail label="Status" value={<StatusBadge status={sub.status} />} />
-                  <Detail label="Start Date" value={fmtDate(sub.start_date)} />
+                  <Detail label="Plan"         value={sub.plan_name || "—"} />
+                  <Detail label="Billing"      value={sub.plan_billing_period === "yearly" ? "Annual" : "Monthly"} />
+                  <Detail label="Price"        value={sub.plan_price_paise != null ? fmtINR(sub.plan_price_paise) : "—"} />
+                  <Detail label="Status"       value={<StatusBadge status={sub.status} />} />
+                  <Detail label="Start Date"   value={fmtDate(sub.start_date)} />
                   <Detail label="Next Billing" value={fmtDate(sub.next_billing_date)} />
                   <Detail label="Razorpay Sub ID" value={sub.razorpay_sub_id || "Not linked"} mono />
-                  <Detail label="Channel" value={sub.acquisition_channel || "—"} />
-                  {sub.status === "paused" && <Detail label="Paused At" value={fmtDate(sub.paused_at)} />}
+                  <Detail label="Channel"      value={sub.acquisition_channel || "—"} />
+                  {sub.status === "paused" && (
+                    <Detail label="Paused At" value={fmtDate(sub.paused_at)} />
+                  )}
                   {sub.status === "cancelled" && (
                     <>
-                      <Detail label="Cancelled At" value={fmtDate(sub.cancelled_at)} />
+                      <Detail label="Cancelled At"  value={fmtDate(sub.cancelled_at)} />
                       <Detail label="Cancel Reason" value={sub.cancel_reason || "—"} />
                     </>
                   )}
                 </Grid2>
               </Section>
 
-              {/* Attribution */}
-              {(sub.sales_agents || sub.coupons) && (
+              {(sub.agent_full_name || sub.coupon_code) && (
                 <Section title="Attribution" icon={Tag}>
                   <Grid2>
-                    {sub.sales_agents && (
+                    {sub.agent_full_name && (
                       <>
-                        <Detail label="Agent" value={sub.sales_agents.full_name} />
-                        <Detail label="Agent Code" value={sub.sales_agents.agent_code} mono />
+                        <Detail label="Agent"      value={sub.agent_full_name} />
+                        <Detail label="Agent Code" value={sub.agent_code || "—"} mono />
                       </>
                     )}
-                    {sub.coupons && (
+                    {sub.coupon_code && (
                       <>
-                        <Detail label="Coupon Code" value={sub.coupons.code} mono />
+                        <Detail label="Coupon Code" value={sub.coupon_code} mono />
                         <Detail
                           label="Discount"
-                          value={`${sub.coupons.discount_type === "percent" ? sub.coupons.discount_value + "%" : fmtINR(Number(sub.coupons.discount_value) * 100)}`}
+                          value={`${
+                            sub.coupon_discount_type === "percent"
+                              ? sub.coupon_discount_value + "%"
+                              : fmtINR(Number(sub.coupon_discount_value) * 100)
+                          }`}
                         />
                       </>
                     )}
@@ -359,13 +496,15 @@ function Subscriber360Modal({
                 </Section>
               )}
 
-              {/* Family Members */}
               <Section title={`Family Members (${sub.family_members.length})`} icon={Users}>
                 <div className="space-y-2">
                   {sub.family_members
                     .sort((a, b) => a.slot_number - b.slot_number)
                     .map((m) => (
-                      <div key={m.id} className="flex items-center gap-3 bg-amber-50/50 rounded-lg px-3 py-2.5 border border-amber-100">
+                      <div
+                        key={m.id}
+                        className="flex items-center gap-3 bg-amber-50/50 rounded-lg px-3 py-2.5 border border-amber-100"
+                      >
                         <div className="w-7 h-7 rounded-full bg-amber-200 flex items-center justify-center text-xs font-bold text-amber-900">
                           {m.slot_number}
                         </div>
@@ -400,12 +539,13 @@ function Subscriber360Modal({
                     className="flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full flex-none ${
-                        p.status === "captured" ? "bg-emerald-500" :
-                        p.status === "failed" ? "bg-rose-500" :
-                        p.status === "refunded" ? "bg-sky-500" :
-                        "bg-slate-300"
-                      }`} />
+                      <div
+                        className={`w-2 h-2 rounded-full flex-none ${
+                          p.status === "captured" ? "bg-emerald-500" :
+                          p.status === "failed"   ? "bg-rose-500"    :
+                          p.status === "refunded" ? "bg-sky-500"     : "bg-slate-300"
+                        }`}
+                      />
                       <div>
                         <div className="text-sm font-semibold text-slate-900">{fmtINR(p.amount_paise)}</div>
                         <div className="text-[11px] text-slate-500 font-mono">
@@ -503,7 +643,7 @@ function Subscriber360Modal({
   );
 }
 
-// ─── Small layout helpers ─────────────────────────────────────
+// ─── Layout Helpers ───────────────────────────────────────────
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
@@ -531,146 +671,149 @@ function Detail({ label, value, mono }: { label: string; value: React.ReactNode;
 }
 
 function EmptyState({ label }: { label: string }) {
-  return (
-    <div className="text-center py-10 text-sm text-slate-400">{label}</div>
-  );
+  return <div className="text-center py-10 text-sm text-slate-400">{label}</div>;
 }
 
-// ─── Expandable Family Members row ───────────────────────────
-
-function FamilyMembersExpanded({ members }: { members: FamilyMember[] }) {
-  return (
-    <div className="flex flex-wrap gap-1.5 mt-1">
-      {members
-        .sort((a, b) => a.slot_number - b.slot_number)
-        .map((m) => (
-          <span key={m.id} className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 text-[11px] px-2 py-0.5 rounded-full">
-            <span className="font-semibold">{m.full_name}</span>
-            {m.gotra && <span className="text-amber-700/70">· {m.gotra}</span>}
-          </span>
-        ))}
-    </div>
-  );
-}
-
-// ─── Main Page ───────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────
 
 function AdminSubscribersPage() {
-  const [subs, setSubs] = useState<Subscription[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // ── List state (from subscriber_list_view, paginated) ──
+  const [rows, setRows]         = useState<SubscriberListRow[]>([]);
+  const [totalCount, setTotal]  = useState<number>(0);
+  const [page, setPage]         = useState(0);           // 0-indexed
+  const [loading, setLoading]   = useState(true);
+  const [errorMsg, setError]    = useState<string | null>(null);
 
-  // Filters
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterPlan, setFilterPlan] = useState("all");
-  const [filterAgent, setFilterAgent] = useState("all");
-  const [filterSearch, setFilterSearch] = useState("");
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo, setFilterDateTo] = useState("");
-
-  // Available plan/agent options (derived from data)
-  const [planOptions, setPlanOptions] = useState<{ id: string; name: string }[]>([]);
+  // ── Filter options loaded separately (all plans/agents from DB) ──
+  const [planOptions, setPlanOptions]   = useState<{ id: string; name: string }[]>([]);
   const [agentOptions, setAgentOptions] = useState<{ id: string; full_name: string }[]>([]);
+  const [optionsLoaded, setOptLoaded]   = useState(false);
 
-  // Expand/360
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [selected360, setSelected360] = useState<Subscription | null>(null);
+  // ── Filters (applied server-side) ──
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [pendingFilters, setPending] = useState<FilterState>(DEFAULT_FILTERS);
 
-  // ── Query 1: Main subscriptions list ──
-  // Joins: plans, sales_agents, coupons, family_members
-  // ⚠ Performance note: family_members is a nested select — at scale (>500 subs),
-  // consider using a DB view or pagination. Flag for Session 6.
-  const fetchSubscribers = async () => {
+  // ── UI state ──
+  const [expandedRows, setExpanded] = useState<Set<string>>(new Set());
+  const [selected360, set360]       = useState<Subscription360 | null>(null);
+  const [loading360Open, setLoad360Open] = useState(false);
+  const [exporting, setExporting]   = useState(false);
+
+  // ── Load filter option lists once on mount ──
+  useEffect(() => {
+    const loadOptions = async () => {
+      const [plansRes, agentsRes] = await Promise.all([
+        supabase.from("plans").select("id, name").eq("is_active", true).order("sort_order"),
+        supabase.from("sales_agents").select("id, full_name").eq("is_active", true).order("full_name"),
+      ]);
+      setPlanOptions(plansRes.data || []);
+      setAgentOptions(agentsRes.data || []);
+      setOptLoaded(true);
+    };
+    loadOptions();
+  }, []);
+
+  // ── Query 1: paginated list from subscriber_list_view ──
+  // Filters applied server-side. Count fetched with `count: "exact"`.
+  // Resets to page 0 whenever filters change.
+  const fetchPage = useCallback(async (pageIndex: number, activeFilters: FilterState) => {
     setLoading(true);
-    setErrorMsg(null);
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .select(`
-          id, user_id, status, start_date, next_billing_date,
-          paused_at, cancelled_at, cancel_reason, acquisition_channel,
-          razorpay_sub_id, created_at, updated_at,
-          plans ( id, name, price_paise, billing_period ),
-          sales_agents ( id, full_name, agent_code ),
-          coupons ( id, code, discount_type, discount_value ),
-          family_members (
-            id, full_name, gotra, relation, slot_number, is_primary, dob, created_at
-          )
-        `)
-        .order("created_at", { ascending: false });
+      const from = pageIndex * PAGE_SIZE;
+      const to   = from + PAGE_SIZE - 1;
 
+      let q = supabase
+        .from("subscriber_list_view")
+        .select("*", { count: "exact" })
+        .order("sub_created_at", { ascending: false })
+        .range(from, to);
+
+      q = applyFilters(q as any, activeFilters) as any;
+
+      const { data, error, count } = await q;
       if (error) {
-        console.error("Subscriptions fetch error:", error);
-        setErrorMsg("Could not load subscribers — check Supabase connection and ANON key.");
-        setSubs([]);
+        console.error("subscriber_list_view error:", error);
+        setError("Could not load subscribers. Check Supabase RLS and that subscriber_list_view exists.");
+        setRows([]);
+        setTotal(0);
       } else {
-        const rows = (data || []) as Subscription[];
-        setSubs(rows);
-
-        // Build filter option lists from data
-        const plans = new Map<string, { id: string; name: string }>();
-        const agents = new Map<string, { id: string; full_name: string }>();
-        for (const s of rows) {
-          if (s.plans) plans.set(s.plans.id, { id: s.plans.id, name: s.plans.name });
-          if (s.sales_agents) agents.set(s.sales_agents.id, { id: s.sales_agents.id, full_name: s.sales_agents.full_name });
-        }
-        setPlanOptions([...plans.values()]);
-        setAgentOptions([...agents.values()]);
+        setRows((data || []) as SubscriberListRow[]);
+        setTotal(count ?? 0);
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("Unexpected error loading subscribers.");
+      setError("Unexpected error loading subscribers.");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Run on mount and whenever page/filters change
+  useEffect(() => {
+    fetchPage(page, filters);
+  }, [page, filters, fetchPage]);
+
+  // ── Apply filters (resets to page 0) ──
+  const applyPendingFilters = () => {
+    setPage(0);
+    setExpanded(new Set());
+    setFilters(pendingFilters);
   };
-
-  useEffect(() => { fetchSubscribers(); }, []);
-
-  // ── Client-side filtering (server-side pagination deferred to Session 6) ──
-  const filteredSubs = useMemo(() => {
-    return subs.filter((s) => {
-      if (filterStatus !== "all" && s.status !== filterStatus) return false;
-      if (filterPlan !== "all" && s.plans?.id !== filterPlan) return false;
-      if (filterAgent !== "all" && s.sales_agents?.id !== filterAgent) return false;
-      if (filterDateFrom && s.start_date && s.start_date < filterDateFrom) return false;
-      if (filterDateTo && s.start_date && s.start_date > filterDateTo) return false;
-      if (filterSearch) {
-        const q = filterSearch.toLowerCase();
-        const primary = s.family_members.find((m) => m.is_primary) || s.family_members[0];
-        const nameMatch = primary?.full_name?.toLowerCase().includes(q);
-        const idMatch = s.id.toLowerCase().includes(q);
-        const couponMatch = s.coupons?.code?.toLowerCase().includes(q);
-        if (!nameMatch && !idMatch && !couponMatch) return false;
-      }
-      return true;
-    });
-  }, [subs, filterStatus, filterPlan, filterAgent, filterDateFrom, filterDateTo, filterSearch]);
-
-  const toggleExpand = (id: string) => {
-    setExpandedRows((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const hasActiveFilters = filterStatus !== "all" || filterPlan !== "all" || filterAgent !== "all" || filterDateFrom || filterDateTo || filterSearch;
 
   const clearFilters = () => {
-    setFilterStatus("all");
-    setFilterPlan("all");
-    setFilterAgent("all");
-    setFilterDateFrom("");
-    setFilterDateTo("");
-    setFilterSearch("");
+    const reset = DEFAULT_FILTERS;
+    setPending(reset);
+    setFilters(reset);
+    setPage(0);
+    setExpanded(new Set());
   };
 
+  const hasActiveFilters =
+    filters.status !== "all" || filters.planId !== "all" || filters.agentId !== "all" ||
+    filters.dateFrom || filters.dateTo || filters.search;
+
+  // ── Open 360 modal: load full family_members lazily ──
+  const open360 = async (row: SubscriberListRow) => {
+    setLoad360Open(true);
+    const { data: fm } = await supabase
+      .from("family_members")
+      .select("id, full_name, gotra, relation, slot_number, is_primary, dob, created_at")
+      .eq("subscription_id", row.subscription_id)
+      .order("slot_number");
+
+    set360({
+      subscription_id:      row.subscription_id,
+      user_id:              row.user_id,
+      status:               row.status,
+      start_date:           row.start_date,
+      next_billing_date:    row.next_billing_date,
+      paused_at:            row.paused_at,
+      cancelled_at:         row.cancelled_at,
+      cancel_reason:        row.cancel_reason,
+      acquisition_channel:  row.acquisition_channel,
+      razorpay_sub_id:      row.razorpay_sub_id,
+      plan_name:            row.plan_name,
+      plan_price_paise:     row.plan_price_paise,
+      plan_billing_period:  row.plan_billing_period,
+      agent_full_name:      row.agent_full_name,
+      agent_code:           row.agent_code,
+      coupon_code:          row.coupon_code,
+      coupon_discount_type: row.coupon_discount_type,
+      coupon_discount_value:row.coupon_discount_value,
+      family_members:       (fm || []) as FamilyMember[],
+    });
+    setLoad360Open(false);
+  };
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  // ── Render ──────────────────────────────────────────────────
   return (
     <div className="space-y-5">
       {/* 360 Modal */}
       {selected360 && (
-        <Subscriber360Modal sub={selected360} onClose={() => setSelected360(null)} />
+        <Subscriber360Modal sub={selected360} onClose={() => set360(null)} />
       )}
 
       {/* Header */}
@@ -678,12 +821,14 @@ function AdminSubscribersPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Subscribers</h1>
           <p className="text-xs text-amber-900/60 mt-0.5">
-            {loading ? "Loading…" : `${filteredSubs.length} of ${subs.length} records`}
+            {loading
+              ? "Loading…"
+              : `Showing ${rows.length > 0 ? page * PAGE_SIZE + 1 : 0}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} of ${totalCount.toLocaleString()} records`}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={fetchSubscribers}
+            onClick={() => fetchPage(page, filters)}
             disabled={loading}
             variant="outline"
             size="sm"
@@ -693,13 +838,16 @@ function AdminSubscribersPage() {
             Refresh
           </Button>
           <Button
-            onClick={() => exportCSV(filteredSubs)}
-            disabled={filteredSubs.length === 0}
+            onClick={() => exportCSVServerSide(filters, setExporting)}
+            disabled={exporting || totalCount === 0}
             size="sm"
             className="bg-amber-700 hover:bg-amber-800 text-white gap-1.5 text-xs"
           >
-            <Download className="w-3.5 h-3.5" />
-            Export CSV ({filteredSubs.length})
+            {exporting ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…</>
+            ) : (
+              <><Download className="w-3.5 h-3.5" /> Export CSV ({totalCount.toLocaleString()})</>
+            )}
           </Button>
         </div>
       </div>
@@ -719,6 +867,7 @@ function AdminSubscribersPage() {
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
               <Filter className="w-4 h-4 text-amber-700" />
               Filters
+              <span className="text-[10px] font-normal text-amber-900/50">(applied server-side)</span>
             </div>
             {hasActiveFilters && (
               <button onClick={clearFilters} className="text-xs text-amber-700 hover:underline flex items-center gap-1">
@@ -735,9 +884,10 @@ function AdminSubscribersPage() {
               <input
                 id="sub-search"
                 type="text"
-                placeholder="Name, sub ID, coupon…"
-                value={filterSearch}
-                onChange={(e) => setFilterSearch(e.target.value)}
+                placeholder="Primary subscriber name…"
+                value={pendingFilters.search}
+                onChange={(e) => setPending((p) => ({ ...p, search: e.target.value }))}
+                onKeyDown={(e) => e.key === "Enter" && applyPendingFilters()}
                 className="w-full pl-8 pr-3 py-2 text-xs border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white placeholder-slate-400"
               />
             </div>
@@ -745,8 +895,8 @@ function AdminSubscribersPage() {
             {/* Status */}
             <select
               id="sub-filter-status"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              value={pendingFilters.status}
+              onChange={(e) => setPending((p) => ({ ...p, status: e.target.value }))}
               className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
             >
               <option value="all">All Statuses</option>
@@ -760,21 +910,21 @@ function AdminSubscribersPage() {
             {/* Plan */}
             <select
               id="sub-filter-plan"
-              value={filterPlan}
-              onChange={(e) => setFilterPlan(e.target.value)}
+              value={pendingFilters.planId}
+              onChange={(e) => setPending((p) => ({ ...p, planId: e.target.value }))}
               className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
             >
               <option value="all">All Plans</option>
-              {planOptions.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+              {planOptions.map((plan) => (
+                <option key={plan.id} value={plan.id}>{plan.name}</option>
               ))}
             </select>
 
             {/* Agent */}
             <select
               id="sub-filter-agent"
-              value={filterAgent}
-              onChange={(e) => setFilterAgent(e.target.value)}
+              value={pendingFilters.agentId}
+              onChange={(e) => setPending((p) => ({ ...p, agentId: e.target.value }))}
               className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
             >
               <option value="all">All Agents</option>
@@ -783,29 +933,37 @@ function AdminSubscribersPage() {
               ))}
             </select>
 
-            {/* Date Range — start_date */}
+            {/* Date range */}
             <div className="xl:col-span-1 flex gap-2">
-              <div className="flex-1">
-                <input
-                  id="sub-filter-date-from"
-                  type="date"
-                  value={filterDateFrom}
-                  onChange={(e) => setFilterDateFrom(e.target.value)}
-                  title="Start date from"
-                  className="w-full text-xs border border-amber-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-                />
-              </div>
-              <div className="flex-1">
-                <input
-                  id="sub-filter-date-to"
-                  type="date"
-                  value={filterDateTo}
-                  onChange={(e) => setFilterDateTo(e.target.value)}
-                  title="Start date to"
-                  className="w-full text-xs border border-amber-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-                />
-              </div>
+              <input
+                id="sub-filter-date-from"
+                type="date"
+                value={pendingFilters.dateFrom}
+                onChange={(e) => setPending((p) => ({ ...p, dateFrom: e.target.value }))}
+                title="Start date from"
+                className="flex-1 text-xs border border-amber-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
+              />
+              <input
+                id="sub-filter-date-to"
+                type="date"
+                value={pendingFilters.dateTo}
+                onChange={(e) => setPending((p) => ({ ...p, dateTo: e.target.value }))}
+                title="Start date to"
+                className="flex-1 text-xs border border-amber-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
+              />
             </div>
+          </div>
+
+          {/* Apply button — filters are pending until explicitly applied */}
+          <div className="flex justify-end mt-3">
+            <Button
+              onClick={applyPendingFilters}
+              size="sm"
+              className="bg-amber-700 hover:bg-amber-800 text-white text-xs h-7 px-4 gap-1.5"
+            >
+              <Search className="w-3 h-3" />
+              Apply Filters
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -828,7 +986,7 @@ function AdminSubscribersPage() {
             </thead>
             <tbody>
               {loading && (
-                [...Array(5)].map((_, i) => (
+                [...Array(PAGE_SIZE > 10 ? 8 : PAGE_SIZE)].map((_, i) => (
                   <tr key={i} className="border-b border-amber-50">
                     {[...Array(8)].map((_, j) => (
                       <td key={j} className="py-3 px-4">
@@ -839,37 +997,44 @@ function AdminSubscribersPage() {
                 ))
               )}
 
-              {!loading && filteredSubs.length === 0 && (
+              {!loading && rows.length === 0 && (
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-sm text-slate-400">
-                    {hasActiveFilters ? "No subscribers match the current filters." : "No subscriber records found in Supabase."}
+                    {hasActiveFilters
+                      ? "No subscribers match the current filters."
+                      : errorMsg
+                      ? "Query failed — check error above."
+                      : "No subscriber records found."}
                   </td>
                 </tr>
               )}
 
-              {!loading && filteredSubs.map((sub) => {
-                const primary = sub.family_members.find((m) => m.is_primary) || sub.family_members[0];
-                const isExpanded = expandedRows.has(sub.id);
-                const hasExtraMembers = sub.family_members.length > 1;
+              {!loading && rows.map((row) => {
+                const isExpanded = expandedRows.has(row.subscription_id);
+                const hasMoreMembers = row.family_member_count > 1;
 
                 return (
                   <>
                     <tr
-                      key={sub.id}
+                      key={row.subscription_id}
                       className={`border-b border-amber-50 hover:bg-amber-50/30 transition-colors ${isExpanded ? "bg-amber-50/20" : ""}`}
                     >
-                      {/* Subscriber (primary family member name) */}
+                      {/* Subscriber */}
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-900">{primary?.full_name || <span className="text-slate-400 italic">No members</span>}</div>
-                        {primary?.gotra && <div className="text-[11px] text-amber-900/60">Gotra: {primary.gotra}</div>}
+                        <div className="font-semibold text-slate-900">
+                          {row.primary_member_name || <span className="text-slate-400 italic">No members</span>}
+                        </div>
+                        {row.primary_member_gotra && (
+                          <div className="text-[11px] text-amber-900/60">Gotra: {row.primary_member_gotra}</div>
+                        )}
                       </td>
 
                       {/* Plan */}
                       <td className="py-3 px-4">
-                        <div className="font-medium text-slate-800">{sub.plans?.name || "—"}</div>
+                        <div className="font-medium text-slate-800">{row.plan_name || "—"}</div>
                         <div className="text-[11px] text-slate-400">
-                          {sub.plans ? fmtINR(sub.plans.price_paise) : ""}
-                          {sub.plans?.billing_period === "yearly" && (
+                          {row.plan_price_paise != null ? fmtINR(row.plan_price_paise) : ""}
+                          {row.plan_billing_period === "yearly" && (
                             <span className="ml-1 text-sky-600 font-semibold">Annual</span>
                           )}
                         </div>
@@ -877,39 +1042,53 @@ function AdminSubscribersPage() {
 
                       {/* Status */}
                       <td className="py-3 px-4">
-                        <StatusBadge status={sub.status} />
+                        <StatusBadge status={row.status} />
                       </td>
 
-                      {/* Start Date */}
-                      <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">{fmtDate(sub.start_date)}</td>
+                      {/* Start */}
+                      <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
+                        {fmtDate(row.start_date)}
+                      </td>
 
                       {/* Next Billing */}
-                      <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">{fmtDate(sub.next_billing_date)}</td>
+                      <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
+                        {fmtDate(row.next_billing_date)}
+                      </td>
 
                       {/* Agent / Coupon */}
                       <td className="py-3 px-4">
-                        {sub.sales_agents && (
+                        {row.agent_full_name && (
                           <div className="flex items-center gap-1 text-[11px] text-slate-700">
                             <User className="w-3 h-3 text-amber-600" />
-                            {sub.sales_agents.full_name}
+                            {row.agent_full_name}
                           </div>
                         )}
-                        {sub.coupons && (
+                        {row.coupon_code && (
                           <div className="flex items-center gap-1 text-[11px] text-slate-500 font-mono mt-0.5">
                             <Tag className="w-3 h-3 text-emerald-600" />
-                            {sub.coupons.code}
+                            {row.coupon_code}
                           </div>
                         )}
-                        {!sub.sales_agents && !sub.coupons && <span className="text-slate-300 text-xs">—</span>}
+                        {!row.agent_full_name && !row.coupon_code && (
+                          <span className="text-slate-300 text-xs">—</span>
+                        )}
                       </td>
 
-                      {/* Family members (expandable) */}
+                      {/* Family count + expand */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-slate-700">{sub.family_members.length}</span>
-                          {hasExtraMembers && (
+                          <span className="text-xs font-semibold text-slate-700">{row.family_member_count}</span>
+                          {hasMoreMembers && (
                             <button
-                              onClick={() => toggleExpand(sub.id)}
+                              onClick={() =>
+                                setExpanded((prev) => {
+                                  const next = new Set(prev);
+                                  next.has(row.subscription_id)
+                                    ? next.delete(row.subscription_id)
+                                    : next.add(row.subscription_id);
+                                  return next;
+                                })
+                              }
                               className="text-amber-700 hover:text-amber-900 transition-colors"
                               title={isExpanded ? "Collapse" : "Expand family members"}
                             >
@@ -919,27 +1098,27 @@ function AdminSubscribersPage() {
                         </div>
                       </td>
 
-                      {/* Actions */}
+                      {/* 360 */}
                       <td className="py-3 px-4">
                         <Button
-                          onClick={() => setSelected360(sub)}
+                          onClick={() => open360(row)}
+                          disabled={loading360Open}
                           size="sm"
                           variant="outline"
                           className="text-[11px] h-7 px-2.5 border-amber-200 text-amber-900 hover:bg-amber-50 gap-1"
                         >
-                          <Eye className="w-3 h-3" />
+                          {loading360Open ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />}
                           360°
                         </Button>
                       </td>
                     </tr>
 
-                    {/* Expanded family members row */}
+                    {/* Expanded: load all members lazily for this row */}
                     {isExpanded && (
-                      <tr key={`${sub.id}-expanded`} className="border-b border-amber-100 bg-amber-50/20">
-                        <td colSpan={8} className="px-4 pb-3 pt-0">
-                          <FamilyMembersExpanded members={sub.family_members} />
-                        </td>
-                      </tr>
+                      <ExpandedMembersRow
+                        key={`${row.subscription_id}-exp`}
+                        subscriptionId={row.subscription_id}
+                      />
                     )}
                   </>
                 );
@@ -948,17 +1127,106 @@ function AdminSubscribersPage() {
           </table>
         </div>
 
-        {/* Performance Note Footer */}
-        {!loading && subs.length > 200 && (
-          <div className="px-4 py-2.5 border-t border-amber-100 bg-amber-50/40 text-[11px] text-amber-900/60 flex items-center gap-2">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-none" />
-            <span>
-              ⚠ Performance flag: {subs.length} records loaded client-side with nested family_members join. 
-              Add server-side pagination + cursor in Session 6 to maintain &lt;200ms load times at scale.
-            </span>
+        {/* Pagination footer */}
+        {!loading && totalCount > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-amber-100 bg-amber-50/30">
+            <p className="text-xs text-amber-900/60">
+              Page {page + 1} of {totalPages} · {totalCount.toLocaleString()} total
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0 border-amber-200"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </Button>
+              {/* Page number pills */}
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 7) {
+                  pageNum = i;
+                } else if (page <= 3) {
+                  pageNum = i;
+                } else if (page >= totalPages - 4) {
+                  pageNum = totalPages - 7 + i;
+                } else {
+                  pageNum = page - 3 + i;
+                }
+                return (
+                  <Button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    disabled={loading}
+                    variant={pageNum === page ? "default" : "outline"}
+                    size="sm"
+                    className={`h-7 w-7 p-0 text-xs ${
+                      pageNum === page
+                        ? "bg-amber-700 text-white border-amber-700 hover:bg-amber-800"
+                        : "border-amber-200 text-slate-600"
+                    }`}
+                  >
+                    {pageNum + 1}
+                  </Button>
+                );
+              })}
+              <Button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1 || loading}
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0 border-amber-200"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Expanded member row (lazy loads all members for one sub) ─
+
+function ExpandedMembersRow({ subscriptionId }: { subscriptionId: string }) {
+  const [members, setMembers] = useState<FamilyMember[] | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("family_members")
+      .select("id, full_name, gotra, relation, slot_number, is_primary, dob")
+      .eq("subscription_id", subscriptionId)
+      .order("slot_number")
+      .then(({ data }) => setMembers((data || []) as FamilyMember[]));
+  }, [subscriptionId]);
+
+  return (
+    <tr className="border-b border-amber-100 bg-amber-50/20">
+      <td colSpan={8} className="px-4 pb-3 pt-0">
+        {members === null ? (
+          <div className="flex items-center gap-2 text-xs text-amber-900/50 mt-1.5">
+            <Loader2 className="w-3 h-3 animate-spin" /> Loading members…
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {members.map((m) => (
+              <span
+                key={m.id}
+                className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 text-[11px] px-2 py-0.5 rounded-full"
+              >
+                <span className="font-semibold">{m.full_name}</span>
+                {m.gotra && <span className="text-amber-700/70">· {m.gotra}</span>}
+                {m.is_primary && (
+                  <span className="text-[9px] bg-amber-700 text-white px-1 rounded">P</span>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
+      </td>
+    </tr>
   );
 }

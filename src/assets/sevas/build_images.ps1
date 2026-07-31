@@ -1,6 +1,6 @@
 Add-Type -AssemblyName System.Drawing
 
-function Build-Seva-Badge {
+function New-SevaBadge {
     param(
         [string]$inputPath,
         [string]$outputPath,
@@ -82,9 +82,9 @@ $titleGau      = "$([char]0x0928)$([char]0x093F)$([char]0x0930)$([char]0x0902)$(
 $titleDeepdaan = "$([char]0x0938)$([char]0x0930)$([char]0x094B)$([char]0x0935)$([char]0x0930) $([char]0x0926)$([char]0x0940)$([char]0x092A)$([char]0x0926)$([char]0x093E)$([char]0x0928)"
 $subtitle      = "$([char]0x0906)$([char]0x092A)$([char]0x0915)$([char]0x0947) $([char]0x092A)$([char]0x0930)$([char]0x093F)$([char]0x0935)$([char]0x093E)$([char]0x0930) $([char]0x0915)$([char]0x0947) $([char]0x0932)$([char]0x093F)$([char]0x090F) $([char]0x0938)$([char]0x0940)$([char]0x0927)$([char]0x093E) $([char]0x092A)$([char]0x0941)$([char]0x0923)$([char]0x094D)$([char]0x092F) $([char]0x092A)$([char]0x094D)$([char]0x0930)$([char]0x0935)$([char]0x093E)$([char]0x0939)"
 
-Build-Seva-Badge -inputPath 'src/assets/plans/varsh_2.png' -outputPath 'src/assets/sevas/sadhu_bhojan.png' -titleText $titleSadhu -subtitleText $subtitle
-Build-Seva-Badge -inputPath 'src/assets/plans/grah_3.png' -outputPath 'src/assets/sevas/gau_seva.png' -titleText $titleGau -subtitleText $subtitle
-Build-Seva-Badge -inputPath 'src/assets/pushkar-ghat.jpg' -outputPath 'src/assets/sevas/sarovar_deepdaan.png' -titleText $titleDeepdaan -subtitleText $subtitle -cropTopPercent 0.22
+New-SevaBadge -inputPath 'src/assets/plans/varsh_2.png' -outputPath 'src/assets/sevas/sadhu_bhojan.png' -titleText $titleSadhu -subtitleText $subtitle
+New-SevaBadge -inputPath 'src/assets/plans/grah_3.png' -outputPath 'src/assets/sevas/gau_seva.png' -titleText $titleGau -subtitleText $subtitle
+New-SevaBadge -inputPath 'src/assets/pushkar-ghat.jpg' -outputPath 'src/assets/sevas/sarovar_deepdaan.png' -titleText $titleDeepdaan -subtitleText $subtitle -cropTopPercent 0.22
 
 # Update hero diya-aarti.jpg to use the photorealistic floating diyas of Pushkar ghat
 Copy-Item -Force 'src/assets/sevas/sarovar_deepdaan.png' 'src/assets/hero/diya-aarti.jpg'
