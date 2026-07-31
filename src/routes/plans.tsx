@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Sun as SunIcon } from "lucide-react";
+import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Sun as SunIcon, AlertTriangle, RefreshCw } from "lucide-react";
 import { ComparisonTable } from "@/components/ComparisonTable";
-import { plans, sevaList, acharyas, type Plan } from "@/lib/plans";
+import { usePublicPlans, acharyas, type Plan } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { LottieIcon } from "@/components/LottieIcon";
@@ -12,24 +12,6 @@ import giftBox from "@/assets/lottie/gift-box.json";
 import diya from "@/assets/lottie/diya.json";
 import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
 import { useTranslation } from "@/lib/translations";
-
-const planSlides: Record<string, { title: string; subtitle: string }[]> = {
-  basic: [
-    { title: "Sankalp • Aapke Naam Se", subtitle: "Har mahina naam-gotra se sankalp" },
-    { title: "Chadava • Maa Ke Charno Mein", subtitle: "Pushp aur naivedya arpan" },
-    { title: "Aarti • Divya Deepak", subtitle: "Har seva ke saath poorna aarti" },
-  ],
-  grah: [
-    { title: "Hawan • Agni Devta Ka Aashirwad", subtitle: "Vaidik mantron se grah shanti" },
-    { title: "Sundarkand Paath • Sankat Haran", subtitle: "Bigade kaam banane wala paath" },
-    { title: "Gau Seva • Gau Mata Ka Punya", subtitle: "Chara aur gud arpan" },
-  ],
-  varsh: [
-    { title: "Vanara Seva • Bajrangbali Ka Ashirwad", subtitle: "Kela evam chana arpan" },
-    { title: "Saadhu Santo Ko Bhojan • Anna Daan", subtitle: "Saadhu santon ko bhojan aur satkar" },
-    { title: "Poore Saal Ka Punya, Ek Sath", subtitle: "12 mahine ka akhand sankalp" },
-  ],
-};
 
 export const Route = createFileRoute("/plans")({
   head: () => ({
@@ -44,7 +26,13 @@ export const Route = createFileRoute("/plans")({
 const iconMap = { BookOpen, Flame, Sun: SunIcon, Wind: Heart, Heart, Users };
 
 function PlansPage() {
-  const visiblePlans = plans.filter((p) => p.isVisible !== false);
+  const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
+  const visiblePlans = (data?.plans ?? []).filter((p) => p.isVisible !== false);
+  const sevaList = data?.sevaList ?? [];
+  // Live cheapest monthly plan price for the Sundarkand Mahatmya section (no hardcoded ₹)
+  const cheapestMonthly = visiblePlans
+    .filter((p) => p.billingPeriod === "monthly")
+    .sort((a, b) => a.priceNumeric - b.priceNumeric)[0];
 
   return (
     <SiteChrome>
@@ -57,18 +45,50 @@ function PlansPage() {
           </p>
         </header>
 
-        {/* Plan cards */}
-        <section
-          className={`grid grid-cols-1 gap-5 ${
-            visiblePlans.length === 1 ? "md:grid-cols-1" :
-            visiblePlans.length === 2 ? "md:grid-cols-2" :
-            "md:grid-cols-3"
-          }`}
-        >
-          {visiblePlans.map((p) => (
-            <PlanCard key={p.id} plan={p} />
-          ))}
-        </section>
+        {/* Plan cards — live from Supabase plans + plan_sevas */}
+        {isLoading ? (
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card-soft overflow-hidden animate-pulse">
+                <div className="aspect-[4/5] bg-black/5" />
+                <div className="p-5 space-y-3">
+                  <div className="h-4 w-2/3 bg-black/10 rounded" />
+                  <div className="h-3 w-full bg-black/5 rounded" />
+                  <div className="h-3 w-5/6 bg-black/5 rounded" />
+                  <div className="h-10 w-full bg-black/10 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </section>
+        ) : isError ? (
+          <section className="card-soft border border-destructive/30 p-8 text-center space-y-3">
+            <AlertTriangle size={32} className="text-destructive mx-auto" />
+            <p className="text-sm font-semibold text-foreground">Plans abhi load nahi ho paye.</p>
+            <p className="text-xs text-muted-foreground">
+              Live plan data fetch karne mein samasya aayi. Kripya punah prayas karein.
+            </p>
+            <button
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={isRefetching ? "animate-spin" : ""} />
+              {isRefetching ? "Retrying..." : "Retry"}
+            </button>
+          </section>
+        ) : (
+          <section
+            className={`grid grid-cols-1 gap-5 ${
+              visiblePlans.length === 1 ? "md:grid-cols-1" :
+              visiblePlans.length === 2 ? "md:grid-cols-2" :
+              "md:grid-cols-3"
+            }`}
+          >
+            {visiblePlans.map((p) => (
+              <PlanCard key={p.id} plan={p} />
+            ))}
+          </section>
+        )}
 
         {/* Shared Plan Comparison Table */}
         <ComparisonTable />
@@ -90,7 +110,7 @@ function PlansPage() {
               <div className="text-xs text-white/70">सामान्य आचार्य शुल्क</div>
               <p className="text-[14px] text-white/85 leading-relaxed pt-2 border-t border-white/10">
                 इसलिए श्री हनुमान जी की कृपा से हमने संकल्प लिया — यह पुण्य हर घर तक पहुँचे। सामूहिक संकल्प के माध्यम से मात्र{" "}
-                <span className="font-bold text-[#F5A742]">₹251</span> में आपके नाम और गोत्र से सुंदरकांड पाठ।
+                <span className="font-bold text-[#F5A742]">{cheapestMonthly ? cheapestMonthly.price : "—"}</span> में आपके नाम और गोत्र से सुंदरकांड पाठ।
               </p>
             </div>
           </div>
@@ -142,7 +162,7 @@ function PlansPage() {
 
 
 
-function PlanCard({ plan }: { plan: (typeof plans)[number] }) {
+function PlanCard({ plan }: { plan: Plan }) {
   const badgeColor =
     plan.badge?.kind === "popular"
       ? "bg-gradient-to-r from-[#FDD9C3] to-[#F5A742] text-[#7A3A00]"

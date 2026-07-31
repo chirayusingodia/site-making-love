@@ -1,5 +1,16 @@
 import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Flame, Video, CreditCard, Shield, Sparkles, AlertCircle, Layers } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Flame,
+  Video,
+  CreditCard,
+  Shield,
+  Sparkles,
+  AlertCircle,
+  Layers,
+  ScrollText,
+} from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,6 +25,7 @@ function AdminLayout() {
     { label: "Overview", href: "/admin/overview", icon: LayoutDashboard },
     { label: "Subscribers", href: "/admin/subscribers", icon: Users },
     { label: "Plans & Sevas", href: "/admin/plans-sevas", icon: Layers },
+    { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText, badge: "New" },
     { label: "Sankalp Batches", href: "/admin/batches", icon: Flame, badge: "Session 4" },
     { label: "Seva Proofs", href: "/admin/proofs", icon: Video, badge: "Session 0.5" },
     { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 5" },
@@ -61,7 +73,9 @@ function AdminLayout() {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || (item.href === "/admin/overview" && pathname === "/admin");
+              const isActive =
+                pathname === item.href ||
+                (item.href === "/admin/overview" && pathname === "/admin");
               return (
                 <Link
                   key={item.href}
@@ -73,7 +87,9 @@ function AdminLayout() {
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-amber-200" : "text-amber-700/70"}`} />
+                    <Icon
+                      className={`w-4 h-4 ${isActive ? "text-amber-200" : "text-amber-700/70"}`}
+                    />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (

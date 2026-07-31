@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Plus,
 } from "lucide-react";
-import { plans, testimonials, faqs } from "@/lib/plans";
+import { usePublicPlans, faqs } from "@/lib/plans";
 import { PizzaComparison } from "@/components/PizzaComparison";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
@@ -278,7 +278,8 @@ function FamilySection() {
 
 function PlansPreview() {
   const { t } = useTranslation();
-  const visiblePlans = plans.filter((p) => p.isVisible !== false);
+  const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
+  const visiblePlans = (data?.plans ?? []).filter((p) => p.isVisible !== false);
 
   return (
     <section id="plans" className="space-y-6 scroll-mt-20">
@@ -286,6 +287,34 @@ function PlansPreview() {
         <h2 className="text-2xl font-bold">{t("nav_plans")}</h2>
         <p className="text-sm text-muted-foreground mt-1">{t("plans_sub")}</p>
       </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card-soft overflow-hidden animate-pulse">
+              <div className="aspect-video w-full bg-black/5" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 w-3/4 bg-black/10 rounded" />
+                <div className="h-3 w-full bg-black/5 rounded" />
+                <div className="h-3 w-2/3 bg-black/5 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="card-soft border border-destructive/30 p-8 text-center space-y-3">
+          <p className="text-sm font-semibold text-foreground">Plans abhi load nahi ho paye.</p>
+          <p className="text-xs text-muted-foreground">
+            Live plan data fetch karne mein samasya aayi. Kripya punah prayas karein.
+          </p>
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
+          >
+            {isRefetching ? "Retrying..." : "Retry"}
+          </button>
+        </div>
+      ) : (
       <div
         className={`grid grid-cols-1 gap-6 ${
           visiblePlans.length === 1 ? "md:grid-cols-1" :
@@ -357,6 +386,7 @@ function PlansPreview() {
           );
         })}
       </div>
+      )}
       <div className="text-center">
         <Link to="/plans" className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-full hover:bg-brand-deep transition-colors primary-btn-glow">
           See Full Plans <ArrowRight size={16} />

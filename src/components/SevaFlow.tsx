@@ -31,7 +31,7 @@ const ICON_MAP: { match: RegExp; Icon: LucideIcon; label: string }[] = [
   { match: /(दान|daan|सिंदूर|चोला|prasad)/i, Icon: Heart, label: "Daan" },
   { match: /(सुंदरकांड|sundarkand|पाठ)/i, Icon: BookOpen, label: "Sundarkand" },
   { match: /(गौ|gau|cow)/i, Icon: Cow, label: "Gau Seva" },
-  { match: /(वानर|vanara|monkey)/i, Icon: Banana, label: "Vanara" },
+  { match: /(वानर|vanara?|monkey)/i, Icon: Banana, label: "Vanara" },
   { match: /(sadhu|santo|ब्राह्मण|brahmin|भोजन|bhojan)/i, Icon: UtensilsCrossed, label: "Saadhu Santo Ko Bhojan" },
 ];
 

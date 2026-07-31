@@ -22,6 +22,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
 import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
 import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
+import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-lists'
 import { Route as AdminPlansSevasRouteImport } from './routes/admin.plans-sevas'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
 
@@ -90,6 +91,11 @@ const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
   path: '/subscribers',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSankalpListsRoute = AdminSankalpListsRouteImport.update({
+  id: '/sankalp-lists',
+  path: '/sankalp-lists',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPlansSevasRoute = AdminPlansSevasRouteImport.update({
   id: '/plans-sevas',
   path: '/plans-sevas',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
+  '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
+  '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
+  '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/sevas'
     | '/admin/overview'
     | '/admin/plans-sevas'
+    | '/admin/sankalp-lists'
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/sevas'
     | '/admin/overview'
     | '/admin/plans-sevas'
+    | '/admin/sankalp-lists'
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/sevas'
     | '/admin/overview'
     | '/admin/plans-sevas'
+    | '/admin/sankalp-lists'
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
@@ -312,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSubscribersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/sankalp-lists': {
+      id: '/admin/sankalp-lists'
+      path: '/sankalp-lists'
+      fullPath: '/admin/sankalp-lists'
+      preLoaderRoute: typeof AdminSankalpListsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/plans-sevas': {
       id: '/admin/plans-sevas'
       path: '/plans-sevas'
@@ -332,6 +351,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminOverviewRoute: typeof AdminOverviewRoute
   AdminPlansSevasRoute: typeof AdminPlansSevasRoute
+  AdminSankalpListsRoute: typeof AdminSankalpListsRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -339,6 +359,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminOverviewRoute: AdminOverviewRoute,
   AdminPlansSevasRoute: AdminPlansSevasRoute,
+  AdminSankalpListsRoute: AdminSankalpListsRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

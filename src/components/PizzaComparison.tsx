@@ -3,7 +3,8 @@ import { UtensilsCrossed } from "lucide-react";
 import { useTranslation } from "@/lib/translations";
 
 interface PizzaComparisonProps {
-  planId: "basic" | "grah" | "varsh";
+  /** Public plan id (e.g. "basic" | "grah" | "varsh" | any new plan slug) */
+  planId: string;
   price: string;
   cycle: string;
   size?: "sm" | "md" | "lg";
