@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Layers,
   ScrollText,
+  BarChart3,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +29,8 @@ function AdminLayout() {
     { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText, badge: "New" },
     { label: "Proof Upload", href: "/admin/proof-upload", icon: Flame, badge: "Session 4" },
     { label: "Seva Proofs", href: "/admin/proofs", icon: Video, badge: "Session 0.5" },
-    { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 5" },
+    { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 6" },
+    { label: "Reports", href: "/admin/reports", icon: BarChart3, badge: "Session 6" },
   ];
 
   return (

@@ -567,7 +567,7 @@ Landing ("Daan Punya Aapka, Sewa Hamari" / Punya Bank framing)
 **NEXT / CURRENT SCOPE (this is what you're picking up):**
 - **Session 4 — Proof Upload + Sankalp Batch Tracking** (most complex — Tuesday/Saturday independent batch logic, name-segment video uploads, `wa.me` stub delivery, Pandit-facing printable export)
 - **Session 5 — Sales Agents & Coupons** with commission attribution
-- **Session 6 — Payments Webhook + Financial Reports** (security-critical — HMAC verification, webhook-driven activation only)
+- ~~Session 6 — Payments Webhook + Financial Reports~~ **COMPLETE (OpenCode + Kimi K3, staging, 2026-08-01):** `/api/payments/webhook` (HMAC-SHA256 vs `RAZORPAY_WEBHOOK_SECRET`, all 7 subscription events, 3-consecutive-failure demotion to `pending`, idempotent payment upserts on `razorpay_payment_id`, audit rows with `admin_id NULL`), `/admin/payments` log, `/admin/reports` (subscriber/revenue/seva-completion/pending-sevas + CSV/PDF-via-print). Verified by `scratch/verify_webhook.ts` (64 checks). **Note:** doc above says `start_date`/`next_billing_date` are timestamptz — live schema has them as `date`; live schema also has NO `owner` role (CHECK is user/admin/agent), so `/admin/reports` is RLS-gated like every other admin page until an owner role is added by migration.
 - **Session 7 — SEO + Audit Log + Subscriber 360 Dashboard polish**
 
 **⚠️ Sessions 4 and 6 involve money and data-integrity-critical logic. Be extra rigorous: idempotency on batch locking, exact HMAC verification per Razorpay docs, no silent assumptions on ambiguous business rules — flag and ask instead.**
