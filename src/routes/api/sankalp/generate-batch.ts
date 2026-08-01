@@ -29,7 +29,7 @@ export const Route = createFileRoute("/api/sankalp/generate-batch")({
       POST: async ({ request }) => {
         const auth = await requireAdmin(request);
         if (!auth) return json({ error: "Admin auth required" }, 401);
-        const { adminId, db } = auth;
+        const { staffId, db } = auth;
 
         let date: string | undefined;
         try {
@@ -85,10 +85,7 @@ export const Route = createFileRoute("/api/sankalp/generate-batch")({
           rulesRes.error;
         if (firstErr) return json({ error: firstErr.message }, 500);
 
-        const hawanSevaIds = saturdayHawanSevaIds(
-          sevasRes.data ?? [],
-          rulesRes.data ?? [],
-        );
+        const hawanSevaIds = saturdayHawanSevaIds(sevasRes.data ?? [], rulesRes.data ?? []);
         const membership = computeBatchMembership({
           kind,
           batchDate: date,
@@ -188,7 +185,7 @@ export const Route = createFileRoute("/api/sankalp/generate-batch")({
         }
 
         await db.from("audit_logs").insert({
-          admin_id: adminId,
+          admin_id: staffId,
           action: "sankalp_batch_generated",
           entity: "sankalp_batches",
           entity_id: null,

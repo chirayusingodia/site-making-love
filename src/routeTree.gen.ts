@@ -31,7 +31,13 @@ import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
 import { Route as ApiSankalpGenerateBatchRouteImport } from './routes/api/sankalp/generate-batch'
 import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
+import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
+import { Route as ApiAdminSalesAgentsListRouteImport } from './routes/api/admin/sales-agents/list'
+import { Route as ApiAdminReportsPendingSevasRouteImport } from './routes/api/admin/reports/pending-sevas'
+import { Route as ApiAdminReportsMonthlyRouteImport } from './routes/api/admin/reports/monthly'
+import { Route as ApiAdminReportsExportRouteImport } from './routes/api/admin/reports/export'
+import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/payments/list'
 
 const SevasRoute = SevasRouteImport.update({
   id: '/sevas',
@@ -143,10 +149,42 @@ const ApiCloudinarySignUploadRoute = ApiCloudinarySignUploadRouteImport.update({
   path: '/api/cloudinary/sign-upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminOverviewFinancialsRoute =
+  ApiAdminOverviewFinancialsRouteImport.update({
+    id: '/api/admin/overview-financials',
+    path: '/api/admin/overview-financials',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminPanditBatchIdRoute = AdminPanditBatchIdRouteImport.update({
   id: '/pandit/$batchId',
   path: '/pandit/$batchId',
   getParentRoute: () => AdminRoute,
+} as any)
+const ApiAdminSalesAgentsListRoute = ApiAdminSalesAgentsListRouteImport.update({
+  id: '/api/admin/sales-agents/list',
+  path: '/api/admin/sales-agents/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminReportsPendingSevasRoute =
+  ApiAdminReportsPendingSevasRouteImport.update({
+    id: '/api/admin/reports/pending-sevas',
+    path: '/api/admin/reports/pending-sevas',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminReportsMonthlyRoute = ApiAdminReportsMonthlyRouteImport.update({
+  id: '/api/admin/reports/monthly',
+  path: '/api/admin/reports/monthly',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminReportsExportRoute = ApiAdminReportsExportRouteImport.update({
+  id: '/api/admin/reports/export',
+  path: '/api/admin/reports/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPaymentsListRoute = ApiAdminPaymentsListRouteImport.update({
+  id: '/api/admin/payments/list',
+  path: '/api/admin/payments/list',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -170,9 +208,15 @@ export interface FileRoutesByFullPath {
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
+  '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
+  '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -194,9 +238,15 @@ export interface FileRoutesByTo {
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
+  '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
+  '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -220,9 +270,15 @@ export interface FileRoutesById {
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
+  '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
+  '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -247,9 +303,15 @@ export interface FileRouteTypes {
     | '/plan/$planId'
     | '/admin/'
     | '/admin/pandit/$batchId'
+    | '/api/admin/overview-financials'
     | '/api/cloudinary/sign-upload'
     | '/api/payments/webhook'
     | '/api/sankalp/generate-batch'
+    | '/api/admin/payments/list'
+    | '/api/admin/reports/export'
+    | '/api/admin/reports/monthly'
+    | '/api/admin/reports/pending-sevas'
+    | '/api/admin/sales-agents/list'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -271,9 +333,15 @@ export interface FileRouteTypes {
     | '/plan/$planId'
     | '/admin'
     | '/admin/pandit/$batchId'
+    | '/api/admin/overview-financials'
     | '/api/cloudinary/sign-upload'
     | '/api/payments/webhook'
     | '/api/sankalp/generate-batch'
+    | '/api/admin/payments/list'
+    | '/api/admin/reports/export'
+    | '/api/admin/reports/monthly'
+    | '/api/admin/reports/pending-sevas'
+    | '/api/admin/sales-agents/list'
   id:
     | '__root__'
     | '/'
@@ -296,9 +364,15 @@ export interface FileRouteTypes {
     | '/plan/$planId'
     | '/admin/'
     | '/admin/pandit/$batchId'
+    | '/api/admin/overview-financials'
     | '/api/cloudinary/sign-upload'
     | '/api/payments/webhook'
     | '/api/sankalp/generate-batch'
+    | '/api/admin/payments/list'
+    | '/api/admin/reports/export'
+    | '/api/admin/reports/monthly'
+    | '/api/admin/reports/pending-sevas'
+    | '/api/admin/sales-agents/list'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -313,9 +387,15 @@ export interface RootRouteChildren {
   SevasRoute: typeof SevasRoute
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
+  ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
   ApiPaymentsWebhookRoute: typeof ApiPaymentsWebhookRoute
   ApiSankalpGenerateBatchRoute: typeof ApiSankalpGenerateBatchRoute
+  ApiAdminPaymentsListRoute: typeof ApiAdminPaymentsListRoute
+  ApiAdminReportsExportRoute: typeof ApiAdminReportsExportRoute
+  ApiAdminReportsMonthlyRoute: typeof ApiAdminReportsMonthlyRoute
+  ApiAdminReportsPendingSevasRoute: typeof ApiAdminReportsPendingSevasRoute
+  ApiAdminSalesAgentsListRoute: typeof ApiAdminSalesAgentsListRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -474,12 +554,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCloudinarySignUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/overview-financials': {
+      id: '/api/admin/overview-financials'
+      path: '/api/admin/overview-financials'
+      fullPath: '/api/admin/overview-financials'
+      preLoaderRoute: typeof ApiAdminOverviewFinancialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/pandit/$batchId': {
       id: '/admin/pandit/$batchId'
       path: '/pandit/$batchId'
       fullPath: '/admin/pandit/$batchId'
       preLoaderRoute: typeof AdminPanditBatchIdRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/api/admin/sales-agents/list': {
+      id: '/api/admin/sales-agents/list'
+      path: '/api/admin/sales-agents/list'
+      fullPath: '/api/admin/sales-agents/list'
+      preLoaderRoute: typeof ApiAdminSalesAgentsListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reports/pending-sevas': {
+      id: '/api/admin/reports/pending-sevas'
+      path: '/api/admin/reports/pending-sevas'
+      fullPath: '/api/admin/reports/pending-sevas'
+      preLoaderRoute: typeof ApiAdminReportsPendingSevasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reports/monthly': {
+      id: '/api/admin/reports/monthly'
+      path: '/api/admin/reports/monthly'
+      fullPath: '/api/admin/reports/monthly'
+      preLoaderRoute: typeof ApiAdminReportsMonthlyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reports/export': {
+      id: '/api/admin/reports/export'
+      path: '/api/admin/reports/export'
+      fullPath: '/api/admin/reports/export'
+      preLoaderRoute: typeof ApiAdminReportsExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/payments/list': {
+      id: '/api/admin/payments/list'
+      path: '/api/admin/payments/list'
+      fullPath: '/api/admin/payments/list'
+      preLoaderRoute: typeof ApiAdminPaymentsListRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -522,9 +644,15 @@ const rootRouteChildren: RootRouteChildren = {
   SevasRoute: SevasRoute,
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
+  ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
   ApiPaymentsWebhookRoute: ApiPaymentsWebhookRoute,
   ApiSankalpGenerateBatchRoute: ApiSankalpGenerateBatchRoute,
+  ApiAdminPaymentsListRoute: ApiAdminPaymentsListRoute,
+  ApiAdminReportsExportRoute: ApiAdminReportsExportRoute,
+  ApiAdminReportsMonthlyRoute: ApiAdminReportsMonthlyRoute,
+  ApiAdminReportsPendingSevasRoute: ApiAdminReportsPendingSevasRoute,
+  ApiAdminSalesAgentsListRoute: ApiAdminSalesAgentsListRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

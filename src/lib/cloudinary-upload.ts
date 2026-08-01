@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { callAdminApi } from "@/lib/admin-api";
 
 // Client-side Cloudinary signed upload helper.
 // Flow: browser → /api/cloudinary/sign-upload (signature)
@@ -7,6 +7,10 @@ import { supabase } from "@/lib/supabase";
 // Large video files never pass through our serverless functions
 // and never block the UI thread — progress is reported per tick.
 
+// callAdminApi now lives in @/lib/admin-api (shared by all admin
+// API callers) — re-exported here so existing imports keep working.
+export { callAdminApi };
+
 export interface SignResponse {
   cloudName: string;
   apiKey: string;
@@ -14,34 +18,6 @@ export interface SignResponse {
   folder: string;
   signature: string;
   uploadUrl: string;
-}
-
-async function getAccessToken(): Promise<string> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    throw new Error("Not signed in — admin session required.");
-  }
-  return session.access_token;
-}
-
-export async function callAdminApi<T>(
-  path: string,
-  body: Record<string, unknown>,
-): Promise<T> {
-  const token = await getAccessToken();
-  const res = await fetch(path, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
-  const data = (await res.json()) as T & { error?: string };
-  if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
-  return data;
 }
 
 export function uploadToCloudinary(
