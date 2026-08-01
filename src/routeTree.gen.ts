@@ -23,8 +23,12 @@ import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
 import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
 import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
 import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-lists'
+import { Route as AdminProofUploadRouteImport } from './routes/admin.proof-upload'
 import { Route as AdminPlansSevasRouteImport } from './routes/admin.plans-sevas'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
+import { Route as ApiSankalpGenerateBatchRouteImport } from './routes/api/sankalp/generate-batch'
+import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
+import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
 
 const SevasRoute = SevasRouteImport.update({
   id: '/sevas',
@@ -96,6 +100,11 @@ const AdminSankalpListsRoute = AdminSankalpListsRouteImport.update({
   path: '/sankalp-lists',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminProofUploadRoute = AdminProofUploadRouteImport.update({
+  id: '/proof-upload',
+  path: '/proof-upload',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPlansSevasRoute = AdminPlansSevasRouteImport.update({
   id: '/plans-sevas',
   path: '/plans-sevas',
@@ -104,6 +113,21 @@ const AdminPlansSevasRoute = AdminPlansSevasRouteImport.update({
 const AdminOverviewRoute = AdminOverviewRouteImport.update({
   id: '/overview',
   path: '/overview',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ApiSankalpGenerateBatchRoute = ApiSankalpGenerateBatchRouteImport.update({
+  id: '/api/sankalp/generate-batch',
+  path: '/api/sankalp/generate-batch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCloudinarySignUploadRoute = ApiCloudinarySignUploadRouteImport.update({
+  id: '/api/cloudinary/sign-upload',
+  path: '/api/cloudinary/sign-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPanditBatchIdRoute = AdminPanditBatchIdRouteImport.update({
+  id: '/pandit/$batchId',
+  path: '/pandit/$batchId',
   getParentRoute: () => AdminRoute,
 } as any)
 
@@ -119,11 +143,15 @@ export interface FileRoutesByFullPath {
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
+  '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -136,11 +164,15 @@ export interface FileRoutesByTo {
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
+  '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -155,11 +187,15 @@ export interface FileRoutesById {
   '/sevas': typeof SevasRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
+  '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -175,11 +211,15 @@ export interface FileRouteTypes {
     | '/sevas'
     | '/admin/overview'
     | '/admin/plans-sevas'
+    | '/admin/proof-upload'
     | '/admin/sankalp-lists'
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/admin/'
+    | '/admin/pandit/$batchId'
+    | '/api/cloudinary/sign-upload'
+    | '/api/sankalp/generate-batch'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -192,11 +232,15 @@ export interface FileRouteTypes {
     | '/sevas'
     | '/admin/overview'
     | '/admin/plans-sevas'
+    | '/admin/proof-upload'
     | '/admin/sankalp-lists'
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/admin'
+    | '/admin/pandit/$batchId'
+    | '/api/cloudinary/sign-upload'
+    | '/api/sankalp/generate-batch'
   id:
     | '__root__'
     | '/'
@@ -210,11 +254,15 @@ export interface FileRouteTypes {
     | '/sevas'
     | '/admin/overview'
     | '/admin/plans-sevas'
+    | '/admin/proof-upload'
     | '/admin/sankalp-lists'
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/admin/'
+    | '/admin/pandit/$batchId'
+    | '/api/cloudinary/sign-upload'
+    | '/api/sankalp/generate-batch'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -229,6 +277,8 @@ export interface RootRouteChildren {
   SevasRoute: typeof SevasRoute
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
+  ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
+  ApiSankalpGenerateBatchRoute: typeof ApiSankalpGenerateBatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -331,6 +381,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSankalpListsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/proof-upload': {
+      id: '/admin/proof-upload'
+      path: '/proof-upload'
+      fullPath: '/admin/proof-upload'
+      preLoaderRoute: typeof AdminProofUploadRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/plans-sevas': {
       id: '/admin/plans-sevas'
       path: '/plans-sevas'
@@ -345,23 +402,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOverviewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/sankalp/generate-batch': {
+      id: '/api/sankalp/generate-batch'
+      path: '/api/sankalp/generate-batch'
+      fullPath: '/api/sankalp/generate-batch'
+      preLoaderRoute: typeof ApiSankalpGenerateBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cloudinary/sign-upload': {
+      id: '/api/cloudinary/sign-upload'
+      path: '/api/cloudinary/sign-upload'
+      fullPath: '/api/cloudinary/sign-upload'
+      preLoaderRoute: typeof ApiCloudinarySignUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pandit/$batchId': {
+      id: '/admin/pandit/$batchId'
+      path: '/pandit/$batchId'
+      fullPath: '/admin/pandit/$batchId'
+      preLoaderRoute: typeof AdminPanditBatchIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminOverviewRoute: typeof AdminOverviewRoute
   AdminPlansSevasRoute: typeof AdminPlansSevasRoute
+  AdminProofUploadRoute: typeof AdminProofUploadRoute
   AdminSankalpListsRoute: typeof AdminSankalpListsRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminPanditBatchIdRoute: typeof AdminPanditBatchIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminOverviewRoute: AdminOverviewRoute,
   AdminPlansSevasRoute: AdminPlansSevasRoute,
+  AdminProofUploadRoute: AdminProofUploadRoute,
   AdminSankalpListsRoute: AdminSankalpListsRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminPanditBatchIdRoute: AdminPanditBatchIdRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -378,6 +460,8 @@ const rootRouteChildren: RootRouteChildren = {
   SevasRoute: SevasRoute,
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
+  ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
+  ApiSankalpGenerateBatchRoute: ApiSankalpGenerateBatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

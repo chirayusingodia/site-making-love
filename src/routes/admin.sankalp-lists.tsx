@@ -226,7 +226,7 @@ export function buildPanditHtml(group: SankalpGroup, generatedAt: Date): string 
   <h1>संकल्प नामावली — Sankalp Name List</h1>
   <div class="sub">${esc(dateStr)} &nbsp;•&nbsp; कुल नाम: ${names.length}</div>
 
-  <h2>सेवाएँ — Sevas covered in this Sankalp</h2>
+  <h2>सेवाएँ — Sevas in this Sankalp</h2>
   <ul class="sevas">
         ${sevaItems || "<li>—</li>"}
   </ul>
@@ -493,10 +493,10 @@ function GroupCard({ group, listNumber }: { group: SankalpGroup; listNumber: num
           </div>
         )}
 
-        {/* Sevas covered — derived live from plan_sevas */}
+        {/* Sevas included — derived live from plan_sevas */}
         <div>
           <div className="text-xs font-bold text-amber-900/80 uppercase tracking-wider mb-2">
-            Sevas covered (live from plan_sevas)
+            Sevas included (live from plan_sevas)
           </div>
           <div className="flex flex-wrap gap-1.5">
             {group.sevas.length > 0 ? (
@@ -645,7 +645,7 @@ function PanditPreview({ group }: { group: SankalpGroup }) {
       </div>
 
       <div className="text-[11px] font-bold uppercase tracking-widest text-amber-800 border-b-2 border-amber-600 pb-1 mb-2">
-        सेवाएँ — Sevas covered in this Sankalp
+        सेवाएँ — Sevas in this Sankalp
       </div>
       <ul className="mb-4">
         {group.sevas.map((s) => (

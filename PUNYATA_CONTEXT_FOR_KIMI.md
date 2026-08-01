@@ -305,12 +305,32 @@ create table sankalp_batch_subscriptions (
   batch_id          uuid references sankalp_batches(id),
   subscription_id   uuid references subscriptions(id),
   is_catchup        boolean default false,
+  segment_number    int,            -- added Session 4 (migration 004): links to name_segments
   created_at        timestamptz default now()
 );
 
+-- PROOF DELIVERIES (added Session 4, migration 004; revised 005)
+-- ONE WhatsApp message per subscriber per batch → their segment video.
+create table proof_deliveries (
+  id                uuid primary key default gen_random_uuid(),
+  batch_id          uuid references sankalp_batches(id),
+  subscription_id   uuid references subscriptions(id),
+  message_kind      text not null,  -- 'segment' only (revision 005)
+  segment_number    int,
+  wa_link           text,           -- NULL when marked sent manually (bypass)
+  is_delivered      boolean default false,
+  delivered_at      timestamptz,
+  whatsapp_msg_id   text,           -- NULL during wa.me stub; Meta API writes later
+  created_at        timestamptz default now(),
+  unique (batch_id, subscription_id, message_kind)
+);
+
 -- ─────────────────────────────────────────
--- SEVA PROOF (batch-based: one seva event → one proof, shared across batch)
+-- SEVA PROOF — DEPRECATED for new writes (Session 4 revision)
 -- ─────────────────────────────────────────
+-- Formerly held the batch-wide "common footage" video. New proof media
+-- lives ONLY in name_segments.video_url. Table + old rows retained for
+-- backward compatibility; do not write new rows from proof-upload flow.
 create table seva_proofs (
   id                uuid primary key default gen_random_uuid(),
   batch_id          uuid references sankalp_batches(id),
@@ -329,7 +349,7 @@ create table seva_proofs (
 );
 
 -- ─────────────────────────────────────────
--- NAME SEGMENTS (personalized name-reading video segments within a batch)
+-- NAME SEGMENTS (ONE combined proof video per tier-pure segment)
 -- ─────────────────────────────────────────
 create table name_segments (
   id                uuid primary key default gen_random_uuid(),
@@ -338,8 +358,10 @@ create table name_segments (
   video_url         text not null,
   created_at        timestamptz default now()
 );
--- 5 families / 20 names per segment (4 members × 5 families).
--- Delivery = 2 WhatsApp messages per subscriber: 1 common footage + 1 name-segment video.
+-- REVISED (Session 4 revision, migration 005): each segment = ONE combined
+-- externally-edited video (that segment's sevas + name-reading), for a
+-- TIER-PURE group of 5 SUBSCRIPTIONS (up to 20 names: 4 members × 5 subs).
+-- Delivery = 1 WhatsApp message per subscriber (their segment's video).
 -- Cloudinary path: punyata-proofs/{year}-{month}/{batch_type}/segments/segment-{n}/
 -- Segment numbers reset fresh each month on new lock events.
 
@@ -461,12 +483,15 @@ Lightweight non-perishables only: Sarovar jal, chandan tilak, akshat/kumkum, mau
 
 ## 6. Video Proof Architecture
 
-- Name-reading segments: 5 families (20 names: 4 members × 5 families) per segment.
-- Each subscriber receives 2 WhatsApp messages: 1 common seva video (shared batch-wide) + 1 segment-specific name video.
+- **REVISED (Session 4 revision):** ONE combined video per segment — externally edited, contains that segment's sevas (sankalp, hawan/bhojan if applicable) PLUS name-reading for just that segment's families.
+- **Segments are TIER-PURE (hard constraint):** group subscriptions only within identical resolved seva composition for that batch variant — never mix Basic and Premium in one segment. Bucket per tier first, then split into groups.
+- **Segment size CONFIRMED: `SEGMENT_SIZE_SUBSCRIPTIONS = 5`** — 5 subscriptions (family units) per segment = up to 20 names (5 × 4 members), ~3-min video.
+- Each subscriber receives **1 WhatsApp message**: their segment's combined video.
+- **Manual bypass:** "Mark Sent Manually" per segment logs delivery (is_delivered=true) without any stored media — for direct sends from Chirayu's own WhatsApp at low volume (<100 subs). Such proofs do NOT appear in the Punya Bank gallery.
 - Cloudinary folder structure: `punyata-proofs/{year}-{month}/{batch_type}/segments/segment-{n}/`
 - Segment numbers reset fresh each month on new lock events.
-- True bulk send (4000+ subscribers) requires Meta Cloud API; stub period uses pre-fill queue UI (~1000 confirm-taps vs. 8000 manual actions).
-- **Open/pending decision:** exact segment size (15 vs 20-25 families) — confirm with Chirayu if this affects your current task.
+- True bulk send (4000+ subscribers) requires Meta Cloud API; stub period uses pre-fill queue UI.
+- ~~Open/pending decision on segment size~~ — RESOLVED: 5 subscriptions.
 
 ---
 
