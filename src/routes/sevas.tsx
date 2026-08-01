@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, Flame, Sun, Wind, Heart, Users, Sparkles } from "lucide-react";
-import { sevaList } from "@/lib/plans";
+import { BookOpen, Flame, Sun, Wind, Heart, Users, Sparkles, AlertTriangle, RefreshCw } from "lucide-react";
+import { usePublicPlans } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 
 import sundarkandImg from "@/assets/sevas/sundarkand.png";
 import gauSevaImg from "@/assets/sevas/gau_seva.png";
-import prasadSevaImg from "@/assets/sevas/prasad_seva.png";
-import sarovarDeepdaanImg from "@/assets/sevas/sarovar_deepdaan.png";
 import sadhuBhojanImg from "@/assets/sevas/sadhu_bhojan.png";
 import hawanImg from "@/assets/sevas/hawan.png";
 
@@ -25,50 +23,40 @@ const iconMap: Record<string, any> = { BookOpen, Flame, Sun, Wind, Heart, Users,
 
 type SevaStaticMedia = { images: string[]; captions: string[] };
 
-const sevaMedia: Record<number, SevaStaticMedia> = {
-  0: {
+// Presentation-only media per seva slug (images/captions are design assets).
+// Seva names/descriptions themselves come live from the `sevas` table.
+// Slugs not listed here render without a photo panel — no composition data here.
+const sevaMedia: Record<string, SevaStaticMedia> = {
+  "sundarkand-path": {
     images: [sundarkandImg],
     captions: ["सुंदरकांड पाठ — आपके नाम व गोत्र से संकट हरण पाठ"],
   },
-  1: {
-    images: [hawanImg],
-    captions: ["गृह शांति एवं सर्व रोग निवारण हवन — वैदिक आहुति"],
-  },
-  2: {
-    images: [sarovarDeepdaanImg],
-    captions: ["आरती (Aarti) — दीप, धूप एवं भजन के साथ"],
-  },
-  3: {
+  "gau-seva": {
     images: [gauSevaImg],
     captions: ["गौ माता सेवा — हरा चारा एवं गुड़ अर्पण"],
   },
-  4: {
+  "vanar-seva": {
     images: [sundarkandImg],
     captions: ["वानर सेवा — श्री हनुमान जी के प्रिय फल व चना अर्पण"],
   },
-  5: {
+  "saadhu-santo-ko-bhojan": {
     images: [sadhuBhojanImg],
     captions: ["साधु संतों को भोजन — पुष्कर क्षेत्र साधु सत्कार"],
   },
-  6: {
-    images: [sarovarDeepdaanImg],
-    captions: ["सरोवर दीपदान — पुष्कर सरोवर में संध्या दीप अर्पण"],
-  },
-  7: {
-    images: [sundarkandImg],
-    captions: ["हनुमान जी चोला सेवा — सिंदूर व चमेली तेल अर्पण"],
-  },
-  8: {
-    images: [prasadSevaImg],
-    captions: ["भंडारा / प्रसाद सेवा — पवित्र पुष्कर प्रसाद वितरण"],
-  },
-  9: {
+  "griha-shanti-hawan": {
     images: [hawanImg],
-    captions: ["भव्य श्रृंगार — पुष्प व वस्त्रों से आलौकिक श्रृंगार"],
+    captions: ["गृह शांति हवन — वैदिक आहुति"],
+  },
+  "sarv-rog-nivaran-hawan": {
+    images: [hawanImg],
+    captions: ["सर्व रोग निवारण हवन — वैदिक आहुति"],
   },
 };
 
 function SevasPage() {
+  const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
+  const sevaList = data?.sevaList ?? [];
+
   return (
     <SiteChrome>
       <main className="max-w-4xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-10">
@@ -80,42 +68,73 @@ function SevasPage() {
           </p>
         </header>
 
-        <div className="space-y-10">
-          {sevaList.map((s, idx) => {
-            const Icon = iconMap[s.iconKey] || BookOpen;
-            const media = sevaMedia[idx];
-            const slides: Slide[] = media
-              ? media.images.map((img, i) => ({
-                  src: img,
-                  alt: `${s.title} — ${media.captions[i]}`,
-                  title: media.captions[i],
-                  subtitle: s.title,
-                }))
-              : [];
-            const reverse = idx % 2 === 1;
-            return (
-              <section
-                key={s.title}
-                className={`card-soft card-lift overflow-hidden grid md:grid-cols-2 gap-0 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
-              >
-                <div className="md:p-4">
-                  {slides.length > 0 && (
-                    <SlidingImageCard slides={slides} aspectRatio="4/5" rounded="md:rounded-2xl rounded-none" />
-                  )}
+        {isLoading ? (
+          <div className="space-y-10">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card-soft overflow-hidden grid md:grid-cols-2 gap-0 animate-pulse">
+                <div className="aspect-[4/5] bg-black/5" />
+                <div className="p-6 space-y-3">
+                  <div className="h-5 w-1/2 bg-black/10 rounded" />
+                  <div className="h-3 w-full bg-black/5 rounded" />
+                  <div className="h-3 w-4/5 bg-black/5 rounded" />
                 </div>
-                <div className="p-6 flex flex-col justify-center gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center shrink-0">
-                      <Icon size={24} className="text-brand" />
-                    </div>
-                    <h2 className="text-xl font-bold text-foreground">{s.title}</h2>
+              </div>
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="card-soft border border-destructive/30 p-8 text-center space-y-3">
+            <AlertTriangle size={32} className="text-destructive mx-auto" />
+            <p className="text-sm font-semibold text-foreground">Seva सूची abhi load nahi ho payi.</p>
+            <p className="text-xs text-muted-foreground">
+              Live seva data fetch karne mein samasya aayi. Kripya punah prayas karein.
+            </p>
+            <button
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={isRefetching ? "animate-spin" : ""} />
+              {isRefetching ? "Retrying..." : "Retry"}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-10">
+            {sevaList.map((s, idx) => {
+              const Icon = iconMap[s.iconKey] || BookOpen;
+              const media = sevaMedia[s.slug];
+              const slides: Slide[] = media
+                ? media.images.map((img, i) => ({
+                    src: img,
+                    alt: `${s.title} — ${media.captions[i] ?? s.title}`,
+                    title: media.captions[i] ?? s.title,
+                    subtitle: s.title,
+                  }))
+                : [];
+              const reverse = idx % 2 === 1;
+              return (
+                <section
+                  key={s.slug}
+                  className={`card-soft card-lift overflow-hidden grid md:grid-cols-2 gap-0 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
+                >
+                  <div className="md:p-4">
+                    {slides.length > 0 && (
+                      <SlidingImageCard slides={slides} aspectRatio="4/5" rounded="md:rounded-2xl rounded-none" />
+                    )}
                   </div>
-                  <p className="text-[15px] text-muted-foreground leading-relaxed">{s.desc}</p>
-                </div>
-              </section>
-            );
-          })}
-        </div>
+                  <div className="p-6 flex flex-col justify-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center shrink-0">
+                        <Icon size={24} className="text-brand" />
+                      </div>
+                      <h2 className="text-xl font-bold text-foreground">{s.title}</h2>
+                    </div>
+                    <p className="text-[15px] text-muted-foreground leading-relaxed">{s.desc}</p>
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
       </main>
     </SiteChrome>
   );

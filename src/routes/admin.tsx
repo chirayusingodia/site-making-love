@@ -1,5 +1,17 @@
 import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Flame, Video, CreditCard, Shield, Sparkles, AlertCircle, Layers } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Flame,
+  Video,
+  CreditCard,
+  Shield,
+  Sparkles,
+  AlertCircle,
+  Layers,
+  ScrollText,
+  BarChart3,
+} from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,15 +26,17 @@ function AdminLayout() {
     { label: "Overview", href: "/admin/overview", icon: LayoutDashboard },
     { label: "Subscribers", href: "/admin/subscribers", icon: Users },
     { label: "Plans & Sevas", href: "/admin/plans-sevas", icon: Layers },
-    { label: "Sankalp Batches", href: "/admin/batches", icon: Flame, badge: "Session 4" },
+    { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText, badge: "New" },
+    { label: "Proof Upload", href: "/admin/proof-upload", icon: Flame, badge: "Session 4" },
     { label: "Seva Proofs", href: "/admin/proofs", icon: Video, badge: "Session 0.5" },
-    { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 5" },
+    { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 6" },
+    { label: "Reports", href: "/admin/reports", icon: BarChart3, badge: "Session 6" },
   ];
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-slate-900 flex flex-col font-sans">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 border-b border-amber-900/10 bg-[#FFFDF9]/90 backdrop-blur-md px-4 lg:px-8 py-3 flex items-center justify-between shadow-xs">
+      <header className="sticky top-0 z-40 border-b border-amber-900/10 bg-[#FFFDF9]/90 backdrop-blur-md px-4 lg:px-8 py-3 flex items-center justify-between shadow-xs print:hidden">
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center gap-2 group">
             <PunyataLogo className="w-8 h-8 text-amber-600 transition-transform group-hover:scale-105" />
@@ -54,14 +68,16 @@ function AdminLayout() {
       {/* Main Container */}
       <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 gap-6">
         {/* Navigation Sidebar */}
-        <aside className="w-full md:w-60 flex-none space-y-1">
+        <aside className="w-full md:w-60 flex-none space-y-1 print:hidden">
           <div className="px-3 py-2 text-xs font-bold text-amber-900/50 uppercase tracking-wider">
             Management
           </div>
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || (item.href === "/admin/overview" && pathname === "/admin");
+              const isActive =
+                pathname === item.href ||
+                (item.href === "/admin/overview" && pathname === "/admin");
               return (
                 <Link
                   key={item.href}
@@ -73,7 +89,9 @@ function AdminLayout() {
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-amber-200" : "text-amber-700/70"}`} />
+                    <Icon
+                      className={`w-4 h-4 ${isActive ? "text-amber-200" : "text-amber-700/70"}`}
+                    />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (

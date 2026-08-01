@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { usePublicPlans } from "@/lib/plans";
 import {
   Users,
   IndianRupee,
@@ -492,35 +493,8 @@ function AdminOverviewPage() {
 
       {/* Operational Highlights & Logic Compliance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Tier & Plan Breakdown Note */}
-        <Card className="border border-amber-900/10 bg-[#FFFDF8]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2">
-              <PackageCheck className="w-4 h-4 text-amber-700" />
-              Plan Tier MRR Composition & Rules
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs text-amber-900/80">
-            <div className="flex items-start gap-2 bg-white p-3 rounded-lg border border-amber-200/50">
-              <Zap className="w-4 h-4 text-amber-600 flex-none mt-0.5" />
-              <div>
-                <span className="font-semibold text-amber-950">Basic Plan (₹251/mo):</span> 1st Tuesday Sundarkand, Gau & Vanar Seva. MRR contribution: <span className="font-mono text-amber-900">₹251/mo</span>.
-              </div>
-            </div>
-            <div className="flex items-start gap-2 bg-white p-3 rounded-lg border border-amber-200/50">
-              <Zap className="w-4 h-4 text-amber-600 flex-none mt-0.5" />
-              <div>
-                <span className="font-semibold text-amber-950">Premium Plan (₹399/mo):</span> 1st TUE & Last SAT sevas (2 Hawans, Saadhu Bhojan). MRR contribution: <span className="font-mono text-amber-900">₹399/mo</span>.
-              </div>
-            </div>
-            <div className="flex items-start gap-2 bg-white p-3 rounded-lg border border-amber-200/50">
-              <Zap className="w-4 h-4 text-amber-600 flex-none mt-0.5" />
-              <div>
-                <span className="font-semibold text-amber-950">Premium Annual (₹4,101/yr):</span> All Premium sevas + Prasad Box. Normalized MRR: <span className="font-mono text-amber-900">₹4,101 ÷ 12 = ₹341.75/mo</span> per subscriber.
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tier & Plan Breakdown Note — LIVE from plans + plan_sevas (never hardcoded) */}
+        <PlanTierCompositionCard />
 
         {/* Business Logic & Compliance Checklist */}
         <Card className="border border-amber-900/10 bg-[#FFFDF8]">
@@ -559,5 +533,64 @@ function AdminOverviewPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// ─── Plan Tier MRR Composition — rendered live from plans + plan_sevas ──────
+// Never hardcode tier → seva mapping here; it tracks admin plan_sevas edits.
+function PlanTierCompositionCard() {
+  const { data, isLoading, isError } = usePublicPlans();
+
+  return (
+    <Card className="border border-amber-900/10 bg-[#FFFDF8]">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2">
+          <PackageCheck className="w-4 h-4 text-amber-700" />
+          Plan Tier MRR Composition & Rules
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-xs text-amber-900/80">
+        {isLoading ? (
+          [1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg bg-amber-100/50" />)
+        ) : isError || !data ? (
+          <div className="flex items-center gap-2 bg-rose-50 p-3 rounded-lg border border-rose-200 text-rose-900">
+            <AlertTriangle className="w-4 h-4 flex-none" />
+            Live plan data unavailable — check Supabase and refresh.
+          </div>
+        ) : (
+          data.plans.map((plan) => {
+            const days = [...new Set(plan.includedSevas.flatMap((s) => s.days))];
+            const sevaNames = plan.includedSevas.map((s) => s.name).join(", ");
+            const hasPrasad = plan.comparison?.prasad?.has;
+            return (
+              <div key={plan.id} className="flex items-start gap-2 bg-white p-3 rounded-lg border border-amber-200/50">
+                <Zap className="w-4 h-4 text-amber-600 flex-none mt-0.5" />
+                <div>
+                  <span className="font-semibold text-amber-950">
+                    {plan.name} ({plan.price}/{plan.billingPeriod === "monthly" ? "mo" : "yr"}):
+                  </span>{" "}
+                  {days.length > 0 ? `${days.join(" & ")} — ` : ""}
+                  {sevaNames || "No sevas assigned"}
+                  {hasPrasad ? " + Prasad & Certificate" : ""}.{" "}
+                  {plan.billingPeriod === "monthly" ? (
+                    <>
+                      MRR contribution: <span className="font-mono text-amber-900">{plan.price}/mo</span>.
+                    </>
+                  ) : (
+                    <>
+                      Normalized MRR:{" "}
+                      <span className="font-mono text-amber-900">
+                        {plan.price} ÷ 12 = ₹{(plan.priceNumeric / 12).toLocaleString("en-IN", { maximumFractionDigits: 2 })}/mo
+                      </span>{" "}
+                      per subscriber.
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
   );
 }

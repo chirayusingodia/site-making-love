@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Edit2, CreditCard, Smartphone, ShieldCheck, Plus, Trash2 } from "lucide-react";
-import { getPlan, type Plan } from "@/lib/plans";
+import { usePublicPlans, getPlanById, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 
 export const Route = createFileRoute("/checkout/$planId")({
@@ -27,7 +27,7 @@ const emptyMember = (relation = "Self"): Member => ({ name: "", gotra: "", relat
 
 function CheckoutPage() {
   const { planId } = Route.useParams();
-  const plan: Plan | undefined = getPlan(planId);
+  const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<FormData>({
     members: [emptyMember("Self")],
@@ -40,6 +40,43 @@ function CheckoutPage() {
     pincode: "",
   });
   const [paid, setPaid] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="max-w-md mx-auto px-4 pb-32 pt-4 space-y-4 animate-pulse">
+          <div className="h-4 w-28 bg-black/10 rounded" />
+          <div className="h-8 w-full bg-black/5 rounded-full" />
+          <div className="h-40 w-full bg-black/5 rounded-2xl" />
+          <div className="h-40 w-full bg-black/5 rounded-2xl" />
+        </main>
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="max-w-2xl mx-auto px-4 py-16 text-center space-y-3">
+          <h1 className="text-xl font-bold">Checkout load nahi ho paya</h1>
+          <p className="text-sm text-muted-foreground">
+            Live plan data fetch karne mein samasya aayi. Kripya punah prayas karein.
+          </p>
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
+          >
+            {isRefetching ? "Retrying..." : "Retry"}
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  const plan: Plan | undefined = getPlanById(data.plans, planId);
 
   if (!plan) {
     return (

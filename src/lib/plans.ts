@@ -1,16 +1,23 @@
-import basicImg1 from "@/assets/plans/basic_1.png";
-import basicImg2 from "@/assets/plans/basic_2.png";
-import basicImg3 from "@/assets/plans/basic_3.png";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
-import grahImg1 from "@/assets/plans/grah_1.png";
-import grahImg2 from "@/assets/plans/grah_2.png";
-import grahImg3 from "@/assets/plans/grah_3.png";
+// ─────────────────────────────────────────────────────────────────────────────
+// PLAN & SEVA DATA — 100% LIVE FROM SUPABASE
+//
+// Plan-to-seva composition is NEVER hardcoded here. Plans, their included
+// sevas, frequencies, features and the seva catalog are fetched live from
+// `plans` + `plan_sevas` + `sevas` + `seva_schedule_rules` + `plan_addons`
+// (all is_active-filtered). If the DB call fails, consumers must show a
+// loading/error state — this module deliberately ships NO hardcoded
+// fallback composition data.
+//
+// What DOES live here statically: per-slug *presentation* assets only
+// (carousel images, long-form marketing prose, reviews, benefits) which have
+// no DB columns today. These contain no tier-composition data — adding or
+// reassigning a seva in the admin manager needs zero code changes.
+// ─────────────────────────────────────────────────────────────────────────────
 
-import varshImg1 from "@/assets/plans/varsh_1.png";
-import varshImg2 from "@/assets/plans/varsh_2.png";
-import varshImg3 from "@/assets/plans/varsh_3.png";
-
-// New plan specific slides imports
+// Plan slide images (bundled assets, keyed by plan slug below)
 import basicHero from "@/assets/plans/basic_hero.png";
 import basicSankalp from "@/assets/plans/basic_sankalp.png";
 import basicSeva from "@/assets/plans/basic_seva.png";
@@ -27,8 +34,6 @@ import annualHawan from "@/assets/plans/annual_hawan.png";
 import annualProof from "@/assets/plans/annual_proof.png";
 import annualBonus from "@/assets/plans/annual_bonus.png";
 
-export type PlanId = "basic" | "grah" | "varsh";
-
 export type PlanSlide = {
   src: string;
   title: string;
@@ -40,51 +45,115 @@ export type PlanSlide = {
   scrimClass?: string;
 };
 
-export type Plan = {
-  id: PlanId;
+// ─── DB row shapes ───────────────────────────────────────────────────────────
+interface DbPlan {
+  id: string;
   name: string;
+  slug: string;
+  price_paise: number;
+  billing_period: "monthly" | "yearly";
+  tagline: string | null;
+  highlight_text: string | null;
+  card_image_url: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
+interface DbSeva {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
+interface DbPlanSeva {
+  plan_id: string;
+  seva_id: string;
+}
+interface DbScheduleRule {
+  seva_id: string;
+  weekday: string;
+  occurrence: string;
+}
+interface DbPlanAddon {
+  plan_id: string;
+  addon_type: string;
+  description: string | null;
+  is_active: boolean;
+}
+
+// ─── Live composition shapes ─────────────────────────────────────────────────
+/** A seva as rendered publicly — schedule derived live from seva_schedule_rules. */
+export type LiveSeva = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  /** e.g. ["1st Tuesday"] or ["1st Tuesday", "Last Saturday"] */
+  days: string[];
+  /** e.g. "1 time a month" | "2 times a month" ("" when no schedule rules) */
+  frequency: string;
+};
+
+export type ComparisonValue = { has: boolean; frequency?: string; label?: string };
+
+export type Plan = {
+  id: string; // public URL id (slug alias, e.g. "grah" for "premium")
+  slug: string; // DB slug
+  name: string; // DB plans.name
+  heading: string; // presentation
+  subheading: string; // presentation
+  tagline: string; // DB plans.tagline (presentation fallback when null)
+  price: string; // derived from price_paise, e.g. "₹251"
+  priceNumeric: number; // derived rupees, e.g. 251
+  cycle: string; // "/Monthly" | "/Yearly"
+  billingPeriod: "monthly" | "yearly";
+  strikePrice?: string; // presentation anchor
+  image: string; // presentation
+  slides: PlanSlide[]; // presentation
+  ribbon?: string; // presentation
+  badge?: { label: string; kind: "popular" | "save" | "max" }; // presentation
+  location: string; // single-location label (Pushkar only, user-visible today)
+  serviceTags: string[]; // derived from live composition
+  features: string[]; // derived live from plan_sevas + schedule rules + addons
+  includedSevas: LiveSeva[]; // live plan_sevas join
+  comparison: Record<string, ComparisonValue>; // keyed by seva slug + proof/family/prasad/billing
+  detail: {
+    description: string[]; // presentation
+    sevas: { title: string; note: string }[]; // LIVE from plan_sevas
+    benefits: string[]; // presentation
+    reviews: { n: string; city: string; q: string; stars: number }[]; // presentation
+  };
+  isVisible: boolean; // DB is_active (rows are pre-filtered)
+};
+
+export type SevaListItem = { slug: string; title: string; desc: string; iconKey: string };
+
+// ─── Presentation-only per-slug assets (NO composition data here) ────────────
+type PlanPresentation = {
+  planId: string;
   heading: string;
   subheading: string;
-  comparisonLine: string;
-  isVisible?: boolean;
-  tagline: string;
-  price: string;
-  priceNumeric: number;
-  cycle: string; // e.g. "/Monthly"
-  strikePrice?: string;
-  image: string; // fallback image
-  images: string[]; // mini-carousel images for listings
-  slides: PlanSlide[]; // custom distinct carousel slides
+  tagline: string; // fallback only — DB tagline wins when set
+  image: string;
+  slides: PlanSlide[];
   ribbon?: string;
-  badge?: { label: string; kind: "popular" | "save" | "max" };
-  location: string;
-  serviceTags: string[]; // Pooja + Chadava + Hawan + Aarti + Daan + Sewa etc.
-  features: string[];
-  extra: string[];
-  comparison?: Record<string, any>;
+  badge?: Plan["badge"];
+  strikePrice?: string;
   detail: {
-    hero: string;
     description: string[];
-    sevas: { title: string; note: string }[];
     benefits: string[];
     reviews: { n: string; city: string; q: string; stars: number }[];
   };
 };
 
-export const plans: Plan[] = [
-  {
-    id: "basic",
-    name: "BASIC",
+const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
+  basic: {
+    planId: "basic",
     heading: "Monthly Sundarkand Path, Gau Seva and Vanar Seva — 1st Tuesday of Every Month Sankalp",
     subheading: "Family ki suraksha, swasthya aur samriddhi ke liye har mahine aapke naam evam gotra se sankalp",
-    comparisonLine: "₹251 mein — ek pizza se bhi kam mein — poore mahine ka daan-punya",
-    isVisible: true,
     tagline: "सेवा की शुरुआत — ₹251/Monthly में मासिक सुंदरकांड, गौ सेवा एवं वानर सेवा (1st Tuesday only)।",
-    price: "₹251",
-    priceNumeric: 251,
-    cycle: "/Monthly",
     image: basicHero,
-    images: [basicImg1, basicImg2, basicImg3],
     slides: [
       {
         src: basicHero,
@@ -111,41 +180,10 @@ export const plans: Plan[] = [
       },
     ],
     ribbon: "800+ परिवार जुड़े",
-    location: "तीर्थ गुरु पुष्करराज, पुष्कर",
-    serviceTags: ["Pooja", "Chadava", "Daan", "Sewa", "Aarti"],
-    features: [
-      "सुंदरकांड पाठ — हर माह (1st Tuesday)",
-      "गौ सेवा — हर माह (1st Tuesday)",
-      "वानर सेवा — हर माह (1st Tuesday)",
-      "आरती (Aarti) — हर सेवा के साथ",
-      "WhatsApp Video Proof",
-    ],
-    extra: ["परिवार के 4 सदस्यों का संकल्प"],
-    comparison: {
-      sundarkand: { has: true, frequency: "1 time a month" },
-      gauSeva: { has: true, frequency: "1 time a month" },
-      vanarSeva: { has: true, frequency: "1 time a month" },
-      sadhuBhojan: { has: false },
-      grihaShantiHawan: { has: false },
-      sarvRogNivaranHawan: { has: false },
-      cholaSeva: { has: false },
-      aarti: { has: true, frequency: "1 time a month" },
-      proof: { has: true },
-      family: { has: true, label: "Up to 4" },
-      prasadBox: { has: false },
-      billing: { has: true, label: "Monthly" }
-    },
     detail: {
-      hero: "मूल संकल्प — सेवा की शुरुआत",
       description: [
         "जब आप मूल संकल्प लेते हैं, तो आपके नाम एवं गोत्र से हर माह पहले मंगलवार को श्री हनुमान जी को समर्पित सुंदरकांड पाठ एवं आरती होती है — यह पुण्य आपके परिवार में शांति, सुरक्षा और समृद्धि लाता है।",
         "इस पैक में शामिल है — सुंदरकांड पाठ, आरती, गौ सेवा एवं वानर सेवा। प्रत्येक सेवा का Video Proof आपके WhatsApp पर।",
-      ],
-      sevas: [
-        { title: "सुंदरकांड पाठ", note: "आपके नाम-गोत्र से — बिगड़े काम बनाने और ग्रह दोष शांत करने के लिए (1st Tuesday only)।" },
-        { title: "आरती (Aarti)", note: "श्री हनुमान जी की आरती — हर अनुष्ठान का अंग।" },
-        { title: "गौ माता सेवा", note: "गौशाला में चारा-गुड़ अर्पण — समस्त देवताओं की सेवा के समान (1st Tuesday only)।" },
-        { title: "वानर सेवा", note: "श्री हनुमान जी के प्रिय — केला एवं चना (1st Tuesday only)。" },
       ],
       benefits: [
         "परिवार में सकारात्मक ऊर्जा एवं मानसिक शांति",
@@ -160,19 +198,12 @@ export const plans: Plan[] = [
       ],
     },
   },
-  {
-    id: "grah",
-    name: "PREMIUM",
+  premium: {
+    planId: "grah",
     heading: "Monthly Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan — 1st Tuesday of Every Month and Last Saturday of Every Month Sankalp",
     subheading: "Do sankalp har mahine — do alag hawan ke saath ghar mein shanti evam rog-badha nivaran",
-    comparisonLine: "₹399 mein — ek family pizza se bhi kam mein — poore mahine ka daan-punya",
-    isVisible: true,
     tagline: "सम्पूर्ण पारिवारिक सेवा — 2 सुंदरकांड, 2 अलग हवन (Griha Shanti & Sarv Rog Nivaran), Saadhu Santo Ko Bhojan एवं गौ/वानर सेवा हर माह।",
-    price: "₹399",
-    priceNumeric: 399,
-    cycle: "/Monthly",
     image: premiumHero,
-    images: [grahImg1, grahImg2, grahImg3],
     slides: [
       {
         src: premiumHero,
@@ -200,45 +231,10 @@ export const plans: Plan[] = [
     ],
     ribbon: "500+ परिवार जुड़े",
     badge: { label: "सबसे लोकप्रिय", kind: "popular" },
-    location: "तीर्थ गुरु पुष्करराज, पुष्कर",
-    serviceTags: ["Pooja", "Chadava", "Hawan", "Aarti", "Daan", "Sewa"],
-    features: [
-      "सुnderkand — 2× हर माह (1st Tuesday & Last Saturday)",
-      "Griha Shanti Hawan (1st Tuesday only)",
-      "Sarv Rog Nivaran Hawan (Last Saturday only)",
-      "Saadhu Santo Ko Bhojan — 2× हर माह",
-      "गौ + वानर सेवा — 2× हर माह",
-      "WhatsApp Video Proof सभी सेवाओं का",
-    ],
-    extra: ["परिवार के 4 सदस्यों का संकल्प"],
-    comparison: {
-      sundarkand: { has: true, frequency: "2 times a month" },
-      gauSeva: { has: true, frequency: "2 times a month" },
-      vanarSeva: { has: true, frequency: "2 times a month" },
-      sadhuBhojan: { has: true, frequency: "2 times a month" },
-      grihaShantiHawan: { has: true, frequency: "1 time a month" },
-      sarvRogNivaranHawan: { has: true, frequency: "1 time a month" },
-      cholaSeva: { has: false },
-      aarti: { has: true, frequency: "2 times a month" },
-      proof: { has: true },
-      family: { has: true, label: "Up to 4" },
-      prasadBox: { has: false },
-      billing: { has: true, label: "Monthly" }
-    },
     detail: {
-      hero: "गृह शांति — सम्पूर्ण पारिवारिक कवच",
       description: [
         "गृह शांति संकल्प आपके परिवार के लिए एक आध्यात्मिक कवच है — हर माह दो सुंदरकांड पाठ, दो अलग हवन (गृह शांति और सर्व रोग निवारण), आरती, साधु संतों को भोजन और गौ-वानर सेवा से आपके घर में मंगल का वास होता है।",
         "यह पैक विशेष रूप से उन परिवारों के लिए है जो चाहते हैं कि उनके घर में सकारात्मक ऊर्जा हो और रोग, शोक तथा वास्तु दोष का शमन हो।",
-      ],
-      sevas: [
-        { title: "सुंदरकांड पाठ", note: "माह में 2 बार (1st Tuesday & Last Saturday) आपके नाम-गोत्र से सुंदरकांड पाठ।" },
-        { title: "Griha Shanti Hawan", note: "वैदिक मंत्रों से — 1st Tuesday of every month only।" },
-        { title: "Sarv Rog Nivaran Hawan", note: "वैदिक मंत्रों से — Last Saturday of every month only।" },
-        { title: "Saadhu Santo Ko Bhojan", note: "माह में 2 बार (1st Tuesday & Last Saturday) साधु संतों को सात्विक भोजन सत्कार।" },
-        { title: "आरती (Aarti)", note: "हर अनुष्ठान के साथ पूर्ण आरती।" },
-        { title: "गौ माता सेवा", note: "माह में 2 बार गौशाला में चारा-गुड़ अर्पण।" },
-        { title: "वानर सेवा", note: "माह में 2 बार केला एवं चना अर्पण।" },
       ],
       benefits: [
         "गृह-कलेश एवं वास्तु दोष का शमन",
@@ -253,20 +249,12 @@ export const plans: Plan[] = [
       ],
     },
   },
-  {
-    id: "varsh",
-    name: "PREMIUM ANNUAL",
+  "premium-annual": {
+    planId: "varsh",
     heading: "12 Month Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan Sankalp — 24 Sankalp Yearly with Prasad and Certificate",
     subheading: "Poore saal ka sanchit punya — Prasad evam Sankalp Certificate ke saath ghar tak pahunchega",
-    comparisonLine: "₹4,101 mein — poore saal ka sanchit punya, ek baar ke family dinner se bhi kam mein",
-    isVisible: true,
-    tagline: "पूरे वर्ष का संकल्प — ₹399 वाली सभी सेवाएं 12 माह + हनुमान जी चोला सेवा + Prasad Box।",
-    price: "₹4,101",
-    priceNumeric: 4101,
-    cycle: "/Yearly",
-    strikePrice: "₹4,812",
+    tagline: "पूरे वर्ष का संकल्प — ₹399 वाली सभी सेवाएं 12 माह + Prasad Box + Sankalp Certificate।",
     image: annualHero,
-    images: [varshImg1, varshImg2, varshImg3],
     slides: [
       {
         src: annualHero,
@@ -299,46 +287,11 @@ export const plans: Plan[] = [
     ],
     ribbon: "सर्वाधिक पुण्यदायी",
     badge: { label: "₹711 की बचत", kind: "save" },
-    location: "तीर्थ गुरु पुष्करराज, पुष्कर",
-    serviceTags: ["Pooja", "Chadava", "Hawan", "Aarti", "Daan", "Sewa", "Prasad Box"],
-    features: [
-      "₹399 प्लान की सभी सेवाएं — 12 माह",
-      "सुंदरकांड — 24 पाठ (2/माह)",
-      "आरती (Aarti) — हर सेवा के साथ",
-      "हनुमान जी चोला सेवा — वार्षिक",
-      "Quarterly Prasad Box — घर पर डाक द्वारा",
-    ],
-    extra: ["परिवार के 4 सदस्यों का संकल्प"],
-    comparison: {
-      sundarkand: { has: true, frequency: "2 times a month" },
-      gauSeva: { has: true, frequency: "2 times a month" },
-      vanarSeva: { has: true, frequency: "2 times a month" },
-      sadhuBhojan: { has: true, frequency: "2 times a month" },
-      grihaShantiHawan: { has: true, frequency: "1 time a month" },
-      sarvRogNivaranHawan: { has: true, frequency: "1 time a month" },
-      cholaSeva: { has: true, label: "1 time a year" },
-      aarti: { has: true, frequency: "2 times a month" },
-      proof: { has: true },
-      family: { has: true, label: "Up to 4" },
-      prasadBox: { has: true, label: "Quarterly" },
-      billing: { has: true, label: "Yearly" }
-    },
+    strikePrice: "₹4,812",
     detail: {
-      hero: "वार्षिक महासंकल्प — पूरे वर्ष का पुण्य",
       description: [
         "एक वार्षिक महासंकल्प का पुण्य 12 अलग-अलग मासिक संकल्पों से कहीं अधिक फलदायी माना गया है। पूरे वर्ष अखंड रूप से आपके नाम-गोत्र से सेवाएँ चलती रहती हैं — बिना विघ्न, बिना विराम।",
-        "इस पैक में गृह शांति की सभी सेवाएँ 12 महीने + हनुमान जी की विशेष वार्षिक चोला सेवा एवं Quarterly Prasad Box शामिल है। ₹4,812 की सेवाएँ मात्र ₹4,101 में — बचत ₹711।",
-      ],
-      sevas: [
-        { title: "सुंदरकांड पाठ", note: "पूरे वर्ष अखंड जप (24 पाठ)।" },
-        { title: "गृह शांति हवन", note: "हर माह वैदिक हवन (12 बार)।" },
-        { title: "आरती (Aarti)", note: "हर अनुष्ठान के साथ पूर्ण आरती।" },
-        { title: "हनुमान जी चोला सेवा", note: "बजरंगबली को विशेष चोला अर्पण (वार्षिक)।" },
-        { title: "सरोवर दीपदान", note: "संध्या समय पुष्कर सरोवर में दीपदान।" },
-        { title: "गौ माता सेवा", note: "पूरे वर्ष निरंतर गौशाला सेवा।" },
-        { title: "वानर सेवा", note: "पूरे वर्ष निरंतर वानर सेवा।" },
-        { title: "ब्राह्मण भोजन", note: "पूरे वर्ष निरंतर ब्राह्मण भोजन।" },
-        { title: "Quarterly Prasad Box", note: "साल में 4 बार पवित्र प्रसाद आपके घर।" },
+        "इस पैक में गृह शांति की सभी सेवाएँ 12 महीने + Quarterly Prasad Box एवं Sankalp Certificate शामिल है। ₹4,812 की सेवाएँ मात्र ₹4,101 में — बचत ₹711।",
       ],
       benefits: [
         "अखंड वार्षिक पुण्य — विघ्न रहित संकल्प",
@@ -353,28 +306,230 @@ export const plans: Plan[] = [
       ],
     },
   },
-];
+};
 
-export function getPlan(id: string): Plan | undefined {
-  return plans.find((p) => p.id === id);
+/** Generic presentation for a plan slug with no bespoke assets yet (e.g. a new plan added in admin). */
+function genericPresentation(plan: DbPlan): PlanPresentation {
+  return {
+    planId: plan.slug,
+    heading: plan.tagline ?? plan.name,
+    subheading: plan.highlight_text ?? "",
+    tagline: plan.tagline ?? "",
+    image: basicHero,
+    slides: [],
+    detail: {
+      description: plan.tagline ? [plan.tagline] : [],
+      benefits: [],
+      reviews: [],
+    },
+  };
 }
 
-// Shared seva list used on Homepage preview + Sevas + Plans pages
-export type SevaListItem = { title: string; desc: string; iconKey: string };
+// Single user-visible location today (Pushkar) — matches existing UI copy.
+const LOCATION_LABEL = "तीर्थ गुरु पुष्करराज, पुष्कर";
 
-export const sevaList: SevaListItem[] = [
-  { title: "सुंदरकांड पाठ", desc: "आपके नाम एवं गोत्र से संकल्पपूर्वक सस्वर सुंदरकांड — श्री हनुमान जी की कृपा हेतु।", iconKey: "BookOpen" },
-  { title: "गृह शांति हवन", desc: "विद्वान आचार्यों द्वारा वैदिक मंत्रों से गृह शांति हवन — परिवार की मंगल कामना सहित।", iconKey: "Flame" },
-  { title: "आरती (Aarti)", desc: "हर अनुष्ठान के साथ पूर्ण आरती — दीप, धूप एवं भजन के साथ।", iconKey: "Sun" },
-  { title: "गौ माता सेवा", desc: "स्थानीय गौशालाओं में गौ माता को हरा चारा एवं गुड़ का अर्पण — सीधा पुण्य।", iconKey: "Wind" },
-  { title: "वानर सेवा", desc: "तीर्थ गुरु पुष्करराज में वानरों को केला एवं चना — श्री हनुमान जी के प्रिय।", iconKey: "Heart" },
-  { title: "साधु संतों को भोजन", desc: "विद्वान साधु संतों को सात्विक भोजन एवं यथायोग्य सत्कार — पितृ आशीर्वाद।", iconKey: "Users" },
-  { title: "सरोवर दीपदान", desc: "पुष्कर सरोवर में संध्या समय दीप अर्पण — मोक्ष एवं सौभाग्य प्रदायक।", iconKey: "Sun" },
-  { title: "हनुमान जी चोला सेवा", desc: "श्री बजरंगबली को सिंदूर, चमेली तेल एवं चांदी का वर्क अर्पण — कष्ट निवारण हेतु।", iconKey: "Sparkles" },
-  { title: "भंडारा / प्रसाद सेवा", desc: "तीर्थ क्षेत्र में श्रद्धालुओं एवं जरूरतमंदों के बीच प्रसाद वितरण।", iconKey: "Heart" },
-  { title: "भव्य श्रृंगार", desc: "विशेष पर्वों पर भगवान का पुष्प एवं वस्त्रों से मन्त्रमुग्ध श्रृंगार।", iconKey: "Flame" },
-];
+// ─── Pure derivation helpers ─────────────────────────────────────────────────
+export function formatINR(pricePaise: number): string {
+  return `₹${Math.round(pricePaise / 100).toLocaleString("en-IN")}`;
+}
 
+const WEEKDAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const WEEKDAY_LABELS: Record<string, string> = {
+  MON: "Monday",
+  TUE: "Tuesday",
+  WED: "Wednesday",
+  THU: "Thursday",
+  FRI: "Friday",
+  SAT: "Saturday",
+  SUN: "Sunday",
+};
+const OCCURRENCE_LABELS: Record<string, string> = {
+  first: "1st",
+  second: "2nd",
+  third: "3rd",
+  fourth: "4th",
+  last: "Last",
+};
+
+function frequencyLabel(timesPerMonth: number): string {
+  return timesPerMonth === 1 ? "1 time a month" : `${timesPerMonth} times a month`;
+}
+
+/** Cadence hint parsed from an addon's admin-written description (e.g. "Quarterly Prasad Box — …"). */
+function addonCadence(description: string | null): string | undefined {
+  if (!description) return undefined;
+  if (/quarterly/i.test(description)) return "Quarterly";
+  if (/monthly|maasik/i.test(description)) return "Monthly";
+  if (/yearly|annual|varsh/i.test(description)) return "Yearly";
+  return undefined;
+}
+
+function buildLiveSeva(seva: DbSeva, rules: DbScheduleRule[]): LiveSeva {
+  const myRules = rules
+    .filter((r) => r.seva_id === seva.id)
+    .sort((a, b) => WEEKDAY_ORDER.indexOf(a.weekday) - WEEKDAY_ORDER.indexOf(b.weekday));
+  const days = myRules.map(
+    (r) => `${OCCURRENCE_LABELS[r.occurrence] ?? r.occurrence} ${WEEKDAY_LABELS[r.weekday] ?? r.weekday}`
+  );
+  return {
+    id: seva.id,
+    slug: seva.slug,
+    name: seva.name,
+    description: seva.description,
+    days,
+    frequency: days.length > 0 ? frequencyLabel(days.length) : "",
+  };
+}
+
+function buildPlan(
+  dbPlan: DbPlan,
+  liveSevas: LiveSeva[],
+  planSevas: DbPlanSeva[],
+  planAddons: DbPlanAddon[]
+): Plan {
+  const pres = PLAN_PRESENTATION[dbPlan.slug] ?? genericPresentation(dbPlan);
+  const includedIds = new Set(planSevas.filter((ps) => ps.plan_id === dbPlan.id).map((ps) => ps.seva_id));
+  const includedSevas = liveSevas.filter((s) => includedIds.has(s.id));
+  const addons = planAddons.filter((a) => a.plan_id === dbPlan.id && a.is_active);
+  const prasadAddon = addons.find((a) => a.addon_type === "prasad");
+  const hasHawan = includedSevas.some((s) => /hawan|havan/i.test(`${s.slug} ${s.name}`));
+
+  // Features list — derived live from plan_sevas + seva_schedule_rules + plan_addons
+  const features = includedSevas.map((s) =>
+    s.days.length > 1
+      ? `${s.name} — ${s.days.length}× हर माह (${s.days.join(" & ")})`
+      : s.days.length === 1
+        ? `${s.name} — हर माह (${s.days[0]})`
+        : s.name
+  );
+  addons.forEach((a) => features.push(a.description ?? a.addon_type));
+  features.push("WhatsApp Video Proof"); // universal platform feature, not a seva
+
+  // Comparison matrix values — every active seva gets a row keyed by its slug
+  const comparison: Record<string, ComparisonValue> = {};
+  liveSevas.forEach((s) => {
+    comparison[s.slug] = includedIds.has(s.id)
+      ? { has: true, ...(s.frequency ? { frequency: s.frequency } : {}) }
+      : { has: false };
+  });
+  comparison.proof = { has: true };
+  comparison.family = { has: true, label: "Up to 4" };
+  comparison.prasad = prasadAddon
+    ? { has: true, ...(addonCadence(prasadAddon.description) ? { frequency: addonCadence(prasadAddon.description) } : {}) }
+    : { has: false };
+  comparison.billing = { has: true, label: dbPlan.billing_period === "monthly" ? "Monthly" : "Yearly" };
+
+  const serviceTags = [
+    "Pooja",
+    "Chadava",
+    ...(hasHawan ? ["Hawan"] : []),
+    "Aarti",
+    "Daan",
+    "Sewa",
+    ...(prasadAddon ? ["Prasad Box"] : []),
+  ];
+
+  return {
+    id: pres.planId,
+    slug: dbPlan.slug,
+    name: dbPlan.name,
+    heading: pres.heading,
+    subheading: pres.subheading,
+    tagline: dbPlan.tagline ?? pres.tagline,
+    price: formatINR(dbPlan.price_paise),
+    priceNumeric: Math.round(dbPlan.price_paise / 100),
+    cycle: dbPlan.billing_period === "monthly" ? "/Monthly" : "/Yearly",
+    billingPeriod: dbPlan.billing_period,
+    strikePrice: pres.strikePrice,
+    image: pres.image,
+    slides: pres.slides,
+    ribbon: pres.ribbon,
+    badge: pres.badge,
+    location: LOCATION_LABEL,
+    serviceTags,
+    features,
+    includedSevas,
+    comparison,
+    detail: {
+      description: pres.detail.description,
+      sevas: includedSevas.map((s) => ({
+        title: s.name,
+        note: s.description ?? (s.days.length ? `हर माह — ${s.days.join(" & ")}` : ""),
+      })),
+      benefits: pres.detail.benefits,
+      reviews: pres.detail.reviews,
+    },
+    isVisible: true,
+  };
+}
+
+function iconKeyForSeva(seva: DbSeva): string {
+  const key = `${seva.slug} ${seva.name}`.toLowerCase();
+  if (/sundarkand|पाठ/.test(key)) return "BookOpen";
+  if (/hawan|havan/.test(key)) return "Flame";
+  if (/aarti/.test(key)) return "Sun";
+  if (/gau|cow/.test(key)) return "Wind";
+  if (/vanar/.test(key)) return "Heart";
+  if (/bhojan|sadhu|santo|brahmin/.test(key)) return "Users";
+  return "Sparkles";
+}
+
+// ─── Live fetch (throws on failure — callers render error state) ─────────────
+export type PublicPlansData = {
+  plans: Plan[];
+  sevas: LiveSeva[];
+  sevaList: SevaListItem[];
+};
+
+async function fetchPublicPlansData(): Promise<PublicPlansData> {
+  const [plansRes, sevasRes, planSevasRes, rulesRes, addonsRes] = await Promise.all([
+    supabase.from("plans").select("*").eq("is_active", true).order("sort_order"),
+    supabase.from("sevas").select("*").eq("is_active", true).order("sort_order"),
+    supabase.from("plan_sevas").select("*"),
+    supabase.from("seva_schedule_rules").select("*"),
+    supabase.from("plan_addons").select("*").eq("is_active", true),
+  ]);
+  const error =
+    plansRes.error ?? sevasRes.error ?? planSevasRes.error ?? rulesRes.error ?? addonsRes.error;
+  if (error) throw new Error(`Supabase: ${error.message}`);
+
+  const dbPlans = (plansRes.data ?? []) as DbPlan[];
+  const dbSevas = (sevasRes.data ?? []) as DbSeva[];
+  const planSevas = (planSevasRes.data ?? []) as DbPlanSeva[];
+  const rules = (rulesRes.data ?? []) as DbScheduleRule[];
+  const addons = (addonsRes.data ?? []) as DbPlanAddon[];
+
+  const liveSevas = dbSevas.map((s) => buildLiveSeva(s, rules));
+  const plans = dbPlans.map((p) => buildPlan(p, liveSevas, planSevas, addons));
+  const sevaList: SevaListItem[] = dbSevas.map((s) => ({
+    slug: s.slug,
+    title: s.name,
+    desc: s.description ?? "",
+    iconKey: iconKeyForSeva(s),
+  }));
+
+  return { plans, sevas: liveSevas, sevaList };
+}
+
+/**
+ * Live plans + sevas for all public pages. No hardcoded fallback — on error,
+ * render the error state surfaced by React Query (isError / refetch).
+ */
+export function usePublicPlans() {
+  return useQuery<PublicPlansData>({
+    queryKey: ["public-plans-data"],
+    queryFn: fetchPublicPlansData,
+    staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+/** Lookup by public URL id or DB slug (e.g. "grah" | "premium"). */
+export function getPlanById(plans: Plan[], id: string): Plan | undefined {
+  return plans.find((p) => p.id === id || p.slug === id);
+}
+
+// ─── Static marketing content (not plan/seva composition) ────────────────────
 export const acharyas = [
   { initials: "रा", name: "पं. रामस्वरूप शर्मा", role: "मुख्य आचार्य — तीर्थ गुरु पुष्करराज", bio: "22 वर्षों से तीर्थ गुरु पुष्करराज में सेवारत। हवन विशेषज्ञ। काशी विद्यापीठ से वेद-शास्त्र में स्नातक।", quote: "सेवा ही हमारा धर्म है।" },
   { initials: "वि", name: "पं. विनायक जी", role: "सुंदरकांड प्रमुख", bio: "8 वर्षों से सुंदरकांड पाठ में विशेषज्ञ। सस्वर एवं संकल्प-सम्मत पाठ के आचार्य।", quote: "राम नाम सबसे बड़ा मंत्र।" },

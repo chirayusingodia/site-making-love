@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck } from "lucide-react";
-import { getPlan, plans, sevaList, type Plan } from "@/lib/plans";
+import { usePublicPlans, getPlanById, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
@@ -32,7 +32,51 @@ export const Route = createFileRoute("/plan/$planId")({
 
 function PlanDetailPage() {
   const { planId } = Route.useParams();
-  const plan: Plan | undefined = getPlan(planId);
+  const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="max-w-2xl mx-auto px-4 pb-32 pt-4 space-y-4 animate-pulse">
+          <div className="h-4 w-28 bg-black/10 rounded" />
+          <div className="card-soft overflow-hidden">
+            <div className="aspect-video bg-black/5" />
+            <div className="p-5 space-y-3">
+              <div className="h-5 w-3/4 bg-black/10 rounded" />
+              <div className="h-3 w-full bg-black/5 rounded" />
+              <div className="h-8 w-32 bg-black/10 rounded" />
+            </div>
+          </div>
+          <div className="h-24 w-full bg-black/5 rounded-2xl" />
+          <div className="h-24 w-full bg-black/5 rounded-2xl" />
+        </main>
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="max-w-2xl mx-auto px-4 py-16 text-center space-y-3">
+          <h1 className="text-xl font-bold">Plan load nahi ho paya</h1>
+          <p className="text-sm text-muted-foreground">
+            Live plan data fetch karne mein samasya aayi. Kripya punah prayas karein.
+          </p>
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
+          >
+            {isRefetching ? "Retrying..." : "Retry"}
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  const plan: Plan | undefined = getPlanById(data.plans, planId);
   if (!plan) {
     return (
       <div className="min-h-screen bg-background">
@@ -44,10 +88,10 @@ function PlanDetailPage() {
       </div>
     );
   }
-  return <PlanDetail plan={plan} />;
+  return <PlanDetail plan={plan} allPlans={data.plans} />;
 }
 
-function PlanDetail({ plan }: { plan: Plan }) {
+function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
   const { lang } = useTranslation();
   const slides: Slide[] = plan.slides.map((s) => ({
     src: s.src,
@@ -229,7 +273,7 @@ function PlanDetail({ plan }: { plan: Plan }) {
         <section className="mt-8">
           <h2 className="text-lg font-bold mb-3">अन्य पैक देखें</h2>
           <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2">
-            {plans.filter((p) => p.id !== plan.id && p.isVisible !== false).map((p) => (
+            {allPlans.filter((p) => p.id !== plan.id && p.isVisible !== false).map((p) => (
               <Link key={p.id} to="/plan/$planId" params={{ planId: p.id }} className="card-soft p-3 w-[260px] min-w-[260px] shrink-0 flex flex-col justify-between border border-black/5 hover:border-brand/20 transition-all">
                 <div>
                   <div className="h-28 overflow-hidden rounded-xl bg-muted">
