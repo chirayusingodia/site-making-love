@@ -48,7 +48,6 @@ export interface BatchRow {
   id: string;
   batch_type: string;
   batch_date: string;
-  sankalp_variant: string | null;
   status: "pending" | "done" | "missed";
 }
 
@@ -261,39 +260,26 @@ export function computePendingSevas(
   const tueBatch = batches.find(
     (b) => b.batch_type === "second_tuesday" && b.batch_date === tueDate,
   );
-  // Saturday: a subscriber belongs to BOTH variant batches (same member
-  // set by construction) — full_package is their primary Saturday seva.
-  const satFull = batches.find(
-    (b) =>
-      b.batch_type === "last_saturday" &&
-      b.batch_date === satDate &&
-      b.sankalp_variant === "full_package",
-  );
-  const satHawan = batches.find(
-    (b) =>
-      b.batch_type === "last_saturday" &&
-      b.batch_date === satDate &&
-      b.sankalp_variant === "hawan_only",
+  // Saturday: ONE batch per date. The old hawan_only / full_package pair —
+  // and the fallback lookup it needed here — is retired.
+  const satBatch = batches.find(
+    (b) => b.batch_type === "last_saturday" && b.batch_date === satDate,
   );
 
   const cellFor = (
     sub: ViewRow,
     batch: BatchRow | undefined,
     batchDate: string,
-    fallback?: BatchRow | undefined,
   ): BatchCell => {
     const joined = (sub.start_date ?? sub.sub_created_at).slice(0, 10);
     if (!batch) {
       return { label: "—", note: "Batch not generated", batchDate };
     }
-    const inBatch = membership.get(batch.id)?.has(sub.subscription_id);
-    const inFallback = fallback ? membership.get(fallback.id)?.has(sub.subscription_id) : false;
-    const effective = inBatch ? batch : inFallback ? fallback : null;
-    if (effective) {
+    if (membership.get(batch.id)?.has(sub.subscription_id)) {
       return {
-        label: BATCH_LABEL[effective.status] ?? "Pending",
-        note: `Batch ${fmtDate(effective.batch_date)}`,
-        batchDate: effective.batch_date,
+        label: BATCH_LABEL[batch.status] ?? "Pending",
+        note: `Batch ${fmtDate(batch.batch_date)}`,
+        batchDate: batch.batch_date,
       };
     }
     // Not a member — the join date decides whether this is a genuine
@@ -314,7 +300,7 @@ export function computePendingSevas(
       joinedDate: (s.start_date ?? s.sub_created_at).slice(0, 10),
       joinedTime: fmtTimeIST(s.sub_created_at),
       tue: cellFor(s, tueBatch, tueDate),
-      sat: cellFor(s, satFull ?? satHawan, satDate, satFull ? satHawan : undefined),
+      sat: cellFor(s, satBatch, satDate),
     }))
     .sort((a, b) => a.joinedDate.localeCompare(b.joinedDate) || a.name.localeCompare(b.name));
 }

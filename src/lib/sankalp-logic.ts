@@ -12,11 +12,18 @@
 //    Saturday (List B). Never weekly. (List A moved from the First
 //    to the Second Tuesday; the twice-a-month cadence is unchanged.)
 //  - List A = ALL active subscribers, sevas per live plan_sevas.
-//  - List B = only hawan-plan subscribers → TWO separate batches:
-//    'hawan_only' + 'full_package'.
+//  - List B = only hawan-plan subscribers. ONE batch, not two. The
+//    former 'hawan_only' / 'full_package' split is retired: it created
+//    two rows over the IDENTICAL member set, so every List B
+//    subscriber was enrolled twice and counted twice. There is no
+//    tier that receives a hawan without the rest of its sevas.
+//  - The two hawans are day-specific, NOT interchangeable: Griha
+//    Shanti Hawan on the Second Tuesday, Sarv Rog Nivaran Hawan on
+//    the Last Saturday, per seva_schedule_rules. Non-hawan sevas run
+//    on every batch day their plan is in. Basic has NO hawan at all.
 //  - Catch-up: hawan-INELIGIBLE (e.g. Basic) subscriber who joins
 //    after that month's Second Tuesday gets a ONE-TIME inclusion in
-//    that month's Last Saturday full_package batch, is_catchup=true.
+//    that month's Last Saturday batch, is_catchup=true.
 //  - Tuesday and Saturday batches are ALWAYS independent records.
 //  - Status labels: Done / Pending / Missed only. Never "Covered".
 // ─────────────────────────────────────────────────────────────
@@ -63,8 +70,6 @@ export interface SubscriptionLite {
  * List A is the SECOND Tuesday; List B is the LAST Saturday.
  */
 export type BatchKind = "second_tuesday" | "last_saturday";
-
-export type SankalpVariant = "hawan_only" | "full_package" | null;
 
 // ─── Date helpers (timezone-safe: pure y/m/d math, UTC DOW) ──
 
@@ -118,11 +123,6 @@ export function batchKindForDate(isoDate: string): BatchKind | null {
   return null;
 }
 
-/** Batch variants to create for a kind. Tuesday → [null] (one row). */
-export function variantsForKind(kind: BatchKind): SankalpVariant[] {
-  return kind === "last_saturday" ? ["hawan_only", "full_package"] : [null];
-}
-
 const MONTHS_EN = [
   "January",
   "February",
@@ -144,11 +144,10 @@ export function formatDateEN(isoDate: string): string {
 }
 
 /** Human label for a batch. Contains NO plan/price info — safe for Pandit view. */
-export function batchLabel(kind: BatchKind, variant: SankalpVariant, isoDate: string): string {
+export function batchLabel(kind: BatchKind, isoDate: string): string {
   const day = formatDateEN(isoDate);
-  if (kind === "second_tuesday") return `Second Tuesday Sankalp — ${day}`;
-  return variant === "hawan_only"
-    ? `Last Saturday Hawan Sankalp — ${day}`
+  return kind === "second_tuesday"
+    ? `Second Tuesday Sankalp — ${day}`
     : `Last Saturday Sankalp — ${day}`;
 }
 
@@ -201,7 +200,7 @@ function planHasHawan(planId: string, planSevas: PlanSevaRow[], hawanIds: Set<st
  * kind='second_tuesday':
  *   every active subscription joined on/before batch date. No catch-up.
  *
- * kind='last_saturday' (applies to BOTH variants — same member set):
+ * kind='last_saturday' (ONE batch — see the header note on the retired variants):
  *   - hawan-plan subscribers: always in, is_catchup=false.
  *   - hawan-ineligible subscribers: in ONLY if they joined after this
  *     month's Second Tuesday and on/before the batch date → one-time
@@ -263,41 +262,75 @@ export function computeBatchMembership(input: {
 
 // ─── Per-subscriber seva resolution (Pandit list + WhatsApp copy) ───
 
+/** The (weekday, occurrence) that a batch kind's day falls on. */
+function batchDayFor(kind: BatchKind): { weekday: string; occurrence: string } {
+  return kind === "second_tuesday"
+    ? { weekday: "TUE", occurrence: "second" }
+    : { weekday: "SAT", occurrence: "last" };
+}
+
+/**
+ * Is this HAWAN seva scheduled for the given batch day?
+ *
+ * Only hawans are day-scoped (see sevasForMember). A hawan with NO schedule
+ * rule at all is treated as unscoped and kept — a missing rule must never
+ * silently drop a seva an admin put in a plan, matching the same
+ * never-silently-empty stance as saturdayHawanSevaIds().
+ */
+function hawanRuledForDay(
+  sevaId: string,
+  rules: ScheduleRuleRow[],
+  day: { weekday: string; occurrence: string },
+): boolean {
+  const mine = rules.filter((r) => r.seva_id === sevaId);
+  if (mine.length === 0) return true;
+  return mine.some((r) => r.weekday === day.weekday && r.occurrence === day.occurrence);
+}
+
 /**
  * Which sevas are performed for ONE subscriber in ONE batch.
- *  - second_tuesday (variant null): their plan's sevas, live.
- *  - hawan_only: the Saturday hawan sevas — same for every member.
- *  - full_package: plan sevas ∪ Saturday hawan sevas (deduped).
- *  - full_package + isCatchup: plan sevas ONLY — the one-time
- *    catch-up explicitly EXCLUDES hawan (Basic late-joiner rule).
+ *
+ * NON-HAWAN sevas run on EVERY batch day their plan participates in — a
+ * Premium subscriber is in both List A and List B, so their Sundarkand Path,
+ * Gau Seva, Vanar Seva and Saadhu Santo Ko Bhojan each happen twice a month.
+ * Basic has no hawan, so it never joins List B and its three sevas run once.
+ *
+ * HAWAN sevas are day-scoped by seva_schedule_rules, because the two hawans
+ * are NOT interchangeable: Griha Shanti Hawan is the Second Tuesday hawan and
+ * Sarv Rog Nivaran Hawan is the Last Saturday hawan. Without this scoping both
+ * hawans would appear on both days (plan_sevas alone has no day dimension).
+ * This keeps the Pandit list and WhatsApp copy in step with the plan page,
+ * which derives the same thing in scheduleForPlan() in src/lib/plans.ts.
+ *
+ *  - second_tuesday: plan sevas, hawans limited to TUE/second.
+ *  - last_saturday: (plan sevas ∪ Saturday hawans), hawans limited to SAT/last.
+ *  - last_saturday + isCatchup: plan sevas ONLY — the one-time catch-up
+ *    explicitly EXCLUDES hawan (Basic late-joiner rule), so day-scoping the
+ *    hawans is moot but harmless.
  */
 export function sevasForMember(input: {
-  variant: SankalpVariant;
+  kind: BatchKind;
   planId: string;
   planSevas: PlanSevaRow[];
   sevas: SevaLite[];
   saturdayHawanSevaIds: string[];
+  scheduleRules: ScheduleRuleRow[];
   isCatchup?: boolean;
 }): SevaLite[] {
-  const { variant, planId, planSevas, sevas, saturdayHawanSevaIds } = input;
+  const { kind, planId, planSevas, sevas, saturdayHawanSevaIds, scheduleRules } = input;
   const byId = new Map(sevas.map((s) => [s.id, s]));
-
-  if (variant === "hawan_only") {
-    return saturdayHawanSevaIds
-      .map((id) => byId.get(id))
-      .filter((s): s is SevaLite => !!s)
-      .sort((a, b) => a.sort_order - b.sort_order);
-  }
 
   const ids = new Set(
     planSevas.filter((ps) => ps.plan_id === planId).map((ps) => ps.seva_id),
   );
-  if (variant === "full_package" && !input.isCatchup) {
+  if (kind === "last_saturday" && !input.isCatchup) {
     for (const id of saturdayHawanSevaIds) ids.add(id);
   }
+  const day = batchDayFor(kind);
   return [...ids]
     .map((id) => byId.get(id))
     .filter((s): s is SevaLite => !!s && s.is_active)
+    .filter((s) => !isHawanSeva(s) || hawanRuledForDay(s.id, scheduleRules, day))
     .sort((a, b) => a.sort_order - b.sort_order);
 }
 
@@ -312,7 +345,7 @@ export function sevasForMember(input: {
  * and a Premium family can never share a segment.
  *
  * tierKey: the subscriber's resolved seva signature for THIS batch
- * variant (sorted seva ids from sevasForMember). Plans with identical
+ * kind (sorted seva ids from sevasForMember). Plans with identical
  * live composition (e.g. Premium + Premium Annual) share a tierKey
  * and MAY share a segment; catch-up subscribers (hawan excluded)
  * always land in their own tier bucket.
@@ -427,7 +460,7 @@ export function buildDeliveryMessage(input: {
 /**
  * Builds the exact update payload for "Mark Seva Completed".
  * The caller MUST apply it with .eq('id', batchId) on ONE row.
- * There is deliberately no batch_type/variant in the payload —
+ * There is deliberately no batch_type in the payload —
  * completion can never leak across batches because it is keyed
  * only by the target row's own primary key.
  */

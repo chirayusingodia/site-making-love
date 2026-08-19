@@ -1,5 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import {
+  buildLiveSeva,
+  buildSevaComparison,
+  isHawanSeva,
+  scheduleForPlan,
+  sevaFeatureLines,
+  type ComparisonValue,
+  type LiveSeva,
+} from "@/lib/plans-schedule";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PLAN & SEVA DATA — 100% LIVE FROM SUPABASE
@@ -83,19 +92,9 @@ interface DbPlanAddon {
 }
 
 // ─── Live composition shapes ─────────────────────────────────────────────────
-/** A seva as rendered publicly — schedule derived live from seva_schedule_rules. */
-export type LiveSeva = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  /** e.g. ["2nd Tuesday"] or ["2nd Tuesday", "Last Saturday"] */
-  days: string[];
-  /** e.g. "1 time a month" | "2 times a month" ("" when no schedule rules) */
-  frequency: string;
-};
-
-export type ComparisonValue = { has: boolean; frequency?: string; label?: string };
+// Defined in plans-schedule.ts alongside the derivation that produces them;
+// re-exported here so consumers keep importing them from "@/lib/plans".
+export type { LiveSeva, ComparisonValue } from "@/lib/plans-schedule";
 
 export type Plan = {
   id: string; // public URL id (slug alias, e.g. "grah" for "premium")
@@ -333,28 +332,6 @@ export function formatINR(pricePaise: number): string {
   return `₹${Math.round(pricePaise / 100).toLocaleString("en-IN")}`;
 }
 
-const WEEKDAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-const WEEKDAY_LABELS: Record<string, string> = {
-  MON: "Monday",
-  TUE: "Tuesday",
-  WED: "Wednesday",
-  THU: "Thursday",
-  FRI: "Friday",
-  SAT: "Saturday",
-  SUN: "Sunday",
-};
-const OCCURRENCE_LABELS: Record<string, string> = {
-  first: "1st",
-  second: "2nd",
-  third: "3rd",
-  fourth: "4th",
-  last: "Last",
-};
-
-function frequencyLabel(timesPerMonth: number): string {
-  return timesPerMonth === 1 ? "1 time a month" : `${timesPerMonth} times a month`;
-}
-
 /** Cadence hint parsed from an addon's admin-written description (e.g. "Quarterly Prasad Box — …"). */
 function addonCadence(description: string | null): string | undefined {
   if (!description) return undefined;
@@ -362,23 +339,6 @@ function addonCadence(description: string | null): string | undefined {
   if (/monthly|maasik/i.test(description)) return "Monthly";
   if (/yearly|annual|varsh/i.test(description)) return "Yearly";
   return undefined;
-}
-
-function buildLiveSeva(seva: DbSeva, rules: DbScheduleRule[]): LiveSeva {
-  const myRules = rules
-    .filter((r) => r.seva_id === seva.id)
-    .sort((a, b) => WEEKDAY_ORDER.indexOf(a.weekday) - WEEKDAY_ORDER.indexOf(b.weekday));
-  const days = myRules.map(
-    (r) => `${OCCURRENCE_LABELS[r.occurrence] ?? r.occurrence} ${WEEKDAY_LABELS[r.weekday] ?? r.weekday}`
-  );
-  return {
-    id: seva.id,
-    slug: seva.slug,
-    name: seva.name,
-    description: seva.description,
-    days,
-    frequency: days.length > 0 ? frequencyLabel(days.length) : "",
-  };
 }
 
 function buildPlan(
@@ -389,29 +349,23 @@ function buildPlan(
 ): Plan {
   const pres = PLAN_PRESENTATION[dbPlan.slug] ?? genericPresentation(dbPlan);
   const includedIds = new Set(planSevas.filter((ps) => ps.plan_id === dbPlan.id).map((ps) => ps.seva_id));
-  const includedSevas = liveSevas.filter((s) => includedIds.has(s.id));
+  // Rule days are GLOBAL (seva_schedule_rules has no plan dimension); what a
+  // subscriber actually receives depends on their tier, so re-derive per plan.
+  // Hawan-eligible plans sit in both batches, so their non-hawan sevas run on
+  // List A *and* List B — see scheduleForPlan() in plans-schedule.ts.
+  const includedSevas = scheduleForPlan(liveSevas.filter((s) => includedIds.has(s.id)));
   const addons = planAddons.filter((a) => a.plan_id === dbPlan.id && a.is_active);
   const prasadAddon = addons.find((a) => a.addon_type === "prasad");
-  const hasHawan = includedSevas.some((s) => /hawan|havan/i.test(`${s.slug} ${s.name}`));
+  const hasHawan = includedSevas.some(isHawanSeva);
 
   // Features list — derived live from plan_sevas + seva_schedule_rules + plan_addons
-  const features = includedSevas.map((s) =>
-    s.days.length > 1
-      ? `${s.name} — ${s.days.length}× हर माह (${s.days.join(" & ")})`
-      : s.days.length === 1
-        ? `${s.name} — हर माह (${s.days[0]})`
-        : s.name
-  );
+  const features = sevaFeatureLines(includedSevas);
   addons.forEach((a) => features.push(a.description ?? a.addon_type));
   features.push("WhatsApp Video Proof"); // universal platform feature, not a seva
 
-  // Comparison matrix values — every active seva gets a row keyed by its slug
-  const comparison: Record<string, ComparisonValue> = {};
-  liveSevas.forEach((s) => {
-    comparison[s.slug] = includedIds.has(s.id)
-      ? { has: true, ...(s.frequency ? { frequency: s.frequency } : {}) }
-      : { has: false };
-  });
+  // Comparison matrix values — every active seva gets a row keyed by its slug,
+  // with the frequency the PLAN gives it (Premium runs Sundarkand twice a month).
+  const comparison: Record<string, ComparisonValue> = buildSevaComparison(liveSevas, includedSevas);
   comparison.proof = { has: true };
   comparison.family = { has: true, label: "Up to 4" };
   comparison.prasad = prasadAddon
@@ -549,7 +503,15 @@ export const faqs = [
   { q: "पहली सेवा कब शुरू होगी?", a: "अगर आप महीने के दूसरे मंगलवार से पहले सब्सक्राइब करते हैं, तो आपकी पहली सेवा उसी महीने के दूसरे मंगलवार को होती है — आपके प्लान की सभी सेवाओं के साथ। Premium और Premium Annual सदस्यों को उसी महीने के आखिरी शनिवार को अतिरिक्त सेवाएं (Saadhu Santo Ko Bhojan दोबारा + Sarv Rog Nivaran Hawan) भी मिलती हैं। अगर आप दूसरे मंगलवार के बाद जॉइन करते हैं, तो Basic सदस्यों को अगले महीने के दूसरे मंगलवार का इंतज़ार करना होता है (हालांकि इस बीच उसी महीने के आखिरी शनिवार में एक बार शामिल कर लिया जाता है, Hawan को छोड़कर)।" },
   { q: "Refund Policy क्या है?", a: "अगर किसी कारणवश सेवा न हो सके तो पूरा धन वापस किया जाएगा।" },
   { q: "क्या मुझे प्रत्येक सेवा का प्रमाण मिलेगा?", a: "जी हाँ। प्रत्येक अनुष्ठान का Live या Video Proof सीधे आपके WhatsApp पर भेजा जाता है।" },
-  { q: "क्या यह कोई business है?", a: "नहीं। यह सनातन सेवा का एक सामूहिक यज्ञ है। आपकी सेवा राशि का एक-एक पैसा सीधे गौ-माता के चारे, वानरों के फल, साधु संतों को भोजन एवं अनुष्ठान सामग्री में लगाया जाता है।" },
+  { q: "क्या यह कोई business है?", a: `ईमानदारी से कहें तो — पुण्यता एक संगठित सेवा है, और किसी भी संगठन को चलते रहने के लिए आत्मनिर्भर होना पड़ता है। हम इसे छिपाते नहीं। फर्क सिर्फ प्राथमिकता का है: यहाँ पहले सेवा आती है, फिर उसे हर महीने बिना रुके चलाते रहने का प्रबंध। और आपका दिया हुआ पैसा कहाँ-कहाँ जाता है, यह जानने का पूरा हक आपका है।
+
+बड़ा हिस्सा — सीधे दान-पुण्य में: गौ-माता का चारा, वानरों के फल, साधु संतों का भोजन, तथा हवन एवं अनुष्ठान की सामग्री।
+
+शेष हिस्सा — पुण्यता को चलाने में: आचार्य एवं पंडित जी की टीम की दक्षिणा; हर सेवा की वीडियो रिकॉर्डिंग एवं एडिटिंग करने वाली टीम; पुष्कर का ऑफिस एवं वहाँ की व्यवस्था; तथा app, website, payment एवं WhatsApp पर प्रमाण पहुँचाने का तकनीकी खर्च।
+
+इसके साथ वह पूरी टीम भी — मैनेजर एवं समन्वयक जो हर महीने संकल्प सूची तैयार करते हैं, सेवाओं का शेड्यूल संभालते हैं, प्रमाण जाँचकर हर परिवार तक भेजते हैं, और आपके प्रश्नों का उत्तर देते हैं। यही लोग हैं जिनकी वजह से हर सेवा समय पर और बिना चूक के पूरी होती है।
+
+यही संतुलन है जिसकी वजह से जो सेवा सामान्यतः हज़ारों में पड़ती है, वह आप तक मात्र ₹251 में पहुँच पाती है — और हर महीने पहुँचती रहती है।` },
   { q: "क्या मैं अपने माता-पिता के नाम से संकल्प ले सकता हूँ?", a: "अवश्य। आप अपने माता-पिता, स्वर्गीय प्रियजनों या किसी भी सदस्य के नाम और गोत्र से यह मासिक संकल्प आरंभ कर सकते हैं।" },
   { q: "क्या मैं किसी भी समय cancel कर सकता हूँ?", a: "जी हाँ, बिना किसी शुल्क या प्रश्न के आप अपना मासिक योगदान कभी भी रोक सकते हैं।" },
 ];

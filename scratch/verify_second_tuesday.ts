@@ -15,7 +15,6 @@ import {
   lastSaturdayOf,
   saturdayHawanSevaIds,
   secondTuesdayOf,
-  variantsForKind,
 } from "../src/lib/sankalp-logic.ts";
 
 let failures = 0;
@@ -247,12 +246,11 @@ check(
 );
 check(
   "List A label reads 'Second Tuesday'",
-  batchLabel("second_tuesday", null, "2026-09-08") === "Second Tuesday Sankalp — 8 September 2026",
+  batchLabel("second_tuesday", "2026-09-08") === "Second Tuesday Sankalp — 8 September 2026",
 );
-check(
-  "List A produces exactly ONE batch row (variant null)",
-  variantsForKind("second_tuesday").length === 1 && variantsForKind("second_tuesday")[0] === null,
-);
+// One batch row per (kind, date) is now structural: variantsForKind is gone
+// and the DB carries a UNIQUE (batch_type, batch_date) index
+// (20260819_010_retire_sankalp_variant.sql).
 // 'first_tuesday' is fully retired — no such value exists in the type, the
 // DB constraint, or any code path. Nothing to assert about it.
 
@@ -386,17 +384,8 @@ for (let y = 2026; y <= 2036; y++) {
 }
 check("132 months: last Saturday still resolves and still maps to 'last_saturday'", satInvariant);
 check(
-  "List B still produces TWO variants, in order",
-  variantsForKind("last_saturday").length === 2 &&
-    variantsForKind("last_saturday")[0] === "hawan_only" &&
-    variantsForKind("last_saturday")[1] === "full_package",
-);
-check(
-  "List B labels unchanged",
-  batchLabel("last_saturday", "hawan_only", "2026-09-26") ===
-    "Last Saturday Hawan Sankalp — 26 September 2026" &&
-    batchLabel("last_saturday", "full_package", "2026-09-26") ===
-      "Last Saturday Sankalp — 26 September 2026",
+  "List B has ONE label — the retired hawan variant label is gone",
+  batchLabel("last_saturday", "2026-09-26") === "Last Saturday Sankalp — 26 September 2026",
 );
 check(
   "Saturday hawan detection unchanged (Sarv Rog Nivaran, not Griha Shanti)",

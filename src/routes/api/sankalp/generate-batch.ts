@@ -5,9 +5,7 @@ import {
   batchKindForDate,
   computeBatchMembership,
   saturdayHawanSevaIds,
-  variantsForKind,
   type BatchKind,
-  type SankalpVariant,
 } from "@/lib/sankalp-logic";
 
 // POST /api/sankalp/generate-batch
@@ -95,93 +93,87 @@ export const Route = createFileRoute("/api/sankalp/generate-batch")({
         });
         const catchupCount = membership.filter((m) => m.is_catchup).length;
 
-        // ── One INDEPENDENT row per (kind, variant) — always ──
+        // ── EXACTLY ONE batch row per (kind, date) ──
+        // The former 'hawan_only' / 'full_package' variant split created two
+        // rows here and inserted this same `membership` into BOTH, enrolling
+        // every List B subscriber twice. One kind, one date, one batch.
         const results: {
           batch_id: string;
           batch_type: BatchKind;
-          sankalp_variant: SankalpVariant;
           action: "created" | "refreshed" | "skipped_done";
           subscriber_count: number;
         }[] = [];
 
-        for (const variant of variantsForKind(kind)) {
-          let query = db
+        {
+          const { data: existing, error: exErr } = await db
             .from("sankalp_batches")
             .select("id,status")
             .eq("batch_date", date)
-            .eq("batch_type", kind);
-          query =
-            variant === null
-              ? query.is("sankalp_variant", null)
-              : query.eq("sankalp_variant", variant);
-          const { data: existing, error: exErr } = await query.maybeSingle();
+            .eq("batch_type", kind)
+            .maybeSingle();
           if (exErr) return json({ error: exErr.message }, 500);
 
           if (existing?.status === "done") {
             results.push({
               batch_id: existing.id,
               batch_type: kind,
-              sankalp_variant: variant,
               action: "skipped_done",
               subscriber_count: membership.length,
             });
-            continue;
-          }
-
-          let batchId: string;
-          if (existing) {
-            batchId = existing.id;
-            // Refresh membership: wipe THIS batch's rows only.
-            const { error: delErr } = await db
-              .from("sankalp_batch_subscriptions")
-              .delete()
-              .eq("batch_id", batchId);
-            if (delErr) return json({ error: delErr.message }, 500);
           } else {
-            const { data: inserted, error: insErr } = await db
-              .from("sankalp_batches")
-              .insert({
-                batch_type: kind,
-                batch_date: date,
-                sankalp_variant: variant,
-                status: "pending",
-              })
-              .select("id")
-              .single();
-            if (insErr || !inserted) {
-              return json({ error: insErr?.message ?? "insert failed" }, 500);
-            }
-            batchId = inserted.id;
-          }
-
-          if (membership.length > 0) {
-            const rows = membership.map((m) => ({
-              batch_id: batchId,
-              subscription_id: m.subscription_id,
-              is_catchup: m.is_catchup,
-            }));
-            for (let i = 0; i < rows.length; i += 500) {
-              const { error: sbsErr } = await db
+            let batchId: string;
+            if (existing) {
+              batchId = existing.id;
+              // Refresh membership: wipe THIS batch's rows only.
+              const { error: delErr } = await db
                 .from("sankalp_batch_subscriptions")
-                .insert(rows.slice(i, i + 500));
-              if (sbsErr) return json({ error: sbsErr.message }, 500);
+                .delete()
+                .eq("batch_id", batchId);
+              if (delErr) return json({ error: delErr.message }, 500);
+            } else {
+              const { data: inserted, error: insErr } = await db
+                .from("sankalp_batches")
+                .insert({
+                  batch_type: kind,
+                  batch_date: date,
+                  status: "pending",
+                })
+                .select("id")
+                .single();
+              if (insErr || !inserted) {
+                return json({ error: insErr?.message ?? "insert failed" }, 500);
+              }
+              batchId = inserted.id;
             }
+
+            if (membership.length > 0) {
+              const rows = membership.map((m) => ({
+                batch_id: batchId,
+                subscription_id: m.subscription_id,
+                is_catchup: m.is_catchup,
+              }));
+              for (let i = 0; i < rows.length; i += 500) {
+                const { error: sbsErr } = await db
+                  .from("sankalp_batch_subscriptions")
+                  .insert(rows.slice(i, i + 500));
+                if (sbsErr) return json({ error: sbsErr.message }, 500);
+              }
+            }
+
+            // Snapshot count onto THIS batch row only.
+            const { error: updErr } = await db
+              .from("sankalp_batches")
+              .update({ subscriber_count: membership.length })
+              .eq("id", batchId);
+            if (updErr) return json({ error: updErr.message }, 500);
+
+            results.push({
+              batch_id: batchId,
+              batch_type: kind,
+              action: existing ? "refreshed" : "created",
+              subscriber_count: membership.length,
+            });
           }
-
-          // Snapshot count onto THIS batch row only.
-          const { error: updErr } = await db
-            .from("sankalp_batches")
-            .update({ subscriber_count: membership.length })
-            .eq("id", batchId);
-          if (updErr) return json({ error: updErr.message }, 500);
-
-          results.push({
-            batch_id: batchId,
-            batch_type: kind,
-            sankalp_variant: variant,
-            action: existing ? "refreshed" : "created",
-            subscriber_count: membership.length,
-          });
         }
 
         await db.from("audit_logs").insert({

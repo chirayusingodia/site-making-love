@@ -13,7 +13,7 @@ import {
   SEGMENT_SIZE_SUBSCRIPTIONS,
   SEGMENT_MAX_NAMES,
   type BatchKind,
-  type SankalpVariant,
+  type ScheduleRuleRow,
   type SevaLite,
 } from "@/lib/sankalp-logic";
 import { callAdminApi, uploadToCloudinary } from "@/lib/cloudinary-upload";
@@ -49,7 +49,6 @@ interface BatchRow {
   id: string;
   batch_type: BatchKind;
   batch_date: string;
-  sankalp_variant: SankalpVariant;
   status: "pending" | "done" | "missed";
   completed_at: string | null;
   subscriber_count: number;
@@ -112,6 +111,7 @@ function ProofUploadPage() {
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [planSevas, setPlanSevas] = useState<{ plan_id: string; seva_id: string }[]>([]);
   const [hawanIds, setHawanIds] = useState<string[]>([]);
+  const [scheduleRules, setScheduleRules] = useState<ScheduleRuleRow[]>([]);
   const [batches, setBatches] = useState<BatchRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -134,13 +134,15 @@ function ProofUploadPage() {
     setSevas(sv);
     setPlans((plansRes.data as PlanRow[]) ?? []);
     setPlanSevas(psRes.data ?? []);
-    setHawanIds(saturdayHawanSevaIds(sv, rulesRes.data ?? []));
+    const rules = (rulesRes.data as ScheduleRuleRow[]) ?? [];
+    setScheduleRules(rules);
+    setHawanIds(saturdayHawanSevaIds(sv, rules));
   }, []);
 
   const loadBatches = useCallback(async () => {
     const { data, error: err } = await supabase
       .from("sankalp_batches")
-      .select("id,batch_type,batch_date,sankalp_variant,status,completed_at,subscriber_count")
+      .select("id,batch_type,batch_date,status,completed_at,subscriber_count")
       .order("batch_date", { ascending: false })
       .limit(16);
     if (err) setError(err.message);
@@ -221,6 +223,7 @@ function ProofUploadPage() {
           plans={plans}
           planSevas={planSevas}
           hawanIds={hawanIds}
+          scheduleRules={scheduleRules}
           onBatchChanged={loadBatches}
         />
       )}
@@ -243,11 +246,9 @@ function GenerateBar({ onGenerated }: { onGenerated: () => Promise<void> }) {
         batch_type: string;
         subscriber_count: number;
         catchup_count: number;
-        batches: { action: string; sankalp_variant: string | null }[];
+        batches: { action: string }[];
       }>("/api/sankalp/generate-batch", { date });
-      const desc = res.batches
-        .map((b) => `${b.sankalp_variant ?? res.batch_type}: ${b.action}`)
-        .join(", ");
+      const desc = res.batches.map((b) => `${res.batch_type}: ${b.action}`).join(", ");
       setMsg(
         `Done — ${res.subscriber_count} subscriber(s) (${res.catchup_count} catch-up). ${desc}`,
       );
@@ -326,7 +327,7 @@ function BatchColumn({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-semibold text-slate-800">
-                {batchLabel(b.batch_type, b.sankalp_variant, b.batch_date)}
+                {batchLabel(b.batch_type, b.batch_date)}
               </span>
               <StatusBadge status={b.status} />
             </div>
@@ -350,6 +351,7 @@ function BatchDetail({
   plans,
   planSevas,
   hawanIds,
+  scheduleRules,
   onBatchChanged,
 }: {
   batch: BatchRow;
@@ -357,6 +359,7 @@ function BatchDetail({
   plans: PlanRow[];
   planSevas: { plan_id: string; seva_id: string }[];
   hawanIds: string[];
+  scheduleRules: ScheduleRuleRow[];
   onBatchChanged: () => Promise<void>;
 }) {
   const [sbs, setSbs] = useState<SbsRow[]>([]);
@@ -467,7 +470,7 @@ function BatchDetail({
     [sbs],
   );
 
-  // Resolved seva set per subscriber (this batch's variant + catch-up
+  // Resolved seva set per subscriber (this batch's kind + catch-up
   // rules) — drives tier keys, segment labels, and WhatsApp copy.
   const sevasBySub = useMemo(() => {
     const map = new Map<string, SevaLite[]>();
@@ -477,17 +480,18 @@ function BatchDetail({
       map.set(
         r.subscription_id,
         sevasForMember({
-          variant: batch.sankalp_variant,
+          kind: batch.batch_type,
           planId: sub.plan_id,
           planSevas,
           sevas,
           saturdayHawanSevaIds: hawanIds,
+          scheduleRules,
           isCatchup: r.is_catchup,
         }),
       );
     }
     return map;
-  }, [sbs, subs, batch.sankalp_variant, planSevas, sevas, hawanIds]);
+  }, [sbs, subs, batch.batch_type, planSevas, sevas, hawanIds, scheduleRules]);
 
   // Tier label per segment: plan names sharing that segment's signature.
   const planNamesById = useMemo(() => new Map(plans.map((p) => [p.id, p.name])), [plans]);
@@ -514,7 +518,7 @@ function BatchDetail({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 flex-wrap">
-              {batchLabel(batch.batch_type, batch.sankalp_variant, batch.batch_date)}
+              {batchLabel(batch.batch_type, batch.batch_date)}
               <StatusBadge status={batch.status} />
             </h2>
             <p className="text-xs text-amber-900/70 mt-1">
@@ -926,7 +930,7 @@ function DeliveryCard({
   const [manualBusy, setManualBusy] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const labelText = batchLabel(batch.batch_type, batch.sankalp_variant, batch.batch_date);
+  const labelText = batchLabel(batch.batch_type, batch.batch_date);
   const deliveredCount = deliveries.filter((d) => d.is_delivered).length;
 
   async function prepare() {

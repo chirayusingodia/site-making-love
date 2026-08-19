@@ -435,28 +435,18 @@ const batches: BatchRow[] = [
     id: "b_tue",
     batch_type: "second_tuesday",
     batch_date: "2026-08-11",
-    sankalp_variant: null,
     status: "done",
   },
   {
-    id: "b_sat_full",
+    id: "b_sat",
     batch_type: "last_saturday",
     batch_date: "2026-08-29",
-    sankalp_variant: "full_package",
-    status: "pending",
-  },
-  {
-    id: "b_sat_hawan",
-    batch_type: "last_saturday",
-    batch_date: "2026-08-29",
-    sankalp_variant: "hawan_only",
     status: "pending",
   },
 ];
 const membership = new Map<string, Set<string>>([
   ["b_tue", new Set(["s1", "s2"])],
-  ["b_sat_full", new Set(["s2"])],
-  ["b_sat_hawan", new Set(["s2"])],
+  ["b_sat", new Set(["s2"])],
 ]);
 const pending = computePendingSevas(subs, batches, membership, "2026-08");
 check("pending: only ACTIVE subs listed", pending.length === 2);
@@ -470,7 +460,7 @@ check(
     pending.find((r) => r.id === "s1")?.sat.note === "Not in this batch's list",
 );
 check(
-  "pending: s2 saturday via full_package",
+  "pending: s2 in the single Saturday batch → Pending",
   pending.find((r) => r.id === "s2")?.sat.label === "Pending",
 );
 check("pending: sorted by join date", pending[0].id === "s2" && pending[1].id === "s1");
@@ -581,6 +571,36 @@ check(
   "006: does NOT hardcode-drop 'profiles_role_check' before discovery",
   !/ALTER TABLE public\.profiles\s+DROP CONSTRAINT profiles_role_check/i.test(m006),
 );
+
+// ─────────────────────────────────────────────────────────────
+// 9. Static SQL checks on migration 010 (retire sankalp_variant)
+// ─────────────────────────────────────────────────────────────
+const m010 = readFileSync(
+  new URL("../supabase/migrations/20260819_010_retire_sankalp_variant.sql", import.meta.url),
+  "utf8",
+);
+const m010Live = m010
+  .split("\n")
+  .filter((l) => !l.trimStart().startsWith("--"))
+  .join("\n");
+
+check("010: drops the sankalp_variant column",
+  /DROP COLUMN IF EXISTS sankalp_variant/.test(m010Live));
+check("010: adds UNIQUE (batch_type, batch_date) so duplicates cannot recur",
+  /CREATE UNIQUE INDEX IF NOT EXISTS[\s\S]*\(batch_type, batch_date\)/.test(m010Live));
+check("010: guards on duplicate (type, date) rows instead of deleting them",
+  m010Live.includes("RAISE EXCEPTION") && m010Live.includes("HAVING count(*) > 1"));
+check("010: no destructive statement against any table",
+  !/(DELETE FROM|TRUNCATE|UPDATE) /i.test(m010Live));
+check("010: does NOT touch seva_schedule_rules or plan_sevas",
+  !/(seva_schedule_rules|plan_sevas)/.test(m010Live));
+check("010: leaves batch_type values alone",
+  !/batch_type_check/.test(m010Live));
+check("010: wrapped in a transaction",
+  m010Live.includes("BEGIN;") && m010Live.includes("COMMIT;"));
+check("010: down migration is documented and fully commented out",
+  m010.includes("DOWN MIGRATION") &&
+    !/ADD COLUMN IF NOT EXISTS sankalp_variant/.test(m010Live));
 
 // ─────────────────────────────────────────────────────────────
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);

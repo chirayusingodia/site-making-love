@@ -13,6 +13,21 @@ If you are an AI coding agent picking this up: **read this fully before writing 
    List B (Last Saturday) is unchanged. This affects: `seva_schedule_rules`, `sankalp_batches.batch_type`, the onboarding catch-up rule, the Pending Sevas report, and all copy/admin labels that said "1st Tuesday." See Section 7.
 2. **New module: Occasional Pooja Pages** — a way for Chirayu to generate a one-off, unlisted "micro-landing page" per subscriber for ad-hoc/occasional poojas (birthday, festival, special sankalp, etc.), attach a photo + custom message, and send the direct link to that subscriber via WhatsApp with an open/voluntary donation ask ("ab aapko jitna es pooja paath ka dena hai aap de sakte hain"). Never linked from the public site nav or sitemap — reachable only via its unique URL. Chirayu can toggle any page live/down anytime. See Section 6A and Section 10 (new admin module #7A).
 
+3. **`sankalp_variant` RETIRED — Last Saturday is ONE batch, not two.**
+   The `'hawan_only'` / `'full_package'` split was never a business rule: no plan
+   grants a hawan without the rest of its sevas. It was also a live bug —
+   membership was computed once for `kind='last_saturday'` and inserted into BOTH
+   rows, so every List B subscriber was enrolled twice (two pandit entries, two
+   proof videos, double `subscriber_count`). The column is dropped and a UNIQUE
+   `(batch_type, batch_date)` index now makes one-batch-per-day structural.
+   See Section 7 and migration `20260819_010_retire_sankalp_variant.sql`.
+4. **The two hawans are DAY-SPECIFIC, not interchangeable.**
+   Griha Shanti Hawan is the Second Tuesday hawan; Sarv Rog Nivaran Hawan is the
+   Last Saturday hawan. `plan_sevas` alone has no day dimension, so seva
+   resolution must scope hawans by `seva_schedule_rules`; without it both hawans
+   appeared on both days. Non-hawan sevas DO run on every batch day their plan is
+   in. See Section 7.
+
 Everything else in this document carries forward unchanged from v2 unless explicitly marked "UPDATED" below.
 
 ---
@@ -460,7 +475,10 @@ create table sankalp_batches (
   id                uuid primary key default gen_random_uuid(),
   batch_type        text not null,      -- 'second_tuesday' (was 'first_tuesday') | 'last_saturday'
   batch_date        date not null,
-  sankalp_variant   text,               -- for last_saturday: 'hawan_only' | 'full_package'
+  -- sankalp_variant RETIRED (migration 010). One batch per (batch_type,
+  -- batch_date), enforced by a UNIQUE index. Do not reintroduce a variant
+  -- column: the old 'hawan_only'/'full_package' pair covered an identical
+  -- member set and double-enrolled every List B subscriber.
   status            text default 'pending',  -- pending | done | missed
   completed_at      timestamptz,
   subscriber_count  int,
@@ -698,9 +716,21 @@ This is the operational heart of the product and must be implemented exactly as 
 
 - Puja happens **exactly twice a month** — never weekly, never daily.
 - **List A — SECOND Tuesday of the month** *(changed from First Tuesday)*: ALL active subscribers (every tier) → whichever sevas their current plan includes (per live `plan_sevas` lookup).
-- **List B — Last Saturday of the month** *(unchanged)*: Subscribers on plans that include Hawan (currently Premium + Premium Annual) → generates **two separate sankalps**:
-  1. Hawan-only sankalp
-  2. Full package sankalp (all of that plan's sevas + Hawan)
+- **List B — Last Saturday of the month**: Subscribers on plans that include Hawan (currently Premium + Premium Annual) → **ONE sankalp**, covering that plan's sevas plus the Saturday hawan. *(UPDATED — the former Hawan-only + Full-package pair is retired; see Changelog #3.)*
+- **Hawan day-scoping (LOCKED):** the two hawans are **not interchangeable**.
+  **Griha Shanti Hawan → Second Tuesday. Sarv Rog Nivaran Hawan → Last Saturday.**
+  Every NON-hawan seva in a plan runs on **every** batch day that plan is in, so
+  a Premium subscriber receives Sundarkand Path, Gau Seva, Vanar Seva and Saadhu
+  Santo Ko Bhojan **twice a month** and each hawan **once**. Resolution must
+  intersect hawans with `seva_schedule_rules` — `plan_sevas` carries no day
+  dimension, so reading it alone puts both hawans on both days.
+  Concretely, for Premium/Premium Annual:
+  | Batch | Sevas performed |
+  |---|---|
+  | Second Tuesday | Sundarkand, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, **Griha Shanti Hawan** |
+  | Last Saturday | Sundarkand, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, **Sarv Rog Nivaran Hawan** |
+  Basic includes no hawan at all and therefore never joins List B (except the
+  one-time catch-up below, which also excludes hawan).
 - Lists are always generated **live/fresh** from currently-active subscriptions **and current plan_sevas mapping** at generation time — **never cached**.
 - **Basic tier limitation (not a bug):** A subscriber on a Saturday-ineligible plan who joins after that month's Second Tuesday must wait until next month's Second Tuesday.
 - **Onboarding catch-up rule (Saturday-ineligible tiers only):** If such a subscriber joins *after* that month's Second Tuesday, they get a **one-time inclusion** in that same month's Last Saturday list, but only for the sevas their plan actually includes (NOT Hawan). From month 2 onward, they resume the normal Second-Tuesday-only cycle.
@@ -708,7 +738,7 @@ This is the operational heart of the product and must be implemented exactly as 
 > **Why Second Tuesday and not First:** business/operational decision by Chirayu — gives a one-week buffer after month-start for that month's active-subscriber list to stabilize (failed payments retried, new sign-ups from the first few days settled) before the first sankalp of the month is generated. Purely operational; no change to the twice-a-month cadence itself.
 
 ### Batch tracking (admin-side)
-- Each list generation (List A or List B, for a given month) creates a distinct **batch record**: date + a snapshot of the subscriptions included.
+- Each list generation (List A or List B, for a given month) creates **exactly one** distinct **batch record**: date + a snapshot of the subscriptions included. `(batch_type, batch_date)` is UNIQUE — regenerating a day refreshes that row's membership rather than inserting a second row.
 - Admin manually clicks **"Mark Seva Completed"** per batch → locks a completion timestamp + subscriber count for that batch.
 - Tuesday batches and Saturday batches are **completely independent records**. Marking one complete must never flip the other's status.
 - Status labels shown in admin UI: **Done / Pending / Missed** — never "Covered."
@@ -758,7 +788,7 @@ Razorpay Checkout → UPI AutoPay mandate / card auto-debit
 
 Twice-monthly Sankalp cycle (UPDATED):
   Second Tuesday → List A generated live → ALL active subs → sevas per current plan
-  Last Saturday  → List B generated live → Hawan-eligible plans only → Hawan-only + Full-package sankalps
+  Last Saturday  → List B generated live → Hawan-eligible plans only → ONE sankalp (plan sevas + Sarv Rog Nivaran Hawan)
   → admin marks each batch "Done" independently
   → proof uploaded per batch (common footage + name-segment video)
   → WhatsApp delivery (2 messages per subscriber)

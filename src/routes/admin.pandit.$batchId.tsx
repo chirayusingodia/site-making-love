@@ -8,7 +8,7 @@ import {
   sevasForMember,
   type BatchKind,
   type PanditMember,
-  type SankalpVariant,
+  type ScheduleRuleRow,
   type SevaLite,
 } from "@/lib/sankalp-logic";
 import { Printer, ArrowLeft } from "lucide-react";
@@ -29,7 +29,6 @@ interface BatchRow {
   id: string;
   batch_type: BatchKind;
   batch_date: string;
-  sankalp_variant: SankalpVariant;
 }
 
 function PanditListPage() {
@@ -46,7 +45,7 @@ function PanditListPage() {
 
       const { data: b, error: bErr } = await supabase
         .from("sankalp_batches")
-        .select("id,batch_type,batch_date,sankalp_variant")
+        .select("id,batch_type,batch_date")
         .eq("id", batchId)
         .maybeSingle();
       if (bErr || !b) {
@@ -107,17 +106,19 @@ function PanditListPage() {
 
       const sevas = (sevasRes.data as SevaLite[]) ?? [];
       const planSevas = psRes.data ?? [];
-      const hawanIds = saturdayHawanSevaIds(sevas, rulesRes.data ?? []);
+      const scheduleRules = (rulesRes.data as ScheduleRuleRow[]) ?? [];
+      const hawanIds = saturdayHawanSevaIds(sevas, scheduleRules);
 
       const members: PanditMember[] = sbsRows.map((r) => ({
         subscription_id: r.subscription_id,
         is_catchup: r.is_catchup,
         sevas: sevasForMember({
-          variant: (b as BatchRow).sankalp_variant,
+          kind: (b as BatchRow).batch_type,
           planId: subPlan.get(r.subscription_id) ?? "",
           planSevas,
           sevas,
           saturdayHawanSevaIds: hawanIds,
+          scheduleRules,
           isCatchup: r.is_catchup,
         }),
         names: membersBySub.get(r.subscription_id) ?? [],
@@ -164,7 +165,7 @@ function PanditListPage() {
           संकल्प नामावली — Sankalp Name List
         </h1>
         <div className="text-center text-xs text-slate-500 mt-1 mb-6">
-          {batchLabel(batch.batch_type, batch.sankalp_variant, batch.batch_date)}
+          {batchLabel(batch.batch_type, batch.batch_date)}
           {" • "}कुल नाम: {totalNames}
         </div>
 

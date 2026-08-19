@@ -94,27 +94,60 @@ function PlansPage() {
         <ComparisonTable />
 
         {/* Sundarkand Mahatmya */}
-        <section className="rounded-3xl overflow-hidden bg-gradient-to-b from-[#5B1A1A] to-[#3D0F0F] text-white">
-          <div className="p-6 space-y-4">
-            <div className="text-xs font-bold uppercase tracking-widest text-[#F5A742]">सुंदरकांड का महात्म्य</div>
-            <h2 className="text-2xl font-bold text-white leading-snug">जहाँ सुंदरकांड, वहाँ संकट का नाश।</h2>
-            <blockquote className="text-[15px] italic text-white/85 border-l-2 border-[#F5A742] pl-3 leading-relaxed">
+        <section className="card-soft overflow-hidden">
+          {/* Hero band: photo with a warm scrim carrying the title */}
+          <div className="relative">
+            <img src={pushkarGhatImg} alt="तीर्थ गुरु पुष्करराज" className="w-full h-56 md:h-64 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#5B1A1A]/90 via-[#5B1A1A]/45 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-6 space-y-1.5">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F5A742]">सुंदरकांड का महात्म्य</div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white leading-snug drop-shadow-sm">
+                जहाँ सुंदरकांड, वहाँ संकट का नाश।
+              </h2>
+            </div>
+          </div>
+
+          <div className="p-6 md:p-8 space-y-5">
+            <blockquote className="relative text-[17px] md:text-[19px] leading-relaxed text-[#5B1A1A] font-medium pl-5">
+              <span className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-gradient-to-b from-[#F5A742] to-[#E85D1F]" />
               "सुंदरकांड का पाठ करने वाले के घर में न दरिद्रता रहती है, न रोग, न शोक, न भय।"
             </blockquote>
-            <p className="text-[14.5px] text-white/80 leading-relaxed">
+
+            <p className="text-[15px] text-foreground/75 leading-relaxed">
               श्री राम चरितमानस का सुंदरकांड — एकमात्र ऐसा कांड है जिसमें श्री हनुमान जी ने स्वयं अपने पराक्रम से असंभव को संभव कर दिखाया। यह पाठ साक्षात हनुमान जी का आवाहन है — बिगड़े काम बनते हैं, ग्रह दोष शांत होते हैं, और परिवार में सकारात्मक ऊर्जा का संचार होता है।
             </p>
-            <div className="rounded-2xl bg-white/10 border border-white/15 p-4 space-y-2">
-              <div className="text-xs text-white/70">आज के समय में सुंदरकांड की लागत</div>
-              <div className="text-3xl font-bold text-[#F5A742]">₹7,000–11,000</div>
-              <div className="text-xs text-white/70">सामान्य आचार्य शुल्क</div>
-              <p className="text-[14px] text-white/85 leading-relaxed pt-2 border-t border-white/10">
-                इसलिए श्री हनुमान जी की कृपा से हमने संकल्प लिया — यह पुण्य हर घर तक पहुँचे। सामूहिक संकल्प के माध्यम से मात्र{" "}
-                <span className="font-bold text-[#F5A742]">{cheapestMonthly ? cheapestMonthly.price : "—"}</span> में आपके नाम और गोत्र से सुंदरकांड पाठ।
+
+            {/* Cost comparison */}
+            <div className="rounded-2xl bg-[#FFF6EE] border border-[#F5A742]/30 p-5 md:p-6 space-y-5">
+              <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
+                <div className="space-y-1">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    आज के समय में सुंदरकांड की लागत
+                  </div>
+                  <div className="text-2xl font-bold text-foreground/45 line-through decoration-[#C0362C]/50 decoration-2">
+                    ₹7,000–11,000
+                  </div>
+                  <div className="text-xs text-muted-foreground">सामान्य आचार्य शुल्क</div>
+                </div>
+
+                <div className="hidden sm:block self-stretch w-px bg-[#F5A742]/30" />
+
+                <div className="space-y-1">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-brand">
+                    सामूहिक संकल्प से
+                  </div>
+                  <div className="text-4xl font-bold text-brand leading-none">
+                    {cheapestMonthly ? cheapestMonthly.price : "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">आपके नाम और गोत्र से</div>
+                </div>
+              </div>
+
+              <p className="text-[15px] text-foreground/75 leading-relaxed pt-4 border-t border-[#F5A742]/25">
+                इसलिए श्री हनुमान जी की कृपा से हमने संकल्प लिया — यह पुण्य हर घर तक पहुँचे।
               </p>
             </div>
           </div>
-          <img src={pushkarGhatImg} alt="तीर्थ गुरु पुष्करराज" className="w-full h-48 object-cover" />
         </section>
 
         {/* Our Sevas */}

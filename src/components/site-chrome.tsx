@@ -83,7 +83,7 @@ export function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.to}
@@ -105,7 +105,7 @@ export function Header() {
       </div>
 
       {/* Mobile pill nav */}
-      <div className="md:hidden max-w-5xl mx-auto px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-none">
+      <div className="lg:hidden max-w-5xl mx-auto px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-none">
         {NAV_LINKS.map((l) => (
           <Link
             key={l.to}
