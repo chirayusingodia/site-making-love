@@ -180,58 +180,95 @@ export function PunyaMeter() {
                   </div>
                 </div>
 
-                {/* Inner Question Card */}
-                <div className="bg-white border border-[#F0DFC8] rounded-xl p-6 min-h-[130px] flex flex-col justify-center shadow-inner relative overflow-hidden">
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={currentIndex}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-lg md:text-xl font-extrabold text-[#1A1A1A] leading-relaxed text-center font-display"
+                {/* ── Q&A CARD: question + answers live together in one sheet ── */}
+                <div className="bg-white border-2 border-[#F0DFC8] rounded-2xl shadow-sm overflow-hidden">
+                  {/* Question row */}
+                  <div className="px-5 pt-5 pb-4">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentIndex}
+                        initial={{ opacity: 0, x: 16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -16 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-start gap-3"
+                      >
+                        {/* Q badge */}
+                        <span className="shrink-0 w-8 h-8 rounded-lg bg-[#D85A30] text-white text-xs font-black flex items-center justify-center shadow-sm">
+                          {lang === "hindi" ? `प्र${currentIndex + 1}` : `Q${currentIndex + 1}`}
+                        </span>
+                        <p className="text-base md:text-lg font-extrabold text-[#1A1A1A] leading-snug font-display pt-1">
+                          {QUESTIONS[currentIndex]}
+                        </p>
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Answer zone — visually attached, on a tinted sheet */}
+                  <div className="border-t border-dashed border-[#F0DFC8] bg-[#FFFBF7] px-5 pt-3.5 pb-5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#D85A30]/70 mb-2.5">
+                      {lang === "hindi" ? "अपना उत्तर चुनें" : "Choose your answer"}
+                    </p>
+
+                    <div className="space-y-2.5">
+                      {[
+                        { value: true, label: t("pm_yes") },
+                        { value: false, label: t("pm_no") },
+                      ].map((opt) => {
+                        const active = selectedValue === opt.value;
+                        return (
+                          <button
+                            key={String(opt.value)}
+                            type="button"
+                            onClick={() => setSelectedValue(opt.value)}
+                            aria-pressed={active}
+                            className={`w-full flex items-center gap-3 text-left py-3.5 px-4 border-2 rounded-xl transition-all active:scale-[0.99] ${
+                              active
+                                ? "bg-[#D85A30]/[0.06] border-[#D85A30] shadow-sm"
+                                : "bg-white border-[#F0DFC8] hover:border-[#D85A30]/50 hover:bg-[#D85A30]/[0.03]"
+                            }`}
+                          >
+                            {/* radio dot */}
+                            <span
+                              className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                active ? "border-[#D85A30] bg-[#D85A30]" : "border-[#D9C4A9] bg-white"
+                              }`}
+                            >
+                              {active && <Check className="w-3 h-3 text-white stroke-[4]" />}
+                            </span>
+                            <span
+                              className={`text-sm font-bold ${
+                                active ? "text-[#D85A30]" : "text-[#4B5563]"
+                              }`}
+                            >
+                              {opt.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Next button — inside the card, so it reads as "submit this answer" */}
+                    <button
+                      disabled={selectedValue === null}
+                      onClick={handleNext}
+                      className={`mt-4 w-full py-3.5 px-4 font-bold rounded-full transition-all text-sm flex items-center justify-center gap-2 ${
+                        selectedValue !== null
+                          ? "bg-[#D85A30] hover:bg-[#B8460F] text-white shadow-md active:scale-[0.98] primary-btn-glow"
+                          : "bg-[#EFE6DC] text-[#B9A894] cursor-not-allowed"
+                      }`}
                     >
-                      {QUESTIONS[currentIndex]}
-                    </motion.p>
-                  </AnimatePresence>
+                      {selectedValue === null
+                        ? lang === "hindi"
+                          ? "पहले उत्तर चुनें"
+                          : "Select an answer first"
+                        : lang === "hindi"
+                          ? "आगे बढ़ें"
+                          : "Next"}
+                      {selectedValue !== null && <ArrowRight size={16} />}
+                    </button>
+                  </div>
                 </div>
-
-                {/* Selection buttons */}
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setSelectedValue(true)}
-                    className={`py-3.5 px-4 border-2 font-black rounded-xl active:scale-95 transition-all text-sm shadow-sm ${
-                      selectedValue === true
-                        ? "bg-white border-[#D85A30] text-[#D85A30] active-border-glow scale-[1.02]"
-                        : "bg-white border-[#F0DFC8] text-gray-500 hover:bg-[#D85A30]/5 breathing-saffron-glow"
-                    }`}
-                  >
-                    {t("pm_yes")}
-                  </button>
-                  <button
-                    onClick={() => setSelectedValue(false)}
-                    className={`py-3.5 px-4 border-2 font-black rounded-xl active:scale-95 transition-all text-sm shadow-sm ${
-                      selectedValue === false
-                        ? "bg-white border-[#D85A30] text-[#D85A30] active-border-glow scale-[1.02]"
-                        : "bg-white border-[#F0DFC8] text-gray-500 hover:bg-[#D85A30]/5 breathing-saffron-glow"
-                    }`}
-                  >
-                    {t("pm_no")}
-                  </button>
-                </div>
-
-                {/* Next button */}
-                <button
-                  disabled={selectedValue === null}
-                  onClick={handleNext}
-                  className={`w-full py-3.5 px-4 font-bold rounded-full transition-all text-sm shadow-md flex items-center justify-center gap-2 ${
-                    selectedValue !== null
-                      ? "bg-[#D85A30] hover:bg-[#B8460F] text-white active:scale-98 primary-btn-glow"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  {lang === "hindi" ? "आगे बढ़ें" : "Next"} <ArrowRight size={16} />
-                </button>
               </motion.div>
             ) : (
               <motion.div
