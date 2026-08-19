@@ -37,7 +37,7 @@ function FaqPage() {
                 </button>
                 <div className={`grid transition-all duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                   <div className="overflow-hidden">
-                    <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">{f.a}</p>
+                    <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{f.a}</p>
                   </div>
                 </div>
               </div>

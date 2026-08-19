@@ -1,6 +1,23 @@
 # 🕉️ PUNYATA — Master Context for AI Coding Agent (Kimi K3 / OpenCode)
 ### "Sewa Hamari, Punya Aapka"
 
+> ## ⚠️ SUPERSEDED — read `PUNYATA_MASTER_CONTEXT_v3` instead
+>
+> This document is kept for history only. It is stale on at least two locked
+> rules and **must not** be used as a schema or business-logic reference:
+>
+> * **List A is the SECOND Tuesday**, not the First. Every "1st Tuesday" /
+>   "First Tuesday" statement below is wrong (migrations
+>   `20260819_008_list_a_second_tuesday.sql`, `..._009_retire_first_tuesday.sql`).
+> * **`sankalp_variant` no longer exists.** Last Saturday is ONE batch, not a
+>   Hawan-only + Full-package pair (migration
+>   `20260819_010_retire_sankalp_variant.sql`).
+> * **The two hawans are day-specific:** Griha Shanti Hawan on the Second
+>   Tuesday, Sarv Rog Nivaran Hawan on the Last Saturday. Non-hawan sevas run on
+>   both days for hawan-eligible plans.
+>
+> Nothing below has been rewritten to match. Use v3.
+
 **Read this fully before writing any code, schema, or copy.** This is the single source of truth. It supersedes and replaces all earlier architecture drafts, including any doc referencing "Punyam Sewa" (obsolete name/stack — Next.js/Prisma — never use).
 
 ---
@@ -293,7 +310,7 @@ create table sankalp_batches (
   id                uuid primary key default gen_random_uuid(),
   batch_type        text not null,      -- 'first_tuesday' | 'last_saturday'
   batch_date        date not null,
-  sankalp_variant   text,               -- last_saturday only: 'hawan_only' | 'full_package'
+  -- sankalp_variant RETIRED (migration 010) — one batch per (batch_type, batch_date)
   status            text default 'pending',  -- pending | done | missed
   completed_at      timestamptz,
   subscriber_count  int,
@@ -465,7 +482,7 @@ Lightweight non-perishables only: Sarovar jal, chandan tilak, akshat/kumkum, mau
 
 - Puja happens **exactly twice a month** — never weekly, never daily.
 - **List A — First Tuesday:** ALL active subscribers, all tiers → whichever sevas their current plan includes (live `plan_sevas` lookup).
-- **List B — Last Saturday:** Subscribers on plans that include Hawan (currently Premium + Premium Annual) → **two separate sankalps**: (1) Hawan-only, (2) Full package (all plan sevas + Hawan).
+- **List B — Last Saturday:** Subscribers on plans that include Hawan (currently Premium + Premium Annual) → **ONE sankalp** (that plan's sevas + the Saturday hawan, Sarv Rog Nivaran). *(CORRECTED — the Hawan-only + Full-package pair is retired; it double-enrolled every List B subscriber.)*
 - Lists are always generated **live/fresh** from currently-active subscriptions and current `plan_sevas` mapping — **never cached**.
 - **Basic new joiners** who miss the 1st Tuesday wait until next month's 1st Tuesday — genuine tier limitation, not a bug.
 - **Onboarding catch-up rule (Hawan-ineligible tiers only):** if such a subscriber joins after that month's 1st Tuesday, they get a **one-time inclusion** in that month's Last Saturday list, but only for sevas their plan actually includes (NOT Hawan). From month 2 onward, normal 1st-Tuesday-only cycle resumes.
@@ -484,7 +501,7 @@ Lightweight non-perishables only: Sarovar jal, chandan tilak, akshat/kumkum, mau
 ## 6. Video Proof Architecture
 
 - **REVISED (Session 4 revision):** ONE combined video per segment — externally edited, contains that segment's sevas (sankalp, hawan/bhojan if applicable) PLUS name-reading for just that segment's families.
-- **Segments are TIER-PURE (hard constraint):** group subscriptions only within identical resolved seva composition for that batch variant — never mix Basic and Premium in one segment. Bucket per tier first, then split into groups.
+- **Segments are TIER-PURE (hard constraint):** group subscriptions only within identical resolved seva composition for that batch kind — never mix Basic and Premium in one segment. Bucket per tier first, then split into groups.
 - **Segment size CONFIRMED: `SEGMENT_SIZE_SUBSCRIPTIONS = 5`** — 5 subscriptions (family units) per segment = up to 20 names (5 × 4 members), ~3-min video.
 - Each subscriber receives **1 WhatsApp message**: their segment's combined video.
 - **Manual bypass:** "Mark Sent Manually" per segment logs delivery (is_delivered=true) without any stored media — for direct sends from Chirayu's own WhatsApp at low volume (<100 subs). Such proofs do NOT appear in the Punya Bank gallery.

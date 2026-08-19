@@ -121,7 +121,7 @@ function AboutPage() {
         </section>
 
         {/* Transparency */}
-        <section className="card-soft p-6 space-y-3 border border-brand/10">
+        <section className="card-soft p-6 space-y-4 border border-brand/10">
           <div className="flex items-center gap-2">
             <ShieldCheck size={22} className="text-brand" />
             <h2 className="text-xl font-bold">पारदर्शिता का वादा</h2>
@@ -131,6 +131,35 @@ function AboutPage() {
           </p>
           <div className="flex items-center gap-1 text-xs text-success font-bold">
             <Video size={14} /> 100% WhatsApp Video Proof
+          </div>
+
+          <div className="rounded-2xl bg-[#FFF6EE] border border-[#F5A742]/30 p-5 space-y-4">
+            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+              आपकी सेवा राशि कहाँ जाती है
+            </div>
+            <p className="text-sm text-foreground/80 leading-relaxed">
+              पुण्यता एक संगठित सेवा है, और किसी भी संगठन को चलते रहने के लिए आत्मनिर्भर होना पड़ता है। यहाँ पहले सेवा आती है, फिर उसे हर महीने बिना रुके चलाते रहने का प्रबंध — और आपका दिया हुआ पैसा कहाँ-कहाँ जाता है, यह जानने का पूरा हक आपका है।
+            </p>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <div className="text-[13px] font-bold text-[#5B1A1A]">बड़ा हिस्सा — सीधे दान-पुण्य में</div>
+                <p className="text-sm text-foreground/70 leading-relaxed">
+                  गौ-माता का चारा, वानरों के फल, साधु संतों का भोजन, तथा हवन एवं अनुष्ठान की सामग्री।
+                </p>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[13px] font-bold text-[#5B1A1A]">शेष हिस्सा — पुण्यता को चलाने में</div>
+                <p className="text-sm text-foreground/70 leading-relaxed">
+                  आचार्य एवं पंडित जी की टीम की दक्षिणा; हर सेवा की वीडियो रिकॉर्डिंग एवं एडिटिंग करने वाली टीम; पुष्कर का ऑफिस एवं वहाँ की व्यवस्था; तथा app, website, payment एवं WhatsApp पर प्रमाण पहुँचाने का तकनीकी खर्च।
+                </p>
+                <p className="text-sm text-foreground/70 leading-relaxed">
+                  इसके साथ वह पूरी टीम भी — मैनेजर एवं समन्वयक जो हर महीने संकल्प सूची तैयार करते हैं, सेवाओं का शेड्यूल संभालते हैं, प्रमाण जाँचकर हर परिवार तक भेजते हैं, और आपके प्रश्नों का उत्तर देते हैं। यही लोग हैं जिनकी वजह से हर सेवा समय पर और बिना चूक के पूरी होती है।
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-foreground/80 leading-relaxed pt-3 border-t border-[#F5A742]/25">
+              यही संतुलन है जिसकी वजह से जो सेवा सामान्यतः हज़ारों में पड़ती है, वह आप तक मात्र ₹251 में पहुँच पाती है — और हर महीने पहुँचती रहती है।
+            </p>
           </div>
         </section>
 

@@ -235,24 +235,45 @@ function KaliyugShloks() {
     },
   ];
   return (
-    <section className="rounded-3xl overflow-hidden bg-gradient-to-b from-[#5B1A1A] to-[#3D0F0F] text-white p-6 space-y-5">
-      <div className="text-center">
-        <div className="text-xs font-bold uppercase tracking-widest text-[#F5A742]">{t("kaliyug_badge")}</div>
-        <h2 className="mt-2 text-2xl font-bold leading-snug">{t("kaliyug_title")}</h2>
+    <section className="card-soft overflow-hidden" style={{ background: "#FFFCF9" }}>
+      <div className="px-5 py-9 md:px-12 md:py-12">
+        <div className="text-center">
+          <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand">{t("kaliyug_badge")}</div>
+          <h2 className="mt-2.5 text-[26px] md:text-[32px] font-bold leading-snug text-[#5B1A1A]">{t("kaliyug_title")}</h2>
+        </div>
+
+        <div className="mt-9 flex flex-col gap-9">
+          {shloks.map((sh, i) => (
+            <figure key={sh.t} className="flex flex-col gap-4 items-center text-center">
+              {i > 0 && <Ornament />}
+              <figcaption className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand/85">
+                {sh.t}
+              </figcaption>
+              <blockquote
+                className="max-w-[46ch] text-[19px] md:text-[22px] font-bold leading-[1.95] whitespace-pre-line text-[#5B1A1A]"
+                style={{ fontFamily: "var(--font-scripture)" }}
+              >
+                {sh.s}
+              </blockquote>
+              <p className="max-w-[54ch] text-[14.5px] text-foreground/65 leading-[1.85]">{sh.m}</p>
+            </figure>
+          ))}
+        </div>
+
+        <p className="mt-10 mx-auto max-w-[52ch] text-center text-[13px] text-muted-foreground italic leading-relaxed">
+          {t("kaliyug_footer")}
+        </p>
       </div>
-      <div className="space-y-3">
-        {shloks.map((sh) => (
-          <div key={sh.t} className="rounded-2xl bg-white/10 border border-white/15 p-4 space-y-2">
-            <div className="text-[11px] font-bold text-[#F5A742] uppercase tracking-wider">{sh.t}</div>
-            <p className="font-bold text-[15px] leading-relaxed whitespace-pre-line text-white">{sh.s}</p>
-            <p className="text-sm text-white/80 leading-relaxed italic">{sh.m}</p>
-          </div>
-        ))}
-      </div>
-      <p className="text-center text-[13px] text-white/75 italic leading-relaxed pt-2">
-        {t("kaliyug_footer")}
-      </p>
     </section>
+  );
+}
+
+function Ornament() {
+  return (
+    <svg width="88" height="12" viewBox="0 0 88 12" fill="none" aria-hidden="true" className="text-[#F5A742] mb-1">
+      <path d="M2 6h28M58 6h28" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" opacity="0.55" />
+      <path d="M44 1.5 48.5 6 44 10.5 39.5 6z" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -426,7 +447,7 @@ function FaqSection() {
               </button>
               <div className={`grid transition-all duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                 <div className="overflow-hidden">
-                  <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">{f.a}</p>
+                  <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{f.a}</p>
                 </div>
               </div>
             </div>

@@ -19,10 +19,10 @@ import {
   sevasForMember,
   tierKeyForMember,
   toISODate,
-  variantsForKind,
   SEGMENT_SIZE_SUBSCRIPTIONS,
   SEGMENT_MAX_NAMES,
 } from "../src/lib/sankalp-logic.ts";
+import * as sankalpLogic from "../src/lib/sankalp-logic.ts";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -40,12 +40,12 @@ const sevas = [
   { id: "s6", name: "Sarv Rog Nivaran Hawan", slug: "sarv-rog-nivaran-hawan", sort_order: 6, is_active: true },
 ];
 const rules = [
-  { seva_id: "s1", weekday: "TUE", occurrence: "first" },
-  { seva_id: "s2", weekday: "TUE", occurrence: "first" },
-  { seva_id: "s3", weekday: "TUE", occurrence: "first" },
-  { seva_id: "s4", weekday: "TUE", occurrence: "first" },
+  { seva_id: "s1", weekday: "TUE", occurrence: "second" },
+  { seva_id: "s2", weekday: "TUE", occurrence: "second" },
+  { seva_id: "s3", weekday: "TUE", occurrence: "second" },
+  { seva_id: "s4", weekday: "TUE", occurrence: "second" },
   { seva_id: "s4", weekday: "SAT", occurrence: "last" },
-  { seva_id: "s5", weekday: "TUE", occurrence: "first" },
+  { seva_id: "s5", weekday: "TUE", occurrence: "second" },
   { seva_id: "s6", weekday: "SAT", occurrence: "last" },
 ];
 const planSevas = [
@@ -147,10 +147,10 @@ check("Month 2: catch-up subscriber reverts to Tuesday-only (excluded from Sat)"
 
 // ── 3. Independence ───────────────────────────────────────────
 console.log("\n— Tuesday/Saturday independence —");
-check("Tuesday yields exactly ONE variant row (null)",
-  variantsForKind("second_tuesday").length === 1 && variantsForKind("second_tuesday")[0] === null);
-check("Saturday yields TWO separate rows (hawan_only + full_package)",
-  JSON.stringify(variantsForKind("last_saturday")) === JSON.stringify(["hawan_only", "full_package"]));
+check("variantsForKind is GONE — the hawan_only/full_package split is retired",
+  !("variantsForKind" in (sankalpLogic as Record<string, unknown>)));
+check("SankalpVariant type is GONE (no runtime trace of a variant concept)",
+  !Object.keys(sankalpLogic as Record<string, unknown>).some((k) => /variant/i.test(k)));
 const completion = buildCompletionUpdate(42);
 check("completion payload touches only status/completed_at/subscriber_count",
   JSON.stringify(Object.keys(completion).sort()) === JSON.stringify(["completed_at", "status", "subscriber_count"]) &&
@@ -172,7 +172,7 @@ check("5 subscriptions × 4 members = exactly 20 names (cap holds)",
 
 // Same-tier split: 12 premium subs → 5, 5, 2
 const premKey = tierKeyForMember(
-  sevasForMember({ variant: null, planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds }),
+  sevasForMember({ kind: "second_tuesday", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }),
 );
 const assigned12 = assignSegmentsTierPure(
   Array.from({ length: 12 }, (_, i) => ({ subscription_id: `prem-${i}`, tierKey: premKey })),
@@ -183,7 +183,7 @@ check("12 same-tier subs → 3 segments of 5, 5, 2",
 
 // Tier purity: Basic and Premium subscribers must NEVER share a segment
 const basicKey = tierKeyForMember(
-  sevasForMember({ variant: null, planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds }),
+  sevasForMember({ kind: "second_tuesday", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }),
 );
 const mixed = assignSegmentsTierPure([
   { subscription_id: "prem-0", tierKey: premKey },
@@ -202,54 +202,86 @@ check("tier-pure: order preserved within each tier bucket",
 
 // Identical-composition plans (Premium vs Premium Annual) MAY share
 const annualKey = tierKeyForMember(
-  sevasForMember({ variant: null, planId: "p-annual", planSevas, sevas, saturdayHawanSevaIds: hawanIds }),
+  sevasForMember({ kind: "second_tuesday", planId: "p-annual", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }),
 );
 check("Premium and Premium Annual share a tier key (identical live composition)",
   annualKey === premKey);
 
-// Catch-up Basic in a full_package batch gets a DIFFERENT tier key
+// Catch-up Basic in the Last Saturday batch gets a DIFFERENT tier key
 // than full-package Premium — can never land in the same segment
 const catchupKey = tierKeyForMember(
-  sevasForMember({ variant: "full_package", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, isCatchup: true }),
+  sevasForMember({ kind: "last_saturday", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules, isCatchup: true }),
 );
 const fullPremKey = tierKeyForMember(
-  sevasForMember({ variant: "full_package", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds }),
+  sevasForMember({ kind: "last_saturday", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }),
 );
-check("catch-up Basic tier key ≠ full-package Premium tier key (hawan excluded)",
+check("catch-up Basic tier key ≠ Saturday Premium tier key (hawan excluded)",
   catchupKey !== fullPremKey);
 
 // ── 5. Per-member seva resolution ─────────────────────────────
 console.log("\n— Seva resolution per member —");
 const namesOf = (list: { name: string }[]) => list.map((s) => s.name).join(",");
 check("Tuesday Basic → 3 non-hawan sevas",
-  namesOf(sevasForMember({ variant: null, planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds }))
+  namesOf(sevasForMember({ kind: "second_tuesday", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }))
     === "Sundarkand Path,Gau Seva,Vanar Seva");
-check("Tuesday Premium → all 6 (incl. Griha Shanti Hawan)",
-  sevasForMember({ variant: null, planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds }).length === 6);
-check("hawan_only → ONLY Sarv Rog Nivaran Hawan",
-  namesOf(sevasForMember({ variant: "hawan_only", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds }))
-    === "Sarv Rog Nivaran Hawan");
-check("full_package premium → all 6 sevas",
-  sevasForMember({ variant: "full_package", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds }).length === 6);
-check("full_package CATCH-UP Basic → 3 sevas, NO hawan added",
-  namesOf(sevasForMember({ variant: "full_package", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, isCatchup: true }))
+check("Tuesday Premium → 5: incl. Griha Shanti Hawan, EXCL. Sarv Rog (Saturday hawan)",
+  namesOf(sevasForMember({ kind: "second_tuesday", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }))
+    === "Sundarkand Path,Gau Seva,Vanar Seva,Saadhu Santo Ko Bhojan,Griha Shanti Hawan");
+check("Last Saturday Premium → 5: incl. Sarv Rog Nivaran, EXCL. Griha Shanti (Tuesday hawan)",
+  namesOf(sevasForMember({ kind: "last_saturday", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }))
+    === "Sundarkand Path,Gau Seva,Vanar Seva,Saadhu Santo Ko Bhojan,Sarv Rog Nivaran Hawan");
+check("Last Saturday CATCH-UP Basic → 3 sevas, NO hawan added",
+  namesOf(sevasForMember({ kind: "last_saturday", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules, isCatchup: true }))
     === "Sundarkand Path,Gau Seva,Vanar Seva");
+
+// Day-scoping of the two hawans — the rule the plan page also renders
+// (scheduleForPlan in src/lib/plans.ts). Griha Shanti = Second Tuesday,
+// Sarv Rog Nivaran = Last Saturday. Never both hawans on one day.
+const tuePrem = namesOf(sevasForMember({ kind: "second_tuesday", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }));
+const satPrem = namesOf(sevasForMember({ kind: "last_saturday", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }));
+check("Griha Shanti Hawan on Tuesday ONLY",
+  tuePrem.includes("Griha Shanti Hawan") && !satPrem.includes("Griha Shanti Hawan"));
+check("Sarv Rog Nivaran Hawan on Saturday ONLY",
+  satPrem.includes("Sarv Rog Nivaran Hawan") && !tuePrem.includes("Sarv Rog Nivaran Hawan"));
+check("no batch day ever carries BOTH hawans",
+  ![tuePrem, satPrem].some((d) => d.includes("Griha Shanti") && d.includes("Sarv Rog")));
+
+// Premium non-hawan sevas run on BOTH days (twice a month) — the ₹399 promise.
+for (const n of ["Sundarkand Path", "Gau Seva", "Vanar Seva", "Saadhu Santo Ko Bhojan"]) {
+  check(`Premium: ${n} runs on BOTH Tuesday and Saturday`,
+    tuePrem.includes(n) && satPrem.includes(n));
+}
+
+// Basic (Rs 251) has NO hawan anywhere, on any day, in any variant.
+const basicEverywhere = [
+  sevasForMember({ kind: "second_tuesday", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }),
+  sevasForMember({ kind: "last_saturday", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules, isCatchup: true }),
+];
+check("Basic never receives a hawan in ANY variant",
+  basicEverywhere.every((list) => list.every((sv) => !/hawan/i.test(sv.name))));
+
+// A seva with NO schedule rule must not silently vanish from a batch.
+const unruledHawan = [...sevas, { id: "s7", name: "Test Hawan", slug: "test-hawan", sort_order: 7, is_active: true }];
+const unruledPlanSevas = [...planSevas, { plan_id: "p-premium", seva_id: "s7" }];
+check("hawan with NO schedule rule is kept (never silently dropped)",
+  namesOf(sevasForMember({ kind: "second_tuesday", planId: "p-premium", planSevas: unruledPlanSevas, sevas: unruledHawan, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }))
+    .includes("Test Hawan"));
 
 // ── 6. Pandit grouping + PII firewall ─────────────────────────
 console.log("\n— Pandit grouping —");
 const panditGroups = groupForPandit([
   { subscription_id: "sub-prem-old", is_catchup: false,
-    sevas: sevasForMember({ variant: "full_package", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds }),
+    sevas: sevasForMember({ kind: "last_saturday", planId: "p-premium", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules }),
     names: [{ name: "Mohan Verma", gotra: "Vashisht" }] },
   { subscription_id: "sub-basic-late", is_catchup: true,
-    sevas: sevasForMember({ variant: "full_package", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, isCatchup: true }),
+    sevas: sevasForMember({ kind: "last_saturday", planId: "p-basic", planSevas, sevas, saturdayHawanSevaIds: hawanIds, scheduleRules: rules, isCatchup: true }),
     names: [{ name: "Ramesh Sharma", gotra: "Bharadwaj" }, { name: "Sita Sharma", gotra: null }] },
 ]);
-check("catch-up Basic family lands in its OWN group (never mixed into full-package)",
+check("catch-up Basic family lands in its OWN group (never mixed with hawan members)",
   panditGroups.length === 2);
-check("catch-up group has 3 sevas, premium group has 6",
+check("catch-up group has 3 sevas, Saturday premium group has 5 (one hawan, not both)",
   panditGroups.some((g) => g.sevas.length === 3 && g.catchupCount === 1) &&
-  panditGroups.some((g) => g.sevas.length === 6 && g.catchupCount === 0));
+  panditGroups.some((g) => g.sevas.length === 5 && g.catchupCount === 0));
 check("names carry ONLY name + gotra (no phone/plan/price fields exist)",
   panditGroups.every((g) => g.names.every((n) => Object.keys(n).sort().join(",") === "gotra,name")));
 

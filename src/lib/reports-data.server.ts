@@ -75,7 +75,7 @@ export async function fetchPendingSevasReportData(
 
   const { data: batchRows, error: batchesErr } = await db
     .from("sankalp_batches")
-    .select("id, batch_type, batch_date, sankalp_variant, status")
+    .select("id, batch_type, batch_date, status")
     .in("batch_date", [tueDate, satDate]);
   if (batchesErr) throw new Error(`sankalp_batches: ${batchesErr.message}`);
 

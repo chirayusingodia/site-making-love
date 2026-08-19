@@ -7,6 +7,8 @@
 @import "@fontsource/hind/500.css";
 @import "@fontsource/hind/600.css";
 @import "@fontsource/hind/700.css";
+@import "@fontsource/martel/devanagari-400.css";
+@import "@fontsource/martel/devanagari-700.css";
 @import "@fontsource/poppins/600.css";
 @import "@fontsource/poppins/700.css";
 @import "@fontsource/poppins/800.css";
@@ -46,6 +48,7 @@
   --color-whatsapp: var(--whatsapp);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
+  --font-scripture: var(--font-scripture);
 }
 
 :root {
@@ -83,6 +86,7 @@
 
   --font-display: 'Hind', 'Noto Sans Devanagari', system-ui, sans-serif;
   --font-body: 'Hind', 'Noto Sans Devanagari', system-ui, sans-serif;
+  --font-scripture: 'Martel', 'Noto Serif Devanagari', Georgia, serif;
 }
 
 @layer base {
