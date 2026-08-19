@@ -1,5 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import {
+  buildLiveSeva,
+  buildSevaComparison,
+  isHawanSeva,
+  scheduleForPlan,
+  sevaFeatureLines,
+  type ComparisonValue,
+  type LiveSeva,
+} from "@/lib/plans-schedule";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PLAN & SEVA DATA — 100% LIVE FROM SUPABASE
@@ -83,19 +92,9 @@ interface DbPlanAddon {
 }
 
 // ─── Live composition shapes ─────────────────────────────────────────────────
-/** A seva as rendered publicly — schedule derived live from seva_schedule_rules. */
-export type LiveSeva = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  /** e.g. ["2nd Tuesday"] or ["2nd Tuesday", "Last Saturday"] */
-  days: string[];
-  /** e.g. "1 time a month" | "2 times a month" ("" when no schedule rules) */
-  frequency: string;
-};
-
-export type ComparisonValue = { has: boolean; frequency?: string; label?: string };
+// Defined in plans-schedule.ts alongside the derivation that produces them;
+// re-exported here so consumers keep importing them from "@/lib/plans".
+export type { LiveSeva, ComparisonValue } from "@/lib/plans-schedule";
 
 export type Plan = {
   id: string; // public URL id (slug alias, e.g. "grah" for "premium")
@@ -333,28 +332,6 @@ export function formatINR(pricePaise: number): string {
   return `₹${Math.round(pricePaise / 100).toLocaleString("en-IN")}`;
 }
 
-const WEEKDAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-const WEEKDAY_LABELS: Record<string, string> = {
-  MON: "Monday",
-  TUE: "Tuesday",
-  WED: "Wednesday",
-  THU: "Thursday",
-  FRI: "Friday",
-  SAT: "Saturday",
-  SUN: "Sunday",
-};
-const OCCURRENCE_LABELS: Record<string, string> = {
-  first: "1st",
-  second: "2nd",
-  third: "3rd",
-  fourth: "4th",
-  last: "Last",
-};
-
-function frequencyLabel(timesPerMonth: number): string {
-  return timesPerMonth === 1 ? "1 time a month" : `${timesPerMonth} times a month`;
-}
-
 /** Cadence hint parsed from an addon's admin-written description (e.g. "Quarterly Prasad Box — …"). */
 function addonCadence(description: string | null): string | undefined {
   if (!description) return undefined;
@@ -362,23 +339,6 @@ function addonCadence(description: string | null): string | undefined {
   if (/monthly|maasik/i.test(description)) return "Monthly";
   if (/yearly|annual|varsh/i.test(description)) return "Yearly";
   return undefined;
-}
-
-function buildLiveSeva(seva: DbSeva, rules: DbScheduleRule[]): LiveSeva {
-  const myRules = rules
-    .filter((r) => r.seva_id === seva.id)
-    .sort((a, b) => WEEKDAY_ORDER.indexOf(a.weekday) - WEEKDAY_ORDER.indexOf(b.weekday));
-  const days = myRules.map(
-    (r) => `${OCCURRENCE_LABELS[r.occurrence] ?? r.occurrence} ${WEEKDAY_LABELS[r.weekday] ?? r.weekday}`
-  );
-  return {
-    id: seva.id,
-    slug: seva.slug,
-    name: seva.name,
-    description: seva.description,
-    days,
-    frequency: days.length > 0 ? frequencyLabel(days.length) : "",
-  };
 }
 
 function buildPlan(
@@ -389,29 +349,23 @@ function buildPlan(
 ): Plan {
   const pres = PLAN_PRESENTATION[dbPlan.slug] ?? genericPresentation(dbPlan);
   const includedIds = new Set(planSevas.filter((ps) => ps.plan_id === dbPlan.id).map((ps) => ps.seva_id));
-  const includedSevas = liveSevas.filter((s) => includedIds.has(s.id));
+  // Rule days are GLOBAL (seva_schedule_rules has no plan dimension); what a
+  // subscriber actually receives depends on their tier, so re-derive per plan.
+  // Hawan-eligible plans sit in both batches, so their non-hawan sevas run on
+  // List A *and* List B — see scheduleForPlan() in plans-schedule.ts.
+  const includedSevas = scheduleForPlan(liveSevas.filter((s) => includedIds.has(s.id)));
   const addons = planAddons.filter((a) => a.plan_id === dbPlan.id && a.is_active);
   const prasadAddon = addons.find((a) => a.addon_type === "prasad");
-  const hasHawan = includedSevas.some((s) => /hawan|havan/i.test(`${s.slug} ${s.name}`));
+  const hasHawan = includedSevas.some(isHawanSeva);
 
   // Features list — derived live from plan_sevas + seva_schedule_rules + plan_addons
-  const features = includedSevas.map((s) =>
-    s.days.length > 1
-      ? `${s.name} — ${s.days.length}× हर माह (${s.days.join(" & ")})`
-      : s.days.length === 1
-        ? `${s.name} — हर माह (${s.days[0]})`
-        : s.name
-  );
+  const features = sevaFeatureLines(includedSevas);
   addons.forEach((a) => features.push(a.description ?? a.addon_type));
   features.push("WhatsApp Video Proof"); // universal platform feature, not a seva
 
-  // Comparison matrix values — every active seva gets a row keyed by its slug
-  const comparison: Record<string, ComparisonValue> = {};
-  liveSevas.forEach((s) => {
-    comparison[s.slug] = includedIds.has(s.id)
-      ? { has: true, ...(s.frequency ? { frequency: s.frequency } : {}) }
-      : { has: false };
-  });
+  // Comparison matrix values — every active seva gets a row keyed by its slug,
+  // with the frequency the PLAN gives it (Premium runs Sundarkand twice a month).
+  const comparison: Record<string, ComparisonValue> = buildSevaComparison(liveSevas, includedSevas);
   comparison.proof = { has: true };
   comparison.family = { has: true, label: "Up to 4" };
   comparison.prasad = prasadAddon
