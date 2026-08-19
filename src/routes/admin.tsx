@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { Badge } from "@/components/ui/badge";
+import { useUserRole } from "@/hooks/use-user-role";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { role } = useUserRole();
 
   const navItems = [
     { label: "Overview", href: "/admin/overview", icon: LayoutDashboard },
@@ -30,7 +32,12 @@ function AdminLayout() {
     { label: "Proof Upload", href: "/admin/proof-upload", icon: Flame, badge: "Session 4" },
     { label: "Seva Proofs", href: "/admin/proofs", icon: Video, badge: "Session 0.5" },
     { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 6" },
-    { label: "Reports", href: "/admin/reports", icon: BarChart3, badge: "Session 6" },
+    // Reports is OWNER-ONLY (financial data). Hidden until the role
+    // resolves and confirmed 'owner' — the route itself is also
+    // guarded in beforeLoad, and the API rejects non-owners with 403.
+    ...(role === "owner"
+      ? [{ label: "Reports", href: "/admin/reports", icon: BarChart3, badge: "Owner" }]
+      : []),
   ];
 
   return (

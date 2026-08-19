@@ -1,7 +1,23 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchAllRows, supabase } from "@/lib/supabase";
-import { daysInMonth, firstTuesdayOf, lastSaturdayOf, toISODate } from "@/lib/sankalp-logic";
+import { callAdminApi, fetchMyRole } from "@/lib/admin-api";
+import {
+  computePendingSevas,
+  computeRevenueReport,
+  computeSevaReport,
+  computeSubscriberReport,
+  fmtDate,
+  fmtINR,
+  monthLabel,
+  monthWindow,
+  type BatchRow,
+  type MonthPayment,
+  type MonthlyReportData,
+  type PendingSevasReportData,
+  type ProofRow,
+  type ReportKey,
+  type ViewRow,
+} from "@/lib/reports-logic";
 import {
   AlertCircle,
   BadgeIndianRupee,
@@ -20,107 +36,28 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// OWNER-ONLY route (financial data — Session 6.5 two-tier roles):
+//   1. beforeLoad redirects any non-owner (incl. admin) to Overview.
+//   2. All data comes from /api/admin/reports/* handlers that reject
+//      non-owners with 403 — no direct Supabase queries from this
+//      page, so there is nothing financial to inspect in devtools.
 export const Route = createFileRoute("/admin/reports")({
+  beforeLoad: async () => {
+    const role = await fetchMyRole();
+    if (role !== "owner") {
+      throw redirect({
+        to: "/admin/overview",
+        search: { notice: "owner-required" },
+      });
+    }
+  },
   component: AdminReportsPage,
 });
 
-// ─── Types ───────────────────────────────────────────────────
-
-interface ViewRow {
-  subscription_id: string;
-  status: string;
-  start_date: string | null;
-  paused_at: string | null;
-  cancelled_at: string | null;
-  sub_created_at: string;
-  plan_name: string | null;
-  plan_price_paise: number | null;
-  plan_billing_period: string | null;
-  primary_member_name: string | null;
-}
-
-interface MonthPayment {
-  subscription_id: string;
-  amount_paise: number;
-  status: string;
-  created_at: string;
-}
-
-interface ProofRow {
-  id: string;
-  seva_id: string | null;
-  media_type: string;
-  is_delivered: boolean;
-  delivered_at: string | null;
-  month: number;
-  year: number;
-  sevas: { name: string } | null;
-  sankalp_batches: { batch_type: string; batch_date: string } | null;
-}
-
-interface BatchRow {
-  id: string;
-  batch_type: string;
-  batch_date: string;
-  sankalp_variant: string | null;
-  status: "pending" | "done" | "missed";
-}
-
-type BatchStatusLabel = "Done" | "Pending" | "Missed";
-
-interface BatchCell {
-  label: BatchStatusLabel | "—";
-  note: string;
-  batchDate: string;
-}
-
 // ─── Helpers ─────────────────────────────────────────────────
 
-function fmtINR(paise: number) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(paise / 100);
-}
-
-function fmtDate(d: string | null) {
-  if (!d) return "—";
-  const dt = new Date(d.length === 10 ? `${d}T00:00:00+05:30` : d);
-  return isNaN(dt.getTime())
-    ? "—"
-    : dt.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        timeZone: "Asia/Kolkata",
-      });
-}
-
-function fmtTimeIST(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Asia/Kolkata",
-  });
-}
-
-function monthLabel(yyyyMm: string) {
-  const [y, m] = yyyyMm.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-IN", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-function downloadCSV(filename: string, headers: string[], rows: (string | number)[][]) {
-  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-  const blob = new Blob(
-    [[headers.map(esc).join(","), ...rows.map((r) => r.map(esc).join(","))].join("\n")],
-    { type: "text/csv" },
-  );
+function downloadCsvText(filename: string, csv: string) {
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -128,12 +65,6 @@ function downloadCSV(filename: string, headers: string[], rows: (string | number
   a.click();
   URL.revokeObjectURL(url);
 }
-
-const BATCH_LABEL: Record<string, BatchStatusLabel> = {
-  done: "Done",
-  pending: "Pending",
-  missed: "Missed",
-};
 
 // ─── Print (PDF) plumbing ────────────────────────────────────
 // PDF export = browser print → Save as PDF. No new dependency —
@@ -151,6 +82,7 @@ function ReportShell({
   subtitle,
   icon: Icon,
   printKey,
+  exporting,
   onCsv,
   onPrint,
   children,
@@ -160,6 +92,7 @@ function ReportShell({
   subtitle: string;
   icon: React.ElementType;
   printKey: PrintKey;
+  exporting: boolean;
   onCsv: () => void;
   onPrint: (k: Exclude<PrintKey, null>) => void;
   children: React.ReactNode;
@@ -181,11 +114,17 @@ function ReportShell({
         <div className="flex gap-2 print:hidden">
           <Button
             onClick={onCsv}
+            disabled={exporting}
             variant="outline"
             size="sm"
             className="border-amber-900/15 bg-amber-50/50 text-amber-900 gap-1.5 text-xs h-7"
           >
-            <Download className="w-3.5 h-3.5" /> CSV
+            {exporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}{" "}
+            CSV
           </Button>
           <Button
             onClick={() => onPrint(id)}
@@ -232,7 +171,7 @@ function StatCard({
   );
 }
 
-function BatchStatusCell({ cell }: { cell: BatchCell }) {
+function BatchStatusCell({ cell }: { cell: import("@/lib/reports-logic").BatchCell }) {
   const cls =
     cell.label === "Done"
       ? "bg-emerald-50 text-emerald-800 border-emerald-200"
@@ -265,8 +204,9 @@ function AdminReportsPage() {
   const [errorMsg, setError] = useState<string | null>(null);
   const [printKey, setPrintKey] = useState<PrintKey>(null);
   const [pendingSearch, setPendingSearch] = useState("");
+  const [exporting, setExporting] = useState<ReportKey | null>(null);
 
-  // Raw data
+  // Raw data (from the owner-gated /api/admin/reports/* handlers)
   const [subs, setSubs] = useState<ViewRow[]>([]);
   const [monthPayments, setMonthPayments] = useState<MonthPayment[]>([]);
   const [resumedCount, setResumedCount] = useState(0);
@@ -278,79 +218,19 @@ function AdminReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [y, m] = yyyyMm.split("-").map(Number);
-      const lastDay = daysInMonth(y, m);
-      const monthStart = `${toISODate(y, m, 1)}T00:00:00+05:30`;
-      const monthEnd = `${toISODate(y, m, lastDay)}T23:59:59.999+05:30`;
-      const tueDate = firstTuesdayOf(y, m);
-      const satDate = lastSaturdayOf(y, m);
-
-      const [subsRes, paysRes, resumedRes, proofsRes, batchesRes] = await Promise.all([
-        fetchAllRows<ViewRow>((from, to) =>
-          supabase
-            .from("subscriber_list_view")
-            .select(
-              "subscription_id, status, start_date, paused_at, cancelled_at, sub_created_at, plan_name, plan_price_paise, plan_billing_period, primary_member_name",
-            )
-            .range(from, to),
-        ),
-        fetchAllRows<MonthPayment>((from, to) =>
-          supabase
-            .from("payments")
-            .select("subscription_id, amount_paise, status, created_at")
-            .gte("created_at", monthStart)
-            .lte("created_at", monthEnd)
-            .range(from, to),
-        ),
-        // Reactivations = webhook 'resumed' events (pause → active).
-        supabase
-          .from("audit_logs")
-          .select("id", { count: "exact", head: true })
-          .eq("action", "razorpay.subscription.resumed")
-          .gte("created_at", monthStart)
-          .lte("created_at", monthEnd),
-        supabase
-          .from("seva_proofs")
-          .select(
-            "id, seva_id, media_type, is_delivered, delivered_at, month, year, sevas(name), sankalp_batches(batch_type, batch_date)",
-          )
-          .eq("month", m)
-          .eq("year", y),
-        supabase
-          .from("sankalp_batches")
-          .select("id, batch_type, batch_date, sankalp_variant, status")
-          .in("batch_date", [tueDate, satDate]),
+      const [monthly, pending] = await Promise.all([
+        callAdminApi<MonthlyReportData>("/api/admin/reports/monthly", { month: yyyyMm }),
+        callAdminApi<PendingSevasReportData>("/api/admin/reports/pending-sevas", {
+          month: yyyyMm,
+        }),
       ]);
 
-      if (subsRes.error) throw new Error(`subscriptions: ${subsRes.error}`);
-      if (paysRes.error) throw new Error(`payments: ${paysRes.error}`);
-      if (resumedRes.error) throw new Error(`audit_logs: ${resumedRes.error.message}`);
-      if (proofsRes.error) throw new Error(`seva_proofs: ${proofsRes.error.message}`);
-      if (batchesRes.error) throw new Error(`sankalp_batches: ${batchesRes.error.message}`);
-
-      const batchRows = (batchesRes.data || []) as BatchRow[];
-      setSubs(subsRes.data);
-      setMonthPayments(paysRes.data);
-      setResumedCount(resumedRes.count ?? 0);
-      setProofs((proofsRes.data || []) as unknown as ProofRow[]);
-      setBatches(batchRows);
-
-      if (batchRows.length > 0) {
-        const ids = batchRows.map((b) => b.id);
-        const { data: members, error: memErr } = await supabase
-          .from("sankalp_batch_subscriptions")
-          .select("batch_id, subscription_id")
-          .in("batch_id", ids);
-        if (memErr) throw new Error(`batch membership: ${memErr.message}`);
-        const map = new Map<string, Set<string>>();
-        for (const row of members || []) {
-          if (!map.has(row.batch_id)) map.set(row.batch_id, new Set());
-          map.get(row.batch_id)!.add(row.subscription_id);
-        }
-        setMembership(map);
-      } else {
-        setMembership(new Map());
-      }
+      setSubs(monthly.subs);
+      setMonthPayments(monthly.monthPayments);
+      setResumedCount(monthly.resumedCount);
+      setProofs(monthly.proofs);
+      setBatches(pending.batches);
+      setMembership(new Map(Object.entries(pending.membership).map(([k, v]) => [k, new Set(v)])));
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Failed to load reports.");
@@ -371,151 +251,21 @@ function AdminReportsPage() {
     }, 80);
   }, []);
 
-  // ── Derived: Subscriber Status Report ──
-  const subscriberReport = useMemo(() => {
-    const [y, m] = month.split("-").map(Number);
-    const first = toISODate(y, m, 1);
-    const last = toISODate(y, m, daysInMonth(y, m));
-    // Timestamptz comparisons MUST go through Date — lexicographic
-    // string compare across differing UTC offsets is wrong.
-    const startMs = new Date(`${first}T00:00:00+05:30`).getTime();
-    const endMs = new Date(`${last}T23:59:59.999+05:30`).getTime();
-    const inMonthTs = (ts: string | null) => {
-      if (ts == null) return false;
-      const t = new Date(ts).getTime();
-      return !isNaN(t) && t >= startMs && t <= endMs;
-    };
-
-    const activeNow = subs.filter((s) => s.status === "active").length;
-    const newThisMonth = subs.filter(
-      (s) => s.start_date != null && s.start_date >= first && s.start_date <= last,
-    ).length;
-    const pausedThisMonth = subs.filter((s) => inMonthTs(s.paused_at)).length;
-    const cancelledThisMonth = subs.filter((s) => inMonthTs(s.cancelled_at)).length;
-    const failedPayments = monthPayments.filter((p) => p.status === "failed");
-    const failedSubs = new Set(failedPayments.map((p) => p.subscription_id)).size;
-
-    return {
-      activeNow,
-      newThisMonth,
-      pausedThisMonth,
-      cancelledThisMonth,
-      reactivatedThisMonth: resumedCount,
-      failedPaymentCount: failedPayments.length,
-      failedSubs,
-    };
-  }, [subs, monthPayments, resumedCount, month]);
-
-  // ── Derived: Revenue Report ──
-  const revenueReport = useMemo(() => {
-    const gross = monthPayments
-      .filter((p) => p.status === "captured")
-      .reduce((s, p) => s + p.amount_paise, 0);
-    const failed = monthPayments
-      .filter((p) => p.status === "failed")
-      .reduce((s, p) => s + p.amount_paise, 0);
-    const refunded = monthPayments
-      .filter((p) => p.status === "refunded")
-      .reduce((s, p) => s + p.amount_paise, 0);
-    // MRR: yearly plans normalised to monthly-equivalent (price / 12).
-    const mrr = subs
-      .filter((s) => s.status === "active")
-      .reduce((s, sub) => {
-        const price = sub.plan_price_paise ?? 0;
-        return s + (sub.plan_billing_period === "yearly" ? price / 12 : price);
-      }, 0);
-    // Churn: cancelled this month ÷ active base at month start
-    // (approximated as active now + cancelled this month − new this month).
-    const base = Math.max(
-      0,
-      subscriberReport.activeNow +
-        subscriberReport.cancelledThisMonth -
-        subscriberReport.newThisMonth,
-    );
-    const churn = base > 0 ? subscriberReport.cancelledThisMonth / base : 0;
-    return { gross, failed, refunded, mrr, churn, churnBase: base };
-  }, [monthPayments, subs, subscriberReport]);
-
-  // ── Derived: Seva Completion Report ──
-  const sevaReport = useMemo(() => {
-    const bySeva = new Map<string, { uploaded: number; delivered: number }>();
-    for (const p of proofs) {
-      const name = p.sevas?.name ?? "(seva removed)";
-      if (!bySeva.has(name)) bySeva.set(name, { uploaded: 0, delivered: 0 });
-      const g = bySeva.get(name)!;
-      g.uploaded++;
-      if (p.is_delivered) g.delivered++;
-    }
-    return [...bySeva.entries()]
-      .map(([name, g]) => ({ name, ...g, pending: g.uploaded - g.delivered }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [proofs]);
-
-  // ── Derived: Pending Sevas Report ──
-  const pendingSevas = useMemo(() => {
-    const [y, m] = month.split("-").map(Number);
-    const tueDate = firstTuesdayOf(y, m);
-    const satDate = lastSaturdayOf(y, m);
-    const tueBatch = batches.find(
-      (b) => b.batch_type === "first_tuesday" && b.batch_date === tueDate,
-    );
-    // Saturday: a subscriber belongs to BOTH variant batches (same member
-    // set by construction) — full_package is their primary Saturday seva.
-    const satFull = batches.find(
-      (b) =>
-        b.batch_type === "last_saturday" &&
-        b.batch_date === satDate &&
-        b.sankalp_variant === "full_package",
-    );
-    const satHawan = batches.find(
-      (b) =>
-        b.batch_type === "last_saturday" &&
-        b.batch_date === satDate &&
-        b.sankalp_variant === "hawan_only",
-    );
-
-    const cellFor = (
-      sub: ViewRow,
-      batch: BatchRow | undefined,
-      batchDate: string,
-      fallback?: BatchRow | undefined,
-    ): BatchCell => {
-      const joined = (sub.start_date ?? sub.sub_created_at).slice(0, 10);
-      if (!batch) {
-        return { label: "—", note: "Batch not generated", batchDate };
-      }
-      const inBatch = membership.get(batch.id)?.has(sub.subscription_id);
-      const inFallback = fallback ? membership.get(fallback.id)?.has(sub.subscription_id) : false;
-      const effective = inBatch ? batch : inFallback ? fallback : null;
-      if (effective) {
-        return {
-          label: BATCH_LABEL[effective.status] ?? "Pending",
-          note: `Batch ${fmtDate(effective.batch_date)}`,
-          batchDate: effective.batch_date,
-        };
-      }
-      // Not a member — the join date decides whether this is a genuine
-      // concern or just the normal wait window.
-      return {
-        label: "—",
-        note: joined > batchDate ? "Joined after batch — normal wait" : "Not in this batch's list",
-        batchDate,
-      };
-    };
-
-    return subs
-      .filter((s) => s.status === "active")
-      .map((s) => ({
-        id: s.subscription_id,
-        name: s.primary_member_name || "(no name)",
-        plan: s.plan_name || "—",
-        joinedDate: (s.start_date ?? s.sub_created_at).slice(0, 10),
-        joinedTime: fmtTimeIST(s.sub_created_at),
-        tue: cellFor(s, tueBatch, tueDate),
-        sat: cellFor(s, satFull ?? satHawan, satDate, satFull ? satHawan : undefined),
-      }))
-      .sort((a, b) => a.joinedDate.localeCompare(b.joinedDate) || a.name.localeCompare(b.name));
-  }, [subs, batches, membership, month]);
+  // ── Derived reports (shared logic: same functions the
+  //    /api/admin/reports/export handler builds CSVs from) ──
+  const subscriberReport = useMemo(
+    () => computeSubscriberReport(subs, monthPayments, resumedCount, month),
+    [subs, monthPayments, resumedCount, month],
+  );
+  const revenueReport = useMemo(
+    () => computeRevenueReport(monthPayments, subs, subscriberReport),
+    [monthPayments, subs, subscriberReport],
+  );
+  const sevaReport = useMemo(() => computeSevaReport(proofs), [proofs]);
+  const pendingSevas = useMemo(
+    () => computePendingSevas(subs, batches, membership, month),
+    [subs, batches, membership, month],
+  );
 
   const filteredPendingSevas = useMemo(() => {
     const q = pendingSearch.trim().toLowerCase();
@@ -525,75 +275,27 @@ function AdminReportsPage() {
     );
   }, [pendingSevas, pendingSearch]);
 
-  // ── CSV exporters (from already-computed report data) ──
-  const csvName = (key: string) => `punyata_${key}_report_${month}.csv`;
+  // ── CSV export: generated SERVER-SIDE by the owner-gated
+  //    /api/admin/reports/export handler ──
+  const exportCsv = useCallback(
+    async (report: ReportKey) => {
+      setExporting(report);
+      try {
+        const { filename, csv } = await callAdminApi<{ filename: string; csv: string }>(
+          "/api/admin/reports/export",
+          { month, report },
+        );
+        downloadCsvText(filename, csv);
+      } catch (err) {
+        alert(err instanceof Error ? `Export failed: ${err.message}` : "Export failed");
+      } finally {
+        setExporting(null);
+      }
+    },
+    [month],
+  );
 
-  const exportSubscribersCSV = () =>
-    downloadCSV(
-      csvName("subscriber_status"),
-      ["metric", "value"],
-      [
-        ["month", monthLabel(month)],
-        ["active_now", subscriberReport.activeNow],
-        ["new_this_month", subscriberReport.newThisMonth],
-        ["paused_this_month", subscriberReport.pausedThisMonth],
-        ["cancelled_this_month", subscriberReport.cancelledThisMonth],
-        ["reactivated_this_month", subscriberReport.reactivatedThisMonth],
-        ["failed_payment_attempts_this_month", subscriberReport.failedPaymentCount],
-        ["subscriptions_with_failures_this_month", subscriberReport.failedSubs],
-      ],
-    );
-
-  const exportRevenueCSV = () =>
-    downloadCSV(
-      csvName("revenue"),
-      ["metric", "value"],
-      [
-        ["month", monthLabel(month)],
-        ["gross_revenue_inr", (revenueReport.gross / 100).toFixed(2)],
-        ["failed_revenue_opportunity_loss_inr", (revenueReport.failed / 100).toFixed(2)],
-        ["refunded_inr", (revenueReport.refunded / 100).toFixed(2)],
-        ["mrr_inr_yearly_normalised", (revenueReport.mrr / 100).toFixed(2)],
-        ["churn_rate_pct", (revenueReport.churn * 100).toFixed(2)],
-        ["churn_base_active_at_month_start", revenueReport.churnBase],
-      ],
-    );
-
-  const exportSevaCSV = () =>
-    downloadCSV(
-      csvName("seva_completion"),
-      ["seva_name", "month", "proofs_uploaded", "delivered", "pending_delivery"],
-      sevaReport.map((r) => [r.name, monthLabel(month), r.uploaded, r.delivered, r.pending]),
-    );
-
-  const exportPendingCSV = () =>
-    downloadCSV(
-      csvName("pending_sevas"),
-      [
-        "subscriber",
-        "plan",
-        "joined_date",
-        "joined_time_ist",
-        `tuesday_batch (${pendingSevas[0]?.tue.batchDate ?? "—"})`,
-        "tuesday_status_note",
-        `saturday_batch (${pendingSevas[0]?.sat.batchDate ?? "—"})`,
-        "saturday_status_note",
-      ],
-      filteredPendingSevas.map((r) => [
-        r.name,
-        r.plan,
-        r.joinedDate,
-        r.joinedTime,
-        r.tue.label,
-        r.tue.note,
-        r.sat.label,
-        r.sat.note,
-      ]),
-    );
-
-  const [y, m] = month.split("-").map(Number);
-  const tueDate = firstTuesdayOf(y, m);
-  const satDate = lastSaturdayOf(y, m);
+  const { tueDate, satDate } = monthWindow(month);
 
   return (
     <div className="space-y-5">
@@ -605,8 +307,8 @@ function AdminReportsPage() {
             Reports
           </h1>
           <p className="text-xs text-amber-900/60 mt-0.5">
-            Subscriber, revenue, seva completion and pending-seva reporting. PDF export uses the
-            browser's print → Save as PDF.
+            Owner-only · Subscriber, revenue, seva completion and pending-seva reporting. PDF export
+            uses the browser's print → Save as PDF.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -655,7 +357,8 @@ function AdminReportsPage() {
             subtitle={`${monthLabel(month)} · New = activated this month (start_date) · Reactivated = pause → active (webhook resumed events)`}
             icon={Users}
             printKey={printKey}
-            onCsv={exportSubscribersCSV}
+            exporting={exporting === "subscribers"}
+            onCsv={() => exportCsv("subscribers")}
             onPrint={doPrint}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
@@ -700,7 +403,8 @@ function AdminReportsPage() {
             subtitle={`${monthLabel(month)} · MRR = active plans, yearly normalised to monthly-equivalent (price ÷ 12) · Churn = cancelled ÷ active base at month start`}
             icon={BadgeIndianRupee}
             printKey={printKey}
-            onCsv={exportRevenueCSV}
+            exporting={exporting === "revenue"}
+            onCsv={() => exportCsv("revenue")}
             onPrint={doPrint}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -738,7 +442,8 @@ function AdminReportsPage() {
             subtitle={`${monthLabel(month)} · seva_proofs joined to sankalp_batches · Note: seva_proofs is deprecated for new uploads (rev 005) — new proof videos live in name_segments`}
             icon={Flame}
             printKey={printKey}
-            onCsv={exportSevaCSV}
+            exporting={exporting === "seva"}
+            onCsv={() => exportCsv("seva")}
             onPrint={doPrint}
           >
             {sevaReport.length === 0 ? (
@@ -806,7 +511,8 @@ function AdminReportsPage() {
             subtitle={`${monthLabel(month)} · Tuesday batch ${fmtDate(tueDate)} and Saturday batch ${fmtDate(satDate)} are SEPARATE columns — statuses are never merged · Join date/time shown so a genuine miss is distinguishable from a subscriber still in the normal wait window`}
             icon={Clock}
             printKey={printKey}
-            onCsv={exportPendingCSV}
+            exporting={exporting === "pending"}
+            onCsv={() => exportCsv("pending")}
             onPrint={doPrint}
           >
             <div className="mb-3 print:hidden">

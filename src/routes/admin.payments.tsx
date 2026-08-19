@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { fetchAllRows, supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import { callAdminApi } from "@/lib/admin-api";
+import {
+  buildPaymentsCsv,
+  type PaymentListRow,
+  type PaymentsListResponse,
+} from "@/lib/payments-logic";
 import {
   AlertCircle,
   CheckCircle2,
@@ -11,6 +17,7 @@ import {
   Download,
   Filter,
   Loader2,
+  Lock,
   RefreshCw,
   RotateCcw,
   Search,
@@ -30,25 +37,6 @@ export const Route = createFileRoute("/admin/payments")({
 const PAGE_SIZE = 50;
 
 // ─── Types ───────────────────────────────────────────────────
-
-interface PaymentRow {
-  id: string;
-  subscription_id: string;
-  razorpay_payment_id: string | null;
-  razorpay_order_id: string | null;
-  amount_paise: number;
-  status: string; // captured | failed | refunded | pending
-  method: string | null;
-  cycle_number: number | null;
-  paid_at: string | null;
-  failure_reason: string | null;
-  created_at: string;
-  subscription: {
-    id: string;
-    plan_id: string;
-    plans: { name: string; billing_period: string } | null;
-  } | null;
-}
 
 interface FilterState {
   status: string;
@@ -119,122 +107,48 @@ function PayStatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── Server-side query builder (list + count + aggregates + CSV
-//     all apply identical filters) ─────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyFilters(q: any, f: FilterState): any {
-  if (f.status !== "all") q = q.eq("status", f.status);
-  if (f.planId !== "all") q = q.eq("subscription.plan_id", f.planId);
-  // Date range filters on created_at (ledger write time) — paid_at
-  // is NULL for failed rows, so filtering paid_at would silently
-  // hide every failure from a date-filtered view.
-  if (f.dateFrom) q = q.gte("created_at", `${f.dateFrom}T00:00:00+05:30`);
-  if (f.dateTo) q = q.lte("created_at", `${f.dateTo}T23:59:59.999+05:30`);
-  if (f.search.trim()) q = q.ilike("razorpay_payment_id", `%${f.search.trim()}%`);
-  return q;
+// 🔒 placeholder for owner-only fields (amount / Razorpay IDs) —
+// signals "restricted", not "missing". The real values were never
+// sent to this browser (server-side strip in /api/admin/payments/list).
+function MaskedCell() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-amber-900/40"
+      title="Owner only — financial field restricted"
+    >
+      <Lock className="w-3.5 h-3.5" />
+    </span>
+  );
 }
 
-const SELECT_COLS = `
-  id, subscription_id, razorpay_payment_id, razorpay_order_id,
-  amount_paise, status, method, cycle_number, paid_at, failure_reason, created_at,
-  subscription:subscriptions!inner(
-    id, plan_id,
-    plans(name, billing_period)
-  )
-`;
-
-// ─── CSV export (full filtered fetch, not the visible page) ──
-
-async function exportCSV(
-  filters: FilterState,
-  nameMap: Map<string, string>,
-  setExporting: (v: boolean) => void,
-) {
-  setExporting(true);
-  try {
-    const { data: rows, error } = await fetchAllRows<PaymentRow>((from, to) =>
-      applyFilters(
-        supabase
-          .from("payments")
-          .select(SELECT_COLS)
-          .order("created_at", { ascending: false })
-          .range(from, to),
-        filters,
-      ),
-    );
-    if (error) {
-      alert(`Export failed: ${error}`);
-      return;
-    }
-    if (rows.length === 0) {
-      alert("No matching payments to export.");
-      return;
-    }
-
-    const headers = [
-      "created_at_ist",
-      "paid_at_ist",
-      "subscriber",
-      "plan",
-      "amount_inr",
-      "status",
-      "method",
-      "cycle_number",
-      "failure_reason",
-      "razorpay_payment_id",
-      "razorpay_order_id",
-      "subscription_id",
-    ];
-    const csvRows = rows.map((r) =>
-      [
-        fmtDateTime(r.created_at),
-        r.paid_at ? fmtDateTime(r.paid_at) : "",
-        nameMap.get(r.subscription_id) ?? "",
-        r.subscription?.plans?.name ?? "",
-        (r.amount_paise / 100).toFixed(2),
-        r.status,
-        r.method ?? "",
-        r.cycle_number ?? "",
-        r.failure_reason ?? "",
-        r.razorpay_payment_id ?? "",
-        r.razorpay_order_id ?? "",
-        r.subscription_id,
-      ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(","),
-    );
-
-    const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], {
-      type: "text/csv",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `punyata_payments_${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  } finally {
-    setExporting(false);
-  }
+function downloadCsvText(filename: string, csv: string) {
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ─── Main Page ───────────────────────────────────────────────
 
 function AdminPaymentsPage() {
-  const [rows, setRows] = useState<PaymentRow[]>([]);
+  const [rows, setRows] = useState<PaymentListRow[]>([]);
   const [totalCount, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setError] = useState<string | null>(null);
+  // Role shape comes from the endpoint response — never trusted
+  // from client-side state alone for the data itself.
+  const [viewerRole, setViewerRole] = useState<"admin" | "owner">("admin");
 
   const [planOptions, setPlanOptions] = useState<{ id: string; name: string }[]>([]);
   const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
 
-  // Aggregates across the ENTIRE filtered set (not just the page).
-  const [agg, setAgg] = useState<{ captured: number; failed: number; refunded: number } | null>(
-    null,
-  );
+  // Aggregates across the ENTIRE filtered set: counts for both
+  // roles; ₹ sums only when the endpoint returned them (owner).
+  const [agg, setAgg] = useState<PaymentsListResponse["aggregates"] | null>(null);
 
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [pendingFilters, setPending] = useState<FilterState>(DEFAULT_FILTERS);
@@ -249,79 +163,78 @@ function AdminPaymentsPage() {
       .then(({ data }) => setPlanOptions(data || []));
   }, []);
 
-  const fetchPage = useCallback(async (pageIndex: number, f: FilterState) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const from = pageIndex * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+  // Primary member names for the page's subscriptions — operational
+  // support-lookup data, readable by staff via RLS (unchanged).
+  const fetchNames = useCallback(async (subIds: string[]) => {
+    if (subIds.length === 0) return;
+    const { data: names } = await supabase
+      .from("subscriber_list_view")
+      .select("subscription_id, primary_member_name")
+      .in("subscription_id", subIds);
+    setNameMap((prev) => {
+      const next = new Map(prev);
+      for (const n of names || []) next.set(n.subscription_id, n.primary_member_name || "");
+      return next;
+    });
+  }, []);
 
-      const q = applyFilters(
-        supabase
-          .from("payments")
-          .select(SELECT_COLS, { count: "exact" })
-          .order("created_at", { ascending: false })
-          .range(from, to),
-        f,
-      );
-      const { data, error, count } = await q;
-      if (error) {
-        setError(`Could not load payments: ${error.message}`);
+  const fetchPage = useCallback(
+    async (pageIndex: number, f: FilterState) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await callAdminApi<PaymentsListResponse>("/api/admin/payments/list", {
+          page: pageIndex,
+          pageSize: PAGE_SIZE,
+          filters: f,
+        });
+        setRows(res.rows);
+        setTotal(res.totalCount);
+        setAgg(res.aggregates);
+        setViewerRole(res.viewerRole);
+        fetchNames([...new Set(res.rows.map((r) => r.subscription_id))]);
+      } catch (err) {
+        console.error(err);
+        setError(
+          err instanceof Error
+            ? `Could not load payments: ${err.message}`
+            : "Could not load payments.",
+        );
         setRows([]);
         setTotal(0);
         setAgg(null);
-        return;
+      } finally {
+        setLoading(false);
       }
-      const pageRows = (data || []) as unknown as PaymentRow[];
-      setRows(pageRows);
-      setTotal(count ?? 0);
-
-      // Primary member names for this page's subscriptions.
-      const subIds = [...new Set(pageRows.map((r) => r.subscription_id))];
-      if (subIds.length > 0) {
-        const { data: names } = await supabase
-          .from("subscriber_list_view")
-          .select("subscription_id, primary_member_name")
-          .in("subscription_id", subIds);
-        setNameMap((prev) => {
-          const next = new Map(prev);
-          for (const n of names || []) next.set(n.subscription_id, n.primary_member_name || "");
-          return next;
-        });
-      }
-
-      // Aggregates over the whole filtered set (amount + status only).
-      // The !inner embed is REQUIRED here even though we don't display
-      // it — PostgREST rejects a filter on "subscription.plan_id"
-      // unless the embedded resource is present in the select.
-      const { data: allAgg } = await fetchAllRows<{ amount_paise: number; status: string }>(
-        (a, b) =>
-          applyFilters(
-            supabase
-              .from("payments")
-              .select("amount_paise, status, subscription:subscriptions!inner(plan_id)")
-              .range(a, b),
-            f,
-          ),
-      );
-      const sums = { captured: 0, failed: 0, refunded: 0 };
-      for (const r of allAgg) {
-        if (r.status === "captured") sums.captured += r.amount_paise;
-        else if (r.status === "failed") sums.failed += r.amount_paise;
-        else if (r.status === "refunded") sums.refunded += r.amount_paise;
-      }
-      setAgg(sums);
-    } catch (err) {
-      console.error(err);
-      setError("Unexpected error loading payments.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [fetchNames],
+  );
 
   useEffect(() => {
     fetchPage(page, filters);
   }, [page, filters, fetchPage]);
+
+  // CSV export — full filtered set via the same role-shaped
+  // endpoint; the CSV builder drops amount/ID columns for admin.
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      const res = await callAdminApi<PaymentsListResponse>("/api/admin/payments/list", {
+        all: true,
+        filters,
+      });
+      if (res.rows.length === 0) {
+        alert("No matching payments to export.");
+        return;
+      }
+      const csv = buildPaymentsCsv(res.rows, res.viewerRole, nameMap);
+      downloadCsvText(`punyata_payments_${new Date().toISOString().split("T")[0]}.csv`, csv);
+    } catch (err) {
+      alert(err instanceof Error ? `Export failed: ${err.message}` : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const applyPendingFilters = () => {
     setPage(0);
@@ -340,6 +253,7 @@ function AdminPaymentsPage() {
     !!filters.search;
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const isOwner = viewerRole === "owner";
 
   return (
     <div className="space-y-5">
@@ -354,6 +268,7 @@ function AdminPaymentsPage() {
             {loading
               ? "Loading…"
               : `Showing ${rows.length > 0 ? page * PAGE_SIZE + 1 : 0}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} of ${totalCount.toLocaleString()} transactions`}
+            {!isOwner && " · Amounts restricted to Owner"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -368,7 +283,7 @@ function AdminPaymentsPage() {
             Refresh
           </Button>
           <Button
-            onClick={() => exportCSV(filters, nameMap, setExporting)}
+            onClick={exportCSV}
             disabled={exporting || totalCount === 0}
             size="sm"
             className="bg-amber-700 hover:bg-amber-800 text-white gap-1.5 text-xs"
@@ -386,26 +301,50 @@ function AdminPaymentsPage() {
         </div>
       </div>
 
-      {/* Aggregate strip (whole filtered set) */}
+      {/* Aggregate strip (whole filtered set).
+          Owner: ₹ sums. Admin: transaction counts (no ₹). */}
       {agg && (
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-xl border border-emerald-200 p-4">
             <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/70">
               Captured (filtered)
             </div>
-            <div className="text-xl font-bold text-emerald-800 mt-1">{fmtINR(agg.captured)}</div>
+            {agg.capturedPaise !== null ? (
+              <div className="text-xl font-bold text-emerald-800 mt-1">
+                {fmtINR(agg.capturedPaise)}
+              </div>
+            ) : (
+              <div className="text-xl font-bold text-emerald-800 mt-1">
+                {agg.capturedCount}{" "}
+                <span className="text-xs font-medium text-emerald-700/60">payments</span>
+              </div>
+            )}
           </div>
           <div className="bg-white rounded-xl border border-rose-200 p-4">
             <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700/70">
-              Failed — opportunity loss
+              {agg.failedPaise !== null ? "Failed — opportunity loss" : "Failed (filtered)"}
             </div>
-            <div className="text-xl font-bold text-rose-800 mt-1">{fmtINR(agg.failed)}</div>
+            {agg.failedPaise !== null ? (
+              <div className="text-xl font-bold text-rose-800 mt-1">{fmtINR(agg.failedPaise)}</div>
+            ) : (
+              <div className="text-xl font-bold text-rose-800 mt-1">
+                {agg.failedCount}{" "}
+                <span className="text-xs font-medium text-rose-700/60">payments</span>
+              </div>
+            )}
           </div>
           <div className="bg-white rounded-xl border border-sky-200 p-4">
             <div className="text-[10px] font-bold uppercase tracking-wider text-sky-700/70">
               Refunded
             </div>
-            <div className="text-xl font-bold text-sky-800 mt-1">{fmtINR(agg.refunded)}</div>
+            {agg.refundedPaise !== null ? (
+              <div className="text-xl font-bold text-sky-800 mt-1">{fmtINR(agg.refundedPaise)}</div>
+            ) : (
+              <div className="text-xl font-bold text-sky-800 mt-1">
+                {agg.refundedCount}{" "}
+                <span className="text-xs font-medium text-sky-700/60">payments</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -591,11 +530,15 @@ function AdminPaymentsPage() {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <span
-                        className={`font-semibold ${p.status === "failed" ? "text-rose-700" : p.status === "refunded" ? "text-sky-700" : "text-slate-900"}`}
-                      >
-                        {fmtINR(p.amount_paise)}
-                      </span>
+                      {p.amount_paise === null ? (
+                        <MaskedCell />
+                      ) : (
+                        <span
+                          className={`font-semibold ${p.status === "failed" ? "text-rose-700" : p.status === "refunded" ? "text-sky-700" : "text-slate-900"}`}
+                        >
+                          {fmtINR(p.amount_paise)}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <PayStatusBadge status={p.status} />
@@ -612,7 +555,11 @@ function AdminPaymentsPage() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-[11px] font-mono text-slate-500">
-                      {p.razorpay_payment_id || "—"}
+                      {p.razorpay_payment_id === null ? (
+                        <MaskedCell />
+                      ) : (
+                        p.razorpay_payment_id || "—"
+                      )}
                     </td>
                   </tr>
                 ))}
