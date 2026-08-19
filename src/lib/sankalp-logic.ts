@@ -8,13 +8,14 @@
 // (see scratch/verify_session4.ts).
 //
 // LOCKED RULES IMPLEMENTED HERE (do not deviate):
-//  - Puja exactly twice a month: First Tuesday (List A) + Last
-//    Saturday (List B). Never weekly.
+//  - Puja exactly twice a month: SECOND Tuesday (List A) + Last
+//    Saturday (List B). Never weekly. (List A moved from the First
+//    to the Second Tuesday; the twice-a-month cadence is unchanged.)
 //  - List A = ALL active subscribers, sevas per live plan_sevas.
 //  - List B = only hawan-plan subscribers → TWO separate batches:
 //    'hawan_only' + 'full_package'.
 //  - Catch-up: hawan-INELIGIBLE (e.g. Basic) subscriber who joins
-//    after that month's First Tuesday gets a ONE-TIME inclusion in
+//    after that month's Second Tuesday gets a ONE-TIME inclusion in
 //    that month's Last Saturday full_package batch, is_catchup=true.
 //  - Tuesday and Saturday batches are ALWAYS independent records.
 //  - Status labels: Done / Pending / Missed only. Never "Covered".
@@ -46,7 +47,7 @@ export interface PlanSevaRow {
 export interface ScheduleRuleRow {
   seva_id: string;
   weekday: string; // 'TUE' | 'SAT' | ...
-  occurrence: string; // 'first' | 'last'
+  occurrence: string; // 'second' (TUE) | 'last' (SAT)
 }
 
 export interface SubscriptionLite {
@@ -57,7 +58,12 @@ export interface SubscriptionLite {
   created_at: string; // ISO
 }
 
-export type BatchKind = "first_tuesday" | "last_saturday";
+/**
+ * Every batch_type value that may exist in sankalp_batches.
+ * List A is the SECOND Tuesday; List B is the LAST Saturday.
+ */
+export type BatchKind = "second_tuesday" | "last_saturday";
+
 export type SankalpVariant = "hawan_only" | "full_package" | null;
 
 // ─── Date helpers (timezone-safe: pure y/m/d math, UTC DOW) ──
@@ -80,12 +86,16 @@ export function daysInMonth(y: number, m: number): number {
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
 
-/** First Tuesday of the given month as YYYY-MM-DD. */
-export function firstTuesdayOf(y: number, m: number): string {
-  for (let d = 1; d <= 7; d++) {
+/**
+ * SECOND Tuesday of the given month as YYYY-MM-DD — List A's seva day.
+ * Always computed live for the target month; never a hardcoded date.
+ * The second Tuesday always falls on day 8-14 inclusive.
+ */
+export function secondTuesdayOf(y: number, m: number): string {
+  for (let d = 8; d <= 14; d++) {
     if (dayOfWeek(toISODate(y, m, d)) === 2) return toISODate(y, m, d);
   }
-  throw new Error(`unreachable: no Tuesday in first week of ${y}-${m}`);
+  throw new Error(`unreachable: no Tuesday in second week of ${y}-${m}`);
 }
 
 /** Last Saturday of the given month as YYYY-MM-DD. */
@@ -98,19 +108,19 @@ export function lastSaturdayOf(y: number, m: number): string {
 
 /**
  * Is this date a valid batch day? Returns the batch kind or null.
- * A date is a First Tuesday ONLY of its own month, likewise Last
- * Saturday — never "a" Tuesday, THE first one.
+ * A date is a Second Tuesday ONLY of its own month, likewise Last
+ * Saturday — never "a" Tuesday, THE second one.
  */
 export function batchKindForDate(isoDate: string): BatchKind | null {
   const [y, m] = isoDate.split("-").map(Number);
-  if (isoDate === firstTuesdayOf(y, m)) return "first_tuesday";
+  if (isoDate === secondTuesdayOf(y, m)) return "second_tuesday";
   if (isoDate === lastSaturdayOf(y, m)) return "last_saturday";
   return null;
 }
 
 /** Batch variants to create for a kind. Tuesday → [null] (one row). */
 export function variantsForKind(kind: BatchKind): SankalpVariant[] {
-  return kind === "first_tuesday" ? [null] : ["hawan_only", "full_package"];
+  return kind === "last_saturday" ? ["hawan_only", "full_package"] : [null];
 }
 
 const MONTHS_EN = [
@@ -136,7 +146,7 @@ export function formatDateEN(isoDate: string): string {
 /** Human label for a batch. Contains NO plan/price info — safe for Pandit view. */
 export function batchLabel(kind: BatchKind, variant: SankalpVariant, isoDate: string): string {
   const day = formatDateEN(isoDate);
-  if (kind === "first_tuesday") return `First Tuesday Sankalp — ${day}`;
+  if (kind === "second_tuesday") return `Second Tuesday Sankalp — ${day}`;
   return variant === "hawan_only"
     ? `Last Saturday Hawan Sankalp — ${day}`
     : `Last Saturday Sankalp — ${day}`;
@@ -188,15 +198,21 @@ function planHasHawan(planId: string, planSevas: PlanSevaRow[], hawanIds: Set<st
  * Compute who belongs in a batch, LIVE from the inputs given.
  * No caching anywhere upstream may store this result ahead of time.
  *
- * kind='first_tuesday':
+ * kind='second_tuesday':
  *   every active subscription joined on/before batch date. No catch-up.
  *
  * kind='last_saturday' (applies to BOTH variants — same member set):
  *   - hawan-plan subscribers: always in, is_catchup=false.
  *   - hawan-ineligible subscribers: in ONLY if they joined after this
- *     month's First Tuesday and on/before the batch date → one-time
+ *     month's Second Tuesday and on/before the batch date → one-time
  *     catch-up, is_catchup=true. From month 2 the window condition
  *     excludes them automatically (normal Tuesday-only cycle).
+ *
+ * The catch-up cutoff is the List A batch DAY ITSELF, with no offset —
+ * joining ON the Second Tuesday means you were in List A that day, so
+ * only a strictly-later join earns the one-time Saturday catch-up. That
+ * zero-offset semantic is unchanged by the First → Second Tuesday shift;
+ * only the day the cutoff lands on moved.
  */
 export function computeBatchMembership(input: {
   kind: BatchKind;
@@ -214,7 +230,8 @@ export function computeBatchMembership(input: {
     const joined = joinedAtISO(sub);
     if (joined > batchDate) continue; // wasn't a subscriber yet on batch day
 
-    if (kind === "first_tuesday") {
+    // List A takes every active subscriber; no catch-up concept applies.
+    if (kind === "second_tuesday") {
       rows.push({ subscription_id: sub.id, is_catchup: false });
       continue;
     }
@@ -226,8 +243,8 @@ export function computeBatchMembership(input: {
     }
 
     const [y, m] = batchDate.split("-").map(Number);
-    const firstTue = firstTuesdayOf(y, m);
-    if (joined > firstTue && joined <= batchDate) {
+    const secondTue = secondTuesdayOf(y, m);
+    if (joined > secondTue && joined <= batchDate) {
       rows.push({ subscription_id: sub.id, is_catchup: true });
     }
     // else: hawan-ineligible long-time subscriber → Tuesday-only, excluded.
@@ -248,7 +265,7 @@ export function computeBatchMembership(input: {
 
 /**
  * Which sevas are performed for ONE subscriber in ONE batch.
- *  - first_tuesday (variant null): their plan's sevas, live.
+ *  - second_tuesday (variant null): their plan's sevas, live.
  *  - hawan_only: the Saturday hawan sevas — same for every member.
  *  - full_package: plan sevas ∪ Saturday hawan sevas (deduped).
  *  - full_package + isCatchup: plan sevas ONLY — the one-time

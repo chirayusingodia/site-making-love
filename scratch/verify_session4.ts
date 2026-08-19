@@ -11,7 +11,7 @@ import {
   buildWaLink,
   computeBatchMembership,
   daysInMonth,
-  firstTuesdayOf,
+  secondTuesdayOf,
   groupForPandit,
   lastSaturdayOf,
   normalizePhoneForWa,
@@ -61,7 +61,7 @@ console.log("\n— Date math —");
 let dateMathOk = true;
 for (const y of [2026, 2027]) {
   for (let m = 1; m <= 12; m++) {
-    const ft = firstTuesdayOf(y, m);
+    const st = secondTuesdayOf(y, m);
     const ls = lastSaturdayOf(y, m);
     // scan whole month for Tuesdays/Saturdays
     const tuesdays: string[] = [];
@@ -72,27 +72,30 @@ for (const y of [2026, 2027]) {
       if (dow === 2) tuesdays.push(iso);
       if (dow === 6) saturdays.push(iso);
     }
-    if (ft !== tuesdays[0]) dateMathOk = false;
+    if (st !== tuesdays[1]) dateMathOk = false;
     if (ls !== saturdays[saturdays.length - 1]) dateMathOk = false;
-    if (batchKindForDate(ft) !== "first_tuesday") dateMathOk = false;
+    if (batchKindForDate(st) !== "second_tuesday") dateMathOk = false;
     if (batchKindForDate(ls) !== "last_saturday") dateMathOk = false;
-    for (const t of tuesdays.slice(1)) if (batchKindForDate(t) !== null) dateMathOk = false;
+    // Every OTHER Tuesday — including the first — must be rejected.
+    for (const t of tuesdays.filter((x) => x !== st)) {
+      if (batchKindForDate(t) !== null) dateMathOk = false;
+    }
     for (const s of saturdays.slice(0, -1)) if (batchKindForDate(s) !== null) dateMathOk = false;
   }
 }
-check("first/last day calc + kind detection, 24 months brute-forced", dateMathOk);
-check("Aug 2026: first Tuesday = 2026-08-04", firstTuesdayOf(2026, 8) === "2026-08-04");
+check("second-Tue/last-Sat calc + kind detection, 24 months brute-forced", dateMathOk);
+check("Aug 2026: second Tuesday = 2026-08-11", secondTuesdayOf(2026, 8) === "2026-08-11");
 check("Aug 2026: last Saturday = 2026-08-29", lastSaturdayOf(2026, 8) === "2026-08-29");
 check("random Wednesday rejected", batchKindForDate("2026-08-05") === null);
 check("hawan detection from live schedule rules = Sarv Rog only",
   hawanIds.length === 1 && hawanIds[0] === "s6");
 
-// ── 2. Membership — August 2026 (Tue 4th, Sat 29th) ───────────
-console.log("\n— Membership (Aug 2026: Tue 04, Sat 29) —");
+// ── 2. Membership — August 2026 (2nd Tue 11th, Sat 29th) ───────────
+console.log("\n— Membership (Aug 2026: 2nd Tue 11, Sat 29) —");
 const subs = [
   { id: "sub-basic-old", plan_id: "p-basic", status: "active", start_date: "2026-07-10", created_at: "2026-07-10" },
-  { id: "sub-basic-late", plan_id: "p-basic", status: "active", start_date: "2026-08-10", created_at: "2026-08-10" }, // after Tue 4 → catch-up
-  { id: "sub-basic-ontue", plan_id: "p-basic", status: "active", start_date: "2026-08-04", created_at: "2026-08-04" }, // joined ON first Tuesday
+  { id: "sub-basic-late", plan_id: "p-basic", status: "active", start_date: "2026-08-17", created_at: "2026-08-17" }, // after Tue 11 → catch-up
+  { id: "sub-basic-ontue", plan_id: "p-basic", status: "active", start_date: "2026-08-11", created_at: "2026-08-11" }, // joined ON the second Tuesday
   { id: "sub-prem-old", plan_id: "p-premium", status: "active", start_date: "2026-07-05", created_at: "2026-07-05" },
   { id: "sub-prem-late", plan_id: "p-premium", status: "active", start_date: "2026-08-15", created_at: "2026-08-15" }, // mid-month premium
   { id: "sub-annual", plan_id: "p-annual", status: "active", start_date: null, created_at: "2026-08-01T09:00:00Z" }, // created_at fallback
@@ -103,7 +106,7 @@ const subs = [
 ];
 
 const tueMembers = computeBatchMembership({
-  kind: "first_tuesday", batchDate: "2026-08-04",
+  kind: "second_tuesday", batchDate: "2026-08-11",
   subscriptions: subs, planSevas, hawanSevaIds: hawanIds,
 });
 const tueIds = tueMembers.map((m) => m.subscription_id);
@@ -111,7 +114,7 @@ check("List A = ALL active subscribers joined by batch day (4)",
   tueIds.length === 4 &&
   ["sub-basic-old", "sub-basic-ontue", "sub-prem-old", "sub-annual"].every((id) => tueIds.includes(id)));
 check("List A excludes paused/cancelled", !tueIds.includes("sub-paused") && !tueIds.includes("sub-cancelled"));
-check("List A excludes future joiner + after-Tuesday joiners",
+check("List A excludes future joiner + after-second-Tuesday joiners",
   !tueIds.includes("sub-future") && !tueIds.includes("sub-basic-late") && !tueIds.includes("sub-prem-late"));
 check("List A has NO catch-up rows", tueMembers.every((m) => !m.is_catchup));
 
@@ -145,7 +148,7 @@ check("Month 2: catch-up subscriber reverts to Tuesday-only (excluded from Sat)"
 // ── 3. Independence ───────────────────────────────────────────
 console.log("\n— Tuesday/Saturday independence —");
 check("Tuesday yields exactly ONE variant row (null)",
-  variantsForKind("first_tuesday").length === 1 && variantsForKind("first_tuesday")[0] === null);
+  variantsForKind("second_tuesday").length === 1 && variantsForKind("second_tuesday")[0] === null);
 check("Saturday yields TWO separate rows (hawan_only + full_package)",
   JSON.stringify(variantsForKind("last_saturday")) === JSON.stringify(["hawan_only", "full_package"]));
 const completion = buildCompletionUpdate(42);
@@ -257,7 +260,7 @@ check("+91 formatted phone preserved", normalizePhoneForWa("+91-9876543210") ===
 const link = buildWaLink("9876543210", "Namaste 🙏 test");
 check("wa.me link is well-formed + encoded",
   link.startsWith("https://wa.me/919876543210?text=") && link.includes("Namaste"));
-const msg = buildDeliveryMessage({ sevaNames: ["Sundarkand Path"], batchLabelText: "First Tuesday Sankalp — 4 August 2026", videoUrl: "https://res.cloudinary.com/x/video.mp4" });
+const msg = buildDeliveryMessage({ sevaNames: ["Sundarkand Path"], batchLabelText: "Second Tuesday Sankalp — 11 August 2026", videoUrl: "https://res.cloudinary.com/x/video.mp4" });
 check("ONE message: references sevas + combined video, no plan/price",
   msg.includes("Sundarkand Path") && msg.includes("video.mp4") && !/₹|Basic|Premium/.test(msg));
 check("message mentions combined seva+naam video (single-asset model)",

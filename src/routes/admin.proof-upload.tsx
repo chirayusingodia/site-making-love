@@ -155,7 +155,7 @@ function ProofUploadPage() {
     })();
   }, [loadStatic, loadBatches]);
 
-  const tuesdayBatches = batches.filter((b) => b.batch_type === "first_tuesday");
+  const tuesdayBatches = batches.filter((b) => b.batch_type === "second_tuesday");
   const saturdayBatches = batches.filter((b) => b.batch_type === "last_saturday");
   const selected = batches.find((b) => b.id === selectedId) ?? null;
 
@@ -197,7 +197,7 @@ function ProofUploadPage() {
       ) : (
         <div className="grid lg:grid-cols-2 gap-4">
           <BatchColumn
-            title="First Tuesday — List A"
+            title="Second Tuesday — List A"
             subtitle="All active subscribers · one batch"
             batches={tuesdayBatches}
             selectedId={selectedId}
@@ -264,7 +264,7 @@ function GenerateBar({ onGenerated }: { onGenerated: () => Promise<void> }) {
       <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <CalendarPlus className="w-5 h-5 text-amber-700 shrink-0" />
         <div className="text-xs text-amber-900/80 flex-1">
-          <span className="font-bold">Generate batch</span> — pick a First Tuesday or Last
+          <span className="font-bold">Generate batch</span> — pick a Second Tuesday or Last
           Saturday date. Membership is computed live at generation time.
         </div>
         <input

@@ -90,7 +90,7 @@ function LoggedInView() {
         </div>
         <div className="px-4 py-4">
           <div className="text-xs text-muted-foreground">Next Seva</div>
-          <div className="font-bold text-foreground mt-0.5">1st Tuesday of next month</div>
+          <div className="font-bold text-foreground mt-0.5">2nd Tuesday of next month</div>
         </div>
       </div>
 

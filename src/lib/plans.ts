@@ -89,7 +89,7 @@ export type LiveSeva = {
   slug: string;
   name: string;
   description: string | null;
-  /** e.g. ["1st Tuesday"] or ["1st Tuesday", "Last Saturday"] */
+  /** e.g. ["2nd Tuesday"] or ["2nd Tuesday", "Last Saturday"] */
   days: string[];
   /** e.g. "1 time a month" | "2 times a month" ("" when no schedule rules) */
   frequency: string;
@@ -150,9 +150,9 @@ type PlanPresentation = {
 const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
   basic: {
     planId: "basic",
-    heading: "Monthly Sundarkand Path, Gau Seva and Vanar Seva — 1st Tuesday of Every Month Sankalp",
+    heading: "Monthly Sundarkand Path, Gau Seva and Vanar Seva — 2nd Tuesday of Every Month Sankalp",
     subheading: "Family ki suraksha, swasthya aur samriddhi ke liye har mahine aapke naam evam gotra se sankalp",
-    tagline: "सेवा की शुरुआत — ₹251/Monthly में मासिक सुंदरकांड, गौ सेवा एवं वानर सेवा (1st Tuesday only)।",
+    tagline: "सेवा की शुरुआत — ₹251/Monthly में मासिक सुंदरकांड, गौ सेवा एवं वानर सेवा (2nd Tuesday only)।",
     image: basicHero,
     slides: [
       {
@@ -182,7 +182,7 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
     ribbon: "800+ परिवार जुड़े",
     detail: {
       description: [
-        "जब आप मूल संकल्प लेते हैं, तो आपके नाम एवं गोत्र से हर माह पहले मंगलवार को श्री हनुमान जी को समर्पित सुंदरकांड पाठ एवं आरती होती है — यह पुण्य आपके परिवार में शांति, सुरक्षा और समृद्धि लाता है।",
+        "जब आप मूल संकल्प लेते हैं, तो आपके नाम एवं गोत्र से हर माह दूसरे मंगलवार को श्री हनुमान जी को समर्पित सुंदरकांड पाठ एवं आरती होती है — यह पुण्य आपके परिवार में शांति, सुरक्षा और समृद्धि लाता है।",
         "इस पैक में शामिल है — सुंदरकांड पाठ, आरती, गौ सेवा एवं वानर सेवा। प्रत्येक सेवा का Video Proof आपके WhatsApp पर।",
       ],
       benefits: [
@@ -200,7 +200,7 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
   },
   premium: {
     planId: "grah",
-    heading: "Monthly Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan — 1st Tuesday of Every Month and Last Saturday of Every Month Sankalp",
+    heading: "Monthly Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan — 2nd Tuesday of Every Month and Last Saturday of Every Month Sankalp",
     subheading: "Do sankalp har mahine — do alag hawan ke saath ghar mein shanti evam rog-badha nivaran",
     tagline: "सम्पूर्ण पारिवारिक सेवा — 2 सुंदरकांड, 2 अलग हवन (Griha Shanti & Sarv Rog Nivaran), Saadhu Santo Ko Bhojan एवं गौ/वानर सेवा हर माह।",
     image: premiumHero,
@@ -546,7 +546,7 @@ export const testimonials = [
 
 export const faqs = [
   { q: "इतने सस्ते में कैसे करवा पा रहे हो यह सब?", a: "सभी के नाम का संकल्प साथ में लिया जाएगा। हर व्यक्ति का नाम और गोत्र अलग-अलग बोला जाएगा, लेकिन पंडित जी एक ही बार में सबके संकल्प सामूहिक रूप से ले लेंगे। इसीलिए यह सेवा सभी के लिए सुलभ और सस्ती रखी गई है।" },
-  { q: "पहली सेवा कब शुरू होगी?", a: "अगर आप महीने के पहले मंगलवार से पहले सब्सक्राइब करते हैं, तो आपकी पहली सेवा उसी महीने के पहले मंगलवार को होती है — आपके प्लान की सभी सेवाओं के साथ। Premium और Premium Annual सदस्यों को उसी महीने के आखिरी शनिवार को अतिरिक्त सेवाएं (Saadhu Santo Ko Bhojan दोबारा + Sarv Rog Nivaran Hawan) भी मिलती हैं। अगर आप पहले मंगलवार के बाद जॉइन करते हैं, तो Basic सदस्यों को अगले महीने के पहले मंगलवार का इंतज़ार करना होता है (हालांकि इस बीच उसी महीने के आखिरी शनिवार में एक बार शामिल कर लिया जाता है, Hawan को छोड़कर)।" },
+  { q: "पहली सेवा कब शुरू होगी?", a: "अगर आप महीने के दूसरे मंगलवार से पहले सब्सक्राइब करते हैं, तो आपकी पहली सेवा उसी महीने के दूसरे मंगलवार को होती है — आपके प्लान की सभी सेवाओं के साथ। Premium और Premium Annual सदस्यों को उसी महीने के आखिरी शनिवार को अतिरिक्त सेवाएं (Saadhu Santo Ko Bhojan दोबारा + Sarv Rog Nivaran Hawan) भी मिलती हैं। अगर आप दूसरे मंगलवार के बाद जॉइन करते हैं, तो Basic सदस्यों को अगले महीने के दूसरे मंगलवार का इंतज़ार करना होता है (हालांकि इस बीच उसी महीने के आखिरी शनिवार में एक बार शामिल कर लिया जाता है, Hawan को छोड़कर)।" },
   { q: "Refund Policy क्या है?", a: "अगर किसी कारणवश सेवा न हो सके तो पूरा धन वापस किया जाएगा।" },
   { q: "क्या मुझे प्रत्येक सेवा का प्रमाण मिलेगा?", a: "जी हाँ। प्रत्येक अनुष्ठान का Live या Video Proof सीधे आपके WhatsApp पर भेजा जाता है।" },
   { q: "क्या यह कोई business है?", a: "नहीं। यह सनातन सेवा का एक सामूहिक यज्ञ है। आपकी सेवा राशि का एक-एक पैसा सीधे गौ-माता के चारे, वानरों के फल, साधु संतों को भोजन एवं अनुष्ठान सामग्री में लगाया जाता है।" },
