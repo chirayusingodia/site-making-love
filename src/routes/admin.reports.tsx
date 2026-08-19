@@ -508,7 +508,7 @@ function AdminReportsPage() {
           <ReportShell
             id="pending"
             title="Pending Sevas Report"
-            subtitle={`${monthLabel(month)} · Tuesday batch ${fmtDate(tueDate)} and Saturday batch ${fmtDate(satDate)} are SEPARATE columns — statuses are never merged · Join date/time shown so a genuine miss is distinguishable from a subscriber still in the normal wait window`}
+            subtitle={`${monthLabel(month)} · 2nd Tuesday batch ${fmtDate(tueDate)} and Last Saturday batch ${fmtDate(satDate)} are SEPARATE columns — statuses are never merged · Join date/time shown so a genuine miss is distinguishable from a subscriber still in the normal wait window`}
             icon={Clock}
             printKey={printKey}
             exporting={exporting === "pending"}
@@ -544,7 +544,7 @@ function AdminReportsPage() {
                         Joined (date · time IST)
                       </th>
                       <th className="text-left py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Tuesday batch — {fmtDate(tueDate)}
+                        2nd Tuesday batch — {fmtDate(tueDate)}
                       </th>
                       <th className="text-left py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
                         Saturday batch — {fmtDate(satDate)}

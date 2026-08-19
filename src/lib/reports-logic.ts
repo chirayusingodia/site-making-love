@@ -8,7 +8,7 @@
 // NOTE: relative import with explicit .ts extension (not "@/…") so
 // this module is also loadable by the plain-Node verification
 // harness in scratch/ (no alias/extension resolution outside Vite).
-import { daysInMonth, firstTuesdayOf, lastSaturdayOf, toISODate } from "./sankalp-logic.ts";
+import { daysInMonth, lastSaturdayOf, secondTuesdayOf, toISODate } from "./sankalp-logic.ts";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -152,7 +152,8 @@ export function monthWindow(yyyyMm: string) {
     last: toISODate(y, m, lastDay),
     monthStart: `${toISODate(y, m, 1)}T00:00:00+05:30`,
     monthEnd: `${toISODate(y, m, lastDay)}T23:59:59.999+05:30`,
-    tueDate: firstTuesdayOf(y, m),
+    // List A seva day = SECOND Tuesday of the month.
+    tueDate: secondTuesdayOf(y, m),
     satDate: lastSaturdayOf(y, m),
   };
 }
@@ -258,7 +259,7 @@ export function computePendingSevas(
 ): PendingSevaRow[] {
   const { tueDate, satDate } = monthWindow(month);
   const tueBatch = batches.find(
-    (b) => b.batch_type === "first_tuesday" && b.batch_date === tueDate,
+    (b) => b.batch_type === "second_tuesday" && b.batch_date === tueDate,
   );
   // Saturday: a subscriber belongs to BOTH variant batches (same member
   // set by construction) — full_package is their primary Saturday seva.

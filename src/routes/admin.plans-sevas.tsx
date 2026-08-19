@@ -622,7 +622,8 @@ function ScheduleRulesEditor({
 }: {
   sevas: Seva[]; scheduleRules: SevaScheduleRule[]; loading: boolean; onUpdated: () => void;
 }) {
-  const [adding, setAdding] = useState({ sevaId: "", weekday: "TUE", occurrence: "first" });
+  // Default matches the live List A rule: 2nd Tuesday.
+  const [adding, setAdding] = useState({ sevaId: "", weekday: "TUE", occurrence: "second" });
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -634,7 +635,7 @@ function ScheduleRulesEditor({
       seva_id: adding.sevaId, weekday: adding.weekday, occurrence: adding.occurrence,
     });
     if (err) { setError(err.message); } else {
-      setAdding({ sevaId: "", weekday: "TUE", occurrence: "first" }); onUpdated();
+      setAdding({ sevaId: "", weekday: "TUE", occurrence: "second" }); onUpdated();
     }
     setSaving(false);
   };

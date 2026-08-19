@@ -263,7 +263,7 @@ check(
   "monthWindow: IST end offset (31-day month)",
   win.monthEnd === "2026-08-31T23:59:59.999+05:30",
 );
-check("monthWindow: first Tuesday Aug 2026 = 04 Aug", win.tueDate === "2026-08-04");
+check("monthWindow: second Tuesday Aug 2026 = 11 Aug", win.tueDate === "2026-08-11");
 check("monthWindow: last Saturday Aug 2026 = 29 Aug", win.satDate === "2026-08-29");
 check(
   "monthWindow: Feb 2026 has 28 days",
@@ -433,8 +433,8 @@ check("seva CSV: removed-seva fallback label", sevaCsv.includes("(seva removed)"
 const batches: BatchRow[] = [
   {
     id: "b_tue",
-    batch_type: "first_tuesday",
-    batch_date: "2026-08-04",
+    batch_type: "second_tuesday",
+    batch_date: "2026-08-11",
     sankalp_variant: null,
     status: "done",
   },
@@ -507,7 +507,7 @@ check(
 const pendCsv = buildPendingSevasCsv("2026-08", pending);
 check(
   "pending CSV: dynamic batch-date headers",
-  pendCsv.split("\n")[0].includes("tuesday_batch (2026-08-04)"),
+  pendCsv.split("\n")[0].includes("tuesday_batch (2026-08-11)"),
 );
 check(
   "pending CSV: saturday header",

@@ -13,7 +13,7 @@ import {
 // POST /api/sankalp/generate-batch
 // Body: { date: "YYYY-MM-DD" }
 //
-// Given a date, validates it is THE First Tuesday or THE Last
+// Given a date, validates it is THE Second Tuesday or THE Last
 // Saturday of its month, then generates the batch row(s) +
 // sankalp_batch_subscriptions rows LIVE from current active
 // subscriptions + current plan_sevas. Nothing is cached or
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/sankalp/generate-batch")({
           return json(
             {
               error:
-                "Not a seva day. Batches exist only for the First Tuesday or Last Saturday of a month.",
+                "Not a seva day. Batches exist only for the Second Tuesday or Last Saturday of a month.",
             },
             400,
           );
