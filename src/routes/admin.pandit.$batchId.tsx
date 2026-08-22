@@ -11,7 +11,7 @@ import {
   type ScheduleRuleRow,
   type SevaLite,
 } from "@/lib/sankalp-logic";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/admin/pandit/$batchId")({
@@ -35,6 +35,7 @@ function PanditListPage() {
   const { batchId } = Route.useParams();
   const [batch, setBatch] = useState<BatchRow | null>(null);
   const [groups, setGroups] = useState<ReturnType<typeof groupForPandit>>([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,7 +69,8 @@ function PanditListPage() {
         supabase.from("plan_sevas").select("plan_id,seva_id"),
         supabase.from("seva_schedule_rules").select("seva_id,weekday,occurrence"),
       ]);
-      const err = sbsAll.error ?? sevasRes.error?.message ?? psRes.error?.message ?? rulesRes.error?.message;
+      const err =
+        sbsAll.error ?? sevasRes.error?.message ?? psRes.error?.message ?? rulesRes.error?.message;
       if (err) {
         setError(err);
         setLoading(false);
@@ -89,7 +91,9 @@ function PanditListPage() {
           .in("id", chunk);
         subPlan = new Map([
           ...subPlan,
-          ...(((subData as { id: string; plan_id: string }[]) ?? []).map((s) => [s.id, s.plan_id] as const)),
+          ...((subData as { id: string; plan_id: string }[]) ?? []).map(
+            (s) => [s.id, s.plan_id] as const,
+          ),
         ]);
 
         const { data: fmData } = await supabase
@@ -109,7 +113,7 @@ function PanditListPage() {
       const scheduleRules = (rulesRes.data as ScheduleRuleRow[]) ?? [];
       const hawanIds = saturdayHawanSevaIds(sevas, scheduleRules);
 
-      const members: PanditMember[] = sbsRows.map((r) => ({
+      const allMembers: PanditMember[] = sbsRows.map((r) => ({
         subscription_id: r.subscription_id,
         is_catchup: r.is_catchup,
         sevas: sevasForMember({
@@ -123,6 +127,16 @@ function PanditListPage() {
         }),
         names: membersBySub.get(r.subscription_id) ?? [],
       }));
+
+      // SANKALP PENDING RULE (signup-first checkout session §3b):
+      // A subscription with ZERO family members has nothing correct to
+      // recite yet — it is EXCLUDED from this Pandit-facing list. Its
+      // sankalp_batch_subscriptions row still exists (created by
+      // generate-batch), so it stays tracked; the moment anyone adds a
+      // member via /profile, the next live batch picks it up.
+      // NEVER fabricate a name from profiles.full_name.
+      const members = allMembers.filter((m) => m.names.length > 0);
+      setPendingCount(allMembers.length - members.length);
 
       setGroups(groupForPandit(members));
       setLoading(false);
@@ -158,12 +172,26 @@ function PanditListPage() {
         </button>
       </div>
 
+      {/* Sankalp Pending notice — screen only, NEVER printed for Pandit ji */}
+      {pendingCount > 0 && (
+        <div className="print:hidden bg-amber-50 border border-amber-300 text-amber-900 p-3 rounded-xl text-xs flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <span>
+            <strong>{pendingCount}</strong> subscription{pendingCount === 1 ? "" : "s"} in this
+            batch have <strong>no family details yet</strong> (Sankalp Pending) — excluded from the
+            list below. They stay tracked in this batch; call them via{" "}
+            <Link to="/admin/subscribers" className="underline font-semibold">
+              Subscribers → Sankalp Pending filter
+            </Link>
+            .
+          </span>
+        </div>
+      )}
+
       {/* Printable sheet — seva names + name-gotra ONLY */}
       <div className="bg-white rounded-2xl border border-amber-900/10 p-8 font-serif print:border-0 print:p-0">
         <div className="text-center text-2xl text-amber-700">॥ श्री गणेशाय नमः ॥</div>
-        <h1 className="text-center text-xl font-bold mt-1">
-          संकल्प नामावली — Sankalp Name List
-        </h1>
+        <h1 className="text-center text-xl font-bold mt-1">संकल्प नामावली — Sankalp Name List</h1>
         <div className="text-center text-xs text-slate-500 mt-1 mb-6">
           {batchLabel(batch.batch_type, batch.batch_date)}
           {" • "}कुल नाम: {totalNames}
@@ -196,14 +224,10 @@ function PanditListPage() {
                     <span className="text-amber-800 font-bold w-8 shrink-0">{i + 1}.</span>
                     <span className="font-semibold">{n.name}</span>
                   </span>
-                  <span className="text-slate-600 whitespace-nowrap">
-                    {n.gotra?.trim() || "—"}
-                  </span>
+                  <span className="text-slate-600 whitespace-nowrap">{n.gotra?.trim() || "—"}</span>
                 </li>
               ))}
-              {g.names.length === 0 && (
-                <li className="text-sm text-slate-400 py-2">No names.</li>
-              )}
+              {g.names.length === 0 && <li className="text-sm text-slate-400 py-2">No names.</li>}
             </ol>
           </div>
         ))}

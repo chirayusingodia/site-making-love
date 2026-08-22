@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SubscriptionSuccessRouteImport } from './routes/subscription-success'
 import { Route as SevasRouteImport } from './routes/sevas'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PlansRouteImport } from './routes/plans'
 import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
@@ -28,9 +30,14 @@ import { Route as AdminProofUploadRouteImport } from './routes/admin.proof-uploa
 import { Route as AdminPlansSevasRouteImport } from './routes/admin.plans-sevas'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
+import { Route as ApiSubscriptionsCreateCheckoutRouteImport } from './routes/api/subscriptions/create-checkout'
 import { Route as ApiSankalpGenerateBatchRouteImport } from './routes/api/sankalp/generate-batch'
+import { Route as ApiProfileFamilyMembersRouteImport } from './routes/api/profile/family-members'
+import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/address'
 import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
+import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
+import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
 import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
 import { Route as ApiAdminSalesAgentsListRouteImport } from './routes/api/admin/sales-agents/list'
@@ -39,6 +46,11 @@ import { Route as ApiAdminReportsMonthlyRouteImport } from './routes/api/admin/r
 import { Route as ApiAdminReportsExportRouteImport } from './routes/api/admin/reports/export'
 import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/payments/list'
 
+const SubscriptionSuccessRoute = SubscriptionSuccessRouteImport.update({
+  id: '/subscription-success',
+  path: '/subscription-success',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SevasRoute = SevasRouteImport.update({
   id: '/sevas',
   path: '/sevas',
@@ -62,6 +74,11 @@ const PlansRoute = PlansRouteImport.update({
 const MySubscriptionRoute = MySubscriptionRouteImport.update({
   id: '/my-subscription',
   path: '/my-subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -134,9 +151,25 @@ const AdminOverviewRoute = AdminOverviewRouteImport.update({
   path: '/overview',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiSubscriptionsCreateCheckoutRoute =
+  ApiSubscriptionsCreateCheckoutRouteImport.update({
+    id: '/api/subscriptions/create-checkout',
+    path: '/api/subscriptions/create-checkout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSankalpGenerateBatchRoute = ApiSankalpGenerateBatchRouteImport.update({
   id: '/api/sankalp/generate-batch',
   path: '/api/sankalp/generate-batch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileFamilyMembersRoute = ApiProfileFamilyMembersRouteImport.update({
+  id: '/api/profile/family-members',
+  path: '/api/profile/family-members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileAddressRoute = ApiProfileAddressRouteImport.update({
+  id: '/api/profile/address',
+  path: '/api/profile/address',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPaymentsWebhookRoute = ApiPaymentsWebhookRouteImport.update({
@@ -144,9 +177,19 @@ const ApiPaymentsWebhookRoute = ApiPaymentsWebhookRouteImport.update({
   path: '/api/payments/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCouponsValidateRoute = ApiCouponsValidateRouteImport.update({
+  id: '/api/coupons/validate',
+  path: '/api/coupons/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCloudinarySignUploadRoute = ApiCloudinarySignUploadRouteImport.update({
   id: '/api/cloudinary/sign-upload',
   path: '/api/cloudinary/sign-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthRequestOtpRoute = ApiAuthRequestOtpRouteImport.update({
+  id: '/api/auth/request-otp',
+  path: '/api/auth/request-otp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminOverviewFinancialsRoute =
@@ -192,11 +235,13 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
+  '/subscription-success': typeof SubscriptionSuccessRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
@@ -209,9 +254,14 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
+  '/api/profile/address': typeof ApiProfileAddressRoute
+  '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
@@ -222,11 +272,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
+  '/subscription-success': typeof SubscriptionSuccessRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
@@ -239,9 +291,14 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
+  '/api/profile/address': typeof ApiProfileAddressRoute
+  '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
@@ -254,11 +311,13 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
+  '/subscription-success': typeof SubscriptionSuccessRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
@@ -271,9 +330,14 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
+  '/api/profile/address': typeof ApiProfileAddressRoute
+  '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
@@ -287,11 +351,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/faq'
+    | '/login'
     | '/my-subscription'
     | '/plans'
     | '/profile'
     | '/reviews'
     | '/sevas'
+    | '/subscription-success'
     | '/admin/overview'
     | '/admin/payments'
     | '/admin/plans-sevas'
@@ -304,9 +370,14 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
+    | '/api/coupons/validate'
     | '/api/payments/webhook'
+    | '/api/profile/address'
+    | '/api/profile/family-members'
     | '/api/sankalp/generate-batch'
+    | '/api/subscriptions/create-checkout'
     | '/api/admin/payments/list'
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
@@ -317,11 +388,13 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/faq'
+    | '/login'
     | '/my-subscription'
     | '/plans'
     | '/profile'
     | '/reviews'
     | '/sevas'
+    | '/subscription-success'
     | '/admin/overview'
     | '/admin/payments'
     | '/admin/plans-sevas'
@@ -334,9 +407,14 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
+    | '/api/coupons/validate'
     | '/api/payments/webhook'
+    | '/api/profile/address'
+    | '/api/profile/family-members'
     | '/api/sankalp/generate-batch'
+    | '/api/subscriptions/create-checkout'
     | '/api/admin/payments/list'
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
@@ -348,11 +426,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/faq'
+    | '/login'
     | '/my-subscription'
     | '/plans'
     | '/profile'
     | '/reviews'
     | '/sevas'
+    | '/subscription-success'
     | '/admin/overview'
     | '/admin/payments'
     | '/admin/plans-sevas'
@@ -365,9 +445,14 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
+    | '/api/coupons/validate'
     | '/api/payments/webhook'
+    | '/api/profile/address'
+    | '/api/profile/family-members'
     | '/api/sankalp/generate-batch'
+    | '/api/subscriptions/create-checkout'
     | '/api/admin/payments/list'
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
@@ -380,17 +465,24 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   FaqRoute: typeof FaqRoute
+  LoginRoute: typeof LoginRoute
   MySubscriptionRoute: typeof MySubscriptionRoute
   PlansRoute: typeof PlansRoute
   ProfileRoute: typeof ProfileRoute
   ReviewsRoute: typeof ReviewsRoute
   SevasRoute: typeof SevasRoute
+  SubscriptionSuccessRoute: typeof SubscriptionSuccessRoute
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
   ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
+  ApiAuthRequestOtpRoute: typeof ApiAuthRequestOtpRoute
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
+  ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
   ApiPaymentsWebhookRoute: typeof ApiPaymentsWebhookRoute
+  ApiProfileAddressRoute: typeof ApiProfileAddressRoute
+  ApiProfileFamilyMembersRoute: typeof ApiProfileFamilyMembersRoute
   ApiSankalpGenerateBatchRoute: typeof ApiSankalpGenerateBatchRoute
+  ApiSubscriptionsCreateCheckoutRoute: typeof ApiSubscriptionsCreateCheckoutRoute
   ApiAdminPaymentsListRoute: typeof ApiAdminPaymentsListRoute
   ApiAdminReportsExportRoute: typeof ApiAdminReportsExportRoute
   ApiAdminReportsMonthlyRoute: typeof ApiAdminReportsMonthlyRoute
@@ -400,6 +492,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/subscription-success': {
+      id: '/subscription-success'
+      path: '/subscription-success'
+      fullPath: '/subscription-success'
+      preLoaderRoute: typeof SubscriptionSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sevas': {
       id: '/sevas'
       path: '/sevas'
@@ -433,6 +532,13 @@ declare module '@tanstack/react-router' {
       path: '/my-subscription'
       fullPath: '/my-subscription'
       preLoaderRoute: typeof MySubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -533,11 +639,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOverviewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/subscriptions/create-checkout': {
+      id: '/api/subscriptions/create-checkout'
+      path: '/api/subscriptions/create-checkout'
+      fullPath: '/api/subscriptions/create-checkout'
+      preLoaderRoute: typeof ApiSubscriptionsCreateCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sankalp/generate-batch': {
       id: '/api/sankalp/generate-batch'
       path: '/api/sankalp/generate-batch'
       fullPath: '/api/sankalp/generate-batch'
       preLoaderRoute: typeof ApiSankalpGenerateBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/family-members': {
+      id: '/api/profile/family-members'
+      path: '/api/profile/family-members'
+      fullPath: '/api/profile/family-members'
+      preLoaderRoute: typeof ApiProfileFamilyMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/address': {
+      id: '/api/profile/address'
+      path: '/api/profile/address'
+      fullPath: '/api/profile/address'
+      preLoaderRoute: typeof ApiProfileAddressRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/payments/webhook': {
@@ -547,11 +674,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/coupons/validate': {
+      id: '/api/coupons/validate'
+      path: '/api/coupons/validate'
+      fullPath: '/api/coupons/validate'
+      preLoaderRoute: typeof ApiCouponsValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cloudinary/sign-upload': {
       id: '/api/cloudinary/sign-upload'
       path: '/api/cloudinary/sign-upload'
       fullPath: '/api/cloudinary/sign-upload'
       preLoaderRoute: typeof ApiCloudinarySignUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/request-otp': {
+      id: '/api/auth/request-otp'
+      path: '/api/auth/request-otp'
+      fullPath: '/api/auth/request-otp'
+      preLoaderRoute: typeof ApiAuthRequestOtpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/overview-financials': {
@@ -637,17 +778,24 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   FaqRoute: FaqRoute,
+  LoginRoute: LoginRoute,
   MySubscriptionRoute: MySubscriptionRoute,
   PlansRoute: PlansRoute,
   ProfileRoute: ProfileRoute,
   ReviewsRoute: ReviewsRoute,
   SevasRoute: SevasRoute,
+  SubscriptionSuccessRoute: SubscriptionSuccessRoute,
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
   ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
+  ApiAuthRequestOtpRoute: ApiAuthRequestOtpRoute,
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
+  ApiCouponsValidateRoute: ApiCouponsValidateRoute,
   ApiPaymentsWebhookRoute: ApiPaymentsWebhookRoute,
+  ApiProfileAddressRoute: ApiProfileAddressRoute,
+  ApiProfileFamilyMembersRoute: ApiProfileFamilyMembersRoute,
   ApiSankalpGenerateBatchRoute: ApiSankalpGenerateBatchRoute,
+  ApiSubscriptionsCreateCheckoutRoute: ApiSubscriptionsCreateCheckoutRoute,
   ApiAdminPaymentsListRoute: ApiAdminPaymentsListRoute,
   ApiAdminReportsExportRoute: ApiAdminReportsExportRoute,
   ApiAdminReportsMonthlyRoute: ApiAdminReportsMonthlyRoute,

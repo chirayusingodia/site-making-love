@@ -123,3 +123,47 @@ export function json(data: unknown, status = 200): Response {
     headers: { "content-type": "application/json" },
   });
 }
+
+// ─── End-user (non-staff) auth helpers ───────────────────────
+// Signup-first checkout session: /api routes that act on the
+// CALLER'S OWN data (profile, subscriptions, family_members) run
+// under the caller's own JWT so RLS stays authoritative — the
+// service role is used only where RLS cannot express the rule.
+
+/**
+ * A Supabase client that executes every query AS THE CALLER — their
+ * access token rides on each request, so ordinary RLS policies
+ * ("user reads/inserts/updates own") are the enforcement layer.
+ * No service-role bypass. persistSession off: stateless request scope.
+ */
+export function getUserClient(accessToken: string): SupabaseClient {
+  const url = process.env.VITE_SUPABASE_URL ?? "https://omjivlmfsikeqwndtlcn.supabase.co";
+  return createClient(url, process.env.SUPABASE_ANON_KEY ?? "", {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { authorization: `Bearer ${accessToken}` } },
+  });
+}
+
+/**
+ * Resolves any signed-in end user (not just staff) from the
+ * Authorization header. Returns null when the token is missing or
+ * invalid — handlers map null to 401.
+ */
+export async function requireUser(
+  request: Request,
+): Promise<{ userId: string; db: SupabaseClient } | null> {
+  const auth = request.headers.get("authorization") ?? "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token) return null;
+
+  // Validate against Supabase Auth first; only then hand the token
+  // to a user-scoped client for RLS-scoped reads/writes.
+  const admin = getServiceClient();
+  const {
+    data: { user },
+    error,
+  } = await admin.auth.getUser(token);
+  if (error || !user) return null;
+
+  return { userId: user.id, db: getUserClient(token) };
+}
