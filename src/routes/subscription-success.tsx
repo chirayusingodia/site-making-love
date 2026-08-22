@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, PartyPopper } from "lucide-react";
+import { ArrowRight, LogIn, PartyPopper } from "lucide-react";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import {
   FamilyAddressForm,
@@ -8,6 +8,7 @@ import {
   type ExistingMember,
 } from "@/components/profile-completion";
 import { supabase } from "@/lib/supabase";
+import { useSessionProfile } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/subscription-success")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -32,12 +33,13 @@ export const Route = createFileRoute("/subscription-success")({
 function SubscriptionSuccessPage() {
   const { ref } = Route.useSearch();
   const navigate = useNavigate();
+  const { userId, loading: sessionLoading } = useSessionProfile();
   const [members, setMembers] = useState<ExistingMember[]>([]);
   const [address, setAddress] = useState<ExistingAddress | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!ref) {
+    if (!ref || !userId) {
       setLoading(false);
       return;
     }
@@ -51,14 +53,14 @@ function SubscriptionSuccessPage() {
         supabase
           .from("profiles")
           .select("address_line1,address_line2,state,pincode")
-          .eq("id", (await supabase.auth.getUser()).data.user?.id ?? "")
+          .eq("id", userId)
           .maybeSingle(),
       ]);
       setMembers((fmRes.data as ExistingMember[]) ?? []);
       setAddress((profRes.data as ExistingAddress | null) ?? null);
       setLoading(false);
     })();
-  }, [ref]);
+  }, [ref, userId]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,32 +81,50 @@ function SubscriptionSuccessPage() {
         </div>
 
         {/* Completion form — same component as /profile */}
-        <div className="space-y-2">
-          <h2 className="font-bold text-foreground">Apni details poore karein</h2>
-          <p className="text-xs text-muted-foreground">
-            Parivaar ke naam-gotra aur prasad address add karein — ya baad mein bhi kar sakte hain.
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="space-y-3 animate-pulse">
-            <div className="h-24 w-full bg-black/5 rounded-2xl" />
-            <div className="h-40 w-full bg-black/5 rounded-2xl" />
+        {!sessionLoading && !userId ? (
+          <div className="card-soft p-5 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Details add karne ke liye login zaroori hai.
+            </p>
+            <Link
+              to="/login"
+              search={{ redirect: ref ? `/subscription-success?ref=${ref}` : "/profile" }}
+              className="inline-flex items-center gap-2 bg-brand text-white font-bold px-5 py-2.5 rounded-full text-sm"
+            >
+              <LogIn size={16} /> Login karein
+            </Link>
           </div>
-        ) : ref ? (
-          <FamilyAddressForm
-            subscriptionId={ref}
-            initialMembers={members}
-            initialAddress={address}
-          />
         ) : (
-          <p className="text-xs text-muted-foreground">
-            Form dikhane ke liye payment reference nahi mila — aap{" "}
-            <Link to="/profile" className="text-brand font-semibold">
-              profile
-            </Link>{" "}
-            se details add kar sakte hain.
-          </p>
+          <>
+            <div className="space-y-2">
+              <h2 className="font-bold text-foreground">Apni details poore karein</h2>
+              <p className="text-xs text-muted-foreground">
+                Parivaar ke naam-gotra aur prasad address add karein — ya baad mein bhi kar sakte
+                hain.
+              </p>
+            </div>
+
+            {loading || sessionLoading ? (
+              <div className="space-y-3 animate-pulse">
+                <div className="h-24 w-full bg-black/5 rounded-2xl" />
+                <div className="h-40 w-full bg-black/5 rounded-2xl" />
+              </div>
+            ) : ref ? (
+              <FamilyAddressForm
+                subscriptionId={ref}
+                initialMembers={members}
+                initialAddress={address}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Form dikhane ke liye payment reference nahi mila — aap{" "}
+                <Link to="/profile" className="text-brand font-semibold">
+                  profile
+                </Link>{" "}
+                se details add kar sakte hain.
+              </p>
+            )}
+          </>
         )}
 
         {/* Explicit skip */}

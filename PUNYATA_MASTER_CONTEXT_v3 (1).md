@@ -746,58 +746,68 @@ This is the operational heart of the product and must be implemented exactly as 
 
 ---
 
-## 8. Subscription Flow
+## 8. Subscription Flow — ★UPDATED by Signup-First Checkout session (2026-08-22)
+
+> ⚠️ **This section supersedes the pre-session flow below it in spirit:** login now happens
+> FIRST, before plan purchase — not mid-checkout after family details. Family member details
+> moved to AFTER payment (profile completion), and are explicitly optional/deferrable.
+> Rationale (Chirayu): reduce checkout friction to one click once the user is identified,
+> and stop losing family/gotra data entry to fields users don't have handy at browse time.
 
 ```
-Landing page — messaging: "Daan Punya Aapka, Sewa Hamari" / Punyata as the subscriber's "Punya Bank"
+Landing / Plans page — fully PUBLIC, no login required to browse
        │
        ▼
-Plan cards (rendered dynamically from `plans` + live `plan_sevas` — tagline, highlight_text,
-features list, team name, unique card_image_url per plan — all tiers shown together, no toggle)
+User clicks Subscribe / Buy on a plan
+       │
+       ├─ Not logged in → /login?redirect=/checkout/<plan>  (plan remembered)
+       │      Full Name + Mobile → OTP (Supabase phone auth, SMS/voice)
+       │      New number  → profiles row created with name, session starts
+       │      Known number→ logs into SAME profile; typed name ignored
+       │      After verify → straight back to that plan's buy step
+       │
+       └─ Already logged in ────────────────────────────┐
+                                                        ▼
+Buy step (/checkout/$planId) — ONE click:
+  shows plan + price + user's own name/phone (never re-entered)
+  optional coupon code (validated via /api/coupons/validate)
        │
        ▼
-Select a plan
+"Confirm & Pay" → POST /api/subscriptions/create-checkout
+  creates subscriptions row (status='pending', razorpay_sub_id linked)
+  + Razorpay Subscription (UPI AutoPay / card) → Razorpay Checkout opens
        │
-       ▼
-Family details step:
-  - Member 1 (compulsory): Full Name + Gotra + Relation
-  - Members 2-4 (optional): Full Name + Gotra + Relation + DOB, "+ Add Family Member" up to 4 total
+       ├─ SUCCESS (client callback) → interim "Payment received, confirming…"
+       │     state → redirect /subscription-success
+       │     REAL activation still ONLY via webhook (subscription.activated/
+       │     charged set status='active'; nothing else ever does)
        │
-       ▼
-Contact details: Phone, Email, City, Country
-       │
-       ▼
-Phone OTP verification (Supabase Auth)
-       │
-       ▼
-Coupon code entry (optional) — validated against `coupons`;
-  agent-shared links can pre-fill attribution
-       │
-       ▼
-Review: plan, all family members (name+gotra used in every sankalp), team performing
-the seva, price after coupon discount
-       │
-       ▼
-Razorpay Checkout → UPI AutoPay mandate / card auto-debit
-       │
-       ├─ SUCCESS → subscription created via WEBHOOK (status: active) + family_members rows
-       │            → WhatsApp welcome message
-       │            → subscriber auto-included in the next live-generated List A/B
-       │
-       └─ FAILED  → retry notification (WhatsApp + email) → after 3 failures → status: pending, flagged in admin
+       └─ DISMISS → retry on same page
 
-Twice-monthly Sankalp cycle (UPDATED):
+Post-purchase (/subscription-success):
+  banner "🎉 आपकी सदस्यता सफलतापूर्वक शुरू हो गई!"
+  + family members form (up to 4: name/gotra/relation/optional DOB)
+  + prasad address form
+  + explicit skip ("Main yeh baad mein karunga") → /my-subscription
+  Same shared component is PERMANENTLY reachable from /profile until filled.
+
+Sankalp Pending rule:
+  A subscription with 0 family_members rows is VALID. Derived flag only
+  (family_member_count === 0) — never a stored boolean.
+  • Sales agent calls subscriber to complete details ASAP after purchase;
+    call queue = /admin/subscribers filter, oldest-purchase-first.
+  • generate-batch STILL tracks such subs in sankalp_batch_subscriptions
+    but the Pandit-facing list EXCLUDES them (nothing correct to recite —
+    never fabricate a name). Next live batch picks them up automatically.
+
+Twice-monthly Sankalp cycle (unchanged):
   Second Tuesday → List A generated live → ALL active subs → sevas per current plan
-  Last Saturday  → List B generated live → Hawan-eligible plans only → ONE sankalp (plan sevas + Sarv Rog Nivaran Hawan)
+  Last Saturday  → List B generated live → Hawan-eligible plans only → ONE sankalp
   → admin marks each batch "Done" independently
   → proof uploaded per batch (common footage + name-segment video)
-  → WhatsApp delivery (2 messages per subscriber)
-  → user's dashboard shows a running "Punya Bank" ledger derived from seva_proofs
+  → WhatsApp delivery → Punya Bank ledger derived from seva_proofs
 
-Separately (ad-hoc, not tied to the cycle above):
-Admin creates an Occasional Pooja page → unique link sent via WhatsApp → subscriber
-opens page → sees photo/message → makes an open/voluntary donation via Razorpay →
-Chirayu can take the page down anytime.
+Separately (ad-hoc): Occasional Pooja pages — unchanged, see Section 6A.
 ```
 
 **User dashboard** shows a computed timeline/count of sevas performed to date — no separate table needed; it's a view over `seva_proofs` + `sankalp_batch_subscriptions` + `family_members`. (Occasional pooja donations are separate one-off events and are **not** part of this recurring ledger, though they may optionally be surfaced as a "Special Sevas" note if useful later.)
@@ -842,11 +852,19 @@ Chirayu can take the page down anytime.
 ## 11. API Endpoints — UPDATED
 
 ```
-Auth (Supabase Auth directly)
-  signInWithOtp / verifyOtp (client SDK)
+Auth (Signup-First Checkout session — UPDATED)
+  POST   /api/auth/request-otp                  → { name, phone } — combined login/signup;
+                                                creates auth user + profiles row for NEW numbers,
+                                                sends OTP via Supabase phone provider (SMS/voice)
+  verifyOtp runs CLIENT-side (supabase.auth.verifyOtp) so the 30-day
+  session lands in the browser; no server verify route by design
+
+Profile completion (RLS-scoped, caller's own JWT)
+  POST   /api/profile/family-members            → upsert up to 4 members on caller's own subscription
+  POST   /api/profile/address                   → upsert prasad address on own profiles row
 
 Subscriptions
-  POST   /api/subscriptions/create-checkout
+  POST   /api/subscriptions/create-checkout     → pending row + Razorpay Subscription (post-login, one click)
   GET    /api/subscriptions/my                  (via Supabase client + RLS)
   POST   /api/subscriptions/pause
   POST   /api/subscriptions/resume
@@ -883,12 +901,21 @@ Coupons / Agents
 
 ## 12. Frontend Pages & Components — UPDATED
 
-### Public / User-facing
+### Public / User-facing — UPDATED (Signup-First Checkout session)
 ```
 /                     → Landing
-/subscribe            → Plan cards → Family details → Contact → OTP → Coupon → Review → Razorpay checkout
+/plans, /plan/:id     → public browse (no login needed)
+/login                → combined Login/Signup: name+phone → OTP → verify;
+                        honors ?redirect= to return to the plan's buy step
+/checkout/:planId     → post-login buy step ONLY (plan + price + own name/phone,
+                        optional coupon, Confirm & Pay); redirects to /login when
+                        no session; NO family/contact/address steps anymore
+/subscription-success → post-payment landing: success banner + shared family/
+                        address form + explicit skip (same component as /profile)
+/profile              → real session data; permanent "complete your family details"
+                        section while family_members count === 0
+/my-subscription      → real subscription/family/address data via RLS
 /r/:agentCode         → Agent referral landing
-/dashboard            → PunyaBankLedger, SevaProofGallery, BillingSection, ManageSubscription
 /occasion/:slug       → ★NEW, UNLISTED — occasional pooja page (photo/video, message, donate CTA);
                          noindex; not in any nav/footer/sitemap; graceful "no longer available"
                          state when inactive or not found

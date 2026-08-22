@@ -23,6 +23,7 @@
 | Session 5 | Sales Agents & Coupons Manager | ⏳ **NOT built** (only a role-safe API stub exists) | — |
 | Session 6 | Razorpay Webhook + Payments Log + Reports | ✅ Complete | OpenCode + Kimi K3 |
 | Session 6.5 | Owner/Admin two-tier role system | ✅ Complete | OpenCode + Kimi K3 |
+| Session SFC | Signup-First Checkout (auth + real payments + post-purchase profile) | ✅ Code complete — **needs Supabase/Vercel/Razorpay config to go live** | OpenCode + Kimi K3 |
 | Session 7 | SEO + Audit Log + Subscriber 360 polish | ⏳ Pending | — |
 
 ---
@@ -139,6 +140,46 @@ The most complex module. What was built:
 
 ---
 
+## ✅ Session SFC — Signup-First Checkout Flow
+**Commit:** `afd62b3` (+ follow-up docs commit) · **Migration:** `20260822_011_signup_first_checkout.sql` · **Completed 2026-08-22**
+**Brief:** `SESSION_SIGNUP_FIRST_CHECKOUT_PROMPT.md`
+
+Funnel reorder (supersedes the old v3 §8 order): **login happens FIRST**, plan purchase is
+one click post-login, family/address details move to AFTER payment and are fully optional.
+
+- **Auth (Supabase phone OTP — SMS/voice, no WhatsApp vendor):**
+  - `/login` — one combined Login/Signup form (matched by phone; new number → auth user +
+    profiles row created with typed name; known number → typed name IGNORED, no duplicates)
+  - `POST /api/auth/request-otp` (server) + client-side `verifyOtp` (deliberate: session must
+    land in the browser; a server verify route would burn the single-use code)
+  - `?redirect=` preserved so post-login users return to the exact plan's buy step
+- **Checkout rewritten** (`/checkout/$planId`): session gate → plan + price + own name/phone →
+  optional coupon → single "Confirm & Pay" → Razorpay Checkout (subscription_id based)
+- **`POST /api/subscriptions/create-checkout`:** pending subscriptions row + Razorpay
+  Subscription created, `razorpay_sub_id` linked BEFORE checkout opens. Activation stays
+  webhook-exclusive.
+- **Coupons kept (§3c):** `/api/coupons/validate` + attribution (`coupon_id` + RZP notes).
+  Charged amount remains the Razorpay plan price until dashboard Offers are linked (v3 §9 risk) — flagged, not silently mis-charged.
+- **Post-purchase:** `/subscription-success` (banner + shared FamilyAddressForm + explicit skip);
+  same component permanently on `/profile`; `/profile` & `/my-subscription` now fully real-data via RLS.
+- **Sankalp Pending (§3b):** 0-family-member subs are valid; derived flag only
+  (`family_member_count === 0`). Pandit list excludes them (tracked in batch rows, never
+  fabricated names); `/admin/subscribers` gains the call-queue filter (oldest-purchase-first)
+  + badge. Variable family size verified safe (segments count subscriptions, not names).
+- **Migration 011:** `profiles` address columns only — `family_members` verified to need no relaxation.
+- **Server helpers added:** `requireUser`/`getUserClient` in `supabase-admin.server.ts`;
+  new server libs `auth.server.ts`, `razorpay.server.ts`, `coupons.server.ts`, `subscriptions-checkout.server.ts`.
+- **Verified:** tsc clean · ESLint clean (new files) · production build passes · schedule tests pass.
+
+### ⚠️ Go-live config still needed (code is done, infra is not):
+1. Apply migration `20260822_011` in Supabase
+2. Supabase Auth → enable Phone provider + set refresh-token expiry to 30 days
+3. Vercel env: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
+4. Admin: set each plan's `razorpay_plan_id` (checkout returns 503 without it)
+5. Decide coupon money handling (Razorpay Offer linkage vs manual credit) before public advertising
+
+---
+
 ## ⏳ NOT DONE YET — Remaining Scope
 
 ### Session 5 — Sales Agents & Coupons Manager ⚠️
@@ -169,13 +210,16 @@ The most complex module. What was built:
 
 | Area | Path |
 |---|---|
-| Migrations | `supabase/migrations/20260725_000` … `20260801_007` (8 files) |
+| Migrations | `supabase/migrations/20260725_000` … `20260822_011` (12 files) |
 | Admin pages | `src/routes/admin.{overview,subscribers,plans-sevas,sankalp-lists,proof-upload,pandit.$batchId,payments,reports}.tsx` |
-| Server APIs | `src/routes/api/payments/webhook.ts`, `api/admin/{payments,reports,sales-agents}/...`, `api/sankalp/generate-batch.ts`, `api/cloudinary/sign-upload.ts` |
-| Business logic | `src/lib/{sankalp-logic,plans,payments-logic,reports-logic,financials-logic,sales-agents-logic}.ts` |
-| Server-only | `src/lib/{razorpay-webhook.server,reports-data.server,supabase-admin.server,config.server}.ts` |
+| User pages | `src/routes/{login,checkout.$planId,subscription-success,profile,my-subscription}.tsx` |
+| Server APIs | `src/routes/api/payments/webhook.ts`, `api/auth/request-otp.ts`, `api/subscriptions/create-checkout.ts`, `api/coupons/validate.ts`, `api/profile/{family-members,address}.ts`, `api/admin/{payments,reports,sales-agents}/...`, `api/sankalp/generate-batch.ts`, `api/cloudinary/sign-upload.ts` |
+| Business logic | `src/lib/{sankalp-logic,plans,payments-logic,reports-logic,financials-logic,sales-agents-logic,coupons.server}.ts` |
+| Server-only | `src/lib/{razorpay-webhook.server,razorpay.server,auth.server,subscriptions-checkout.server,reports-data.server,supabase-admin.server,config.server}.ts` |
+| Client auth | `src/lib/auth-api.ts`, `src/hooks/use-session.ts`, `src/components/profile-completion.tsx` |
 | Verification scripts | `scratch/verify_{session4,webhook,owner_roles,sankalp_lists}.*` |
-| Master context doc | `PUNYATA_CONTEXT_FOR_KIMI.md` (single source of truth — read before any new session) |
+| Master context doc | `PUNYATA_MASTER_CONTEXT_v3 (1).md` (single source of truth — read before any new session) |
+| Session briefs | `SESSION_SIGNUP_FIRST_CHECKOUT_PROMPT.md`, `SESSION_TENURE_AND_OTP_ABUSE_PROMPT.md` |
 
 ---
 
