@@ -26,25 +26,12 @@ import {
 // reassigning a seva in the admin manager needs zero code changes.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Plan slide images (bundled assets, keyed by plan slug below)
-import basicHero from "@/assets/plans/basic_hero.png";
-import basicSankalp from "@/assets/plans/basic_sankalp.png";
-import basicSeva from "@/assets/plans/basic_seva.png";
-import basicProof from "@/assets/plans/basic_proof.png";
-
-import premiumHero from "@/assets/plans/premium_hero.png";
-import premiumSankalp from "@/assets/plans/premium_sankalp.png";
-import premiumHawan from "@/assets/plans/premium_hawan.png";
-import premiumProof from "@/assets/plans/premium_proof.png";
-
-import annualHero from "@/assets/plans/annual_hero.png";
-import annualSankalp from "@/assets/plans/annual_sankalp.png";
-import annualHawan from "@/assets/plans/annual_hawan.png";
-import annualProof from "@/assets/plans/annual_proof.png";
-import annualBonus from "@/assets/plans/annual_bonus.png";
+// Plan slide images resolve through the central manifest — see
+// src/lib/site-images.ts for how to swap in a real Cloudinary photo.
+import { SITE_IMAGES, externalImage, type SiteImage } from "@/lib/site-images";
 
 export type PlanSlide = {
-  src: string;
+  image: SiteImage;
   title: string;
   subtitle: string;
   step?: string;
@@ -108,7 +95,7 @@ export type Plan = {
   cycle: string; // "/Monthly" | "/Yearly"
   billingPeriod: "monthly" | "yearly";
   strikePrice?: string; // presentation anchor
-  image: string; // presentation
+  image: SiteImage; // presentation (DB card_image_url wins when set)
   slides: PlanSlide[]; // presentation
   ribbon?: string; // presentation
   badge?: { label: string; kind: "popular" | "save" | "max" }; // presentation
@@ -134,7 +121,7 @@ type PlanPresentation = {
   heading: string;
   subheading: string;
   tagline: string; // fallback only — DB tagline wins when set
-  image: string;
+  image: SiteImage;
   slides: PlanSlide[];
   ribbon?: string;
   badge?: Plan["badge"];
@@ -152,27 +139,27 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
     heading: "Monthly Sundarkand Path, Gau Seva and Vanar Seva — 2nd Tuesday of Every Month Sankalp",
     subheading: "Family ki suraksha, swasthya aur samriddhi ke liye har mahine aapke naam evam gotra se sankalp",
     tagline: "सेवा की शुरुआत — ₹251/Monthly में मासिक सुंदरकांड, गौ सेवा एवं वानर सेवा (2nd Tuesday only)।",
-    image: basicHero,
+    image: SITE_IMAGES.planBasicHero,
     slides: [
       {
-        src: basicHero,
+        image: SITE_IMAGES.planBasicHero,
         title: "बेसिक सेवा — 4 सदस्यों तक के लिए",
         subtitle: "सुंदरकांड पाठ • वानर सेवा • गौ सेवा",
       },
       {
-        src: basicSankalp,
+        image: SITE_IMAGES.planBasicSankalp,
         title: "संकल्प — आपके नाम व गोत्र से",
         subtitle: "आपकी जानकारी हर माह सेवा में शामिल होती है",
         step: "चरण 1",
       },
       {
-        src: basicSeva,
+        image: SITE_IMAGES.planBasicSeva,
         title: "पंडित जी द्वारा सेवा सम्पन्न",
         subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में विधिपूर्वक",
         step: "चरण 2",
       },
       {
-        src: basicProof,
+        image: SITE_IMAGES.planBasicProof,
         title: "प्रमाण सीधे आपके व्हाट्सएप पर",
         subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह आपकी सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
         step: "चरण 3",
@@ -202,27 +189,27 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
     heading: "Monthly Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan — 2nd Tuesday of Every Month and Last Saturday of Every Month Sankalp",
     subheading: "Do sankalp har mahine — do alag hawan ke saath ghar mein shanti evam rog-badha nivaran",
     tagline: "सम्पूर्ण पारिवारिक सेवा — 2 सुंदरकांड, 2 अलग हवन (Griha Shanti & Sarv Rog Nivaran), Saadhu Santo Ko Bhojan एवं गौ/वानर सेवा हर माह।",
-    image: premiumHero,
+    image: SITE_IMAGES.planPremiumHero,
     slides: [
       {
-        src: premiumHero,
+        image: SITE_IMAGES.planPremiumHero,
         title: "प्रीमियम सेवा — हवन सहित सम्पूर्ण पूजा",
         subtitle: "हवन एवं आहुति • सुंदरकांड पाठ • Saadhu Santo Ko Bhojan • वानर सेवा • गौ सेवा",
       },
       {
-        src: premiumSankalp,
+        image: SITE_IMAGES.planPremiumSankalp,
         title: "संकल्प — आपके नाम व गोत्र से",
         subtitle: "हवन सहित सम्पूर्ण पूजा आपकी जानकारी के साथ",
         step: "चरण 1",
       },
       {
-        src: premiumHawan,
+        image: SITE_IMAGES.planPremiumHawan,
         title: "हवन — पंडित जी द्वारा विधिपूर्वक सम्पन्न",
         subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में",
         step: "चरण 2",
       },
       {
-        src: premiumProof,
+        image: SITE_IMAGES.planPremiumProof,
         title: "हर सेवा का प्रमाण — फोटो व वीडियो सहित",
         subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह हवन सहित आपकी सम्पूर्ण सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
         step: "चरण 3",
@@ -253,33 +240,33 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
     heading: "12 Month Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan Sankalp — 24 Sankalp Yearly with Prasad and Certificate",
     subheading: "Poore saal ka sanchit punya — Prasad evam Sankalp Certificate ke saath ghar tak pahunchega",
     tagline: "पूरे वर्ष का संकल्प — ₹399 वाली सभी सेवाएं 12 माह + Prasad Box + Sankalp Certificate।",
-    image: annualHero,
+    image: SITE_IMAGES.planAnnualHero,
     slides: [
       {
-        src: annualHero,
+        image: SITE_IMAGES.planAnnualHero,
         title: "प्रीमियम वार्षिक — पूरे वर्ष की निश्चिंतता",
         subtitle: "हवन एवं आहुति • सुंदरकांड • Saadhu Santo Ko Bhojan • वानर सेवा • गौ सेवा • संकल्प प्रमाणपत्र एवं प्रसाद",
       },
       {
-        src: annualSankalp,
+        image: SITE_IMAGES.planAnnualSankalp,
         title: "संकल्प — आपके नाम व गोत्र से",
         subtitle: "हवन सहित सम्पूर्ण पूजा आपकी जानकारी के साथ",
         step: "चरण 1",
       },
       {
-        src: annualHawan,
+        image: SITE_IMAGES.planAnnualHawan,
         title: "हवन — पंडित जी द्वारा विधिपूर्वक सम्पन्न",
         subtitle: "तीर्थ गुरु पुष्करराज, पुष्कर में",
         step: "चरण 2",
       },
       {
-        src: annualProof,
+        image: SITE_IMAGES.planAnnualProof,
         title: "हर सेवा का प्रमाण — फोटो व वीडियो सहित",
         subtitle: "🙏 जय श्री राम, [नाम] जी — इस माह हवन सहित आपकी सम्पूर्ण सेवा सम्पन्न हुई। प्रमाण संलग्न है।",
         step: "चरण 3",
       },
       {
-        src: annualBonus,
+        image: SITE_IMAGES.planAnnualBonus,
         title: "वार्षिक सदस्यों के लिए विशेष प्रसाद",
         subtitle: "सरोवर जल, चंदन तिलक, अक्षत-कुमकुम एवं संकल्प प्रमाणपत्र",
       },
@@ -314,7 +301,7 @@ function genericPresentation(plan: DbPlan): PlanPresentation {
     heading: plan.tagline ?? plan.name,
     subheading: plan.highlight_text ?? "",
     tagline: plan.tagline ?? "",
-    image: basicHero,
+    image: SITE_IMAGES.planBasicHero,
     slides: [],
     detail: {
       description: plan.tagline ? [plan.tagline] : [],
@@ -395,7 +382,11 @@ function buildPlan(
     cycle: dbPlan.billing_period === "monthly" ? "/Monthly" : "/Yearly",
     billingPeriod: dbPlan.billing_period,
     strikePrice: pres.strikePrice,
-    image: pres.image,
+    // An admin-entered card_image_url is an explicit override and always wins
+    // over the bundled/Cloudinary manifest entry for this slug.
+    image: dbPlan.card_image_url?.trim()
+      ? externalImage(dbPlan.card_image_url.trim(), dbPlan.name)
+      : pres.image,
     slides: pres.slides,
     ribbon: pres.ribbon,
     badge: pres.badge,

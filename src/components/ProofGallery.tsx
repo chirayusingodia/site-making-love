@@ -5,12 +5,10 @@ import { LottieIcon } from "./LottieIcon";
 import { useTranslation } from "@/lib/translations";
 import checkmark from "@/assets/lottie/checkmark.json";
 
-import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
-import havanImg from "@/assets/havan.jpg";
-import gauImg from "@/assets/gau-seva.jpg";
-import whatsappProofImg from "@/assets/hero/whatsapp-proof.jpg";
+import { CldImage, IMAGE_SIZES } from "./CldImage";
+import { SITE_IMAGES, type SiteImage } from "@/lib/site-images";
 
-function VideoThumbnailCard({ src }: { src: string }) {
+function VideoThumbnailCard({ image }: { image: SiteImage }) {
   const lottieRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
 
@@ -36,9 +34,14 @@ function VideoThumbnailCard({ src }: { src: string }) {
       onMouseLeave={handleMouseLeave}
       className="relative rounded-xl overflow-hidden aspect-square group cursor-pointer shadow-sm border border-black/5"
     >
-      <img
-        src={src}
-        alt="Proof"
+      <CldImage
+        publicId={image.publicId}
+        fallback={image.fallback}
+        alt={image.alt}
+        width={image.w}
+        height={image.h}
+        sizes={IMAGE_SIZES.thumb}
+        crop="fill"
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
       />
       <div className="absolute inset-0 bg-black/20 group-hover:bg-black/25 transition-colors duration-300" />
@@ -67,7 +70,12 @@ function VideoThumbnailCard({ src }: { src: string }) {
 
 export function ProofGallery() {
   const { t } = useTranslation();
-  const imgs = [pushkarGhatImg, havanImg, whatsappProofImg, gauImg];
+  const imgs: SiteImage[] = [
+    SITE_IMAGES.proofGhat,
+    SITE_IMAGES.proofHavan,
+    SITE_IMAGES.proofWhatsapp,
+    SITE_IMAGES.proofGau,
+  ];
 
   return (
     <section className="space-y-4">
@@ -78,8 +86,8 @@ export function ProofGallery() {
         </Link>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-        {imgs.map((src, i) => (
-          <VideoThumbnailCard key={i} src={src} />
+        {imgs.map((image, i) => (
+          <VideoThumbnailCard key={i} image={image} />
         ))}
       </div>
       <p className="text-xs text-center text-muted-foreground">

@@ -10,7 +10,8 @@ import { PizzaComparison } from "@/components/PizzaComparison";
 import checkmark from "@/assets/lottie/checkmark.json";
 import giftBox from "@/assets/lottie/gift-box.json";
 import diya from "@/assets/lottie/diya.json";
-import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
+import { SITE_IMAGES } from "@/lib/site-images";
 import { useTranslation } from "@/lib/translations";
 
 export const Route = createFileRoute("/plans")({
@@ -97,7 +98,16 @@ function PlansPage() {
         <section className="card-soft overflow-hidden">
           {/* Hero band: photo with a warm scrim carrying the title */}
           <div className="relative">
-            <img src={pushkarGhatImg} alt="तीर्थ गुरु पुष्करराज" className="w-full h-56 md:h-64 object-cover" />
+            <CldImage
+              publicId={SITE_IMAGES.pushkarGhat.publicId}
+              fallback={SITE_IMAGES.pushkarGhat.fallback}
+              alt={SITE_IMAGES.pushkarGhat.alt}
+              width={SITE_IMAGES.pushkarGhat.w}
+              height={SITE_IMAGES.pushkarGhat.h}
+              sizes={IMAGE_SIZES.fullBleed}
+              crop="fill"
+              className="w-full h-56 md:h-64 object-cover"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-[#5B1A1A]/90 via-[#5B1A1A]/45 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-6 space-y-1.5">
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F5A742]">सुंदरकांड का महात्म्य</div>
@@ -205,8 +215,8 @@ function PlanCard({ plan }: { plan: Plan }) {
 
   const { t, lang } = useTranslation();
 
-  const slides = (plan.slides ?? []).map((slide) => ({
-    src: slide.src,
+  const slides: Slide[] = (plan.slides ?? []).map((slide) => ({
+    image: slide.image,
     alt: slide.title,
     title: slide.title,
     subtitle: slide.subtitle,
@@ -223,9 +233,18 @@ function PlanCard({ plan }: { plan: Plan }) {
           </div>
         )}
         {slides.length > 0 ? (
-          <SlidingImageCard slides={slides} aspectRatio="4/5" rounded="rounded-none" />
+          <SlidingImageCard slides={slides} aspectRatio="4/5" rounded="rounded-none" sizes={IMAGE_SIZES.card} />
         ) : (
-          <img src={plan.image} alt={plan.name} className="w-full h-48 object-cover" />
+          <CldImage
+            publicId={plan.image.publicId}
+            fallback={plan.image.fallback}
+            alt={plan.name}
+            width={plan.image.w}
+            height={plan.image.h}
+            sizes={IMAGE_SIZES.card}
+            crop="fill"
+            className="w-full h-48 object-cover"
+          />
         )}
       </div>
 

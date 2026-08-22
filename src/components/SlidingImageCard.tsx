@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PunyataLogo } from "./PunyataLogo";
+import { CldImage, IMAGE_SIZES } from "./CldImage";
+import type { SiteImage } from "@/lib/site-images";
 
 export type Slide = {
-  /** Image URL. TODO: replace with real Punyata/Pushkar seva photo. */
-  src: string;
-  alt: string;
+  /** Manifest entry from `SITE_IMAGES` (or `externalImage(url, …)`). */
+  image: SiteImage;
+  /** Slide-specific alt text; falls back to the manifest's own alt. */
+  alt?: string;
   title: string;
   subtitle?: string;
   step?: string;
@@ -23,6 +26,10 @@ type Props = {
   className?: string;
   rounded?: string; // e.g. "rounded-2xl"
   showArrows?: boolean;
+  /** Responsive `sizes` hint for the slide images. Defaults to card sizing. */
+  sizes?: string;
+  /** Mark the first slide as above-the-fold (eager, high priority). */
+  priority?: boolean;
 };
 
 export function SlidingImageCard({
@@ -32,6 +39,8 @@ export function SlidingImageCard({
   className = "",
   rounded = "rounded-2xl",
   showArrows = true,
+  sizes = IMAGE_SIZES.card,
+  priority = false,
 }: Props) {
   const [i, setI] = useState(0);
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
@@ -100,10 +109,14 @@ export function SlidingImageCard({
           {!loaded[idx] && (
             <div className="absolute inset-0 bg-gradient-to-br from-brand-soft to-secondary animate-pulse" />
           )}
-          <img
-            src={s.src}
-            alt={s.alt}
-            loading="lazy"
+          <CldImage
+            publicId={s.image.publicId}
+            fallback={s.image.fallback}
+            alt={s.alt ?? s.image.alt}
+            width={s.image.w}
+            height={s.image.h}
+            sizes={sizes}
+            priority={priority && idx === 0}
             className="w-full h-full object-contain bg-[#FDF3EB] object-center"
             onLoad={() => setLoaded((m) => ({ ...m, [idx]: true }))}
           />
@@ -160,13 +173,4 @@ export function SlidingImageCard({
       )}
     </div>
   );
-}
-
-/**
- * Themed placeholder image URL from loremflickr — deterministic via `lock`.
- * TODO: replace with real Punyata/Pushkar seva photography via admin uploads.
- */
-export function themedImage(keywords: string, lock = 1, w = 1200, h = 900) {
-  const q = keywords.split(/\s+/).filter(Boolean).join(",");
-  return `https://loremflickr.com/${w}/${h}/${encodeURIComponent(q)}?lock=${lock}`;
 }

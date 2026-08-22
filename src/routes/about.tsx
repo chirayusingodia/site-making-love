@@ -2,20 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, MapPin, Video, ShieldCheck, Sun, Flame, BookOpen, Sparkles, Heart, Users } from "lucide-react";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
-import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
 import { CountUp } from "@/components/CountUp";
-
-// Import local story images
-import story1 from "@/assets/about/story_1.png";
-import story2 from "@/assets/about/story_2.png";
-import story3 from "@/assets/about/story_3.png";
-import story4 from "@/assets/about/story_4.png";
+import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
+import { SITE_IMAGES } from "@/lib/site-images";
 
 const storySlides: Slide[] = [
-  { src: story1, alt: "Pushkar Brahma temple", title: "Tirth Guru Pushkarraj", subtitle: "Jahan har sankalp shuru hota hai" },
-  { src: story2, alt: "Elderly priest", title: "Anubhavi Pandit Samuday", subtitle: "Vidhi-vidhan se, poori shraddha ke saath" },
-  { src: story3, alt: "Devotee viewing proof", title: "Aapka Vishwas, Hamari Zimmedari", subtitle: "Har seva ka proof, seedha aapke paas" },
-  { src: story4, alt: "Pushkar sunset", title: "Bharat Ka Punya Bank", subtitle: "Sewa Hamari, Punya Aapka" },
+  { image: SITE_IMAGES.aboutStory1, title: "Tirth Guru Pushkarraj", subtitle: "Jahan har sankalp shuru hota hai" },
+  { image: SITE_IMAGES.aboutStory2, title: "Anubhavi Pandit Samuday", subtitle: "Vidhi-vidhan se, poori shraddha ke saath" },
+  { image: SITE_IMAGES.aboutStory3, title: "Aapka Vishwas, Hamari Zimmedari", subtitle: "Har seva ka proof, seedha aapke paas" },
+  { image: SITE_IMAGES.aboutStory4, title: "Bharat Ka Punya Bank", subtitle: "Sewa Hamari, Punya Aapka" },
 ];
 
 export const Route = createFileRoute("/about")({
@@ -48,7 +43,13 @@ function AboutPage() {
     <SiteChrome>
       <div className="w-full">
         <div className="max-w-5xl mx-auto md:px-4 md:pt-4">
-          <SlidingImageCard slides={storySlides} aspectRatio="video" rounded="md:rounded-3xl rounded-none" />
+          <SlidingImageCard
+            slides={storySlides}
+            aspectRatio="video"
+            rounded="md:rounded-3xl rounded-none"
+            sizes={IMAGE_SIZES.fullBleed}
+            priority
+          />
         </div>
       </div>
       <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-8 space-y-14">
@@ -108,7 +109,16 @@ function AboutPage() {
         <section className="space-y-3">
           <h2 className="text-2xl font-bold">तीर्थ गुरु पुष्करराज</h2>
           <div className="card-soft overflow-hidden">
-            <img src={pushkarGhatImg} alt="तीर्थ गुरु पुष्करराज" className="w-full h-56 object-cover" />
+            <CldImage
+              publicId={SITE_IMAGES.pushkarGhat.publicId}
+              fallback={SITE_IMAGES.pushkarGhat.fallback}
+              alt={SITE_IMAGES.pushkarGhat.alt}
+              width={SITE_IMAGES.pushkarGhat.w}
+              height={SITE_IMAGES.pushkarGhat.h}
+              sizes={IMAGE_SIZES.card}
+              crop="fill"
+              className="w-full h-56 object-cover"
+            />
             <div className="p-5 space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold text-brand">
                 <MapPin size={14} /> पुष्कर, राजस्थान — 305022

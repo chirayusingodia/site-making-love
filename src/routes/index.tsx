@@ -27,14 +27,8 @@ import namaste from "@/assets/lottie/namaste.json";
 import diya from "@/assets/lottie/diya.json";
 import whatsapp from "@/assets/lottie/whatsapp.json";
 import lockSecure from "@/assets/lottie/lock-secure.json";
-import heroPushkar from "@/assets/hero/pushkar-ghats.jpg";
-import sundarkandSlideImg from "@/assets/plans/basic_seva.png";
-import hawanSlideImg from "@/assets/sevas/hawan.png";
-import gauSevaSlideImg from "@/assets/sevas/gau_seva.png";
-import sadhuBhojanSlideImg from "@/assets/sevas/sadhu_bhojan.png";
-import vanarSevaSlideImg from "@/assets/plans/varsh_1.png";
-import deepdaanSlideImg from "@/assets/sevas/sarovar_deepdaan.png";
-import heroWhatsapp from "@/assets/hero/whatsapp-proof.jpg";
+import { SITE_IMAGES } from "@/lib/site-images";
+import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
 import punyataStaticLogo from "@/assets/punyata-logo.svg";
 
 export const Route = createFileRoute("/")({
@@ -48,14 +42,14 @@ export const Route = createFileRoute("/")({
 });
 
 const heroSlides: Slide[] = [
-  { src: heroPushkar, alt: "तीर्थ गुरु पुष्करराज — पवित्र सरोवर एवं संध्या दीपदर्शन", title: "", subtitle: "" },
-  { src: sundarkandSlideImg, alt: "आपके नाम व गोत्र से संकल्पबद्ध सुंदरकांड पाठ", title: "", subtitle: "" },
-  { src: hawanSlideImg, alt: "वैदिक आहुति — गृह शांति एवं सर्व रोग निवारण हवन", title: "", subtitle: "" },
-  { src: gauSevaSlideImg, alt: "गौ माता सेवा — हरा चारा एवं गुड़ अर्पण", title: "", subtitle: "" },
-  { src: sadhuBhojanSlideImg, alt: "साधु संतों को भोजन — पुष्कर क्षेत्र सात्विक भोजन सत्कार", title: "", subtitle: "" },
-  { src: vanarSevaSlideImg, alt: "वानर सेवा — श्री हनुमान जी के प्रिय फल व चना अर्पण", title: "", subtitle: "" },
-  { src: deepdaanSlideImg, alt: "सरोवर दीपदान — पुष्कर सरोवर में मोक्ष प्रदायक दीप अर्पण", title: "", subtitle: "" },
-  { src: heroWhatsapp, alt: "100% पारदर्शिता — हर सेवा का WhatsApp Video Proof", title: "", subtitle: "" },
+  { image: SITE_IMAGES.heroPushkarGhats, title: "", subtitle: "" },
+  { image: SITE_IMAGES.planBasicSeva, alt: "आपके नाम व गोत्र से संकल्पबद्ध सुंदरकांड पाठ", title: "", subtitle: "" },
+  { image: SITE_IMAGES.sevaHawan, title: "", subtitle: "" },
+  { image: SITE_IMAGES.sevaGau, title: "", subtitle: "" },
+  { image: SITE_IMAGES.sevaSadhuBhojan, title: "", subtitle: "" },
+  { image: SITE_IMAGES.sevaVanar, title: "", subtitle: "" },
+  { image: SITE_IMAGES.sevaSarovarDeepdaan, title: "", subtitle: "" },
+  { image: SITE_IMAGES.heroWhatsappProof, title: "", subtitle: "" },
 ];
 
 function HomePage() {
@@ -65,7 +59,13 @@ function HomePage() {
       {/* Full-width hero carousel — sits above the headline */}
       <div className="w-full bg-background">
         <div className="max-w-5xl mx-auto md:px-4 md:pt-4">
-          <SlidingImageCard slides={heroSlides} aspectRatio="video" rounded="md:rounded-3xl rounded-none" />
+          <SlidingImageCard
+            slides={heroSlides}
+            aspectRatio="video"
+            rounded="md:rounded-3xl rounded-none"
+            sizes={IMAGE_SIZES.fullBleed}
+            priority
+          />
         </div>
       </div>
       <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-12">
@@ -368,9 +368,14 @@ function PlansPreview() {
               
               {/* Image Area */}
               <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                <img
-                  src={p.image}
+                <CldImage
+                  publicId={p.image.publicId}
+                  fallback={p.image.fallback}
                   alt={p.name}
+                  width={p.image.w}
+                  height={p.image.h}
+                  sizes={IMAGE_SIZES.thumb}
+                  crop="fill"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
