@@ -8,7 +8,18 @@ const supabaseAnonKey =
   (import.meta.env.VITE_SUPABASE_ANON_KEY as string) ||
   "sb_anon_key_placeholder";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    // Signup-first checkout: the phone-OTP session must survive
+    // reloads and auto-refresh across its full lifetime. persist +
+    // localStorage are defaults; stated explicitly so nobody "simplifies"
+    // them away. The 30-day length is the Supabase project's Auth
+    // refresh-token setting (v3 §14) — NOT configurable here.
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 // PostgREST silently caps every response at ~1000 rows. Any query
 // whose result can grow past that (subscriber-scale tables) MUST

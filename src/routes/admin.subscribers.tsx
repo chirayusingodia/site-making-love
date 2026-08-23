@@ -25,10 +25,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  PhoneCall,
+  CircleStop,
+  Play,
+  Copy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { callAdminApi } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin/subscribers")({
   component: AdminSubscribersPage,
@@ -50,6 +55,7 @@ interface SubscriberListRow {
   next_billing_date: string | null;
   paused_at: string | null;
   cancelled_at: string | null;
+  halted_at: string | null;
   cancel_reason: string | null;
   acquisition_channel: string | null;
   razorpay_sub_id: string | null;
@@ -89,6 +95,8 @@ interface FilterState {
   search: string;
   dateFrom: string;
   dateTo: string;
+  /** Call queue: subscriptions with 0 family members (Sankalp Pending). */
+  sankalpPending: boolean;
 }
 
 const DEFAULT_FILTERS: FilterState = {
@@ -98,6 +106,7 @@ const DEFAULT_FILTERS: FilterState = {
   search: "",
   dateFrom: "",
   dateTo: "",
+  sankalpPending: false,
 };
 
 // ─── 360 Modal Types (unchanged — still queries real tables) ──
@@ -155,6 +164,7 @@ interface Subscription360 {
   next_billing_date: string | null;
   paused_at: string | null;
   cancelled_at: string | null;
+  halted_at: string | null;
   cancel_reason: string | null;
   acquisition_channel: string | null;
   razorpay_sub_id: string | null;
@@ -192,16 +202,46 @@ function fmtDate(d: string | null) {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string; icon: React.ElementType }> = {
-    active:    { label: "Active",    cls: "bg-emerald-50 text-emerald-800 border-emerald-200", icon: CheckCircle2 },
-    paused:    { label: "Paused",    cls: "bg-amber-50 text-amber-800 border-amber-200",       icon: PauseCircle },
-    cancelled: { label: "Cancelled", cls: "bg-rose-50 text-rose-800 border-rose-200",          icon: XCircle },
-    pending:   { label: "Pending",   cls: "bg-slate-100 text-slate-700 border-slate-200",      icon: Clock },
-    expired:   { label: "Expired",   cls: "bg-slate-100 text-slate-500 border-slate-200",      icon: AlertCircle },
+    active: {
+      label: "Active",
+      cls: "bg-emerald-50 text-emerald-800 border-emerald-200",
+      icon: CheckCircle2,
+    },
+    paused: {
+      label: "Paused",
+      cls: "bg-amber-50 text-amber-800 border-amber-200",
+      icon: PauseCircle,
+    },
+    cancelled: {
+      label: "Cancelled",
+      cls: "bg-rose-50 text-rose-800 border-rose-200",
+      icon: XCircle,
+    },
+    halted: {
+      // Distinct from paused (amber, voluntary) AND cancelled (rose,
+      // final): red = urgent-but-recoverable, CircleStop reads as
+      // "stopped", not "crossed out".
+      label: "Halted",
+      cls: "bg-red-50 text-red-800 border-red-200",
+      icon: CircleStop,
+    },
+    pending: { label: "Pending", cls: "bg-slate-100 text-slate-700 border-slate-200", icon: Clock },
+    expired: {
+      label: "Expired",
+      cls: "bg-slate-100 text-slate-500 border-slate-200",
+      icon: AlertCircle,
+    },
   };
-  const m = map[status] ?? { label: status, cls: "bg-slate-100 text-slate-700 border-slate-200", icon: AlertCircle };
+  const m = map[status] ?? {
+    label: status,
+    cls: "bg-slate-100 text-slate-700 border-slate-200",
+    icon: AlertCircle,
+  };
   const Icon = m.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${m.cls}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${m.cls}`}
+    >
       <Icon className="w-3 h-3" />
       {m.label}
     </span>
@@ -212,6 +252,11 @@ function StatusBadge({ status }: { status: string }) {
 // Centralised so list query, count query, and CSV query all apply
 // identical filters consistently.
 
+/** Call queue urgency: Sankalp Pending sorts OLDEST purchase first. */
+function orderForFilters(filters: FilterState) {
+  return { column: "sub_created_at" as const, ascending: !filters.sankalpPending };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyFilters(query: any, filters: FilterState): any {
   if (filters.status !== "all") query = query.eq("status", filters.status);
@@ -219,6 +264,11 @@ function applyFilters(query: any, filters: FilterState): any {
   if (filters.agentId !== "all") query = query.eq("agent_id", filters.agentId);
   if (filters.dateFrom) query = query.gte("start_date", filters.dateFrom);
   if (filters.dateTo) query = query.lte("start_date", filters.dateTo);
+  if (filters.sankalpPending) {
+    // Sankalp Pending call queue — derived, never a stored flag:
+    // zero family_members rows on the subscription.
+    query = query.eq("family_member_count", 0);
+  }
   if (filters.search.trim()) {
     // PostgREST ilike on primary_member_name for name search;
     // OR subscription_id text match handled client-side post-fetch
@@ -233,10 +283,7 @@ function applyFilters(query: any, filters: FilterState): any {
 // Does NOT reuse the paginated client state.
 // Fetches ALL matching rows directly from the DB, batched in 500s.
 
-async function exportCSVServerSide(
-  filters: FilterState,
-  setExporting: (v: boolean) => void
-) {
+async function exportCSVServerSide(filters: FilterState, setExporting: (v: boolean) => void) {
   setExporting(true);
   try {
     const BATCH = 500;
@@ -244,10 +291,11 @@ async function exportCSVServerSide(
     const allRows: SubscriberListRow[] = [];
 
     while (true) {
+      const ord = orderForFilters(filters);
       let q = supabase
         .from("subscriber_list_view")
         .select("*")
-        .order("sub_created_at", { ascending: false })
+        .order(ord.column, { ascending: ord.ascending })
         .range(offset, offset + BATCH - 1);
 
       q = applyFilters(q as any, filters) as any;
@@ -268,34 +316,44 @@ async function exportCSVServerSide(
     }
 
     const headers = [
-      "subscription_id", "primary_name", "primary_gotra",
-      "plan_name", "billing_period", "price_inr",
-      "status", "start_date", "next_billing_date",
-      "agent_name", "agent_code", "coupon_code",
-      "family_member_count", "sub_created_at",
+      "subscription_id",
+      "primary_name",
+      "primary_gotra",
+      "plan_name",
+      "billing_period",
+      "price_inr",
+      "status",
+      "start_date",
+      "next_billing_date",
+      "agent_name",
+      "agent_code",
+      "coupon_code",
+      "family_member_count",
+      "sub_created_at",
     ];
 
-    const csvRows = allRows.map((r) => [
-      r.subscription_id,
-      r.primary_member_name || "",
-      r.primary_member_gotra || "",
-      r.plan_name || "",
-      r.plan_billing_period || "",
-      r.plan_price_paise != null ? (r.plan_price_paise / 100).toFixed(2) : "",
-      r.status,
-      r.start_date || "",
-      r.next_billing_date || "",
-      r.agent_full_name || "",
-      r.agent_code || "",
-      r.coupon_code || "",
-      r.family_member_count,
-      r.sub_created_at,
-    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
-
-    const blob = new Blob(
-      [[headers.join(","), ...csvRows].join("\n")],
-      { type: "text/csv" }
+    const csvRows = allRows.map((r) =>
+      [
+        r.subscription_id,
+        r.primary_member_name || "",
+        r.primary_member_gotra || "",
+        r.plan_name || "",
+        r.plan_billing_period || "",
+        r.plan_price_paise != null ? (r.plan_price_paise / 100).toFixed(2) : "",
+        r.status,
+        r.start_date || "",
+        r.next_billing_date || "",
+        r.agent_full_name || "",
+        r.agent_code || "",
+        r.coupon_code || "",
+        r.family_member_count,
+        r.sub_created_at,
+      ]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(","),
     );
+
+    const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -311,18 +369,19 @@ async function exportCSVServerSide(
 // UNTOUCHED from Session 2 — still queries real tables directly,
 // scoped to a single subscription_id. Already fast.
 
-function Subscriber360Modal({
-  sub,
-  onClose,
-}: {
-  sub: Subscription360;
-  onClose: () => void;
-}) {
+function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: () => void }) {
   const [payments, setPayments] = useState<Payment[] | null>(null);
   const [sevaProofs, setSevaProofs] = useState<SevaProof[] | null>(null);
   const [planHistory, setPlanHistory] = useState<PlanHistoryEntry[] | null>(null);
   const [tab, setTab] = useState<"overview" | "payments" | "proofs" | "history">("overview");
   const [loading360, setLoading360] = useState(false);
+
+  // Halted-subscription recovery actions (admin/owner only).
+  const [resumeBusy, setResumeBusy] = useState(false);
+  const [resumeMsg, setResumeMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [reissueBusy, setReissueBusy] = useState(false);
+  const [reissuedLink, setReissuedLink] = useState<string | null>(null);
+  const [reissueErr, setReissueErr] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -330,13 +389,16 @@ function Subscriber360Modal({
       const [payRes, proofRes, histRes] = await Promise.all([
         supabase
           .from("payments")
-          .select("id, amount_paise, status, method, cycle_number, paid_at, failure_reason, razorpay_payment_id, created_at")
+          .select(
+            "id, amount_paise, status, method, cycle_number, paid_at, failure_reason, razorpay_payment_id, created_at",
+          )
           .eq("subscription_id", sub.subscription_id)
           .order("created_at", { ascending: false }),
 
         supabase
           .from("sankalp_batch_subscriptions")
-          .select(`
+          .select(
+            `
             batch_id,
             sankalp_batches (
               id, batch_type, batch_date,
@@ -346,17 +408,20 @@ function Subscriber360Modal({
                 sevas ( name )
               )
             )
-          `)
+          `,
+          )
           .eq("subscription_id", sub.subscription_id),
 
         supabase
           .from("plan_history")
-          .select(`
+          .select(
+            `
             id, changed_at,
             old_plan: plans!plan_history_old_plan_id_fkey ( name ),
             new_plan: plans!plan_history_new_plan_id_fkey ( name ),
             changer: profiles ( full_name )
-          `)
+          `,
+          )
           .eq("subscription_id", sub.subscription_id)
           .order("changed_at", { ascending: false }),
       ]);
@@ -386,11 +451,61 @@ function Subscriber360Modal({
 
   const primary = sub.family_members.find((m) => m.is_primary) || sub.family_members[0];
 
+  async function resumeSubscription() {
+    setResumeBusy(true);
+    setResumeMsg(null);
+    try {
+      const res = await callAdminApi<{ message?: string }>("/api/admin/subscriptions/resume", {
+        subscription_id: sub.subscription_id,
+      });
+      setResumeMsg({ ok: true, text: res.message ?? "Resume requested" });
+    } catch (err) {
+      const text = err instanceof Error ? err.message : "Resume call failed";
+      setResumeMsg({
+        ok: false,
+        text: `${text} — mandate dead ho sakta hai; "Send New Payment Link" use karein.`,
+      });
+    } finally {
+      setResumeBusy(false);
+    }
+  }
+
+  async function reissueLink() {
+    setReissueBusy(true);
+    setReissueErr(null);
+    setReissuedLink(null);
+    try {
+      const res = await callAdminApi<{ shareLink: string }>(
+        "/api/admin/subscriptions/reissue-link",
+        {
+          subscription_id: sub.subscription_id,
+        },
+      );
+      setReissuedLink(res.shareLink);
+    } catch (err) {
+      setReissueErr(err instanceof Error ? err.message : "Reissue failed");
+    } finally {
+      setReissueBusy(false);
+    }
+  }
+
   const tabs = [
-    { key: "overview", label: "Overview",                                              icon: User },
-    { key: "payments", label: `Payments${payments ? ` (${payments.length})` : ""}`,   icon: CreditCard },
-    { key: "proofs",   label: `Seva Proofs${sevaProofs ? ` (${sevaProofs.length})` : ""}`, icon: Video },
-    { key: "history",  label: `Plan History${planHistory ? ` (${planHistory.length})` : ""}`, icon: ArrowUpRight },
+    { key: "overview", label: "Overview", icon: User },
+    {
+      key: "payments",
+      label: `Payments${payments ? ` (${payments.length})` : ""}`,
+      icon: CreditCard,
+    },
+    {
+      key: "proofs",
+      label: `Seva Proofs${sevaProofs ? ` (${sevaProofs.length})` : ""}`,
+      icon: Video,
+    },
+    {
+      key: "history",
+      label: `Plan History${planHistory ? ` (${planHistory.length})` : ""}`,
+      icon: ArrowUpRight,
+    },
   ] as const;
 
   return (
@@ -406,7 +521,8 @@ function Subscriber360Modal({
               <StatusBadge status={sub.status} />
             </div>
             <p className="text-xs text-amber-900/60 mt-0.5 font-mono">
-              {sub.subscription_id.slice(0, 8)}…  •  {sub.plan_name || "Unknown Plan"}  •  Started {fmtDate(sub.start_date)}
+              {sub.subscription_id.slice(0, 8)}… • {sub.plan_name || "Unknown Plan"} • Started{" "}
+              {fmtDate(sub.start_date)}
             </p>
           </div>
           <button
@@ -442,7 +558,9 @@ function Subscriber360Modal({
         <div className="flex-1 overflow-y-auto p-6">
           {loading360 && (
             <div className="space-y-3">
-              {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full bg-amber-50" />)}
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full bg-amber-50" />
+              ))}
             </div>
           )}
 
@@ -450,32 +568,111 @@ function Subscriber360Modal({
             <div className="space-y-5">
               <Section title="Subscription Record" icon={ReceiptText}>
                 <Grid2>
-                  <Detail label="Plan"         value={sub.plan_name || "—"} />
-                  <Detail label="Billing"      value={sub.plan_billing_period === "yearly" ? "Annual" : "Monthly"} />
-                  <Detail label="Price"        value={sub.plan_price_paise != null ? fmtINR(sub.plan_price_paise) : "—"} />
-                  <Detail label="Status"       value={<StatusBadge status={sub.status} />} />
-                  <Detail label="Start Date"   value={fmtDate(sub.start_date)} />
+                  <Detail label="Plan" value={sub.plan_name || "—"} />
+                  <Detail
+                    label="Billing"
+                    value={sub.plan_billing_period === "yearly" ? "Annual" : "Monthly"}
+                  />
+                  <Detail
+                    label="Price"
+                    value={sub.plan_price_paise != null ? fmtINR(sub.plan_price_paise) : "—"}
+                  />
+                  <Detail label="Status" value={<StatusBadge status={sub.status} />} />
+                  <Detail label="Start Date" value={fmtDate(sub.start_date)} />
                   <Detail label="Next Billing" value={fmtDate(sub.next_billing_date)} />
-                  <Detail label="Razorpay Sub ID" value={sub.razorpay_sub_id || "Not linked"} mono />
-                  <Detail label="Channel"      value={sub.acquisition_channel || "—"} />
+                  <Detail
+                    label="Razorpay Sub ID"
+                    value={sub.razorpay_sub_id || "Not linked"}
+                    mono
+                  />
+                  <Detail label="Channel" value={sub.acquisition_channel || "—"} />
                   {sub.status === "paused" && (
                     <Detail label="Paused At" value={fmtDate(sub.paused_at)} />
                   )}
+                  {sub.status === "halted" && (
+                    <Detail label="Halted At" value={fmtDate(sub.halted_at)} />
+                  )}
                   {sub.status === "cancelled" && (
                     <>
-                      <Detail label="Cancelled At"  value={fmtDate(sub.cancelled_at)} />
+                      <Detail label="Cancelled At" value={fmtDate(sub.cancelled_at)} />
                       <Detail label="Cancel Reason" value={sub.cancel_reason || "—"} />
                     </>
                   )}
                 </Grid2>
               </Section>
 
+              {/* Halted recovery — Razorpay exhausted its own retries
+                  (~3 days). Resume pokes the mandate; if the mandate
+                  itself is dead, re-issue a fresh organic link. */}
+              {sub.status === "halted" && (
+                <Section title="Halted — Recovery Actions" icon={CircleStop}>
+                  <div className="rounded-xl border border-red-200 bg-red-50/60 px-4 py-3 text-xs text-red-900">
+                    Razorpay ne retries exhaust kar diye hain. Resume se wahi mandate dobara charge
+                    hota hai; fail hone par niche se naya payment link bhejein.
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <Button
+                      onClick={resumeSubscription}
+                      disabled={resumeBusy}
+                      size="sm"
+                      className="bg-red-700 hover:bg-red-800 text-white gap-1.5 text-xs h-8"
+                    >
+                      {resumeBusy ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5" />
+                      )}
+                      Resume Subscription
+                    </Button>
+                    <Button
+                      onClick={reissueLink}
+                      disabled={reissueBusy}
+                      size="sm"
+                      variant="outline"
+                      className="border-red-300 text-red-800 hover:bg-red-50 gap-1.5 text-xs h-8"
+                    >
+                      {reissueBusy ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      )}
+                      Send New Payment Link
+                    </Button>
+                  </div>
+                  {resumeMsg && (
+                    <p
+                      className={`text-xs mt-2 ${resumeMsg.ok ? "text-emerald-700" : "text-red-700"}`}
+                    >
+                      {resumeMsg.text}
+                    </p>
+                  )}
+                  {reissuedLink && (
+                    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 flex items-center gap-2 flex-wrap">
+                      <code className="text-[11px] break-all">{reissuedLink}</code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(reissuedLink)}
+                        className="gap-1 h-6 text-[11px]"
+                      >
+                        <Copy className="w-3 h-3" /> Copy
+                      </Button>
+                      <span className="text-[11px] text-emerald-800 font-semibold">
+                        Purana halted row cancelled (mandate_dead_reissued) — naya link organic,
+                        kisi ko credit nahi.
+                      </span>
+                    </div>
+                  )}
+                  {reissueErr && <p className="text-xs text-red-700 mt-2">{reissueErr}</p>}
+                </Section>
+              )}
+
               {(sub.agent_full_name || sub.coupon_code) && (
                 <Section title="Attribution" icon={Tag}>
                   <Grid2>
                     {sub.agent_full_name && (
                       <>
-                        <Detail label="Agent"      value={sub.agent_full_name} />
+                        <Detail label="Agent" value={sub.agent_full_name} />
                         <Detail label="Agent Code" value={sub.agent_code || "—"} mono />
                       </>
                     )}
@@ -510,9 +707,13 @@ function Subscriber360Modal({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-slate-900 truncate">{m.full_name}</span>
+                            <span className="text-sm font-semibold text-slate-900 truncate">
+                              {m.full_name}
+                            </span>
                             {m.is_primary && (
-                              <span className="text-[10px] bg-amber-700 text-white px-1.5 py-0.5 rounded font-semibold">Primary</span>
+                              <span className="text-[10px] bg-amber-700 text-white px-1.5 py-0.5 rounded font-semibold">
+                                Primary
+                              </span>
                             )}
                           </div>
                           <div className="text-xs text-amber-900/60 flex gap-2 mt-0.5">
@@ -541,13 +742,19 @@ function Subscriber360Modal({
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-2 h-2 rounded-full flex-none ${
-                          p.status === "captured" ? "bg-emerald-500" :
-                          p.status === "failed"   ? "bg-rose-500"    :
-                          p.status === "refunded" ? "bg-sky-500"     : "bg-slate-300"
+                          p.status === "captured"
+                            ? "bg-emerald-500"
+                            : p.status === "failed"
+                              ? "bg-rose-500"
+                              : p.status === "refunded"
+                                ? "bg-sky-500"
+                                : "bg-slate-300"
                         }`}
                       />
                       <div>
-                        <div className="text-sm font-semibold text-slate-900">{fmtINR(p.amount_paise)}</div>
+                        <div className="text-sm font-semibold text-slate-900">
+                          {fmtINR(p.amount_paise)}
+                        </div>
                         <div className="text-[11px] text-slate-500 font-mono">
                           {p.razorpay_payment_id || "no rzp id"} • {p.method || "—"}
                           {p.cycle_number != null ? ` • cycle ${p.cycle_number}` : ""}
@@ -555,8 +762,12 @@ function Subscriber360Modal({
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[11px] font-semibold text-slate-700 capitalize">{p.status}</div>
-                      <div className="text-[11px] text-slate-400">{fmtDate(p.paid_at || p.created_at)}</div>
+                      <div className="text-[11px] font-semibold text-slate-700 capitalize">
+                        {p.status}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {fmtDate(p.paid_at || p.created_at)}
+                      </div>
                       {p.failure_reason && (
                         <div className="text-[10px] text-rose-600 mt-0.5">{p.failure_reason}</div>
                       )}
@@ -578,12 +789,17 @@ function Subscriber360Modal({
                     className="flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${proof.is_delivered ? "bg-emerald-100" : "bg-amber-100"}`}>
-                        <Video className={`w-4 h-4 ${proof.is_delivered ? "text-emerald-700" : "text-amber-700"}`} />
+                      <div
+                        className={`p-2 rounded-lg ${proof.is_delivered ? "bg-emerald-100" : "bg-amber-100"}`}
+                      >
+                        <Video
+                          className={`w-4 h-4 ${proof.is_delivered ? "text-emerald-700" : "text-amber-700"}`}
+                        />
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-slate-900">
-                          {proof.sevas?.name || "Seva"} — {MONTHS[(proof.month || 1) - 1]} {proof.year}
+                          {proof.sevas?.name || "Seva"} — {MONTHS[(proof.month || 1) - 1]}{" "}
+                          {proof.year}
                         </div>
                         <div className="text-[11px] text-slate-500">
                           {proof.sankalp_batches?.batch_type?.replace("_", " ") || "—"} batch •{" "}
@@ -594,9 +810,13 @@ function Subscriber360Modal({
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
                       {proof.is_delivered ? (
-                        <span className="text-[11px] font-semibold text-emerald-700">Delivered {fmtDate(proof.delivered_at)}</span>
+                        <span className="text-[11px] font-semibold text-emerald-700">
+                          Delivered {fmtDate(proof.delivered_at)}
+                        </span>
                       ) : (
-                        <span className="text-[11px] text-amber-600 font-semibold">Pending Delivery</span>
+                        <span className="text-[11px] text-amber-600 font-semibold">
+                          Pending Delivery
+                        </span>
                       )}
                       <a
                         href={proof.media_url}
@@ -619,7 +839,10 @@ function Subscriber360Modal({
                 <EmptyState label="No plan changes recorded for this subscription." />
               ) : (
                 planHistory.map((h) => (
-                  <div key={h.id} className="flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3">
+                  <div
+                    key={h.id}
+                    className="flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3"
+                  >
                     <div className="flex items-center gap-3">
                       <ArrowUpRight className="w-4 h-4 text-amber-700 flex-none" />
                       <div>
@@ -645,7 +868,15 @@ function Subscriber360Modal({
 
 // ─── Layout Helpers ───────────────────────────────────────────
 
-function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
+function Section({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
@@ -664,7 +895,9 @@ function Grid2({ children }: { children: React.ReactNode }) {
 function Detail({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-900/50 mb-0.5">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-900/50 mb-0.5">
+        {label}
+      </div>
       <div className={`text-sm text-slate-900 ${mono ? "font-mono text-xs" : ""}`}>{value}</div>
     </div>
   );
@@ -678,16 +911,16 @@ function EmptyState({ label }: { label: string }) {
 
 function AdminSubscribersPage() {
   // ── List state (from subscriber_list_view, paginated) ──
-  const [rows, setRows]         = useState<SubscriberListRow[]>([]);
-  const [totalCount, setTotal]  = useState<number>(0);
-  const [page, setPage]         = useState(0);           // 0-indexed
-  const [loading, setLoading]   = useState(true);
-  const [errorMsg, setError]    = useState<string | null>(null);
+  const [rows, setRows] = useState<SubscriberListRow[]>([]);
+  const [totalCount, setTotal] = useState<number>(0);
+  const [page, setPage] = useState(0); // 0-indexed
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setError] = useState<string | null>(null);
 
   // ── Filter options loaded separately (all plans/agents from DB) ──
-  const [planOptions, setPlanOptions]   = useState<{ id: string; name: string }[]>([]);
+  const [planOptions, setPlanOptions] = useState<{ id: string; name: string }[]>([]);
   const [agentOptions, setAgentOptions] = useState<{ id: string; full_name: string }[]>([]);
-  const [optionsLoaded, setOptLoaded]   = useState(false);
+  const [optionsLoaded, setOptLoaded] = useState(false);
 
   // ── Filters (applied server-side) ──
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -695,16 +928,20 @@ function AdminSubscribersPage() {
 
   // ── UI state ──
   const [expandedRows, setExpanded] = useState<Set<string>>(new Set());
-  const [selected360, set360]       = useState<Subscription360 | null>(null);
+  const [selected360, set360] = useState<Subscription360 | null>(null);
   const [loading360Open, setLoad360Open] = useState(false);
-  const [exporting, setExporting]   = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // ── Load filter option lists once on mount ──
   useEffect(() => {
     const loadOptions = async () => {
       const [plansRes, agentsRes] = await Promise.all([
         supabase.from("plans").select("id, name").eq("is_active", true).order("sort_order"),
-        supabase.from("sales_agents").select("id, full_name").eq("is_active", true).order("full_name"),
+        supabase
+          .from("sales_agents")
+          .select("id, full_name")
+          .eq("is_active", true)
+          .order("full_name"),
       ]);
       setPlanOptions(plansRes.data || []);
       setAgentOptions(agentsRes.data || []);
@@ -721,12 +958,13 @@ function AdminSubscribersPage() {
     setError(null);
     try {
       const from = pageIndex * PAGE_SIZE;
-      const to   = from + PAGE_SIZE - 1;
+      const to = from + PAGE_SIZE - 1;
 
+      const ord = orderForFilters(activeFilters);
       let q = supabase
         .from("subscriber_list_view")
         .select("*", { count: "exact" })
-        .order("sub_created_at", { ascending: false })
+        .order(ord.column, { ascending: ord.ascending })
         .range(from, to);
 
       q = applyFilters(q as any, activeFilters) as any;
@@ -734,7 +972,9 @@ function AdminSubscribersPage() {
       const { data, error, count } = await q;
       if (error) {
         console.error("subscriber_list_view error:", error);
-        setError("Could not load subscribers. Check Supabase RLS and that subscriber_list_view exists.");
+        setError(
+          "Could not load subscribers. Check Supabase RLS and that subscriber_list_view exists.",
+        );
         setRows([]);
         setTotal(0);
       } else {
@@ -770,8 +1010,13 @@ function AdminSubscribersPage() {
   };
 
   const hasActiveFilters =
-    filters.status !== "all" || filters.planId !== "all" || filters.agentId !== "all" ||
-    filters.dateFrom || filters.dateTo || filters.search;
+    filters.status !== "all" ||
+    filters.planId !== "all" ||
+    filters.agentId !== "all" ||
+    filters.dateFrom ||
+    filters.dateTo ||
+    filters.search ||
+    filters.sankalpPending;
 
   // ── Open 360 modal: load full family_members lazily ──
   const open360 = async (row: SubscriberListRow) => {
@@ -783,25 +1028,26 @@ function AdminSubscribersPage() {
       .order("slot_number");
 
     set360({
-      subscription_id:      row.subscription_id,
-      user_id:              row.user_id,
-      status:               row.status,
-      start_date:           row.start_date,
-      next_billing_date:    row.next_billing_date,
-      paused_at:            row.paused_at,
-      cancelled_at:         row.cancelled_at,
-      cancel_reason:        row.cancel_reason,
-      acquisition_channel:  row.acquisition_channel,
-      razorpay_sub_id:      row.razorpay_sub_id,
-      plan_name:            row.plan_name,
-      plan_price_paise:     row.plan_price_paise,
-      plan_billing_period:  row.plan_billing_period,
-      agent_full_name:      row.agent_full_name,
-      agent_code:           row.agent_code,
-      coupon_code:          row.coupon_code,
+      subscription_id: row.subscription_id,
+      user_id: row.user_id,
+      status: row.status,
+      start_date: row.start_date,
+      next_billing_date: row.next_billing_date,
+      paused_at: row.paused_at,
+      cancelled_at: row.cancelled_at,
+      halted_at: row.halted_at,
+      cancel_reason: row.cancel_reason,
+      acquisition_channel: row.acquisition_channel,
+      razorpay_sub_id: row.razorpay_sub_id,
+      plan_name: row.plan_name,
+      plan_price_paise: row.plan_price_paise,
+      plan_billing_period: row.plan_billing_period,
+      agent_full_name: row.agent_full_name,
+      agent_code: row.agent_code,
+      coupon_code: row.coupon_code,
       coupon_discount_type: row.coupon_discount_type,
-      coupon_discount_value:row.coupon_discount_value,
-      family_members:       (fm || []) as FamilyMember[],
+      coupon_discount_value: row.coupon_discount_value,
+      family_members: (fm || []) as FamilyMember[],
     });
     setLoad360Open(false);
   };
@@ -812,9 +1058,7 @@ function AdminSubscribersPage() {
   return (
     <div className="space-y-5">
       {/* 360 Modal */}
-      {selected360 && (
-        <Subscriber360Modal sub={selected360} onClose={() => set360(null)} />
-      )}
+      {selected360 && <Subscriber360Modal sub={selected360} onClose={() => set360(null)} />}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-5 rounded-2xl border border-amber-900/10 shadow-2xs">
@@ -844,9 +1088,13 @@ function AdminSubscribersPage() {
             className="bg-amber-700 hover:bg-amber-800 text-white gap-1.5 text-xs"
           >
             {exporting ? (
-              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…</>
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…
+              </>
             ) : (
-              <><Download className="w-3.5 h-3.5" /> Export CSV ({totalCount.toLocaleString()})</>
+              <>
+                <Download className="w-3.5 h-3.5" /> Export CSV ({totalCount.toLocaleString()})
+              </>
             )}
           </Button>
         </div>
@@ -867,10 +1115,15 @@ function AdminSubscribersPage() {
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
               <Filter className="w-4 h-4 text-amber-700" />
               Filters
-              <span className="text-[10px] font-normal text-amber-900/50">(applied server-side)</span>
+              <span className="text-[10px] font-normal text-amber-900/50">
+                (applied server-side)
+              </span>
             </div>
             {hasActiveFilters && (
-              <button onClick={clearFilters} className="text-xs text-amber-700 hover:underline flex items-center gap-1">
+              <button
+                onClick={clearFilters}
+                className="text-xs text-amber-700 hover:underline flex items-center gap-1"
+              >
                 <X className="w-3 h-3" /> Clear all
               </button>
             )}
@@ -902,6 +1155,7 @@ function AdminSubscribersPage() {
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
+              <option value="halted">Halted</option>
               <option value="cancelled">Cancelled</option>
               <option value="pending">Pending</option>
               <option value="expired">Expired</option>
@@ -916,7 +1170,9 @@ function AdminSubscribersPage() {
             >
               <option value="all">All Plans</option>
               {planOptions.map((plan) => (
-                <option key={plan.id} value={plan.id}>{plan.name}</option>
+                <option key={plan.id} value={plan.id}>
+                  {plan.name}
+                </option>
               ))}
             </select>
 
@@ -929,9 +1185,29 @@ function AdminSubscribersPage() {
             >
               <option value="all">All Agents</option>
               {agentOptions.map((a) => (
-                <option key={a.id} value={a.id}>{a.full_name}</option>
+                <option key={a.id} value={a.id}>
+                  {a.full_name}
+                </option>
               ))}
             </select>
+
+            {/* Sankalp Pending call queue */}
+            <label
+              className={`flex items-center gap-2 text-xs border rounded-lg px-2.5 py-2 cursor-pointer select-none ${
+                pendingFilters.sankalpPending
+                  ? "border-rose-300 bg-rose-50 text-rose-800 font-semibold"
+                  : "border-amber-200 bg-white text-slate-700"
+              }`}
+              title="Subscriptions with 0 family members — sales call queue, oldest purchase first"
+            >
+              <input
+                type="checkbox"
+                checked={pendingFilters.sankalpPending}
+                onChange={(e) => setPending((p) => ({ ...p, sankalpPending: e.target.checked }))}
+                className="accent-rose-600"
+              />
+              Sankalp Pending (0 members)
+            </label>
 
             {/* Date range */}
             <div className="xl:col-span-1 flex gap-2">
@@ -974,18 +1250,32 @@ function AdminSubscribersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-amber-100 bg-amber-50/60">
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">Subscriber</th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">Plan</th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">Status</th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">Start</th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">Next Billing</th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">Agent / Coupon</th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">Family</th>
+                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
+                  Subscriber
+                </th>
+                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
+                  Plan
+                </th>
+                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
+                  Start
+                </th>
+                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
+                  Next Billing
+                </th>
+                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
+                  Agent / Coupon
+                </th>
+                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
+                  Family
+                </th>
                 <th className="py-3 px-4"></th>
               </tr>
             </thead>
             <tbody>
-              {loading && (
+              {loading &&
                 [...Array(PAGE_SIZE > 10 ? 8 : PAGE_SIZE)].map((_, i) => (
                   <tr key={i} className="border-b border-amber-50">
                     {[...Array(8)].map((_, j) => (
@@ -994,8 +1284,7 @@ function AdminSubscribersPage() {
                       </td>
                     ))}
                   </tr>
-                ))
-              )}
+                ))}
 
               {!loading && rows.length === 0 && (
                 <tr>
@@ -1003,126 +1292,149 @@ function AdminSubscribersPage() {
                     {hasActiveFilters
                       ? "No subscribers match the current filters."
                       : errorMsg
-                      ? "Query failed — check error above."
-                      : "No subscriber records found."}
+                        ? "Query failed — check error above."
+                        : "No subscriber records found."}
                   </td>
                 </tr>
               )}
 
-              {!loading && rows.map((row) => {
-                const isExpanded = expandedRows.has(row.subscription_id);
-                const hasMoreMembers = row.family_member_count > 1;
+              {!loading &&
+                rows.map((row) => {
+                  const isExpanded = expandedRows.has(row.subscription_id);
+                  const hasMoreMembers = row.family_member_count > 1;
 
-                return (
-                  <>
-                    <tr
-                      key={row.subscription_id}
-                      className={`border-b border-amber-50 hover:bg-amber-50/30 transition-colors ${isExpanded ? "bg-amber-50/20" : ""}`}
-                    >
-                      {/* Subscriber */}
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-900">
-                          {row.primary_member_name || <span className="text-slate-400 italic">No members</span>}
-                        </div>
-                        {row.primary_member_gotra && (
-                          <div className="text-[11px] text-amber-900/60">Gotra: {row.primary_member_gotra}</div>
-                        )}
-                      </td>
-
-                      {/* Plan */}
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-slate-800">{row.plan_name || "—"}</div>
-                        <div className="text-[11px] text-slate-400">
-                          {row.plan_price_paise != null ? fmtINR(row.plan_price_paise) : ""}
-                          {row.plan_billing_period === "yearly" && (
-                            <span className="ml-1 text-sky-600 font-semibold">Annual</span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-4">
-                        <StatusBadge status={row.status} />
-                      </td>
-
-                      {/* Start */}
-                      <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
-                        {fmtDate(row.start_date)}
-                      </td>
-
-                      {/* Next Billing */}
-                      <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
-                        {fmtDate(row.next_billing_date)}
-                      </td>
-
-                      {/* Agent / Coupon */}
-                      <td className="py-3 px-4">
-                        {row.agent_full_name && (
-                          <div className="flex items-center gap-1 text-[11px] text-slate-700">
-                            <User className="w-3 h-3 text-amber-600" />
-                            {row.agent_full_name}
+                  return (
+                    <>
+                      <tr
+                        key={row.subscription_id}
+                        className={`border-b border-amber-50 hover:bg-amber-50/30 transition-colors ${isExpanded ? "bg-amber-50/20" : ""}`}
+                      >
+                        {/* Subscriber */}
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-slate-900">
+                            {row.primary_member_name || (
+                              <span className="text-slate-400 italic">No members</span>
+                            )}
                           </div>
-                        )}
-                        {row.coupon_code && (
-                          <div className="flex items-center gap-1 text-[11px] text-slate-500 font-mono mt-0.5">
-                            <Tag className="w-3 h-3 text-emerald-600" />
-                            {row.coupon_code}
-                          </div>
-                        )}
-                        {!row.agent_full_name && !row.coupon_code && (
-                          <span className="text-slate-300 text-xs">—</span>
-                        )}
-                      </td>
-
-                      {/* Family count + expand */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-slate-700">{row.family_member_count}</span>
-                          {hasMoreMembers && (
-                            <button
-                              onClick={() =>
-                                setExpanded((prev) => {
-                                  const next = new Set(prev);
-                                  next.has(row.subscription_id)
-                                    ? next.delete(row.subscription_id)
-                                    : next.add(row.subscription_id);
-                                  return next;
-                                })
-                              }
-                              className="text-amber-700 hover:text-amber-900 transition-colors"
-                              title={isExpanded ? "Collapse" : "Expand family members"}
-                            >
-                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                            </button>
+                          {row.primary_member_gotra && (
+                            <div className="text-[11px] text-amber-900/60">
+                              Gotra: {row.primary_member_gotra}
+                            </div>
                           )}
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* 360 */}
-                      <td className="py-3 px-4">
-                        <Button
-                          onClick={() => open360(row)}
-                          disabled={loading360Open}
-                          size="sm"
-                          variant="outline"
-                          className="text-[11px] h-7 px-2.5 border-amber-200 text-amber-900 hover:bg-amber-50 gap-1"
-                        >
-                          {loading360Open ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />}
-                          360°
-                        </Button>
-                      </td>
-                    </tr>
+                        {/* Plan */}
+                        <td className="py-3 px-4">
+                          <div className="font-medium text-slate-800">{row.plan_name || "—"}</div>
+                          <div className="text-[11px] text-slate-400">
+                            {row.plan_price_paise != null ? fmtINR(row.plan_price_paise) : ""}
+                            {row.plan_billing_period === "yearly" && (
+                              <span className="ml-1 text-sky-600 font-semibold">Annual</span>
+                            )}
+                          </div>
+                        </td>
 
-                    {/* Expanded: load all members lazily for this row */}
-                    {isExpanded && (
-                      <ExpandedMembersRow
-                        key={`${row.subscription_id}-exp`}
-                        subscriptionId={row.subscription_id}
-                      />
-                    )}
-                  </>
-                );
-              })}
+                        {/* Status */}
+                        <td className="py-3 px-4">
+                          <div className="flex flex-col items-start gap-1">
+                            <StatusBadge status={row.status} />
+                            {row.family_member_count === 0 && row.status === "active" && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-rose-50 text-rose-700 border-rose-200">
+                                <PhoneCall className="w-3 h-3" />
+                                Sankalp Pending
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Start */}
+                        <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
+                          {fmtDate(row.start_date)}
+                        </td>
+
+                        {/* Next Billing */}
+                        <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
+                          {fmtDate(row.next_billing_date)}
+                        </td>
+
+                        {/* Agent / Coupon */}
+                        <td className="py-3 px-4">
+                          {row.agent_full_name && (
+                            <div className="flex items-center gap-1 text-[11px] text-slate-700">
+                              <User className="w-3 h-3 text-amber-600" />
+                              {row.agent_full_name}
+                            </div>
+                          )}
+                          {row.coupon_code && (
+                            <div className="flex items-center gap-1 text-[11px] text-slate-500 font-mono mt-0.5">
+                              <Tag className="w-3 h-3 text-emerald-600" />
+                              {row.coupon_code}
+                            </div>
+                          )}
+                          {!row.agent_full_name && !row.coupon_code && (
+                            <span className="text-slate-300 text-xs">—</span>
+                          )}
+                        </td>
+
+                        {/* Family count + expand */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-semibold text-slate-700">
+                              {row.family_member_count}
+                            </span>
+                            {hasMoreMembers && (
+                              <button
+                                onClick={() =>
+                                  setExpanded((prev) => {
+                                    const next = new Set(prev);
+                                    next.has(row.subscription_id)
+                                      ? next.delete(row.subscription_id)
+                                      : next.add(row.subscription_id);
+                                    return next;
+                                  })
+                                }
+                                className="text-amber-700 hover:text-amber-900 transition-colors"
+                                title={isExpanded ? "Collapse" : "Expand family members"}
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 360 */}
+                        <td className="py-3 px-4">
+                          <Button
+                            onClick={() => open360(row)}
+                            disabled={loading360Open}
+                            size="sm"
+                            variant="outline"
+                            className="text-[11px] h-7 px-2.5 border-amber-200 text-amber-900 hover:bg-amber-50 gap-1"
+                          >
+                            {loading360Open ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Eye className="w-3 h-3" />
+                            )}
+                            360°
+                          </Button>
+                        </td>
+                      </tr>
+
+                      {/* Expanded: load all members lazily for this row */}
+                      {isExpanded && (
+                        <ExpandedMembersRow
+                          key={`${row.subscription_id}-exp`}
+                          subscriptionId={row.subscription_id}
+                        />
+                      )}
+                    </>
+                  );
+                })}
             </tbody>
           </table>
         </div>

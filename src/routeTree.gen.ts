@@ -9,16 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TelecallerRouteImport } from './routes/telecaller'
+import { Route as SubscriptionSuccessRouteImport } from './routes/subscription-success'
 import { Route as SevasRouteImport } from './routes/sevas'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PlansRouteImport } from './routes/plans'
 import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TelecallerIndexRouteImport } from './routes/telecaller.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as TelecallerScriptRouteImport } from './routes/telecaller.script'
+import { Route as TelecallerQueuesRouteImport } from './routes/telecaller.queues'
+import { Route as TelecallerNewRouteImport } from './routes/telecaller.new'
+import { Route as TelecallerMyDayRouteImport } from './routes/telecaller.my-day'
+import { Route as TelecallerEarningsRouteImport } from './routes/telecaller.earnings'
 import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
 import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
 import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
@@ -26,19 +35,68 @@ import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-li
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminProofUploadRouteImport } from './routes/admin.proof-upload'
 import { Route as AdminPlansSevasRouteImport } from './routes/admin.plans-sevas'
+import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
+import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
+import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller.queue.$queueKey'
+import { Route as TelecallerPersonSubscriptionIdRouteImport } from './routes/telecaller.person.$subscriptionId'
+import { Route as TelecallerLeadLeadIdRouteImport } from './routes/telecaller.lead.$leadId'
+import { Route as ApiTelecallerSendPaymentLinkRouteImport } from './routes/api/telecaller/send-payment-link'
+import { Route as ApiTelecallerQueuesRouteImport } from './routes/api/telecaller/queues'
+import { Route as ApiTelecallerProofResendRouteImport } from './routes/api/telecaller/proof-resend'
+import { Route as ApiTelecallerProfileRouteImport } from './routes/api/telecaller/profile'
+import { Route as ApiTelecallerPlansRouteImport } from './routes/api/telecaller/plans'
+import { Route as ApiTelecallerPersonRouteImport } from './routes/api/telecaller/person'
+import { Route as ApiTelecallerMyDayRouteImport } from './routes/api/telecaller/my-day'
+import { Route as ApiTelecallerLogCallRouteImport } from './routes/api/telecaller/log-call'
+import { Route as ApiTelecallerLeadRouteImport } from './routes/api/telecaller/lead'
+import { Route as ApiTelecallerFamilyMembersRouteImport } from './routes/api/telecaller/family-members'
+import { Route as ApiTelecallerEarningsRouteImport } from './routes/api/telecaller/earnings'
+import { Route as ApiTelecallerCreateLeadRouteImport } from './routes/api/telecaller/create-lead'
+import { Route as ApiTelecallerAgentsRouteImport } from './routes/api/telecaller/agents'
+import { Route as ApiSubscriptionsCreateCheckoutRouteImport } from './routes/api/subscriptions/create-checkout'
 import { Route as ApiSankalpGenerateBatchRouteImport } from './routes/api/sankalp/generate-batch'
+import { Route as ApiProfileFamilyMembersRouteImport } from './routes/api/profile/family-members'
+import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/address'
 import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
+import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
+import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
 import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
+import { Route as ApiTelecallerQueueListRouteImport } from './routes/api/telecaller/queue/list'
+import { Route as ApiTelecallerLeadUpdateRouteImport } from './routes/api/telecaller/lead/update'
+import { Route as ApiAdminSubscriptionsResumeRouteImport } from './routes/api/admin/subscriptions/resume'
+import { Route as ApiAdminSubscriptionsReissueLinkRouteImport } from './routes/api/admin/subscriptions/reissue-link'
 import { Route as ApiAdminSalesAgentsListRouteImport } from './routes/api/admin/sales-agents/list'
 import { Route as ApiAdminReportsPendingSevasRouteImport } from './routes/api/admin/reports/pending-sevas'
 import { Route as ApiAdminReportsMonthlyRouteImport } from './routes/api/admin/reports/monthly'
 import { Route as ApiAdminReportsExportRouteImport } from './routes/api/admin/reports/export'
+import { Route as ApiAdminPerformanceTelecallersRouteImport } from './routes/api/admin/performance/telecallers'
+import { Route as ApiAdminPerformanceHospitalsRouteImport } from './routes/api/admin/performance/hospitals'
+import { Route as ApiAdminPerformanceAgentsRouteImport } from './routes/api/admin/performance/agents'
 import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/payments/list'
+import { Route as ApiAdminLeadsUploadRouteImport } from './routes/api/admin/leads/upload'
+import { Route as ApiAdminLeadsSweepRouteImport } from './routes/api/admin/leads/sweep'
+import { Route as ApiAdminLeadsAssignRouteImport } from './routes/api/admin/leads/assign'
+import { Route as ApiAdminHospitalsReallotRouteImport } from './routes/api/admin/hospitals/reallot'
+import { Route as ApiAdminHospitalsListRouteImport } from './routes/api/admin/hospitals/list'
+import { Route as ApiAdminHospitalsCreateRouteImport } from './routes/api/admin/hospitals/create'
+import { Route as ApiAdminCommissionsReconcileRouteImport } from './routes/api/admin/commissions/reconcile'
+import { Route as ApiAdminCommissionsLockRouteImport } from './routes/api/admin/commissions/lock'
 
+const TelecallerRoute = TelecallerRouteImport.update({
+  id: '/telecaller',
+  path: '/telecaller',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscriptionSuccessRoute = SubscriptionSuccessRouteImport.update({
+  id: '/subscription-success',
+  path: '/subscription-success',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SevasRoute = SevasRouteImport.update({
   id: '/sevas',
   path: '/sevas',
@@ -64,6 +122,11 @@ const MySubscriptionRoute = MySubscriptionRouteImport.update({
   path: '/my-subscription',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
@@ -84,10 +147,40 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TelecallerIndexRoute = TelecallerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TelecallerRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const TelecallerScriptRoute = TelecallerScriptRouteImport.update({
+  id: '/script',
+  path: '/script',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerQueuesRoute = TelecallerQueuesRouteImport.update({
+  id: '/queues',
+  path: '/queues',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerNewRoute = TelecallerNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerMyDayRoute = TelecallerMyDayRouteImport.update({
+  id: '/my-day',
+  path: '/my-day',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerEarningsRoute = TelecallerEarningsRouteImport.update({
+  id: '/earnings',
+  path: '/earnings',
+  getParentRoute: () => TelecallerRoute,
 } as any)
 const PlanPlanIdRoute = PlanPlanIdRouteImport.update({
   id: '/plan/$planId',
@@ -124,6 +217,11 @@ const AdminPlansSevasRoute = AdminPlansSevasRouteImport.update({
   path: '/plans-sevas',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPerformanceRoute = AdminPerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
@@ -134,9 +232,119 @@ const AdminOverviewRoute = AdminOverviewRouteImport.update({
   path: '/overview',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLeadsRoute = AdminLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
+  id: '/commissions',
+  path: '/commissions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const TelecallerQueueQueueKeyRoute = TelecallerQueueQueueKeyRouteImport.update({
+  id: '/queue/$queueKey',
+  path: '/queue/$queueKey',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerPersonSubscriptionIdRoute =
+  TelecallerPersonSubscriptionIdRouteImport.update({
+    id: '/person/$subscriptionId',
+    path: '/person/$subscriptionId',
+    getParentRoute: () => TelecallerRoute,
+  } as any)
+const TelecallerLeadLeadIdRoute = TelecallerLeadLeadIdRouteImport.update({
+  id: '/lead/$leadId',
+  path: '/lead/$leadId',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const ApiTelecallerSendPaymentLinkRoute =
+  ApiTelecallerSendPaymentLinkRouteImport.update({
+    id: '/api/telecaller/send-payment-link',
+    path: '/api/telecaller/send-payment-link',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiTelecallerQueuesRoute = ApiTelecallerQueuesRouteImport.update({
+  id: '/api/telecaller/queues',
+  path: '/api/telecaller/queues',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerProofResendRoute =
+  ApiTelecallerProofResendRouteImport.update({
+    id: '/api/telecaller/proof-resend',
+    path: '/api/telecaller/proof-resend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiTelecallerProfileRoute = ApiTelecallerProfileRouteImport.update({
+  id: '/api/telecaller/profile',
+  path: '/api/telecaller/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerPlansRoute = ApiTelecallerPlansRouteImport.update({
+  id: '/api/telecaller/plans',
+  path: '/api/telecaller/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerPersonRoute = ApiTelecallerPersonRouteImport.update({
+  id: '/api/telecaller/person',
+  path: '/api/telecaller/person',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerMyDayRoute = ApiTelecallerMyDayRouteImport.update({
+  id: '/api/telecaller/my-day',
+  path: '/api/telecaller/my-day',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerLogCallRoute = ApiTelecallerLogCallRouteImport.update({
+  id: '/api/telecaller/log-call',
+  path: '/api/telecaller/log-call',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerLeadRoute = ApiTelecallerLeadRouteImport.update({
+  id: '/api/telecaller/lead',
+  path: '/api/telecaller/lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerFamilyMembersRoute =
+  ApiTelecallerFamilyMembersRouteImport.update({
+    id: '/api/telecaller/family-members',
+    path: '/api/telecaller/family-members',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiTelecallerEarningsRoute = ApiTelecallerEarningsRouteImport.update({
+  id: '/api/telecaller/earnings',
+  path: '/api/telecaller/earnings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerCreateLeadRoute = ApiTelecallerCreateLeadRouteImport.update({
+  id: '/api/telecaller/create-lead',
+  path: '/api/telecaller/create-lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerAgentsRoute = ApiTelecallerAgentsRouteImport.update({
+  id: '/api/telecaller/agents',
+  path: '/api/telecaller/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSubscriptionsCreateCheckoutRoute =
+  ApiSubscriptionsCreateCheckoutRouteImport.update({
+    id: '/api/subscriptions/create-checkout',
+    path: '/api/subscriptions/create-checkout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSankalpGenerateBatchRoute = ApiSankalpGenerateBatchRouteImport.update({
   id: '/api/sankalp/generate-batch',
   path: '/api/sankalp/generate-batch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileFamilyMembersRoute = ApiProfileFamilyMembersRouteImport.update({
+  id: '/api/profile/family-members',
+  path: '/api/profile/family-members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileAddressRoute = ApiProfileAddressRouteImport.update({
+  id: '/api/profile/address',
+  path: '/api/profile/address',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPaymentsWebhookRoute = ApiPaymentsWebhookRouteImport.update({
@@ -144,9 +352,19 @@ const ApiPaymentsWebhookRoute = ApiPaymentsWebhookRouteImport.update({
   path: '/api/payments/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCouponsValidateRoute = ApiCouponsValidateRouteImport.update({
+  id: '/api/coupons/validate',
+  path: '/api/coupons/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCloudinarySignUploadRoute = ApiCloudinarySignUploadRouteImport.update({
   id: '/api/cloudinary/sign-upload',
   path: '/api/cloudinary/sign-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthRequestOtpRoute = ApiAuthRequestOtpRouteImport.update({
+  id: '/api/auth/request-otp',
+  path: '/api/auth/request-otp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminOverviewFinancialsRoute =
@@ -160,6 +378,28 @@ const AdminPanditBatchIdRoute = AdminPanditBatchIdRouteImport.update({
   path: '/pandit/$batchId',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiTelecallerQueueListRoute = ApiTelecallerQueueListRouteImport.update({
+  id: '/api/telecaller/queue/list',
+  path: '/api/telecaller/queue/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerLeadUpdateRoute = ApiTelecallerLeadUpdateRouteImport.update({
+  id: '/update',
+  path: '/update',
+  getParentRoute: () => ApiTelecallerLeadRoute,
+} as any)
+const ApiAdminSubscriptionsResumeRoute =
+  ApiAdminSubscriptionsResumeRouteImport.update({
+    id: '/api/admin/subscriptions/resume',
+    path: '/api/admin/subscriptions/resume',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminSubscriptionsReissueLinkRoute =
+  ApiAdminSubscriptionsReissueLinkRouteImport.update({
+    id: '/api/admin/subscriptions/reissue-link',
+    path: '/api/admin/subscriptions/reissue-link',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminSalesAgentsListRoute = ApiAdminSalesAgentsListRouteImport.update({
   id: '/api/admin/sales-agents/list',
   path: '/api/admin/sales-agents/list',
@@ -181,9 +421,69 @@ const ApiAdminReportsExportRoute = ApiAdminReportsExportRouteImport.update({
   path: '/api/admin/reports/export',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminPerformanceTelecallersRoute =
+  ApiAdminPerformanceTelecallersRouteImport.update({
+    id: '/api/admin/performance/telecallers',
+    path: '/api/admin/performance/telecallers',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminPerformanceHospitalsRoute =
+  ApiAdminPerformanceHospitalsRouteImport.update({
+    id: '/api/admin/performance/hospitals',
+    path: '/api/admin/performance/hospitals',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminPerformanceAgentsRoute =
+  ApiAdminPerformanceAgentsRouteImport.update({
+    id: '/api/admin/performance/agents',
+    path: '/api/admin/performance/agents',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminPaymentsListRoute = ApiAdminPaymentsListRouteImport.update({
   id: '/api/admin/payments/list',
   path: '/api/admin/payments/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLeadsUploadRoute = ApiAdminLeadsUploadRouteImport.update({
+  id: '/api/admin/leads/upload',
+  path: '/api/admin/leads/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLeadsSweepRoute = ApiAdminLeadsSweepRouteImport.update({
+  id: '/api/admin/leads/sweep',
+  path: '/api/admin/leads/sweep',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLeadsAssignRoute = ApiAdminLeadsAssignRouteImport.update({
+  id: '/api/admin/leads/assign',
+  path: '/api/admin/leads/assign',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminHospitalsReallotRoute =
+  ApiAdminHospitalsReallotRouteImport.update({
+    id: '/api/admin/hospitals/reallot',
+    path: '/api/admin/hospitals/reallot',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminHospitalsListRoute = ApiAdminHospitalsListRouteImport.update({
+  id: '/api/admin/hospitals/list',
+  path: '/api/admin/hospitals/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminHospitalsCreateRoute = ApiAdminHospitalsCreateRouteImport.update({
+  id: '/api/admin/hospitals/create',
+  path: '/api/admin/hospitals/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminCommissionsReconcileRoute =
+  ApiAdminCommissionsReconcileRouteImport.update({
+    id: '/api/admin/commissions/reconcile',
+    path: '/api/admin/commissions/reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminCommissionsLockRoute = ApiAdminCommissionsLockRouteImport.update({
+  id: '/api/admin/commissions/lock',
+  path: '/api/admin/commissions/lock',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -192,13 +492,19 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
+  '/subscription-success': typeof SubscriptionSuccessRoute
+  '/telecaller': typeof TelecallerRouteWithChildren
+  '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/performance': typeof AdminPerformanceRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -206,29 +512,76 @@ export interface FileRoutesByFullPath {
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
+  '/telecaller/earnings': typeof TelecallerEarningsRoute
+  '/telecaller/my-day': typeof TelecallerMyDayRoute
+  '/telecaller/new': typeof TelecallerNewRoute
+  '/telecaller/queues': typeof TelecallerQueuesRoute
+  '/telecaller/script': typeof TelecallerScriptRoute
   '/admin/': typeof AdminIndexRoute
+  '/telecaller/': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
+  '/api/profile/address': typeof ApiProfileAddressRoute
+  '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
+  '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
+  '/api/telecaller/create-lead': typeof ApiTelecallerCreateLeadRoute
+  '/api/telecaller/earnings': typeof ApiTelecallerEarningsRoute
+  '/api/telecaller/family-members': typeof ApiTelecallerFamilyMembersRoute
+  '/api/telecaller/lead': typeof ApiTelecallerLeadRouteWithChildren
+  '/api/telecaller/log-call': typeof ApiTelecallerLogCallRoute
+  '/api/telecaller/my-day': typeof ApiTelecallerMyDayRoute
+  '/api/telecaller/person': typeof ApiTelecallerPersonRoute
+  '/api/telecaller/plans': typeof ApiTelecallerPlansRoute
+  '/api/telecaller/profile': typeof ApiTelecallerProfileRoute
+  '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
+  '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
+  '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
+  '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
+  '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
+  '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
+  '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
+  '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
+  '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
+  '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
+  '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
+  '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
+  '/api/admin/performance/hospitals': typeof ApiAdminPerformanceHospitalsRoute
+  '/api/admin/performance/telecallers': typeof ApiAdminPerformanceTelecallersRoute
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
+  '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
+  '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
+  '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
+  '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
+  '/subscription-success': typeof SubscriptionSuccessRoute
+  '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/performance': typeof AdminPerformanceRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -236,17 +589,59 @@ export interface FileRoutesByTo {
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
+  '/telecaller/earnings': typeof TelecallerEarningsRoute
+  '/telecaller/my-day': typeof TelecallerMyDayRoute
+  '/telecaller/new': typeof TelecallerNewRoute
+  '/telecaller/queues': typeof TelecallerQueuesRoute
+  '/telecaller/script': typeof TelecallerScriptRoute
   '/admin': typeof AdminIndexRoute
+  '/telecaller': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
+  '/api/profile/address': typeof ApiProfileAddressRoute
+  '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
+  '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
+  '/api/telecaller/create-lead': typeof ApiTelecallerCreateLeadRoute
+  '/api/telecaller/earnings': typeof ApiTelecallerEarningsRoute
+  '/api/telecaller/family-members': typeof ApiTelecallerFamilyMembersRoute
+  '/api/telecaller/lead': typeof ApiTelecallerLeadRouteWithChildren
+  '/api/telecaller/log-call': typeof ApiTelecallerLogCallRoute
+  '/api/telecaller/my-day': typeof ApiTelecallerMyDayRoute
+  '/api/telecaller/person': typeof ApiTelecallerPersonRoute
+  '/api/telecaller/plans': typeof ApiTelecallerPlansRoute
+  '/api/telecaller/profile': typeof ApiTelecallerProfileRoute
+  '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
+  '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
+  '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
+  '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
+  '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
+  '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
+  '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
+  '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
+  '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
+  '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
+  '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
+  '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
+  '/api/admin/performance/hospitals': typeof ApiAdminPerformanceHospitalsRoute
+  '/api/admin/performance/telecallers': typeof ApiAdminPerformanceTelecallersRoute
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
+  '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
+  '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
+  '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
+  '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -254,13 +649,19 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
+  '/subscription-success': typeof SubscriptionSuccessRoute
+  '/telecaller': typeof TelecallerRouteWithChildren
+  '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/performance': typeof AdminPerformanceRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -268,17 +669,59 @@ export interface FileRoutesById {
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
+  '/telecaller/earnings': typeof TelecallerEarningsRoute
+  '/telecaller/my-day': typeof TelecallerMyDayRoute
+  '/telecaller/new': typeof TelecallerNewRoute
+  '/telecaller/queues': typeof TelecallerQueuesRoute
+  '/telecaller/script': typeof TelecallerScriptRoute
   '/admin/': typeof AdminIndexRoute
+  '/telecaller/': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
+  '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
+  '/api/profile/address': typeof ApiProfileAddressRoute
+  '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
+  '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
+  '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
+  '/api/telecaller/create-lead': typeof ApiTelecallerCreateLeadRoute
+  '/api/telecaller/earnings': typeof ApiTelecallerEarningsRoute
+  '/api/telecaller/family-members': typeof ApiTelecallerFamilyMembersRoute
+  '/api/telecaller/lead': typeof ApiTelecallerLeadRouteWithChildren
+  '/api/telecaller/log-call': typeof ApiTelecallerLogCallRoute
+  '/api/telecaller/my-day': typeof ApiTelecallerMyDayRoute
+  '/api/telecaller/person': typeof ApiTelecallerPersonRoute
+  '/api/telecaller/plans': typeof ApiTelecallerPlansRoute
+  '/api/telecaller/profile': typeof ApiTelecallerProfileRoute
+  '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
+  '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
+  '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
+  '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
+  '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
+  '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
+  '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
+  '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
+  '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
+  '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
+  '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
+  '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
+  '/api/admin/performance/hospitals': typeof ApiAdminPerformanceHospitalsRoute
+  '/api/admin/performance/telecallers': typeof ApiAdminPerformanceTelecallersRoute
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
+  '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
+  '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
+  '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
+  '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -287,13 +730,19 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/faq'
+    | '/login'
     | '/my-subscription'
     | '/plans'
     | '/profile'
     | '/reviews'
     | '/sevas'
+    | '/subscription-success'
+    | '/telecaller'
+    | '/admin/commissions'
+    | '/admin/leads'
     | '/admin/overview'
     | '/admin/payments'
+    | '/admin/performance'
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
     | '/admin/reports'
@@ -301,29 +750,76 @@ export interface FileRouteTypes {
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
+    | '/telecaller/earnings'
+    | '/telecaller/my-day'
+    | '/telecaller/new'
+    | '/telecaller/queues'
+    | '/telecaller/script'
     | '/admin/'
+    | '/telecaller/'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
+    | '/api/coupons/validate'
     | '/api/payments/webhook'
+    | '/api/profile/address'
+    | '/api/profile/family-members'
     | '/api/sankalp/generate-batch'
+    | '/api/subscriptions/create-checkout'
+    | '/api/telecaller/agents'
+    | '/api/telecaller/create-lead'
+    | '/api/telecaller/earnings'
+    | '/api/telecaller/family-members'
+    | '/api/telecaller/lead'
+    | '/api/telecaller/log-call'
+    | '/api/telecaller/my-day'
+    | '/api/telecaller/person'
+    | '/api/telecaller/plans'
+    | '/api/telecaller/profile'
+    | '/api/telecaller/proof-resend'
+    | '/api/telecaller/queues'
+    | '/api/telecaller/send-payment-link'
+    | '/telecaller/lead/$leadId'
+    | '/telecaller/person/$subscriptionId'
+    | '/telecaller/queue/$queueKey'
+    | '/api/admin/commissions/lock'
+    | '/api/admin/commissions/reconcile'
+    | '/api/admin/hospitals/create'
+    | '/api/admin/hospitals/list'
+    | '/api/admin/hospitals/reallot'
+    | '/api/admin/leads/assign'
+    | '/api/admin/leads/sweep'
+    | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
+    | '/api/admin/performance/agents'
+    | '/api/admin/performance/hospitals'
+    | '/api/admin/performance/telecallers'
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
     | '/api/admin/sales-agents/list'
+    | '/api/admin/subscriptions/reissue-link'
+    | '/api/admin/subscriptions/resume'
+    | '/api/telecaller/lead/update'
+    | '/api/telecaller/queue/list'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/faq'
+    | '/login'
     | '/my-subscription'
     | '/plans'
     | '/profile'
     | '/reviews'
     | '/sevas'
+    | '/subscription-success'
+    | '/admin/commissions'
+    | '/admin/leads'
     | '/admin/overview'
     | '/admin/payments'
+    | '/admin/performance'
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
     | '/admin/reports'
@@ -331,30 +827,78 @@ export interface FileRouteTypes {
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
+    | '/telecaller/earnings'
+    | '/telecaller/my-day'
+    | '/telecaller/new'
+    | '/telecaller/queues'
+    | '/telecaller/script'
     | '/admin'
+    | '/telecaller'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
+    | '/api/coupons/validate'
     | '/api/payments/webhook'
+    | '/api/profile/address'
+    | '/api/profile/family-members'
     | '/api/sankalp/generate-batch'
+    | '/api/subscriptions/create-checkout'
+    | '/api/telecaller/agents'
+    | '/api/telecaller/create-lead'
+    | '/api/telecaller/earnings'
+    | '/api/telecaller/family-members'
+    | '/api/telecaller/lead'
+    | '/api/telecaller/log-call'
+    | '/api/telecaller/my-day'
+    | '/api/telecaller/person'
+    | '/api/telecaller/plans'
+    | '/api/telecaller/profile'
+    | '/api/telecaller/proof-resend'
+    | '/api/telecaller/queues'
+    | '/api/telecaller/send-payment-link'
+    | '/telecaller/lead/$leadId'
+    | '/telecaller/person/$subscriptionId'
+    | '/telecaller/queue/$queueKey'
+    | '/api/admin/commissions/lock'
+    | '/api/admin/commissions/reconcile'
+    | '/api/admin/hospitals/create'
+    | '/api/admin/hospitals/list'
+    | '/api/admin/hospitals/reallot'
+    | '/api/admin/leads/assign'
+    | '/api/admin/leads/sweep'
+    | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
+    | '/api/admin/performance/agents'
+    | '/api/admin/performance/hospitals'
+    | '/api/admin/performance/telecallers'
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
     | '/api/admin/sales-agents/list'
+    | '/api/admin/subscriptions/reissue-link'
+    | '/api/admin/subscriptions/resume'
+    | '/api/telecaller/lead/update'
+    | '/api/telecaller/queue/list'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/admin'
     | '/faq'
+    | '/login'
     | '/my-subscription'
     | '/plans'
     | '/profile'
     | '/reviews'
     | '/sevas'
+    | '/subscription-success'
+    | '/telecaller'
+    | '/admin/commissions'
+    | '/admin/leads'
     | '/admin/overview'
     | '/admin/payments'
+    | '/admin/performance'
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
     | '/admin/reports'
@@ -362,17 +906,59 @@ export interface FileRouteTypes {
     | '/admin/subscribers'
     | '/checkout/$planId'
     | '/plan/$planId'
+    | '/telecaller/earnings'
+    | '/telecaller/my-day'
+    | '/telecaller/new'
+    | '/telecaller/queues'
+    | '/telecaller/script'
     | '/admin/'
+    | '/telecaller/'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
+    | '/api/coupons/validate'
     | '/api/payments/webhook'
+    | '/api/profile/address'
+    | '/api/profile/family-members'
     | '/api/sankalp/generate-batch'
+    | '/api/subscriptions/create-checkout'
+    | '/api/telecaller/agents'
+    | '/api/telecaller/create-lead'
+    | '/api/telecaller/earnings'
+    | '/api/telecaller/family-members'
+    | '/api/telecaller/lead'
+    | '/api/telecaller/log-call'
+    | '/api/telecaller/my-day'
+    | '/api/telecaller/person'
+    | '/api/telecaller/plans'
+    | '/api/telecaller/profile'
+    | '/api/telecaller/proof-resend'
+    | '/api/telecaller/queues'
+    | '/api/telecaller/send-payment-link'
+    | '/telecaller/lead/$leadId'
+    | '/telecaller/person/$subscriptionId'
+    | '/telecaller/queue/$queueKey'
+    | '/api/admin/commissions/lock'
+    | '/api/admin/commissions/reconcile'
+    | '/api/admin/hospitals/create'
+    | '/api/admin/hospitals/list'
+    | '/api/admin/hospitals/reallot'
+    | '/api/admin/leads/assign'
+    | '/api/admin/leads/sweep'
+    | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
+    | '/api/admin/performance/agents'
+    | '/api/admin/performance/hospitals'
+    | '/api/admin/performance/telecallers'
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
     | '/api/admin/sales-agents/list'
+    | '/api/admin/subscriptions/reissue-link'
+    | '/api/admin/subscriptions/resume'
+    | '/api/telecaller/lead/update'
+    | '/api/telecaller/queue/list'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -380,26 +966,75 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   FaqRoute: typeof FaqRoute
+  LoginRoute: typeof LoginRoute
   MySubscriptionRoute: typeof MySubscriptionRoute
   PlansRoute: typeof PlansRoute
   ProfileRoute: typeof ProfileRoute
   ReviewsRoute: typeof ReviewsRoute
   SevasRoute: typeof SevasRoute
+  SubscriptionSuccessRoute: typeof SubscriptionSuccessRoute
+  TelecallerRoute: typeof TelecallerRouteWithChildren
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
   ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
+  ApiAuthRequestOtpRoute: typeof ApiAuthRequestOtpRoute
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
+  ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
   ApiPaymentsWebhookRoute: typeof ApiPaymentsWebhookRoute
+  ApiProfileAddressRoute: typeof ApiProfileAddressRoute
+  ApiProfileFamilyMembersRoute: typeof ApiProfileFamilyMembersRoute
   ApiSankalpGenerateBatchRoute: typeof ApiSankalpGenerateBatchRoute
+  ApiSubscriptionsCreateCheckoutRoute: typeof ApiSubscriptionsCreateCheckoutRoute
+  ApiTelecallerAgentsRoute: typeof ApiTelecallerAgentsRoute
+  ApiTelecallerCreateLeadRoute: typeof ApiTelecallerCreateLeadRoute
+  ApiTelecallerEarningsRoute: typeof ApiTelecallerEarningsRoute
+  ApiTelecallerFamilyMembersRoute: typeof ApiTelecallerFamilyMembersRoute
+  ApiTelecallerLeadRoute: typeof ApiTelecallerLeadRouteWithChildren
+  ApiTelecallerLogCallRoute: typeof ApiTelecallerLogCallRoute
+  ApiTelecallerMyDayRoute: typeof ApiTelecallerMyDayRoute
+  ApiTelecallerPersonRoute: typeof ApiTelecallerPersonRoute
+  ApiTelecallerPlansRoute: typeof ApiTelecallerPlansRoute
+  ApiTelecallerProfileRoute: typeof ApiTelecallerProfileRoute
+  ApiTelecallerProofResendRoute: typeof ApiTelecallerProofResendRoute
+  ApiTelecallerQueuesRoute: typeof ApiTelecallerQueuesRoute
+  ApiTelecallerSendPaymentLinkRoute: typeof ApiTelecallerSendPaymentLinkRoute
+  ApiAdminCommissionsLockRoute: typeof ApiAdminCommissionsLockRoute
+  ApiAdminCommissionsReconcileRoute: typeof ApiAdminCommissionsReconcileRoute
+  ApiAdminHospitalsCreateRoute: typeof ApiAdminHospitalsCreateRoute
+  ApiAdminHospitalsListRoute: typeof ApiAdminHospitalsListRoute
+  ApiAdminHospitalsReallotRoute: typeof ApiAdminHospitalsReallotRoute
+  ApiAdminLeadsAssignRoute: typeof ApiAdminLeadsAssignRoute
+  ApiAdminLeadsSweepRoute: typeof ApiAdminLeadsSweepRoute
+  ApiAdminLeadsUploadRoute: typeof ApiAdminLeadsUploadRoute
   ApiAdminPaymentsListRoute: typeof ApiAdminPaymentsListRoute
+  ApiAdminPerformanceAgentsRoute: typeof ApiAdminPerformanceAgentsRoute
+  ApiAdminPerformanceHospitalsRoute: typeof ApiAdminPerformanceHospitalsRoute
+  ApiAdminPerformanceTelecallersRoute: typeof ApiAdminPerformanceTelecallersRoute
   ApiAdminReportsExportRoute: typeof ApiAdminReportsExportRoute
   ApiAdminReportsMonthlyRoute: typeof ApiAdminReportsMonthlyRoute
   ApiAdminReportsPendingSevasRoute: typeof ApiAdminReportsPendingSevasRoute
   ApiAdminSalesAgentsListRoute: typeof ApiAdminSalesAgentsListRoute
+  ApiAdminSubscriptionsReissueLinkRoute: typeof ApiAdminSubscriptionsReissueLinkRoute
+  ApiAdminSubscriptionsResumeRoute: typeof ApiAdminSubscriptionsResumeRoute
+  ApiTelecallerQueueListRoute: typeof ApiTelecallerQueueListRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/telecaller': {
+      id: '/telecaller'
+      path: '/telecaller'
+      fullPath: '/telecaller'
+      preLoaderRoute: typeof TelecallerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscription-success': {
+      id: '/subscription-success'
+      path: '/subscription-success'
+      fullPath: '/subscription-success'
+      preLoaderRoute: typeof SubscriptionSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sevas': {
       id: '/sevas'
       path: '/sevas'
@@ -435,6 +1070,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MySubscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/faq': {
       id: '/faq'
       path: '/faq'
@@ -463,12 +1105,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/telecaller/': {
+      id: '/telecaller/'
+      path: '/'
+      fullPath: '/telecaller/'
+      preLoaderRoute: typeof TelecallerIndexRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/telecaller/script': {
+      id: '/telecaller/script'
+      path: '/script'
+      fullPath: '/telecaller/script'
+      preLoaderRoute: typeof TelecallerScriptRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
+    '/telecaller/queues': {
+      id: '/telecaller/queues'
+      path: '/queues'
+      fullPath: '/telecaller/queues'
+      preLoaderRoute: typeof TelecallerQueuesRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
+    '/telecaller/new': {
+      id: '/telecaller/new'
+      path: '/new'
+      fullPath: '/telecaller/new'
+      preLoaderRoute: typeof TelecallerNewRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
+    '/telecaller/my-day': {
+      id: '/telecaller/my-day'
+      path: '/my-day'
+      fullPath: '/telecaller/my-day'
+      preLoaderRoute: typeof TelecallerMyDayRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
+    '/telecaller/earnings': {
+      id: '/telecaller/earnings'
+      path: '/earnings'
+      fullPath: '/telecaller/earnings'
+      preLoaderRoute: typeof TelecallerEarningsRouteImport
+      parentRoute: typeof TelecallerRoute
     }
     '/plan/$planId': {
       id: '/plan/$planId'
@@ -519,6 +1203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPlansSevasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/performance': {
+      id: '/admin/performance'
+      path: '/performance'
+      fullPath: '/admin/performance'
+      preLoaderRoute: typeof AdminPerformanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/payments': {
       id: '/admin/payments'
       path: '/payments'
@@ -533,11 +1224,158 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOverviewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/leads': {
+      id: '/admin/leads'
+      path: '/leads'
+      fullPath: '/admin/leads'
+      preLoaderRoute: typeof AdminLeadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/commissions': {
+      id: '/admin/commissions'
+      path: '/commissions'
+      fullPath: '/admin/commissions'
+      preLoaderRoute: typeof AdminCommissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/telecaller/queue/$queueKey': {
+      id: '/telecaller/queue/$queueKey'
+      path: '/queue/$queueKey'
+      fullPath: '/telecaller/queue/$queueKey'
+      preLoaderRoute: typeof TelecallerQueueQueueKeyRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
+    '/telecaller/person/$subscriptionId': {
+      id: '/telecaller/person/$subscriptionId'
+      path: '/person/$subscriptionId'
+      fullPath: '/telecaller/person/$subscriptionId'
+      preLoaderRoute: typeof TelecallerPersonSubscriptionIdRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
+    '/telecaller/lead/$leadId': {
+      id: '/telecaller/lead/$leadId'
+      path: '/lead/$leadId'
+      fullPath: '/telecaller/lead/$leadId'
+      preLoaderRoute: typeof TelecallerLeadLeadIdRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
+    '/api/telecaller/send-payment-link': {
+      id: '/api/telecaller/send-payment-link'
+      path: '/api/telecaller/send-payment-link'
+      fullPath: '/api/telecaller/send-payment-link'
+      preLoaderRoute: typeof ApiTelecallerSendPaymentLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/queues': {
+      id: '/api/telecaller/queues'
+      path: '/api/telecaller/queues'
+      fullPath: '/api/telecaller/queues'
+      preLoaderRoute: typeof ApiTelecallerQueuesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/proof-resend': {
+      id: '/api/telecaller/proof-resend'
+      path: '/api/telecaller/proof-resend'
+      fullPath: '/api/telecaller/proof-resend'
+      preLoaderRoute: typeof ApiTelecallerProofResendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/profile': {
+      id: '/api/telecaller/profile'
+      path: '/api/telecaller/profile'
+      fullPath: '/api/telecaller/profile'
+      preLoaderRoute: typeof ApiTelecallerProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/plans': {
+      id: '/api/telecaller/plans'
+      path: '/api/telecaller/plans'
+      fullPath: '/api/telecaller/plans'
+      preLoaderRoute: typeof ApiTelecallerPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/person': {
+      id: '/api/telecaller/person'
+      path: '/api/telecaller/person'
+      fullPath: '/api/telecaller/person'
+      preLoaderRoute: typeof ApiTelecallerPersonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/my-day': {
+      id: '/api/telecaller/my-day'
+      path: '/api/telecaller/my-day'
+      fullPath: '/api/telecaller/my-day'
+      preLoaderRoute: typeof ApiTelecallerMyDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/log-call': {
+      id: '/api/telecaller/log-call'
+      path: '/api/telecaller/log-call'
+      fullPath: '/api/telecaller/log-call'
+      preLoaderRoute: typeof ApiTelecallerLogCallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/lead': {
+      id: '/api/telecaller/lead'
+      path: '/api/telecaller/lead'
+      fullPath: '/api/telecaller/lead'
+      preLoaderRoute: typeof ApiTelecallerLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/family-members': {
+      id: '/api/telecaller/family-members'
+      path: '/api/telecaller/family-members'
+      fullPath: '/api/telecaller/family-members'
+      preLoaderRoute: typeof ApiTelecallerFamilyMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/earnings': {
+      id: '/api/telecaller/earnings'
+      path: '/api/telecaller/earnings'
+      fullPath: '/api/telecaller/earnings'
+      preLoaderRoute: typeof ApiTelecallerEarningsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/create-lead': {
+      id: '/api/telecaller/create-lead'
+      path: '/api/telecaller/create-lead'
+      fullPath: '/api/telecaller/create-lead'
+      preLoaderRoute: typeof ApiTelecallerCreateLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/agents': {
+      id: '/api/telecaller/agents'
+      path: '/api/telecaller/agents'
+      fullPath: '/api/telecaller/agents'
+      preLoaderRoute: typeof ApiTelecallerAgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/subscriptions/create-checkout': {
+      id: '/api/subscriptions/create-checkout'
+      path: '/api/subscriptions/create-checkout'
+      fullPath: '/api/subscriptions/create-checkout'
+      preLoaderRoute: typeof ApiSubscriptionsCreateCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sankalp/generate-batch': {
       id: '/api/sankalp/generate-batch'
       path: '/api/sankalp/generate-batch'
       fullPath: '/api/sankalp/generate-batch'
       preLoaderRoute: typeof ApiSankalpGenerateBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/family-members': {
+      id: '/api/profile/family-members'
+      path: '/api/profile/family-members'
+      fullPath: '/api/profile/family-members'
+      preLoaderRoute: typeof ApiProfileFamilyMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/address': {
+      id: '/api/profile/address'
+      path: '/api/profile/address'
+      fullPath: '/api/profile/address'
+      preLoaderRoute: typeof ApiProfileAddressRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/payments/webhook': {
@@ -547,11 +1385,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/coupons/validate': {
+      id: '/api/coupons/validate'
+      path: '/api/coupons/validate'
+      fullPath: '/api/coupons/validate'
+      preLoaderRoute: typeof ApiCouponsValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cloudinary/sign-upload': {
       id: '/api/cloudinary/sign-upload'
       path: '/api/cloudinary/sign-upload'
       fullPath: '/api/cloudinary/sign-upload'
       preLoaderRoute: typeof ApiCloudinarySignUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/request-otp': {
+      id: '/api/auth/request-otp'
+      path: '/api/auth/request-otp'
+      fullPath: '/api/auth/request-otp'
+      preLoaderRoute: typeof ApiAuthRequestOtpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/overview-financials': {
@@ -567,6 +1419,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/pandit/$batchId'
       preLoaderRoute: typeof AdminPanditBatchIdRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/api/telecaller/queue/list': {
+      id: '/api/telecaller/queue/list'
+      path: '/api/telecaller/queue/list'
+      fullPath: '/api/telecaller/queue/list'
+      preLoaderRoute: typeof ApiTelecallerQueueListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/lead/update': {
+      id: '/api/telecaller/lead/update'
+      path: '/update'
+      fullPath: '/api/telecaller/lead/update'
+      preLoaderRoute: typeof ApiTelecallerLeadUpdateRouteImport
+      parentRoute: typeof ApiTelecallerLeadRoute
+    }
+    '/api/admin/subscriptions/resume': {
+      id: '/api/admin/subscriptions/resume'
+      path: '/api/admin/subscriptions/resume'
+      fullPath: '/api/admin/subscriptions/resume'
+      preLoaderRoute: typeof ApiAdminSubscriptionsResumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/subscriptions/reissue-link': {
+      id: '/api/admin/subscriptions/reissue-link'
+      path: '/api/admin/subscriptions/reissue-link'
+      fullPath: '/api/admin/subscriptions/reissue-link'
+      preLoaderRoute: typeof ApiAdminSubscriptionsReissueLinkRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/admin/sales-agents/list': {
       id: '/api/admin/sales-agents/list'
@@ -596,6 +1476,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminReportsExportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/performance/telecallers': {
+      id: '/api/admin/performance/telecallers'
+      path: '/api/admin/performance/telecallers'
+      fullPath: '/api/admin/performance/telecallers'
+      preLoaderRoute: typeof ApiAdminPerformanceTelecallersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/performance/hospitals': {
+      id: '/api/admin/performance/hospitals'
+      path: '/api/admin/performance/hospitals'
+      fullPath: '/api/admin/performance/hospitals'
+      preLoaderRoute: typeof ApiAdminPerformanceHospitalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/performance/agents': {
+      id: '/api/admin/performance/agents'
+      path: '/api/admin/performance/agents'
+      fullPath: '/api/admin/performance/agents'
+      preLoaderRoute: typeof ApiAdminPerformanceAgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/payments/list': {
       id: '/api/admin/payments/list'
       path: '/api/admin/payments/list'
@@ -603,12 +1504,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminPaymentsListRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/leads/upload': {
+      id: '/api/admin/leads/upload'
+      path: '/api/admin/leads/upload'
+      fullPath: '/api/admin/leads/upload'
+      preLoaderRoute: typeof ApiAdminLeadsUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads/sweep': {
+      id: '/api/admin/leads/sweep'
+      path: '/api/admin/leads/sweep'
+      fullPath: '/api/admin/leads/sweep'
+      preLoaderRoute: typeof ApiAdminLeadsSweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads/assign': {
+      id: '/api/admin/leads/assign'
+      path: '/api/admin/leads/assign'
+      fullPath: '/api/admin/leads/assign'
+      preLoaderRoute: typeof ApiAdminLeadsAssignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/hospitals/reallot': {
+      id: '/api/admin/hospitals/reallot'
+      path: '/api/admin/hospitals/reallot'
+      fullPath: '/api/admin/hospitals/reallot'
+      preLoaderRoute: typeof ApiAdminHospitalsReallotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/hospitals/list': {
+      id: '/api/admin/hospitals/list'
+      path: '/api/admin/hospitals/list'
+      fullPath: '/api/admin/hospitals/list'
+      preLoaderRoute: typeof ApiAdminHospitalsListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/hospitals/create': {
+      id: '/api/admin/hospitals/create'
+      path: '/api/admin/hospitals/create'
+      fullPath: '/api/admin/hospitals/create'
+      preLoaderRoute: typeof ApiAdminHospitalsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/commissions/reconcile': {
+      id: '/api/admin/commissions/reconcile'
+      path: '/api/admin/commissions/reconcile'
+      fullPath: '/api/admin/commissions/reconcile'
+      preLoaderRoute: typeof ApiAdminCommissionsReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/commissions/lock': {
+      id: '/api/admin/commissions/lock'
+      path: '/api/admin/commissions/lock'
+      fullPath: '/api/admin/commissions/lock'
+      preLoaderRoute: typeof ApiAdminCommissionsLockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminCommissionsRoute: typeof AdminCommissionsRoute
+  AdminLeadsRoute: typeof AdminLeadsRoute
   AdminOverviewRoute: typeof AdminOverviewRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminPerformanceRoute: typeof AdminPerformanceRoute
   AdminPlansSevasRoute: typeof AdminPlansSevasRoute
   AdminProofUploadRoute: typeof AdminProofUploadRoute
   AdminReportsRoute: typeof AdminReportsRoute
@@ -619,8 +1579,11 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCommissionsRoute: AdminCommissionsRoute,
+  AdminLeadsRoute: AdminLeadsRoute,
   AdminOverviewRoute: AdminOverviewRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminPerformanceRoute: AdminPerformanceRoute,
   AdminPlansSevasRoute: AdminPlansSevasRoute,
   AdminProofUploadRoute: AdminProofUploadRoute,
   AdminReportsRoute: AdminReportsRoute,
@@ -632,27 +1595,101 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface TelecallerRouteChildren {
+  TelecallerEarningsRoute: typeof TelecallerEarningsRoute
+  TelecallerMyDayRoute: typeof TelecallerMyDayRoute
+  TelecallerNewRoute: typeof TelecallerNewRoute
+  TelecallerQueuesRoute: typeof TelecallerQueuesRoute
+  TelecallerScriptRoute: typeof TelecallerScriptRoute
+  TelecallerIndexRoute: typeof TelecallerIndexRoute
+  TelecallerLeadLeadIdRoute: typeof TelecallerLeadLeadIdRoute
+  TelecallerPersonSubscriptionIdRoute: typeof TelecallerPersonSubscriptionIdRoute
+  TelecallerQueueQueueKeyRoute: typeof TelecallerQueueQueueKeyRoute
+}
+
+const TelecallerRouteChildren: TelecallerRouteChildren = {
+  TelecallerEarningsRoute: TelecallerEarningsRoute,
+  TelecallerMyDayRoute: TelecallerMyDayRoute,
+  TelecallerNewRoute: TelecallerNewRoute,
+  TelecallerQueuesRoute: TelecallerQueuesRoute,
+  TelecallerScriptRoute: TelecallerScriptRoute,
+  TelecallerIndexRoute: TelecallerIndexRoute,
+  TelecallerLeadLeadIdRoute: TelecallerLeadLeadIdRoute,
+  TelecallerPersonSubscriptionIdRoute: TelecallerPersonSubscriptionIdRoute,
+  TelecallerQueueQueueKeyRoute: TelecallerQueueQueueKeyRoute,
+}
+
+const TelecallerRouteWithChildren = TelecallerRoute._addFileChildren(
+  TelecallerRouteChildren,
+)
+
+interface ApiTelecallerLeadRouteChildren {
+  ApiTelecallerLeadUpdateRoute: typeof ApiTelecallerLeadUpdateRoute
+}
+
+const ApiTelecallerLeadRouteChildren: ApiTelecallerLeadRouteChildren = {
+  ApiTelecallerLeadUpdateRoute: ApiTelecallerLeadUpdateRoute,
+}
+
+const ApiTelecallerLeadRouteWithChildren =
+  ApiTelecallerLeadRoute._addFileChildren(ApiTelecallerLeadRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   FaqRoute: FaqRoute,
+  LoginRoute: LoginRoute,
   MySubscriptionRoute: MySubscriptionRoute,
   PlansRoute: PlansRoute,
   ProfileRoute: ProfileRoute,
   ReviewsRoute: ReviewsRoute,
   SevasRoute: SevasRoute,
+  SubscriptionSuccessRoute: SubscriptionSuccessRoute,
+  TelecallerRoute: TelecallerRouteWithChildren,
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
   ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
+  ApiAuthRequestOtpRoute: ApiAuthRequestOtpRoute,
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
+  ApiCouponsValidateRoute: ApiCouponsValidateRoute,
   ApiPaymentsWebhookRoute: ApiPaymentsWebhookRoute,
+  ApiProfileAddressRoute: ApiProfileAddressRoute,
+  ApiProfileFamilyMembersRoute: ApiProfileFamilyMembersRoute,
   ApiSankalpGenerateBatchRoute: ApiSankalpGenerateBatchRoute,
+  ApiSubscriptionsCreateCheckoutRoute: ApiSubscriptionsCreateCheckoutRoute,
+  ApiTelecallerAgentsRoute: ApiTelecallerAgentsRoute,
+  ApiTelecallerCreateLeadRoute: ApiTelecallerCreateLeadRoute,
+  ApiTelecallerEarningsRoute: ApiTelecallerEarningsRoute,
+  ApiTelecallerFamilyMembersRoute: ApiTelecallerFamilyMembersRoute,
+  ApiTelecallerLeadRoute: ApiTelecallerLeadRouteWithChildren,
+  ApiTelecallerLogCallRoute: ApiTelecallerLogCallRoute,
+  ApiTelecallerMyDayRoute: ApiTelecallerMyDayRoute,
+  ApiTelecallerPersonRoute: ApiTelecallerPersonRoute,
+  ApiTelecallerPlansRoute: ApiTelecallerPlansRoute,
+  ApiTelecallerProfileRoute: ApiTelecallerProfileRoute,
+  ApiTelecallerProofResendRoute: ApiTelecallerProofResendRoute,
+  ApiTelecallerQueuesRoute: ApiTelecallerQueuesRoute,
+  ApiTelecallerSendPaymentLinkRoute: ApiTelecallerSendPaymentLinkRoute,
+  ApiAdminCommissionsLockRoute: ApiAdminCommissionsLockRoute,
+  ApiAdminCommissionsReconcileRoute: ApiAdminCommissionsReconcileRoute,
+  ApiAdminHospitalsCreateRoute: ApiAdminHospitalsCreateRoute,
+  ApiAdminHospitalsListRoute: ApiAdminHospitalsListRoute,
+  ApiAdminHospitalsReallotRoute: ApiAdminHospitalsReallotRoute,
+  ApiAdminLeadsAssignRoute: ApiAdminLeadsAssignRoute,
+  ApiAdminLeadsSweepRoute: ApiAdminLeadsSweepRoute,
+  ApiAdminLeadsUploadRoute: ApiAdminLeadsUploadRoute,
   ApiAdminPaymentsListRoute: ApiAdminPaymentsListRoute,
+  ApiAdminPerformanceAgentsRoute: ApiAdminPerformanceAgentsRoute,
+  ApiAdminPerformanceHospitalsRoute: ApiAdminPerformanceHospitalsRoute,
+  ApiAdminPerformanceTelecallersRoute: ApiAdminPerformanceTelecallersRoute,
   ApiAdminReportsExportRoute: ApiAdminReportsExportRoute,
   ApiAdminReportsMonthlyRoute: ApiAdminReportsMonthlyRoute,
   ApiAdminReportsPendingSevasRoute: ApiAdminReportsPendingSevasRoute,
   ApiAdminSalesAgentsListRoute: ApiAdminSalesAgentsListRoute,
+  ApiAdminSubscriptionsReissueLinkRoute: ApiAdminSubscriptionsReissueLinkRoute,
+  ApiAdminSubscriptionsResumeRoute: ApiAdminSubscriptionsResumeRoute,
+  ApiTelecallerQueueListRoute: ApiTelecallerQueueListRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -4,10 +4,8 @@ import { usePublicPlans } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 
-import sundarkandImg from "@/assets/sevas/sundarkand.png";
-import gauSevaImg from "@/assets/sevas/gau_seva.png";
-import sadhuBhojanImg from "@/assets/sevas/sadhu_bhojan.png";
-import hawanImg from "@/assets/sevas/hawan.png";
+import { IMAGE_SIZES } from "@/components/CldImage";
+import { SITE_IMAGES, type SiteImage } from "@/lib/site-images";
 
 export const Route = createFileRoute("/sevas")({
   head: () => ({
@@ -21,34 +19,34 @@ export const Route = createFileRoute("/sevas")({
 
 const iconMap: Record<string, any> = { BookOpen, Flame, Sun, Wind, Heart, Users, Sparkles };
 
-type SevaStaticMedia = { images: string[]; captions: string[] };
+type SevaStaticMedia = { images: SiteImage[]; captions: string[] };
 
 // Presentation-only media per seva slug (images/captions are design assets).
 // Seva names/descriptions themselves come live from the `sevas` table.
 // Slugs not listed here render without a photo panel — no composition data here.
 const sevaMedia: Record<string, SevaStaticMedia> = {
   "sundarkand-path": {
-    images: [sundarkandImg],
+    images: [SITE_IMAGES.sevaSundarkand],
     captions: ["सुंदरकांड पाठ — आपके नाम व गोत्र से संकट हरण पाठ"],
   },
   "gau-seva": {
-    images: [gauSevaImg],
+    images: [SITE_IMAGES.sevaGau],
     captions: ["गौ माता सेवा — हरा चारा एवं गुड़ अर्पण"],
   },
   "vanar-seva": {
-    images: [sundarkandImg],
+    images: [SITE_IMAGES.sevaVanar],
     captions: ["वानर सेवा — श्री हनुमान जी के प्रिय फल व चना अर्पण"],
   },
   "saadhu-santo-ko-bhojan": {
-    images: [sadhuBhojanImg],
+    images: [SITE_IMAGES.sevaSadhuBhojan],
     captions: ["साधु संतों को भोजन — पुष्कर क्षेत्र साधु सत्कार"],
   },
   "griha-shanti-hawan": {
-    images: [hawanImg],
+    images: [SITE_IMAGES.sevaHawan],
     captions: ["गृह शांति हवन — वैदिक आहुति"],
   },
   "sarv-rog-nivaran-hawan": {
-    images: [hawanImg],
+    images: [SITE_IMAGES.sevaHawan],
     captions: ["सर्व रोग निवारण हवन — वैदिक आहुति"],
   },
 };
@@ -104,7 +102,7 @@ function SevasPage() {
               const media = sevaMedia[s.slug];
               const slides: Slide[] = media
                 ? media.images.map((img, i) => ({
-                    src: img,
+                    image: img,
                     alt: `${s.title} — ${media.captions[i] ?? s.title}`,
                     title: media.captions[i] ?? s.title,
                     subtitle: s.title,
@@ -118,7 +116,7 @@ function SevasPage() {
                 >
                   <div className="md:p-4">
                     {slides.length > 0 && (
-                      <SlidingImageCard slides={slides} aspectRatio="4/5" rounded="md:rounded-2xl rounded-none" />
+                      <SlidingImageCard slides={slides} aspectRatio="4/5" rounded="md:rounded-2xl rounded-none" sizes={IMAGE_SIZES.card} />
                     )}
                   </div>
                   <div className="p-6 flex flex-col justify-center gap-3">

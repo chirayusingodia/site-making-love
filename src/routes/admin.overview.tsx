@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { usePublicPlans } from "@/lib/plans";
 import { callAdminApi } from "@/lib/admin-api";
 import { useUserRole } from "@/hooks/use-user-role";
+import { NeedsChirayuCard } from "@/components/admin/needs-chirayu";
 import {
   Users,
   IndianRupee,
@@ -372,6 +373,9 @@ function AdminOverviewPage() {
           </span>
         </div>
       )}
+
+      {/* §5.6 — telecaller escalations (cancel/pause requests, complaints). */}
+      <NeedsChirayuCard />
 
       {errorMsg && (
         <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl text-xs flex items-center gap-3">

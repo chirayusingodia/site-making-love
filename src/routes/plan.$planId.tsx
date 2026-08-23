@@ -11,20 +11,7 @@ import { PizzaComparison } from "@/components/PizzaComparison";
 import { ComparisonTable } from "@/components/ComparisonTable";
 import diya from "@/assets/lottie/diya.json";
 import { motion } from "framer-motion";
-
-// Import local hero images
-import h1 from "@/assets/plan-detail/hero_1.png";
-import h2 from "@/assets/plan-detail/hero_2.png";
-import h3 from "@/assets/plan-detail/hero_3.png";
-import h4 from "@/assets/plan-detail/hero_4.png";
-import h5 from "@/assets/plan-detail/hero_5.png";
-import h6 from "@/assets/plan-detail/hero_6.png";
-import h7 from "@/assets/plan-detail/hero_7.png";
-import h8 from "@/assets/plan-detail/hero_8.png";
-import h9 from "@/assets/plan-detail/hero_9.png";
-import h10 from "@/assets/plan-detail/hero_10.png";
-
-const heroImages = [h1, h2, h3, h4, h5, h6, h7, h8, h9, h10];
+import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
 
 export const Route = createFileRoute("/plan/$planId")({
   component: PlanDetailPage,
@@ -94,7 +81,7 @@ function PlanDetailPage() {
 function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
   const { lang } = useTranslation();
   const slides: Slide[] = plan.slides.map((s) => ({
-    src: s.src,
+    image: s.image,
     alt: s.title,
     title: s.title,
     subtitle: s.subtitle,
@@ -116,9 +103,25 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
         {/* Hero Carousel */}
         <div className="card-soft overflow-hidden flex flex-col">
           {slides.length > 0 ? (
-            <SlidingImageCard slides={slides} aspectRatio="video" rounded="rounded-none" />
+            <SlidingImageCard
+              slides={slides}
+              aspectRatio="video"
+              rounded="rounded-none"
+              sizes={IMAGE_SIZES.card}
+              priority
+            />
           ) : (
-            <img src={plan.image} alt={plan.name} className="w-full h-56 object-cover" />
+            <CldImage
+              publicId={plan.image.publicId}
+              fallback={plan.image.fallback}
+              alt={plan.name}
+              width={plan.image.w}
+              height={plan.image.h}
+              sizes={IMAGE_SIZES.card}
+              crop="fill"
+              priority
+              className="w-full h-56 object-cover"
+            />
           )}
           <div className="p-5">
             <h1 className="text-xl font-extrabold text-foreground leading-snug">{plan.heading}</h1>
@@ -277,7 +280,16 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
               <Link key={p.id} to="/plan/$planId" params={{ planId: p.id }} className="card-soft p-3 w-[260px] min-w-[260px] shrink-0 flex flex-col justify-between border border-black/5 hover:border-brand/20 transition-all">
                 <div>
                   <div className="h-28 overflow-hidden rounded-xl bg-muted">
-                    <img src={p.image} className="w-full h-full object-cover" alt={p.name} />
+                    <CldImage
+                      publicId={p.image.publicId}
+                      fallback={p.image.fallback}
+                      alt={p.name}
+                      width={p.image.w}
+                      height={p.image.h}
+                      sizes={IMAGE_SIZES.thumb}
+                      crop="fill"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="mt-2 font-extrabold text-sm text-foreground line-clamp-1">{p.name}</div>
                   <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 leading-tight h-7">{p.subheading}</p>

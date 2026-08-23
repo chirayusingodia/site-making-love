@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, redirect, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
@@ -11,12 +11,29 @@ import {
   Layers,
   ScrollText,
   BarChart3,
+  PhoneCall,
+  UserPlus,
+  BadgeIndianRupee,
+  TrendingUp,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { Badge } from "@/components/ui/badge";
 import { useUserRole } from "@/hooks/use-user-role";
+import { fetchMyRole } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin")({
+  // 🚩 §6.1 gap fixed: this shell previously rendered for ANYONE and
+  // relied on API 401/403 to keep the tables empty. With a
+  // lower-privilege staff role in the system that is no longer
+  // acceptable — a telecaller could load /admin/plans-sevas and see
+  // the chrome, the nav, the field labels. Redirect non-staff:
+  //   telecaller → her panel; user/agent/anonymous → site root.
+  // The API gates stay EXACTLY as they are — this is layer 1 of 3.
+  beforeLoad: async () => {
+    const role = await fetchMyRole();
+    if (role === "telecaller") throw redirect({ to: "/telecaller" });
+    if (role !== "admin" && role !== "owner") throw redirect({ to: "/" });
+  },
   component: AdminLayout,
 });
 
@@ -26,6 +43,9 @@ function AdminLayout() {
 
   const navItems = [
     { label: "Overview", href: "/admin/overview", icon: LayoutDashboard },
+    // Telecaller panel — owner/admin reach it read-write (§0), so
+    // Chirayu can sit in the same queue and check the work.
+    { label: "Call Queue", href: "/telecaller", icon: PhoneCall, badge: "New" },
     { label: "Subscribers", href: "/admin/subscribers", icon: Users },
     { label: "Plans & Sevas", href: "/admin/plans-sevas", icon: Layers },
     { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText, badge: "New" },
@@ -37,6 +57,27 @@ function AdminLayout() {
     // guarded in beforeLoad, and the API rejects non-owners with 403.
     ...(role === "owner"
       ? [{ label: "Reports", href: "/admin/reports", icon: BarChart3, badge: "Owner" }]
+      : []),
+    // Part B — lead pipeline (staff) + commission controls (owner).
+    { label: "Leads", href: "/admin/leads", icon: UserPlus, badge: "Part B" },
+    ...(role === "owner"
+      ? [
+          {
+            label: "Commissions",
+            href: "/admin/commissions",
+            icon: BadgeIndianRupee,
+            badge: "Owner",
+          },
+          // §6.1 (Hospitals session): performance leaderboard is
+          // OWNER-only — nav lives inside this owner block (layer 1);
+          // the route beforeLoad is layer 2 and the API 403 is layer 3.
+          {
+            label: "Performance",
+            href: "/admin/performance",
+            icon: TrendingUp,
+            badge: "Owner",
+          },
+        ]
       : []),
   ];
 
