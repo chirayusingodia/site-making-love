@@ -89,6 +89,21 @@ export async function fetchMyProfile(): Promise<MyProfile | null> {
 }
 
 /**
+ * First-ever Google sign-in confirm step (SESSION_GOOGLE_LOGIN_PROMPT
+ * §4): attaches a real phone number to the just-authenticated Google
+ * identity. No OTP by design — duplicates answer 409 code=phone_taken,
+ * which complete-profile.tsx maps to the "OTP se login karein" route.
+ * Runs under this browser's own session (callUserApi → Bearer token),
+ * so the insert lands through the caller's own RLS grant.
+ */
+export async function completeGoogleProfile(fullName: string, phoneRaw: string): Promise<void> {
+  await callUserApi<{ ok: boolean }>("/api/auth/complete-google-profile", {
+    full_name: fullName,
+    phone: phoneRaw,
+  });
+}
+
+/**
  * Legacy-edge recovery: auth user exists but its profiles row was
  * lost before this session's server-side creation existed. Inserts
  * the missing own row under the caller's RLS grant. No-op when the
