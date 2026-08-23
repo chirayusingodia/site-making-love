@@ -26,12 +26,18 @@ export class AuthApiError extends Error {
   }
 }
 
-/** Sends the OTP; creates profile for a brand-new number server-side. */
-export async function requestOtp(name: string, phoneRaw: string): Promise<{ isNewUser: boolean }> {
+/** Sends the OTP; creates profile for a brand-new number server-side.
+ *  captchaToken (Turnstile) rides along when the widget is enabled —
+ *  the server either verifies it itself or forwards it to Supabase. */
+export async function requestOtp(
+  name: string,
+  phoneRaw: string,
+  captchaToken?: string,
+): Promise<{ isNewUser: boolean }> {
   const res = await fetch("/api/auth/request-otp", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name, phone: phoneRaw }),
+    body: JSON.stringify({ name, phone: phoneRaw, ...(captchaToken ? { captchaToken } : {}) }),
   });
   const data = (await res.json().catch(() => ({}))) as { error?: string; isNewUser?: boolean };
   if (!res.ok) throw new AuthApiError(data.error ?? `Request failed (${res.status})`, res.status);

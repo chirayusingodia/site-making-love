@@ -22,11 +22,34 @@ import { validateCouponForPlan, type CouponDecision } from "@/lib/coupons.server
 // Only /api/payments/webhook does.
 // ─────────────────────────────────────────────────────────────
 
-/** Billable cycles before the Razorpay subscription completes.
- *  UPI AutoPay mandates need a finite total_count. Monthly plans run
- *  one year; yearly plans five years — business-tunable constants. */
-const TOTAL_COUNT_MONTHLY = 12;
-const TOTAL_COUNT_YEARLY = 5;
+// ─── Subscription tenure: "runs until cancelled" ──────────────
+// Razorpay has no literal "forever" flag — total_count is MANDATORY
+// at creation and capped at 100 YEARS (their documented maximum). A
+// live subscription can be cancelled at any moment regardless of how
+// much total_count remains, so we model "no fixed term, renews until
+// the subscriber (or admin) cancels" as simply the maximum legal
+// tenure — like a no-fixed-term gym membership on a platform that
+// demands some number.
+//
+// ⚠️ Subscriptions created BEFORE 2026-08-23 carry the old short
+// tenures (12 monthly / 5 yearly cycles). Razorpay does NOT
+// retroactively extend a live mandate's total_count — those keep
+// their original end date (see session log for the census).
+export const SUBSCRIPTION_MAX_YEARS = 100;
+
+/** Billable cycles per year per billing_period. Declared as an
+ *  exhaustive Record: adding a third period (weekly/daily) to the
+ *  PlanRow union FAILS TO COMPILE until it gets a row here, so its
+ *  total_count always derives as 100 years of that cadence — never
+ *  left unhandled. */
+const CYCLES_PER_YEAR: Record<PlanRow["billing_period"], number> = {
+  monthly: 12,
+  yearly: 1,
+};
+
+export function totalCountForBillingPeriod(period: PlanRow["billing_period"]): number {
+  return SUBSCRIPTION_MAX_YEARS * CYCLES_PER_YEAR[period];
+}
 
 interface PlanRow {
   id: string;
@@ -88,6 +111,15 @@ export async function createCheckoutForUser(input: {
   userId: string;
   planIdOrSlug: string;
   couponCode?: string | null;
+  /**
+   * Telecaller panel (§5.5): stamp acquisition_channel='telecall'.
+   */
+  acquisitionChannel?: string | null;
+  /** Sourcing field agent credited on the sale (leads.source_agent_id). */
+  salesAgentId?: string | null;
+  /** §9.1 path 1: closing telecaller resolved from a lead's
+   *  attribution token at checkout creation — stamped write-once. */
+  telecallerId?: string | null;
 }): Promise<CreateCheckoutOutcome> {
   const { adminDb, userId, planIdOrSlug } = input;
   const couponCode = input.couponCode?.trim() ? input.couponCode.trim().toUpperCase() : null;
@@ -102,6 +134,9 @@ export async function createCheckoutForUser(input: {
 
   let couponDecision: CouponDecision | null = null;
   if (couponCode) {
+    // §2.2 (Hospitals session): the agent-visibility WIDENING is gone.
+    // Only ordinary public/personally-assigned coupons validate here —
+    // exactly what the public post-login checkout always allowed.
     couponDecision = await validateCouponForPlan(adminDb, {
       code: couponCode,
       planId: plan.id,
@@ -122,8 +157,18 @@ export async function createCheckoutForUser(input: {
       plan_id: plan.id,
       ...(couponDecision?.ok ? { coupon_id: couponDecision.coupon!.id } : {}),
       status: "pending",
-      ...(couponDecision?.ok
-        ? { acquisition_channel: `coupon:${couponDecision.coupon!.code}` }
+      ...(input.acquisitionChannel
+        ? { acquisition_channel: input.acquisitionChannel }
+        : couponDecision?.ok
+          ? { acquisition_channel: `coupon:${couponDecision.coupon!.code}` }
+          : {}),
+      ...(input.salesAgentId ? { sales_agent_id: input.salesAgentId } : {}),
+      ...(input.telecallerId
+        ? {
+            telecaller_id: input.telecallerId,
+            attribution_source: "token",
+            attributed_at: new Date().toISOString(),
+          }
         : {}),
     })
     .select("id")
@@ -137,7 +182,7 @@ export async function createCheckoutForUser(input: {
       razorpayPlanId: plan.razorpay_plan_id!,
       subscriptionDbId: subRow.id,
       couponCode,
-      totalCount: plan.billing_period === "yearly" ? TOTAL_COUNT_YEARLY : TOTAL_COUNT_MONTHLY,
+      totalCount: totalCountForBillingPeriod(plan.billing_period),
     });
 
     const { error: updErr } = await adminDb

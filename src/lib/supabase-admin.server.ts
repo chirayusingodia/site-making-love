@@ -7,6 +7,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export type StaffRole = "admin" | "owner";
 
+/** Roles allowed through the telecaller panel gate (§8 checklist). */
+export type TelecallerCallerRole = "telecaller" | StaffRole;
+
 export function getServiceClient(): SupabaseClient {
   // URL is not a secret — same fallback as the client bundle uses.
   const url = process.env.VITE_SUPABASE_URL ?? "https://omjivlmfsikeqwndtlcn.supabase.co";
@@ -115,6 +118,83 @@ export async function requireOwner(
     return { ok: false, status: 403, error: "Owner access required" };
   }
   return { ok: true, auth: { staffId: user.id, role: "owner", db } };
+}
+
+// ─── Telecaller panel gate (Session: Telecaller Panel) ───────
+
+export interface TelecallerAuth {
+  callerId: string;
+  role: TelecallerCallerRole;
+  db: SupabaseClient;
+}
+
+export function isTelecallerCallerRole(
+  role: string | null | undefined,
+): role is TelecallerCallerRole {
+  return role === "telecaller" || isStaffRole(role);
+}
+
+/**
+ * Gate for EVERY /api/telecaller/* endpoint. The caller's token is
+ * validated against Supabase Auth, then profiles.role decides:
+ *
+ *   telecaller / admin / owner → allowed (owner + admin reach the
+ *     panel read-write so Chirayu can sit in the same queue and
+ *     check the work — §0)
+ *   user / agent / anything else → null (handlers map to 401)
+ *
+ * The returned client is the SERVICE-ROLE client on purpose: the
+ * telecaller has NO direct table grants (migration 012 adds none),
+ * so every read/write flows through here where the explicit field
+ * allowlists in telecaller-logic.ts are applied. Never widen this
+ * gate to 'agent'; never let a handler select("*") behind it.
+ */
+export async function requireTelecaller(request: Request): Promise<TelecallerAuth | null> {
+  const auth = request.headers.get("authorization") ?? "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token) return null;
+
+  const db = getServiceClient();
+  const {
+    data: { user },
+    error,
+  } = await db.auth.getUser(token);
+  if (error || !user) return null;
+
+  const { data: profile } = await db
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile || !isTelecallerCallerRole(profile.role)) return null;
+  return { callerId: user.id, role: profile.role, db };
+}
+
+/**
+ * Audit-trail write for telecaller panel mutations (§5). Every
+ * endpoint that writes ANYTHING calls this with before/after values
+ * in `meta` — no exceptions. Runs on the service-role client (the
+ * telecaller herself has no audit_logs grant by design).
+ */
+export async function writeTelecallerAudit(
+  db: SupabaseClient,
+  callerId: string,
+  action: string,
+  entity: string,
+  entityId: string | null,
+  meta: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await db.from("audit_logs").insert({
+    admin_id: callerId,
+    action,
+    entity,
+    entity_id: entityId,
+    meta,
+  });
+  // An audit failure must fail the request — a silent write without
+  // its trail is exactly what this table exists to prevent.
+  if (error) throw new Error(`audit_logs insert failed: ${error.message}`);
 }
 
 export function json(data: unknown, status = 200): Response {

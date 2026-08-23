@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireUser } from "@/lib/supabase-admin.server";
+import { validateProfileAddress } from "@/lib/family-validation";
 
 // POST /api/profile/address
 // Auth: Bearer <supabase access token> (end user)
@@ -8,6 +9,9 @@ import { json, requireUser } from "@/lib/supabase-admin.server";
 // Upserts the prasad shipping address on the CALLER'S OWN profiles
 // row (Premium Annual delivery). Runs under the caller's JWT —
 // RLS policy "profiles: user updates own" is the enforcement layer.
+//
+// Validation lives in lib/family-validation.ts — shared with the
+// telecaller's on-behalf editor so both surfaces stay in step.
 
 export const Route = createFileRoute("/api/profile/address")({
   server: {
@@ -23,22 +27,13 @@ export const Route = createFileRoute("/api/profile/address")({
           return json({ error: "Invalid JSON body" }, 400);
         }
 
-        const line1 = typeof body.address_line1 === "string" ? body.address_line1.trim() : "";
-        const line2 = typeof body.address_line2 === "string" ? body.address_line2.trim() : "";
-        const state = typeof body.state === "string" ? body.state.trim() : "";
-        const pincode = typeof body.pincode === "string" ? body.pincode.replace(/\D/g, "") : "";
-
-        if (line1.length < 5) return json({ error: "Address kam se kam 5 akshar ka ho" }, 400);
-        if (!state) return json({ error: "State zaroori hai" }, 400);
-        if (!/^\d{6}$/.test(pincode)) return json({ error: "Pincode 6 anko ka hona chahiye" }, 400);
+        const validated = validateProfileAddress(body);
+        if (!validated.ok) return json({ error: validated.error }, 400);
 
         const { error } = await auth.db
           .from("profiles")
           .update({
-            address_line1: line1.slice(0, 240),
-            address_line2: line2.slice(0, 240) || null,
-            state: state.slice(0, 80),
-            pincode,
+            ...validated.value,
             updated_at: new Date().toISOString(),
           })
           .eq("id", auth.userId);

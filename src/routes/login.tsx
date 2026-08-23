@@ -9,6 +9,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { requestOtp, verifyOtp, ensureMyProfile, AuthApiError } from "@/lib/auth-api";
+import { turnstileEnabled, renderTurnstile, type RenderedTurnstile } from "@/lib/turnstile";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -24,6 +25,12 @@ export const Route = createFileRoute("/login")({
 // profile created server-side; known numbers just log in and the
 // typed name is ignored. After success the user returns to
 // ?redirect=... (e.g. the plan's buy step) or to /profile.
+//
+// OTP-request spam guard: when VITE_TURNSTILE_SITE_KEY is set, a
+// Cloudflare Turnstile token rides on every /api/auth/request-otp
+// call (Layer 2). Tokens are single-use — the widget resets after
+// each attempt, including resends, which is why its host stays
+// MOUNTED (off-screen, not display:none) through the OTP step.
 // ─────────────────────────────────────────────────────────────
 
 type Step = "form" | "otp" | "verifying";
@@ -40,6 +47,67 @@ function LoginPage() {
   const [resentAt, setResentAt] = useState<Date | null>(null);
   const otpSentFor = useRef<string | null>(null);
 
+  // ── Turnstile state (no-op unless site key configured) ───────
+  const captchaEnabled = turnstileEnabled();
+  const captchaHostRef = useRef<HTMLDivElement | null>(null);
+  const widgetRef = useRef<RenderedTurnstile | null>(null);
+  const tokenRef = useRef(""); // mirrors latest valid token
+  const [captchaReady, setCaptchaReady] = useState(!captchaEnabled);
+
+  useEffect(() => {
+    if (!captchaEnabled || !captchaHostRef.current) return;
+    let disposed = false;
+    let rendered: RenderedTurnstile | null = null;
+    renderTurnstile(
+      captchaHostRef.current,
+      (token) => {
+        if (!disposed) {
+          tokenRef.current = token;
+          setCaptchaReady(true);
+        }
+      },
+      () => {
+        if (!disposed) {
+          tokenRef.current = "";
+          setCaptchaReady(false);
+        }
+      },
+    )
+      .then((r) => {
+        if (disposed) {
+          window.turnstile?.remove(r.widgetId);
+          return;
+        }
+        rendered = r;
+        widgetRef.current = r;
+      })
+      .catch(() => {
+        // Script blocked (ad-blocker/network). Server-side Layer 3
+        // rate limits still protect the route; sends will surface
+        // the generic captcha-hint error instead of succeeding
+        // blindly when the secret enforces it.
+      });
+    return () => {
+      disposed = true;
+      if (rendered) window.turnstile?.remove(rendered.widgetId);
+      widgetRef.current = null;
+    };
+  }, [captchaEnabled]);
+
+  /** Fresh-token gate before any send. Tokens are single-use; the
+   *  caller MUST reset() after each request regardless of outcome. */
+  const consumeCaptchaToken = async (): Promise<string> => {
+    if (!captchaEnabled) return "";
+    for (let waited = 0; waited < 4000 && !tokenRef.current; waited += 250) {
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    const token = tokenRef.current;
+    tokenRef.current = "";
+    setCaptchaReady(false);
+    widgetRef.current?.reset(); // start solving the NEXT token now
+    return token;
+  };
+
   // Safe internal redirect targets only — never bounce off-site.
   const fallback = "/profile";
   const target =
@@ -54,11 +122,18 @@ function LoginPage() {
   const nameValid = name.trim().length >= 3;
   const phoneValid = /^[6-9]\d{9}$/.test(phoneDigits);
 
+  const sendBlocked = !nameValid || !phoneValid || busy || !captchaReady;
+
   const sendOtp = async () => {
     setError(null);
     setBusy(true);
     try {
-      await requestOtp(name.trim(), phoneDigits);
+      const captchaToken = await consumeCaptchaToken();
+      if (captchaEnabled && !captchaToken) {
+        setError("Security check poori nahi hui — thodi der baad phir try karein.");
+        return;
+      }
+      await requestOtp(name.trim(), phoneDigits, captchaToken || undefined);
       otpSentFor.current = phoneDigits;
       setStep("otp");
       setResentAt(new Date());
@@ -100,7 +175,15 @@ function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      await requestOtp("", otpSentFor.current);
+      const captchaToken = await consumeCaptchaToken();
+      if (captchaEnabled && !captchaToken) {
+        // Widget is off-screen on this step; send the user back to
+        // the form where it is visible to complete the check.
+        setStep("form");
+        setError("Pehle security check poori karein — phir naya OTP bhejein.");
+        return;
+      }
+      await requestOtp("", otpSentFor.current, captchaToken || undefined);
       setResentAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : "OTP dubara nahi bheja ja saka");
@@ -155,11 +238,16 @@ function LoginPage() {
               </p>
             </div>
             {error && <p className="text-xs text-destructive">{error}</p>}
+            {!captchaReady && (
+              <p className="text-xs text-muted-foreground text-center">
+                Security check chal raha hai…
+              </p>
+            )}
             <button
-              disabled={!nameValid || !phoneValid || busy}
+              disabled={sendBlocked}
               onClick={sendOtp}
               className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors ${
-                nameValid && phoneValid && !busy
+                !sendBlocked
                   ? "bg-brand text-white hover:bg-brand-deep"
                   : "bg-secondary text-muted-foreground cursor-not-allowed"
               }`}
@@ -225,6 +313,16 @@ function LoginPage() {
             </button>
           </div>
         )}
+
+        {/* Turnstile host — OUTSIDE the step conditionals so the
+            widget (and its single-use token supply for resends)
+            survives the form → OTP transition. Visible on the form
+            step; off-screen but ALIVE on later steps. */}
+        <div
+          ref={captchaHostRef}
+          style={step === "form" ? undefined : { position: "fixed", left: -9999, top: 0 }}
+          className={`flex justify-center ${step === "form" ? "mt-4" : ""}`}
+        />
       </main>
     </div>
   );

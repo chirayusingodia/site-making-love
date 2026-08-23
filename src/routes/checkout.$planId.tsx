@@ -7,6 +7,10 @@ import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
 
 export const Route = createFileRoute("/checkout/$planId")({
+  // §9.1: telecaller payment links arrive as /checkout/<slug>?att=<token>.
+  validateSearch: (search: Record<string, unknown>): { att?: string } => ({
+    att: typeof search.att === "string" ? search.att : undefined,
+  }),
   component: CheckoutPage,
 });
 
@@ -70,16 +74,21 @@ function formatPhone(e164: string | null): string {
 
 function CheckoutPage() {
   const { planId } = Route.useParams();
+  const { att: attToken } = Route.useSearch();
   const navigate = useNavigate();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
   const { userId, profile, loading: sessionLoading } = useSessionProfile();
 
-  // Session gate — remember which plan they wanted via ?redirect.
+  // Session gate — remember which plan they wanted via ?redirect
+  // (and carry the attribution token through the login bounce).
   useEffect(() => {
     if (!sessionLoading && !userId) {
-      navigate({ to: "/login", search: { redirect: `/checkout/${planId}` }, replace: true });
+      const back = attToken
+        ? `/checkout/${planId}?att=${encodeURIComponent(attToken)}`
+        : `/checkout/${planId}`;
+      navigate({ to: "/login", search: { redirect: back }, replace: true });
     }
-  }, [sessionLoading, userId, planId, navigate]);
+  }, [sessionLoading, userId, planId, attToken, navigate]);
 
   const [couponInput, setCouponInput] = useState("");
   const [couponApplied, setCouponApplied] = useState<string | null>(null);
@@ -174,6 +183,7 @@ function CheckoutPage() {
       const res = await callUserApi<CreateCheckoutResponse>("/api/subscriptions/create-checkout", {
         plan_id: plan.slug,
         ...(couponApplied ? { coupon_code: couponApplied } : {}),
+        ...(attToken ? { att: attToken } : {}),
       });
       if (!res.razorpayKeyId)
         throw new Error("Payment keys configured nahi hain — thodi der baad try karein.");

@@ -89,6 +89,10 @@ export function decideCoupon(input: {
 
   // Visibility: public+customer-facing coupons are open to all signed-in
   // users; anything narrower must be assigned to THIS user.
+  // §2.3 (Hospitals session): the agent-visibility widening is REMOVED —
+  // there is no such thing as an agent coupon anymore. A
+  // visibility='agent' row now simply fails not_visible_to_user for
+  // everyone, which is the correct outcome.
   const publiclyUsable = coupon.visibility === "public" && coupon.is_customer_facing;
   const personallyAssigned = userId !== null && coupon.assigned_to_user_id === userId;
   if (!publiclyUsable && !personallyAssigned) {
@@ -107,7 +111,12 @@ export function decideCoupon(input: {
 /** DB fetch + decision in one call. Codes compare case-insensitively. */
 export async function validateCouponForPlan(
   db: SupabaseClient,
-  input: { code: string; planId: string; planPricePaise: number; userId: string | null },
+  input: {
+    code: string;
+    planId: string;
+    planPricePaise: number;
+    userId: string | null;
+  },
 ): Promise<CouponDecision> {
   const code = input.code.trim().toUpperCase();
   if (!code)

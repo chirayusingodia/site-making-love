@@ -1,7 +1,7 @@
 # 🕉️ PUNYATA — Sessions Progress Report
 ### What has been done so far — complete session-by-session log
 
-> **Last updated:** 2026-08-19 · **Branch discipline:** work happens on `Staging`, Chirayu reviews & merges to `main` (protected, PR-only).
+> **Last updated:** 2026-08-23 · **Branch discipline:** work happens on `Staging`, Chirayu reviews & merges to `main` (protected, PR-only).
 > **Repo:** `chirayusingodia/site-making-love` · **Supabase project:** `omjivlmfsikeqwndtlcn`
 > **Builders:** Sessions 0–5 → Antigravity (Claude) · Session 6 onward → OpenCode + Kimi K3
 
@@ -180,6 +180,74 @@ one click post-login, family/address details move to AFTER payment and are fully
 
 ---
 
+## ✅ Session TOA — Subscription Tenure + OTP Abuse Protection
+**Brief:** `SESSION_TENURE_AND_OTP_ABUSE_PROMPT.md` · **Date:** 2026-08-23 · **Migration:** `20260823_016_otp_rate_limit.sql`
+
+Two targeted fixes flagged after the SFC review.
+
+- **1. Subscriptions run until cancelled, not 1 year** (`subscriptions-checkout.server.ts`):
+  - Old hardcoded `total_count = 12` (monthly) / `5` (yearly) replaced with
+    **`SUBSCRIPTION_MAX_YEARS = 100`** → derived via `totalCountForBillingPeriod()`:
+    **monthly = 1200 cycles · yearly = 100 cycles** (Razorpay's documented 100-year max;
+    no "forever" flag exists — cancellation remains the only ending).
+  - `CYCLES_PER_YEAR` is an exhaustive `Record<billing_period, number>`: a third period
+    value (weekly/daily) fails to compile until mapped — never silently unhandled.
+  - `createRazorpaySubscription()` now REQUIRES `totalCount` (the old `?? 12` fallback is gone).
+  - **Existing-subscription census:** `scratch/report_subscription_tenure.ts` reports
+    **ZERO linked subscriptions in the DB** — nobody carries the old short mandate; nothing
+    to escalate to Razorpay support. Re-run any time (View B groups by Razorpay's actual
+    entity `total_count` when test/live keys are present).
+- **2. OTP abuse protection on `/api/auth/request-otp`** (three layers):
+  - **Layer 1 (Chirayu, dashboard-only):** tighten Authentication → Rate Limits → SMS send
+    limit. Not code-controllable — see action items below.
+  - **Layer 2 (Turnstile CAPTCHA):** `/login` renders a Turnstile widget when
+    `VITE_TURNSTILE_SITE_KEY` is set (`src/lib/turnstile.ts`, dependency-free loader,
+    `interaction-only` appearance). Host stays mounted across form→OTP steps so resends get
+    fresh single-use tokens. Server half (`src/lib/turnstile.server.ts`) picks ONE mode by env:
+    `TURNSTILE_SECRET_KEY` set → app verifies via Cloudflare siteverify (fail-closed, works
+    without touching Supabase); absent → token rides through `signInWithOtp options.captchaToken`
+    per Supabase's documented CAPTCHA integration (enforces once the secret is set in the
+    Supabase dashboard). Tokens are never double-consumed.
+  - **Layer 3 (Postgres ledger):** new `otp_send_log` table (phone, ip, allowed, reason,
+    created_at; RLS on, ZERO policies = service-role only) + `otp_send_ip_phone_count()`
+    RPC for the distinct-phone count PostgREST can't do. `requestOtpForPhone`
+    (`auth.server.ts`) enforces BEFORE any auth/SMS work and logs EVERY attempt:
+    **per phone ≤ 3/10 min and ≤ 8/24 h · per IP ≤ 5 distinct phones/hour**
+    (tunable constants: `OTP_RATE_LIMITS` in `auth.server.ts`). All rejections answer
+    **429 + one generic message** ("Thodi der baad try karein") — never which limit fired.
+    Ledger missing (migration unapplied) → degrades OPEN with a loud console warning so a
+    merge never bricks login; any OTHER ledger error fails CLOSED.
+  - Route extracts client IP from `cf-connecting-ip` / first `x-forwarded-for` hop / `x-real-ip`.
+- **OTP guess-limiting (verify step): NOT custom-built** per brief — that's Supabase's job
+  (GoTrue tracks attempts internally, invalidates after repeated wrong codes). Chirayu must
+  eyeball it in the dashboard (action item 4 below); nothing in the repo can confirm it.
+- **Verified:** tsc clean · ESLint clean (all touched files) · production build passes ·
+  `scratch/verify_otp_abuse.ts` 21/21 checks (limits fire, blocked+allowed attempts logged,
+  fail-open-on-missing vs fail-closed-on-broken, captcha threading).
+
+### ⚠️ Action items for Chirayu (config only — code is done):
+1. **Apply migration `20260823_016_otp_rate_limit.sql`** in Supabase SQL editor — until then
+   OTP rate limiting is INACTIVE (server logs one loud warning per boot).
+2. **Supabase → Authentication → Rate Limits → SMS/phone OTP send limit** — check & tighten
+   (default ~30/hr is generous for SMS-pumping protection). Dashboard-only setting.
+3. **Turnstile:** create a free widget at Cloudflare → add `VITE_TURNSTILE_SITE_KEY` to
+   Vercel env (client). Then EITHER put the matching secret in `TURNSTILE_SECRET_KEY`
+   (recommended: app-level enforcement, live immediately) OR enable CAPTCHA protection in
+   Supabase Auth with the same Turnstile secret (passthrough mode activates).
+   Dev shortcut: Turnstile test keys (`1x00000000000000000000AA` site / `1x0000000000000000000000000000000AA` secret) always pass.
+4. **Confirm OTP-guess limit:** Supabase Auth rate-limits `/auth/v1/verify` (token
+   verification) per IP by default (~360/hr w/ bursts) and invalidates codes after repeated
+   wrong attempts — verify under Authentication → Rate Limits that "Verification requests"
+   hasn't been loosened. No custom code built for this, as decided.
+5. Optional Razorpay proof: run `scratch/verify_checkout_tenure.ts` with TEST-mode keys +
+   a monthly `RAZORPAY_TEST_PLAN_ID` to assert `total_count=1200` against the created
+   entity (auto-cancels afterwards). Needs keys not present locally.
+6. Note: because OTP sends go through our server (service-role), Supabase's own per-IP SMS
+   throttling sees ONE ip (ours) unless IP forwarding is enabled — one more reason Layer 3
+   lives in our code.
+
+---
+
 ## ⏳ NOT DONE YET — Remaining Scope
 
 ### Session 5 — Sales Agents & Coupons Manager ⚠️
@@ -215,9 +283,9 @@ one click post-login, family/address details move to AFTER payment and are fully
 | User pages | `src/routes/{login,checkout.$planId,subscription-success,profile,my-subscription}.tsx` |
 | Server APIs | `src/routes/api/payments/webhook.ts`, `api/auth/request-otp.ts`, `api/subscriptions/create-checkout.ts`, `api/coupons/validate.ts`, `api/profile/{family-members,address}.ts`, `api/admin/{payments,reports,sales-agents}/...`, `api/sankalp/generate-batch.ts`, `api/cloudinary/sign-upload.ts` |
 | Business logic | `src/lib/{sankalp-logic,plans,payments-logic,reports-logic,financials-logic,sales-agents-logic,coupons.server}.ts` |
-| Server-only | `src/lib/{razorpay-webhook.server,razorpay.server,auth.server,subscriptions-checkout.server,reports-data.server,supabase-admin.server,config.server}.ts` |
-| Client auth | `src/lib/auth-api.ts`, `src/hooks/use-session.ts`, `src/components/profile-completion.tsx` |
-| Verification scripts | `scratch/verify_{session4,webhook,owner_roles,sankalp_lists}.*` |
+| Server-only | `src/lib/{razorpay-webhook.server,razorpay.server,auth.server,subscriptions-checkout.server,reports-data.server,supabase-admin.server,turnstile.server,config.server}.ts` |
+| Client auth | `src/lib/auth-api.ts`, `src/lib/turnstile.ts`, `src/hooks/use-session.ts`, `src/components/profile-completion.tsx` |
+| Verification scripts | `scratch/verify_{session4,webhook,owner_roles,sankalp_lists,otp_abuse,checkout_tenure}.ts`, `scratch/report_subscription_tenure.ts` (+ `scratch/ts-aliases.mjs` loader hook for plain-node runs) |
 | Master context doc | `PUNYATA_MASTER_CONTEXT_v3 (1).md` (single source of truth — read before any new session) |
 | Session briefs | `SESSION_SIGNUP_FIRST_CHECKOUT_PROMPT.md`, `SESSION_TENURE_AND_OTP_ABUSE_PROMPT.md` |
 

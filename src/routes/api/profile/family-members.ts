@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireUser } from "@/lib/supabase-admin.server";
+import { validateFamilyMembers } from "@/lib/family-validation";
 
 // POST /api/profile/family-members
 // Auth: Bearer <supabase access token> (end user)
@@ -19,14 +20,10 @@ import { json, requireUser } from "@/lib/supabase-admin.server";
 // Pending) — this endpoint is how a subscriber (or a sales agent
 // guiding them over the phone) fills them in later, at which point
 // the next live batch generation picks them up automatically.
-
-interface MemberInput {
-  slot_number: number;
-  full_name: string;
-  gotra?: string | null;
-  relation?: string | null;
-  dob?: string | null;
-}
+//
+// Validation lives in lib/family-validation.ts — the SAME copy the
+// telecaller's on-behalf route uses, so both surfaces can never
+// drift apart.
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -48,49 +45,20 @@ export const Route = createFileRoute("/api/profile/family-members")({
         if (!UUID_RE.test(subscriptionId)) {
           return json({ error: "subscription_id must be a uuid" }, 400);
         }
-        if (!Array.isArray(body.members) || body.members.length === 0 || body.members.length > 4) {
-          return json({ error: "1 se 4 members required" }, 400);
-        }
 
-        // Normalise + validate BEFORE touching the DB.
-        const seen = new Set<number>();
-        const rows: Record<string, unknown>[] = [];
-        for (const raw of body.members as Record<string, unknown>[]) {
-          const slot = typeof raw.slot_number === "number" ? Math.trunc(raw.slot_number) : NaN;
-          const name = typeof raw.full_name === "string" ? raw.full_name.trim() : "";
-          if (!(slot >= 1 && slot <= 4))
-            return json({ error: "slot_number 1-4 hona chahiye" }, 400);
-          if (seen.has(slot)) return json({ error: `slot ${slot} duplicate hai` }, 400);
-          seen.add(slot);
-          if (!name || name.length < 2)
-            return json({ error: `Slot ${slot}: naam zaroori hai` }, 400);
-
-          const gotra =
-            typeof raw.gotra === "string" && raw.gotra.trim()
-              ? raw.gotra.trim().slice(0, 60)
-              : null;
-          const relation =
-            typeof raw.relation === "string" && raw.relation.trim()
-              ? raw.relation.trim().slice(0, 40)
-              : null;
-          let dob: string | null = null;
-          if (typeof raw.dob === "string" && raw.dob.trim()) {
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(raw.dob.trim())) {
-              return json({ error: `Slot ${slot}: dob YYYY-MM-DD format mein ho` }, 400);
-            }
-            dob = raw.dob.trim();
-          }
-
-          rows.push({
-            subscription_id: subscriptionId,
-            slot_number: slot,
-            full_name: name.slice(0, 120),
-            gotra,
-            relation,
-            is_primary: slot === 1,
-            ...(dob ? { dob } : {}),
-          });
-        }
+        const validated = validateFamilyMembers(body.members);
+        if (!validated.ok) return json({ error: validated.error }, 400);
+        const rows = validated.value.map((m) => ({
+          subscription_id: subscriptionId,
+          slot_number: m.slot_number,
+          full_name: m.full_name,
+          gotra: m.gotra,
+          relation: m.relation,
+          is_primary: m.slot_number === 1,
+          // Absent dob stays ABSENT — an upsert without the key must
+          // not wipe a previously saved value.
+          ...(m.dob ? { dob: m.dob } : {}),
+        }));
 
         // Ownership gate — same client, so RLS scopes this read too.
         const { data: owned, error: ownErr } = await auth.db

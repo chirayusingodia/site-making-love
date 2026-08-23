@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
         const auth = await requireUser(request);
         if (!auth) return json({ error: "Login required" }, 401);
 
-        let body: { plan_id?: unknown; coupon_code?: unknown };
+        let body: { plan_id?: unknown; coupon_code?: unknown; att?: unknown };
         try {
           body = await request.json();
         } catch {
@@ -33,12 +33,33 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
             ? body.coupon_code
             : null;
 
+        // §9.1 path 1 — attribution token from a telecaller's payment
+        // link (?att=…). Resolves to (telecaller, source agent) and both
+        // are stamped write-once on the subscription at creation.
+        // §4.2 (Hospitals session): the AGENT stamped is the FIELD agent
+        // who sourced the lead (leads.source_agent_id) — never anyone else.
+        // A bogus token never blocks the purchase; it attributes nothing.
+        let telecallerId: string | null = null;
+        let sourcingAgentId: string | null = null;
+        if (typeof body?.att === "string" && body.att.trim()) {
+          const adminDb = getServiceClient();
+          const { data: lead } = await adminDb
+            .from("leads")
+            .select("id,assigned_to,created_by,source_agent_id")
+            .eq("attribution_token", body.att.trim())
+            .maybeSingle();
+          telecallerId = lead?.assigned_to ?? lead?.created_by ?? null;
+          sourcingAgentId = lead?.source_agent_id ?? null;
+        }
+
         try {
           const outcome = await createCheckoutForUser({
             adminDb: getServiceClient(),
             userId: auth.userId,
             planIdOrSlug: body.plan_id.trim(),
             couponCode,
+            ...(telecallerId ? { telecallerId } : {}),
+            ...(sourcingAgentId ? { salesAgentId: sourcingAgentId } : {}),
           });
           return json({
             ok: true,

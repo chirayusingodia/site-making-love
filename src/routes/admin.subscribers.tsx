@@ -26,10 +26,14 @@ import {
   ChevronRight,
   Loader2,
   PhoneCall,
+  CircleStop,
+  Play,
+  Copy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { callAdminApi } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin/subscribers")({
   component: AdminSubscribersPage,
@@ -51,6 +55,7 @@ interface SubscriberListRow {
   next_billing_date: string | null;
   paused_at: string | null;
   cancelled_at: string | null;
+  halted_at: string | null;
   cancel_reason: string | null;
   acquisition_channel: string | null;
   razorpay_sub_id: string | null;
@@ -159,6 +164,7 @@ interface Subscription360 {
   next_billing_date: string | null;
   paused_at: string | null;
   cancelled_at: string | null;
+  halted_at: string | null;
   cancel_reason: string | null;
   acquisition_channel: string | null;
   razorpay_sub_id: string | null;
@@ -210,6 +216,14 @@ function StatusBadge({ status }: { status: string }) {
       label: "Cancelled",
       cls: "bg-rose-50 text-rose-800 border-rose-200",
       icon: XCircle,
+    },
+    halted: {
+      // Distinct from paused (amber, voluntary) AND cancelled (rose,
+      // final): red = urgent-but-recoverable, CircleStop reads as
+      // "stopped", not "crossed out".
+      label: "Halted",
+      cls: "bg-red-50 text-red-800 border-red-200",
+      icon: CircleStop,
     },
     pending: { label: "Pending", cls: "bg-slate-100 text-slate-700 border-slate-200", icon: Clock },
     expired: {
@@ -362,6 +376,13 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
   const [tab, setTab] = useState<"overview" | "payments" | "proofs" | "history">("overview");
   const [loading360, setLoading360] = useState(false);
 
+  // Halted-subscription recovery actions (admin/owner only).
+  const [resumeBusy, setResumeBusy] = useState(false);
+  const [resumeMsg, setResumeMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [reissueBusy, setReissueBusy] = useState(false);
+  const [reissuedLink, setReissuedLink] = useState<string | null>(null);
+  const [reissueErr, setReissueErr] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchDetail = async () => {
       setLoading360(true);
@@ -429,6 +450,44 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
   }, [sub.subscription_id]);
 
   const primary = sub.family_members.find((m) => m.is_primary) || sub.family_members[0];
+
+  async function resumeSubscription() {
+    setResumeBusy(true);
+    setResumeMsg(null);
+    try {
+      const res = await callAdminApi<{ message?: string }>("/api/admin/subscriptions/resume", {
+        subscription_id: sub.subscription_id,
+      });
+      setResumeMsg({ ok: true, text: res.message ?? "Resume requested" });
+    } catch (err) {
+      const text = err instanceof Error ? err.message : "Resume call failed";
+      setResumeMsg({
+        ok: false,
+        text: `${text} — mandate dead ho sakta hai; "Send New Payment Link" use karein.`,
+      });
+    } finally {
+      setResumeBusy(false);
+    }
+  }
+
+  async function reissueLink() {
+    setReissueBusy(true);
+    setReissueErr(null);
+    setReissuedLink(null);
+    try {
+      const res = await callAdminApi<{ shareLink: string }>(
+        "/api/admin/subscriptions/reissue-link",
+        {
+          subscription_id: sub.subscription_id,
+        },
+      );
+      setReissuedLink(res.shareLink);
+    } catch (err) {
+      setReissueErr(err instanceof Error ? err.message : "Reissue failed");
+    } finally {
+      setReissueBusy(false);
+    }
+  }
 
   const tabs = [
     { key: "overview", label: "Overview", icon: User },
@@ -530,6 +589,9 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
                   {sub.status === "paused" && (
                     <Detail label="Paused At" value={fmtDate(sub.paused_at)} />
                   )}
+                  {sub.status === "halted" && (
+                    <Detail label="Halted At" value={fmtDate(sub.halted_at)} />
+                  )}
                   {sub.status === "cancelled" && (
                     <>
                       <Detail label="Cancelled At" value={fmtDate(sub.cancelled_at)} />
@@ -538,6 +600,72 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
                   )}
                 </Grid2>
               </Section>
+
+              {/* Halted recovery — Razorpay exhausted its own retries
+                  (~3 days). Resume pokes the mandate; if the mandate
+                  itself is dead, re-issue a fresh organic link. */}
+              {sub.status === "halted" && (
+                <Section title="Halted — Recovery Actions" icon={CircleStop}>
+                  <div className="rounded-xl border border-red-200 bg-red-50/60 px-4 py-3 text-xs text-red-900">
+                    Razorpay ne retries exhaust kar diye hain. Resume se wahi mandate dobara charge
+                    hota hai; fail hone par niche se naya payment link bhejein.
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <Button
+                      onClick={resumeSubscription}
+                      disabled={resumeBusy}
+                      size="sm"
+                      className="bg-red-700 hover:bg-red-800 text-white gap-1.5 text-xs h-8"
+                    >
+                      {resumeBusy ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5" />
+                      )}
+                      Resume Subscription
+                    </Button>
+                    <Button
+                      onClick={reissueLink}
+                      disabled={reissueBusy}
+                      size="sm"
+                      variant="outline"
+                      className="border-red-300 text-red-800 hover:bg-red-50 gap-1.5 text-xs h-8"
+                    >
+                      {reissueBusy ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      )}
+                      Send New Payment Link
+                    </Button>
+                  </div>
+                  {resumeMsg && (
+                    <p
+                      className={`text-xs mt-2 ${resumeMsg.ok ? "text-emerald-700" : "text-red-700"}`}
+                    >
+                      {resumeMsg.text}
+                    </p>
+                  )}
+                  {reissuedLink && (
+                    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 flex items-center gap-2 flex-wrap">
+                      <code className="text-[11px] break-all">{reissuedLink}</code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(reissuedLink)}
+                        className="gap-1 h-6 text-[11px]"
+                      >
+                        <Copy className="w-3 h-3" /> Copy
+                      </Button>
+                      <span className="text-[11px] text-emerald-800 font-semibold">
+                        Purana halted row cancelled (mandate_dead_reissued) — naya link organic,
+                        kisi ko credit nahi.
+                      </span>
+                    </div>
+                  )}
+                  {reissueErr && <p className="text-xs text-red-700 mt-2">{reissueErr}</p>}
+                </Section>
+              )}
 
               {(sub.agent_full_name || sub.coupon_code) && (
                 <Section title="Attribution" icon={Tag}>
@@ -907,6 +1035,7 @@ function AdminSubscribersPage() {
       next_billing_date: row.next_billing_date,
       paused_at: row.paused_at,
       cancelled_at: row.cancelled_at,
+      halted_at: row.halted_at,
       cancel_reason: row.cancel_reason,
       acquisition_channel: row.acquisition_channel,
       razorpay_sub_id: row.razorpay_sub_id,
@@ -1026,6 +1155,7 @@ function AdminSubscribersPage() {
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
+              <option value="halted">Halted</option>
               <option value="cancelled">Cancelled</option>
               <option value="pending">Pending</option>
               <option value="expired">Expired</option>
