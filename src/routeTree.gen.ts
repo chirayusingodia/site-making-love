@@ -18,6 +18,7 @@ import { Route as PlansRouteImport } from './routes/plans'
 import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as CompleteProfileRouteImport } from './routes/complete-profile'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -64,6 +65,7 @@ import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/we
 import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
 import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
+import { Route as ApiAuthCompleteGoogleProfileRouteImport } from './routes/api/auth/complete-google-profile'
 import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
 import { Route as ApiTelecallerQueueListRouteImport } from './routes/api/telecaller/queue/list'
@@ -77,6 +79,7 @@ import { Route as ApiAdminReportsExportRouteImport } from './routes/api/admin/re
 import { Route as ApiAdminPerformanceTelecallersRouteImport } from './routes/api/admin/performance/telecallers'
 import { Route as ApiAdminPerformanceHospitalsRouteImport } from './routes/api/admin/performance/hospitals'
 import { Route as ApiAdminPerformanceAgentsRouteImport } from './routes/api/admin/performance/agents'
+import { Route as ApiAdminPaymentsRefundRouteImport } from './routes/api/admin/payments/refund'
 import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/payments/list'
 import { Route as ApiAdminLeadsUploadRouteImport } from './routes/api/admin/leads/upload'
 import { Route as ApiAdminLeadsSweepRouteImport } from './routes/api/admin/leads/sweep'
@@ -130,6 +133,11 @@ const LoginRoute = LoginRouteImport.update({
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompleteProfileRoute = CompleteProfileRouteImport.update({
+  id: '/complete-profile',
+  path: '/complete-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -367,6 +375,12 @@ const ApiAuthRequestOtpRoute = ApiAuthRequestOtpRouteImport.update({
   path: '/api/auth/request-otp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthCompleteGoogleProfileRoute =
+  ApiAuthCompleteGoogleProfileRouteImport.update({
+    id: '/api/auth/complete-google-profile',
+    path: '/api/auth/complete-google-profile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminOverviewFinancialsRoute =
   ApiAdminOverviewFinancialsRouteImport.update({
     id: '/api/admin/overview-financials',
@@ -439,6 +453,11 @@ const ApiAdminPerformanceAgentsRoute =
     path: '/api/admin/performance/agents',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminPaymentsRefundRoute = ApiAdminPaymentsRefundRouteImport.update({
+  id: '/api/admin/payments/refund',
+  path: '/api/admin/payments/refund',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminPaymentsListRoute = ApiAdminPaymentsListRouteImport.update({
   id: '/api/admin/payments/list',
   path: '/api/admin/payments/list',
@@ -491,6 +510,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/complete-profile': typeof CompleteProfileRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
@@ -521,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/telecaller/': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
@@ -554,6 +575,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/payments/refund': typeof ApiAdminPaymentsRefundRoute
   '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
   '/api/admin/performance/hospitals': typeof ApiAdminPerformanceHospitalsRoute
   '/api/admin/performance/telecallers': typeof ApiAdminPerformanceTelecallersRoute
@@ -569,6 +591,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/complete-profile': typeof CompleteProfileRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
@@ -598,6 +621,7 @@ export interface FileRoutesByTo {
   '/telecaller': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
@@ -631,6 +655,7 @@ export interface FileRoutesByTo {
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/payments/refund': typeof ApiAdminPaymentsRefundRoute
   '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
   '/api/admin/performance/hospitals': typeof ApiAdminPerformanceHospitalsRoute
   '/api/admin/performance/telecallers': typeof ApiAdminPerformanceTelecallersRoute
@@ -648,6 +673,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/complete-profile': typeof CompleteProfileRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
@@ -678,6 +704,7 @@ export interface FileRoutesById {
   '/telecaller/': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
@@ -711,6 +738,7 @@ export interface FileRoutesById {
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
+  '/api/admin/payments/refund': typeof ApiAdminPaymentsRefundRoute
   '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
   '/api/admin/performance/hospitals': typeof ApiAdminPerformanceHospitalsRoute
   '/api/admin/performance/telecallers': typeof ApiAdminPerformanceTelecallersRoute
@@ -729,6 +757,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/complete-profile'
     | '/faq'
     | '/login'
     | '/my-subscription'
@@ -759,6 +788,7 @@ export interface FileRouteTypes {
     | '/telecaller/'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/complete-google-profile'
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
@@ -792,6 +822,7 @@ export interface FileRouteTypes {
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
+    | '/api/admin/payments/refund'
     | '/api/admin/performance/agents'
     | '/api/admin/performance/hospitals'
     | '/api/admin/performance/telecallers'
@@ -807,6 +838,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/complete-profile'
     | '/faq'
     | '/login'
     | '/my-subscription'
@@ -836,6 +868,7 @@ export interface FileRouteTypes {
     | '/telecaller'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/complete-google-profile'
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
@@ -869,6 +902,7 @@ export interface FileRouteTypes {
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
+    | '/api/admin/payments/refund'
     | '/api/admin/performance/agents'
     | '/api/admin/performance/hospitals'
     | '/api/admin/performance/telecallers'
@@ -885,6 +919,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/complete-profile'
     | '/faq'
     | '/login'
     | '/my-subscription'
@@ -915,6 +950,7 @@ export interface FileRouteTypes {
     | '/telecaller/'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/auth/complete-google-profile'
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
@@ -948,6 +984,7 @@ export interface FileRouteTypes {
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
+    | '/api/admin/payments/refund'
     | '/api/admin/performance/agents'
     | '/api/admin/performance/hospitals'
     | '/api/admin/performance/telecallers'
@@ -965,6 +1002,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  CompleteProfileRoute: typeof CompleteProfileRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   MySubscriptionRoute: typeof MySubscriptionRoute
@@ -977,6 +1015,7 @@ export interface RootRouteChildren {
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
   ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
+  ApiAuthCompleteGoogleProfileRoute: typeof ApiAuthCompleteGoogleProfileRoute
   ApiAuthRequestOtpRoute: typeof ApiAuthRequestOtpRoute
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
   ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
@@ -1007,6 +1046,7 @@ export interface RootRouteChildren {
   ApiAdminLeadsSweepRoute: typeof ApiAdminLeadsSweepRoute
   ApiAdminLeadsUploadRoute: typeof ApiAdminLeadsUploadRoute
   ApiAdminPaymentsListRoute: typeof ApiAdminPaymentsListRoute
+  ApiAdminPaymentsRefundRoute: typeof ApiAdminPaymentsRefundRoute
   ApiAdminPerformanceAgentsRoute: typeof ApiAdminPerformanceAgentsRoute
   ApiAdminPerformanceHospitalsRoute: typeof ApiAdminPerformanceHospitalsRoute
   ApiAdminPerformanceTelecallersRoute: typeof ApiAdminPerformanceTelecallersRoute
@@ -1082,6 +1122,13 @@ declare module '@tanstack/react-router' {
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/complete-profile': {
+      id: '/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof CompleteProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -1406,6 +1453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthRequestOtpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/complete-google-profile': {
+      id: '/api/auth/complete-google-profile'
+      path: '/api/auth/complete-google-profile'
+      fullPath: '/api/auth/complete-google-profile'
+      preLoaderRoute: typeof ApiAuthCompleteGoogleProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/overview-financials': {
       id: '/api/admin/overview-financials'
       path: '/api/admin/overview-financials'
@@ -1495,6 +1549,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/performance/agents'
       fullPath: '/api/admin/performance/agents'
       preLoaderRoute: typeof ApiAdminPerformanceAgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/payments/refund': {
+      id: '/api/admin/payments/refund'
+      path: '/api/admin/payments/refund'
+      fullPath: '/api/admin/payments/refund'
+      preLoaderRoute: typeof ApiAdminPaymentsRefundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/payments/list': {
@@ -1638,6 +1699,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  CompleteProfileRoute: CompleteProfileRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   MySubscriptionRoute: MySubscriptionRoute,
@@ -1650,6 +1712,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
   ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
+  ApiAuthCompleteGoogleProfileRoute: ApiAuthCompleteGoogleProfileRoute,
   ApiAuthRequestOtpRoute: ApiAuthRequestOtpRoute,
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
   ApiCouponsValidateRoute: ApiCouponsValidateRoute,
@@ -1680,6 +1743,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLeadsSweepRoute: ApiAdminLeadsSweepRoute,
   ApiAdminLeadsUploadRoute: ApiAdminLeadsUploadRoute,
   ApiAdminPaymentsListRoute: ApiAdminPaymentsListRoute,
+  ApiAdminPaymentsRefundRoute: ApiAdminPaymentsRefundRoute,
   ApiAdminPerformanceAgentsRoute: ApiAdminPerformanceAgentsRoute,
   ApiAdminPerformanceHospitalsRoute: ApiAdminPerformanceHospitalsRoute,
   ApiAdminPerformanceTelecallersRoute: ApiAdminPerformanceTelecallersRoute,

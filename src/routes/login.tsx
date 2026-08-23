@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import { Header } from "@/components/site-chrome";
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 import {
   InputOTP,
   InputOTPGroup,
@@ -12,8 +13,11 @@ import { requestOtp, verifyOtp, ensureMyProfile, AuthApiError } from "@/lib/auth
 import { turnstileEnabled, renderTurnstile, type RenderedTurnstile } from "@/lib/turnstile";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  // Explicit optional return type keeps every existing ?redirect-only
+  // call site valid; ?prefill= arrives only from /complete-profile §1c.
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; prefill?: string } => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    prefill: typeof search.prefill === "string" ? search.prefill : undefined,
   }),
   component: LoginPage,
 });
@@ -26,6 +30,12 @@ export const Route = createFileRoute("/login")({
 // typed name is ignored. After success the user returns to
 // ?redirect=... (e.g. the plan's buy step) or to /profile.
 //
+// Second path (additive, session brief §1a): "Continue with Google"
+// above the phone form. Both paths end in the same place; the Google
+// round-trip routes through /complete-profile (see that file). When
+// the confirm step meets an already-registered number it sends the
+// person BACK here with ?prefill=<digits> to use the normal OTP flow.
+//
 // OTP-request spam guard: when VITE_TURNSTILE_SITE_KEY is set, a
 // Cloudflare Turnstile token rides on every /api/auth/request-otp
 // call (Layer 2). Tokens are single-use — the widget resets after
@@ -35,12 +45,18 @@ export const Route = createFileRoute("/login")({
 
 type Step = "form" | "otp" | "verifying";
 
+/** Keeps only a plausible 10-digit Indian mobile from ?prefill=. */
+function sanitizePrefill(raw: string | undefined): string {
+  const digits = (raw ?? "").replace(/\D/g, "");
+  return /^[6-9]\d{9}$/.test(digits) ? digits : "";
+}
+
 function LoginPage() {
-  const { redirect } = Route.useSearch();
+  const { redirect, prefill } = Route.useSearch();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(sanitizePrefill(prefill));
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -202,6 +218,14 @@ function LoginPage() {
 
         {step === "form" && (
           <div className="mt-5 space-y-4 animate-fade-in">
+            <GoogleAuthButton redirect={target} onError={(msg) => setError(msg)} />
+            <div className="flex items-center gap-3 py-1" aria-hidden="true">
+              <span className="h-px flex-1 bg-black/10" />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                ya phone number se
+              </span>
+              <span className="h-px flex-1 bg-black/10" />
+            </div>
             <p className="text-sm text-muted-foreground -mt-1">
               नया नंबर हो तो account बन जाएगा, पुराना हो तो सीधे login — दोनों इसी form से।
             </p>

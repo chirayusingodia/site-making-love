@@ -1,7 +1,7 @@
 # 🕉️ PUNYATA — Sessions Progress Report
 ### What has been done so far — complete session-by-session log
 
-> **Last updated:** 2026-08-23 · **Branch discipline:** work happens on `Staging`, Chirayu reviews & merges to `main` (protected, PR-only).
+> **Last updated:** 2026-08-24 · **Branch discipline:** work happens on `Staging`, Chirayu reviews & merges to `main` (protected, PR-only).
 > **Repo:** `chirayusingodia/site-making-love` · **Supabase project:** `omjivlmfsikeqwndtlcn`
 > **Builders:** Sessions 0–5 → Antigravity (Claude) · Session 6 onward → OpenCode + Kimi K3
 
@@ -24,6 +24,8 @@
 | Session 6 | Razorpay Webhook + Payments Log + Reports | ✅ Complete | OpenCode + Kimi K3 |
 | Session 6.5 | Owner/Admin two-tier role system | ✅ Complete | OpenCode + Kimi K3 |
 | Session SFC | Signup-First Checkout (auth + real payments + post-purchase profile) | ✅ Code complete — **needs Supabase/Vercel/Razorpay config to go live** | OpenCode + Kimi K3 |
+| Session TOA | Subscription tenure (until-cancel) + OTP abuse protection (3 layers) | ✅ Complete (config items open) | OpenCode + Kimi K3 |
+| Session GSI | Google Sign-In alongside phone OTP (+ confirm-phone step) | ✅ Code complete — **needs Google OAuth provider config in Supabase** | OpenCode + Kimi K3 |
 | Session 7 | SEO + Audit Log + Subscriber 360 polish | ⏳ Pending | — |
 
 ---
@@ -248,6 +250,57 @@ Two targeted fixes flagged after the SFC review.
 
 ---
 
+## ✅ Session GSI — Google Sign-In (Trust Factor) alongside Phone OTP
+**Brief:** `SESSION_GOOGLE_LOGIN_PROMPT.md` · **Date:** 2026-08-24 · **Migration:** NONE needed
+
+Additive second login method on `/login`; phone-OTP flow untouched. Phone stays the business
+backbone — Google only changes how identity is proven.
+
+- **`/login`:** "Continue with Google" rendered FIRST (`src/components/GoogleAuthButton.tsx`,
+  official G mark), then divider "── ya phone number se ──", then the unchanged name+phone+OTP
+  form. New optional `?prefill=` search param seeds the phone field (used by §1c routing).
+- **`/complete-profile` (NEW route — chosen over a modal):** single OAuth checkpoint.
+  - no session → back to `/login`
+  - session + profiles row → RETURNING user → straight to `?redirect` target (buy step)
+  - session + NO row → first-timer confirm step: name pre-filled from Google metadata
+    (editable), 10-digit Indian mobile required, **NO OTP sent** — deliberate trade-off
+    (trust now, verified later by the existing telecaller/Sankalp-Pending call). Escape
+    hatch "galat Google account?" → signOut → /login.
+- **`POST /api/auth/complete-google-profile`:** requireUser(token) gate; duplicate check runs
+  service-role (RLS can't read others' rows); INSERT runs under the CALLER's own JWT so RLS
+  "profiles: user inserts own" enforces id=auth.uid() at Postgres level. Collision →
+  **409 code=phone_taken** → frontend routes to phone-OTP login prefilled. Race between check
+  and insert is caught via UNIQUE violation (23505) and re-resolved honestly. Verified email
+  copied from the token's auth record (never client-sent).
+- **§1d UNIQUE constraint:** ALREADY EXISTS — core schema migration 001 declares
+  `phone text UNIQUE` inline (→ `profiles_phone_key`). Live-db census
+  (`scratch/report_phone_unique.ts`): **ZERO duplicate phones** (2 profiles rows at the time),
+  so the backstop holds without any new migration.
+- **Account merging (Google identity ↔ pre-existing phone account): NOT built**, per brief
+  §1c — fast-follow candidate only.
+- **Pre-existing bug fixed as a dependency** (`supabase-admin.server.ts`): `getUserClient()`
+  crashed with "supabaseKey is required" whenever only `VITE_SUPABASE_ANON_KEY` was set
+  (repo `.env` shape) — now falls back to it before throwing (anon key is public anyway;
+  same pattern getServiceClient already uses for VITE_SUPABASE_URL).
+- **Verified:** tsc clean · ESLint clean · production build passes · live end-to-end
+  `scratch/verify_google_profile.ts` **16/16** against the dev server (401 / 400 / first-confirm
+  creates row with E.164 phone + verified email / idempotent repeat / cross-user collision 409
+  with no second row / raw-insert UNIQUE fires / zero otp_send_log writes / full cleanup).
+
+### ⚠️ Action items for Chirayu (config only — code is done):
+1. **Google Cloud Console:** create OAuth consent screen + OAuth client ID (Web) for the
+   production domain; note client ID + secret.
+2. **Supabase dashboard → Authentication → Providers → Google:** enable + paste the client
+   ID/secret. Until this is done the button fails gracefully ("Google se connect nahi ho paya").
+3. **Supabase → Authentication → URL Configuration → Redirect URLs:** allow-list
+   `https://<prod-domain>/complete-profile` (+ localhost equivalent for dev) — the OAuth round
+   trip lands there by design.
+4. Revisit the trust trade-off if abuse shows up: Google-path numbers are format-valid but not
+   OTP-verified; the telecaller call queue remains their verification. Account merge remains
+   available as a fast-follow if dual-login demand appears.
+
+---
+
 ## ⏳ NOT DONE YET — Remaining Scope
 
 ### Session 5 — Sales Agents & Coupons Manager ⚠️
@@ -280,12 +333,12 @@ Two targeted fixes flagged after the SFC review.
 |---|---|
 | Migrations | `supabase/migrations/20260725_000` … `20260822_011` (12 files) |
 | Admin pages | `src/routes/admin.{overview,subscribers,plans-sevas,sankalp-lists,proof-upload,pandit.$batchId,payments,reports}.tsx` |
-| User pages | `src/routes/{login,checkout.$planId,subscription-success,profile,my-subscription}.tsx` |
-| Server APIs | `src/routes/api/payments/webhook.ts`, `api/auth/request-otp.ts`, `api/subscriptions/create-checkout.ts`, `api/coupons/validate.ts`, `api/profile/{family-members,address}.ts`, `api/admin/{payments,reports,sales-agents}/...`, `api/sankalp/generate-batch.ts`, `api/cloudinary/sign-upload.ts` |
+| User pages | `src/routes/{login,complete-profile,checkout.$planId,subscription-success,profile,my-subscription}.tsx` |
+| Server APIs | `src/routes/api/payments/webhook.ts`, `api/auth/request-otp.ts`, `api/auth/complete-google-profile.ts`, `api/subscriptions/create-checkout.ts`, `api/coupons/validate.ts`, `api/profile/{family-members,address}.ts`, `api/admin/{payments,reports,sales-agents}/...`, `api/sankalp/generate-batch.ts`, `api/cloudinary/sign-upload.ts` |
 | Business logic | `src/lib/{sankalp-logic,plans,payments-logic,reports-logic,financials-logic,sales-agents-logic,coupons.server}.ts` |
 | Server-only | `src/lib/{razorpay-webhook.server,razorpay.server,auth.server,subscriptions-checkout.server,reports-data.server,supabase-admin.server,turnstile.server,config.server}.ts` |
-| Client auth | `src/lib/auth-api.ts`, `src/lib/turnstile.ts`, `src/hooks/use-session.ts`, `src/components/profile-completion.tsx` |
-| Verification scripts | `scratch/verify_{session4,webhook,owner_roles,sankalp_lists,otp_abuse,checkout_tenure}.ts`, `scratch/report_subscription_tenure.ts` (+ `scratch/ts-aliases.mjs` loader hook for plain-node runs) |
+| Client auth | `src/lib/auth-api.ts`, `src/lib/turnstile.ts`, `src/hooks/use-session.ts`, `src/components/profile-completion.tsx`, `src/components/GoogleAuthButton.tsx` |
+| Verification scripts | `scratch/verify_{session4,webhook,owner_roles,sankalp_lists,otp_abuse,checkout_tenure,google_profile}.ts`, `scratch/report_subscription_tenure.ts`, `scratch/report_phone_unique.ts` (+ `scratch/ts-aliases.mjs` loader hook for plain-node runs) |
 | Master context doc | `PUNYATA_MASTER_CONTEXT_v3 (1).md` (single source of truth — read before any new session) |
 | Session briefs | `SESSION_SIGNUP_FIRST_CHECKOUT_PROMPT.md`, `SESSION_TENURE_AND_OTP_ABUSE_PROMPT.md` |
 

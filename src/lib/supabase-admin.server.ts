@@ -218,7 +218,15 @@ export function json(data: unknown, status = 200): Response {
  */
 export function getUserClient(accessToken: string): SupabaseClient {
   const url = process.env.VITE_SUPABASE_URL ?? "https://omjivlmfsikeqwndtlcn.supabase.co";
-  return createClient(url, process.env.SUPABASE_ANON_KEY ?? "", {
+  // The anon key is public (ships in the browser bundle), so the VITE_
+  // spelling is an equally valid fallback — without it, any deployment
+  // that only sets the VITE_ var crashes requireUser() with
+  // "supabaseKey is required" instead of serving the request.
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY;
+  if (!anonKey) {
+    throw new Error("Missing SUPABASE_ANON_KEY (or VITE_SUPABASE_ANON_KEY) env var");
+  }
+  return createClient(url, anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { authorization: `Bearer ${accessToken}` } },
   });
