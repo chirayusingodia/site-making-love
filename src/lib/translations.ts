@@ -19,13 +19,15 @@ export const translations = {
     hero_sub: "जय सियाराम • तीर्थ गुरु पुष्करराज से",
     hero_title_1: "पुण्य आपका,",
     hero_title_2: "सेवा हमारी।",
-    hero_desc: "व्यस्तता के कारण खुद दान-पुण्य, हवन, पूजा नहीं कर पाते? पुण्यता आपके नाम एवं गोत्र से तीर्थ गुरु पुष्करराज में यह ज़िम्मेदारी निभाता है — हर सेवा का प्रमाण सीधे आपके WhatsApp पर.",
+    hero_desc:
+      "व्यस्तता के कारण खुद दान-पुण्य, हवन, पूजा नहीं कर पाते? पुण्यता आपके नाम एवं गोत्र से तीर्थ गुरु पुष्करराज में यह ज़िम्मेदारी निभाता है — हर सेवा का प्रमाण सीधे आपके WhatsApp पर.",
     hero_cta: "See Plans — ₹251/Monthly से शुरू",
 
     // Homepage Mission
     mission_relief: "The Relief",
     mission_title: "व्यस्तता की वजह से पुण्य पीछे न रह जाए।",
-    mission_desc: "शहर की दौड़-भाग में हर घर अपने दान-पुण्य, हवन और पूजा से दूर होता जा रहा है। पुण्यता यह ज़िम्मेदारी अपने ऊपर लेता है — आपके नाम, आपके गोत्र, आपके संकल्प से।",
+    mission_desc:
+      "शहर की दौड़-भाग में हर घर अपने दान-पुण्य, हवन और पूजा से दूर होता जा रहा है। पुण्यता यह ज़िम्मेदारी अपने ऊपर लेता है — आपके नाम, आपके गोत्र, आपके संकल्प से।",
     mission_quote: '"हम आपकी ज़िम्मेदारी नहीं लेते — हम उसे आपकी ओर से निभाते हैं।"',
 
     // How It Works
@@ -47,11 +49,13 @@ export const translations = {
     // Kaliyug Section
     kaliyug_badge: "कलियुग में दान-पुण्य",
     kaliyug_title: "पुण्य ही एकमात्र संचित धन है।",
-    kaliyug_footer: "जब हम स्वयं दान-पुण्य नहीं कर पाते — तो पुण्यता यह पवित्र कर्तव्य आपके नाम से निभाता है।",
+    kaliyug_footer:
+      "जब हम स्वयं दान-पुण्य नहीं कर पाते — तो पुण्यता यह पवित्र कर्तव्य आपके नाम से निभाता है।",
 
     // Family Section
     family_title: "पूरे परिवार के लिए",
-    family_desc: "एक सदस्यता — 4 सदस्यों तक का संकल्प। हर व्यक्ति का नाम एवं गोत्र संकल्प में बोला जाता है।",
+    family_desc:
+      "एक सदस्यता — 4 सदस्यों तक का संकल्प। हर व्यक्ति का नाम एवं गोत्र संकल्प में बोला जाता है।",
 
     // Plans preview
     plans_sub: "₹251/Monthly से शुरू • 4 सदस्यों तक",
@@ -61,7 +65,8 @@ export const translations = {
 
     // Punya Meter
     pm_title: "Punya Meter",
-    pm_subtitle: "Kya aap apne aur apni family ke liye har mahine punya kar paa rahe ho, vedic rituals ke saath?",
+    pm_subtitle:
+      "Kya aap apne aur apni family ke liye har mahine punya kar paa rahe ho, vedic rituals ke saath?",
     pm_badge: "पुण्य ही वह एकमात्र धन है, जो इस जीवन के बाद भी आपके साथ जाता है",
     pm_ques_parent: "क्या आप माता-पिता के निमित्त दान-पुण्य करवा पाते हैं?",
     pm_ques_1: "5 sadhu-santon ko bhojan (Saadhu Santo Ko Bhojan) — vedic sankalp sahit",
@@ -74,8 +79,10 @@ export const translations = {
     pm_pass_msg: "Aapka Punya Bank sahi hai",
     pm_fail_msg: "Aapka Punya Bank sahi nahi hai",
     pm_score: "Score",
-    pm_pass_bless: "🕉️ Pranam! Aap niyamit roop se punya karya kar rahe hain. Hanuman ji ki kripa aap par aur aapke parivar par sadav bani rahe.",
-    pm_fail_bless: "Kaliyug mein niyamit daan-punya hi hamara sabse bada suraksha kavach hai. Vyastata ko apni punya yatra mein baadha na banne dein.",
+    pm_pass_bless:
+      "🕉️ Pranam! Aap niyamit roop se punya karya kar rahe hain. Hanuman ji ki kripa aap par aur aapke parivar par sadav bani rahe.",
+    pm_fail_bless:
+      "Kaliyug mein niyamit daan-punya hi hamara sabse bada suraksha kavach hai. Vyastata ko apni punya yatra mein baadha na banne dein.",
     pm_cta: "अपनी पुण्य यात्रा शुरू करें",
     pm_reset: "Punya Meter Phir Se Check Karein",
     pm_benefits_title: "Niyamit Daan-Punya Ke Laabh",
@@ -103,13 +110,15 @@ export const translations = {
     hero_sub: "Jai Siyaram • From Holy Pushkarraj",
     hero_title_1: "Punya Yours,",
     hero_title_2: "Service Ours.",
-    hero_desc: "Too busy to perform daan-punya, hawan, or pooja yourself? Punyata fulfills this sacred responsibility in your name & gotra at Holy Pushkarraj — with video proof sent directly to your WhatsApp.",
+    hero_desc:
+      "Too busy to perform daan-punya, hawan, or pooja yourself? Punyata fulfills this sacred responsibility in your name & gotra at Holy Pushkarraj — with video proof sent directly to your WhatsApp.",
     hero_cta: "See Plans — Starting from ₹251/Month",
 
     // Homepage Mission
     mission_relief: "The Relief",
     mission_title: "Don't let a busy life keep you from accumulating Punya.",
-    mission_desc: "In the rush of city life, every home is drifting away from regular daan-punya, hawan, and pooja. Punyata takes up this sacred duty for you — in your name, your gotra, and with your sankalp.",
+    mission_desc:
+      "In the rush of city life, every home is drifting away from regular daan-punya, hawan, and pooja. Punyata takes up this sacred duty for you — in your name, your gotra, and with your sankalp.",
     mission_quote: '"We don\'t take away your responsibility — we fulfill it on your behalf."',
 
     // How It Works
@@ -131,11 +140,13 @@ export const translations = {
     // Kaliyug Section
     kaliyug_badge: "Daan-Punya in Kaliyug",
     kaliyug_title: "Punya is the only wealth that stays with you.",
-    kaliyug_footer: "When we cannot perform daan-punya ourselves, Punyata carries out this sacred duty in your name.",
+    kaliyug_footer:
+      "When we cannot perform daan-punya ourselves, Punyata carries out this sacred duty in your name.",
 
     // Family Section
     family_title: "For the Whole Family",
-    family_desc: "One subscription — sankalp for up to 4 family members. Every person's name and gotra is spoken during the rituals.",
+    family_desc:
+      "One subscription — sankalp for up to 4 family members. Every person's name and gotra is spoken during the rituals.",
 
     // Plans preview
     plans_sub: "Starting at ₹251/Month • Up to 4 family members",
@@ -145,7 +156,8 @@ export const translations = {
 
     // Punya Meter
     pm_title: "Punya Meter",
-    pm_subtitle: "Are you able to accumulate Punya for yourself and your family every month with Vedic rituals?",
+    pm_subtitle:
+      "Are you able to accumulate Punya for yourself and your family every month with Vedic rituals?",
     pm_badge: "Punya is the only wealth that goes with you after this life",
     pm_ques_parent: "Are you able to perform daan-punya for your parents?",
     pm_ques_1: "Feeding 5 sadhus (Saadhu Santo Ko Bhojan) — with Vedic Sankalp",
@@ -158,8 +170,10 @@ export const translations = {
     pm_pass_msg: "Your Punya Bank is healthy",
     pm_fail_msg: "Your Punya Bank is not healthy",
     pm_score: "Score",
-    pm_pass_bless: "🕉️ Pranam! You are regularly performing punya activities. May Lord Hanuman's grace always be upon you and your family.",
-    pm_fail_bless: "In Kaliyug, regular daan-punya is our greatest shield. Don't let busyness block your punya journey.",
+    pm_pass_bless:
+      "🕉️ Pranam! You are regularly performing punya activities. May Lord Hanuman's grace always be upon you and your family.",
+    pm_fail_bless:
+      "In Kaliyug, regular daan-punya is our greatest shield. Don't let busyness block your punya journey.",
     pm_cta: "Start Your Punya Journey",
     pm_reset: "Check Punya Meter Again",
     pm_benefits_title: "Benefits of Regular Daan-Punya",
@@ -171,19 +185,23 @@ export const translations = {
     pm_benefit_6: "Mitigation of Pitra Dosh and planetary defects",
     pm_benefit_7: "Destruction of fear and crisis by the grace of Lord Hanuman",
     pm_benefit_8: "Continuous flow of direct daan-punya",
-  }
+  },
 } as const;
 
 export function useLanguage() {
-  const [lang, setLang] = useState<Lang>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(LANG_KEY);
-      if (stored === "hindi" || stored === "english") return stored;
-    }
-    return "hindi";
-  });
+  // [Pass-2 L8] Hydration-safe: the SSR pass and the first client
+  // render must agree (both "hindi"); a stored preference is applied
+  // in an EFFECT after mount. The old localStorage-in-initializer made
+  // english-preferring browsers hydrate with different text than the
+  // server rendered — React hydration mismatch + full re-render flash
+  // on every marketing page.
+  const [lang, setLang] = useState<Lang>("hindi");
 
   useEffect(() => {
+    const stored = localStorage.getItem(LANG_KEY);
+    if (stored === "hindi" || stored === "english") {
+      setLang((prev) => (prev === stored ? prev : stored));
+    }
     const handleLangChange = (e: Event) => {
       const customEvent = e as CustomEvent<Lang>;
       setLang(customEvent.detail);

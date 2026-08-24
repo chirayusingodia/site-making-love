@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import process from "node:process";
 import { json, getServiceClient } from "@/lib/supabase-admin.server";
 import { requestOtpForPhone, OtpRateLimitError } from "@/lib/auth.server";
 import { gateOtpCaptcha } from "@/lib/turnstile.server";
@@ -20,12 +21,22 @@ import { gateOtpCaptcha } from "@/lib/turnstile.server";
 //             tripped ("Thodi der baad try karein") — the specific
 //             limit must never be revealed.
 
-/** Client IP behind Vercel/Cloudflare proxies. First hop of
- *  x-forwarded-for is the original client; cf-connecting-ip is
- *  Cloudflare's authoritative value when present. */
+/**
+ * Client IP behind Vercel/Cloudflare proxies. cf-connecting-ip is
+ * Cloudflare's authoritative value when present.
+ *
+ * [Pass-2 P12] x-forwarded-for / x-real-ip are CLIENT-SUPPLIED on any
+ * non-CF path — trusting them by default let an attacker rotate fake
+ * XFF values to mint unlimited fresh per-IP rate-limit slots. They are
+ * now honoured only when TRUST_PROXY_IP_HEADERS=true is set explicitly
+ * (i.e. the operator has confirmed the platform strips/sanitises
+ * inbound XFF). Without it, a non-CF deploy simply runs with ip=null
+ * and the per-PHONE caps carry the enforcement alone.
+ */
 function clientIpFromRequest(request: Request): string | null {
   const cf = request.headers.get("cf-connecting-ip");
   if (cf) return cf.trim();
+  if (process.env.TRUST_PROXY_IP_HEADERS !== "true") return null;
   const xff = request.headers.get("x-forwarded-for");
   if (xff) {
     const first = xff.split(",")[0]?.trim();

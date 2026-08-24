@@ -483,10 +483,30 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
           }
 
           // ── Write the generated drafts ─────────────────────────
+          // [Pass-2 P1] first_deal drafts go ONE-BY-ONE: migration 019's
+          // partial unique index (subscription_id WHERE kind='first_deal')
+          // makes the once-ever bonus physically unbreakable, so a
+          // concurrent run's claim that beat us to the insert surfaces
+          // here as a clean 23505 skip instead of either double pay or
+          // a wholesale chunk failure. Trail drafts keep chunked inserts
+          // — their payment-keyed tuple index already dedupes them.
           let inserted = 0;
           if (!dryRun && toInsert.length > 0) {
-            for (let i = 0; i < toInsert.length; i += 200) {
-              const chunk = toInsert.slice(i, i + 200);
+            const firstDeals = toInsert.filter((d) => d.kind === "first_deal");
+            const trails = toInsert.filter((d) => d.kind !== "first_deal");
+
+            for (const draft of firstDeals) {
+              const res = await db.from("commission_entries").insert(draft).select("id");
+              if (res.error) {
+                if (res.error.code === "23505") continue; // another run claimed it
+                insertErrors.push(`first_deal: ${res.error.message}`);
+              } else {
+                inserted += res.data?.length ?? 0;
+              }
+            }
+
+            for (let i = 0; i < trails.length; i += 200) {
+              const chunk = trails.slice(i, i + 200);
               // H6 (REVIEW): `.then(undefined, () => …)` swallowed every
               // failure and still answered ok:true. Errors are now
               // collected and reported per chunk.

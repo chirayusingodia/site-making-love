@@ -77,6 +77,11 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
           return json({ error: "Is flow mein coupon nahi hota — link hi attribution hai" }, 400);
         }
 
+        // [Pass-2 P6] Set when THIS send claims a halted subscription
+        // for replacement — declared out here so the catch can run the
+        // compensating revert-to-halted if anything downstream fails.
+        let retiredHaltedSubId: string | null = null;
+
         try {
           // ── Resolve WHO pays ────────────────────────────────────
           let userId = "";
@@ -91,7 +96,7 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
           // Set when THIS send retires a halted subscription first
           // (follow-up fix: mirrors reissue-link.ts so a halted row is
           // never left sitting beside the fresh pending one).
-          let retiredHaltedSubId: string | null = null;
+          // [Pass-2 P6] declaration hoisted above the try for catch access.
 
           if (targetProfileId) {
             userId = targetProfileId; // profiles.id mirrors auth.users id
@@ -284,6 +289,27 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
             }),
           );
         } catch (err) {
+          // [Pass-2 P6] Compensating revert: if we claimed a halted
+          // subscription but checkout creation failed afterwards, put
+          // the customer back into 'halted' so recovery queues still
+          // see them — never stranded as cancelled-with-nothing. The
+          // guard matches only OUR claim.
+          if (retiredHaltedSubId) {
+            try {
+              await auth.db
+                .from("subscriptions")
+                .update({
+                  status: "halted",
+                  cancelled_at: null,
+                  cancel_reason: null,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", retiredHaltedSubId)
+                .eq("cancel_reason", "mandate_dead_reissued");
+            } catch {
+              // best-effort compensation only
+            }
+          }
           if (err instanceof CheckoutError) return json({ error: err.message }, err.status);
           console.error("telecaller/send-payment-link error:", err);
           return json({ error: err instanceof Error ? err.message : "Query failed" }, 500);

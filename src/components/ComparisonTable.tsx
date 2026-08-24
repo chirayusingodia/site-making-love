@@ -17,9 +17,7 @@ export function ComparisonTable() {
   return (
     <div className="space-y-6 pt-4 max-w-3xl mx-auto w-full px-4">
       <div className="text-center">
-        <h2 className="text-2xl font-black text-foreground">
-          Sankalp Comparison
-        </h2>
+        <h2 className="text-2xl font-black text-foreground">Sankalp Comparison</h2>
         <p className="text-sm text-muted-foreground mt-1.5">
           Complete comparison of all sankalp packs
         </p>
@@ -106,9 +104,15 @@ function LiveTable({
       </table>
       {yearlyPlan && (
         <div className="bg-[#3FAE55] text-white text-center px-3 py-2.5 md:py-3 text-[10px] sm:text-xs md:text-sm font-bold leading-snug">
+          {/* [Pass-2 F15] keep the paisa remainder instead of rounding a
+              ₹249.92 equivalent up to ₹250 — show 2 decimals only when
+              the monthly-equivalent isn't a whole rupee. */}
           {yearlyPlan.name} = equivalent to just ₹
-          {Math.round(yearlyPlan.priceNumeric / 12).toLocaleString("en-IN")}/Month — worry-free for
-          the entire year!
+          {(yearlyPlan.priceNumeric / 12).toLocaleString("en-IN", {
+            minimumFractionDigits: yearlyPlan.priceNumeric % 1200 !== 0 ? 2 : 0,
+            maximumFractionDigits: 2,
+          })}
+          /Month — worry-free for the entire year!
         </div>
       )}
     </div>

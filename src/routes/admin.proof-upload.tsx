@@ -175,9 +175,9 @@ function ProofUploadPage() {
           </Badge>
         </h1>
         <p className="text-xs text-amber-900/70 mt-1">
-          One combined video per tier-pure segment ({SEGMENT_SIZE_SUBSCRIPTIONS} subscriptions /
-          max {SEGMENT_MAX_NAMES} names). One WhatsApp message per subscriber. Tuesday and
-          Saturday batches are fully independent. Status labels: Done / Pending / Missed.
+          One combined video per tier-pure segment ({SEGMENT_SIZE_SUBSCRIPTIONS} subscriptions / max{" "}
+          {SEGMENT_MAX_NAMES} names). One WhatsApp message per subscriber. Tuesday and Saturday
+          batches are fully independent. Status labels: Done / Pending / Missed.
         </p>
       </div>
 
@@ -265,8 +265,8 @@ function GenerateBar({ onGenerated }: { onGenerated: () => Promise<void> }) {
       <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <CalendarPlus className="w-5 h-5 text-amber-700 shrink-0" />
         <div className="text-xs text-amber-900/80 flex-1">
-          <span className="font-bold">Generate batch</span> — pick a Second Tuesday or Last
-          Saturday date. Membership is computed live at generation time.
+          <span className="font-bold">Generate batch</span> — pick a Second Tuesday or Last Saturday
+          date. Membership is computed live at generation time.
         </div>
         <input
           type="date"
@@ -280,7 +280,11 @@ function GenerateBar({ onGenerated }: { onGenerated: () => Promise<void> }) {
           disabled={busy || !date}
           className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold gap-1.5"
         >
-          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarPlus className="w-3.5 h-3.5" />}
+          {busy ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <CalendarPlus className="w-3.5 h-3.5" />
+          )}
           Generate
         </Button>
         {msg && <div className="text-[11px] text-slate-600 sm:basis-full">{msg}</div>}
@@ -393,7 +397,9 @@ function BatchDetail({
       fetchAllRows<DeliveryRow>((from, to) =>
         supabase
           .from("proof_deliveries")
-          .select("id,subscription_id,message_kind,segment_number,wa_link,is_delivered,delivered_at")
+          .select(
+            "id,subscription_id,message_kind,segment_number,wa_link,is_delivered,delivered_at",
+          )
           .eq("batch_id", batch.id)
           .order("id")
           .range(from, to),
@@ -499,9 +505,7 @@ function BatchDetail({
     const rows = sbs.filter((r) => r.segment_number === n);
     const planIds = [
       ...new Set(
-        rows
-          .map((r) => subs.get(r.subscription_id)?.plan_id)
-          .filter((id): id is string => !!id),
+        rows.map((r) => subs.get(r.subscription_id)?.plan_id).filter((id): id is string => !!id),
       ),
     ];
     const names = planIds.map((id) => planNamesById.get(id) ?? "Unknown plan");
@@ -654,10 +658,7 @@ function CloudinaryUploadButton({
       </Button>
       {progress != null && (
         <div className="w-full h-1.5 bg-amber-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-amber-600 transition-all"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-amber-600 transition-all" style={{ width: `${progress}%` }} />
         </div>
       )}
       {err && <div className="text-[11px] text-rose-600">{err}</div>}
@@ -744,10 +745,12 @@ function SegmentsCard({
   }
 
   async function saveSegmentVideo(segmentNumber: number, url: string) {
-    const { error } = await supabase.from("name_segments").upsert(
-      { batch_id: batch.id, segment_number: segmentNumber, video_url: url },
-      { onConflict: "batch_id,segment_number" },
-    );
+    const { error } = await supabase
+      .from("name_segments")
+      .upsert(
+        { batch_id: batch.id, segment_number: segmentNumber, video_url: url },
+        { onConflict: "batch_id,segment_number" },
+      );
     if (error) throw new Error(error.message);
     await onChanged();
   }
@@ -772,7 +775,11 @@ function SegmentsCard({
             disabled={busy || sbs.length === 0 || (assignedCount > 0 && hasVideos)}
             className="border-amber-900/20 text-amber-900 hover:bg-amber-50 gap-1.5 text-xs font-semibold"
           >
-            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Scissors className="w-3.5 h-3.5" />}
+            {busy ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Scissors className="w-3.5 h-3.5" />
+            )}
             {assignedCount > 0
               ? "Re-assign segments"
               : `Auto-assign (${SEGMENT_SIZE_SUBSCRIPTIONS} subs/segment, tier-pure)`}
@@ -854,9 +861,15 @@ function MarkCompletedButton({
 }) {
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
   async function complete() {
     setBusy(true);
+    setErrMsg(null);
+    // [Pass-2 residual F11] `errMsg` in finally was the stale
+    // render-time closure (still null), so the confirm UI collapsed
+    // and hid the error in the same tick. Track success explicitly.
+    let succeeded = false;
     try {
       // Keyed ONLY by this batch's primary key. No batch_type or
       // date filter — completion can never leak to another batch.
@@ -866,11 +879,15 @@ function MarkCompletedButton({
         .eq("id", batchId);
       if (error) throw new Error(error.message);
       await onDone();
-    } catch {
-      // surfaced via parent refresh; keep button state simple
+      succeeded = true;
+    } catch (err) {
+      // [Pass-2 F11] the empty catch hid failures completely — not even
+      // the parent refresh ran (onDone was skipped), so the batch sat
+      // pending with zero feedback. Surface it and stay on confirm.
+      setErrMsg(err instanceof Error ? err.message : "Mark completed fail hua");
     } finally {
       setBusy(false);
-      setConfirming(false);
+      if (succeeded) setConfirming(false);
     }
   }
 
@@ -886,7 +903,7 @@ function MarkCompletedButton({
     );
   }
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       <span className="text-[11px] text-slate-600">Mark THIS batch done?</span>
       <Button
         size="sm"
@@ -896,18 +913,13 @@ function MarkCompletedButton({
       >
         {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Yes, Done"}
       </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => setConfirming(false)}
-        className="text-xs"
-      >
+      <Button size="sm" variant="outline" onClick={() => setConfirming(false)} className="text-xs">
         Cancel
       </Button>
+      {errMsg && <span className="text-[11px] text-rose-600 font-medium">{errMsg}</span>}
     </div>
   );
 }
-
 // ─── WhatsApp delivery (ONE message per subscriber) ───────────
 function DeliveryCard({
   batch,
@@ -966,11 +978,9 @@ function DeliveryCard({
         });
       }
       for (let i = 0; i < rows.length; i += 200) {
-        const { error } = await supabase
-          .from("proof_deliveries")
-          .upsert(rows.slice(i, i + 200), {
-            onConflict: "batch_id,subscription_id,message_kind",
-          });
+        const { error } = await supabase.from("proof_deliveries").upsert(rows.slice(i, i + 200), {
+          onConflict: "batch_id,subscription_id,message_kind",
+        });
         if (error) throw new Error(error.message);
       }
       await onChanged();
@@ -1045,7 +1055,11 @@ function DeliveryCard({
             disabled={busy || sbs.length === 0}
             className="border-amber-900/20 text-amber-900 hover:bg-amber-50 gap-1.5 text-xs font-semibold"
           >
-            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
+            {busy ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <MessageCircle className="w-3.5 h-3.5" />
+            )}
             {deliveries.length > 0 ? "Refresh delivery list" : "Prepare delivery list"}
           </Button>
           {deliveries.length > 0 && (
@@ -1109,10 +1123,7 @@ function DeliveryCard({
                 const sub = subs.get(d.subscription_id);
                 const profile = sub ? profiles.get(sub.user_id) : undefined;
                 return (
-                  <div
-                    key={d.id}
-                    className="flex items-center justify-between gap-2 text-xs pl-6"
-                  >
+                  <div key={d.id} className="flex items-center justify-between gap-2 text-xs pl-6">
                     <span className="text-slate-600 flex items-center gap-1.5 min-w-0">
                       {d.is_delivered ? (
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -1121,7 +1132,9 @@ function DeliveryCard({
                       )}
                       <span className="truncate">
                         {profile?.full_name ?? "—"}
-                        <span className="text-slate-400 ml-1.5">{profile?.phone ?? "no phone"}</span>
+                        <span className="text-slate-400 ml-1.5">
+                          {profile?.phone ?? "no phone"}
+                        </span>
                       </span>
                     </span>
                     <div className="flex items-center gap-2 shrink-0">

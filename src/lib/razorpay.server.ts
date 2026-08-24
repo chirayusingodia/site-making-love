@@ -29,14 +29,18 @@ function basicAuthHeader(): string {
   return `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`;
 }
 
-async function razorpayCall<T>(path: string, body: Record<string, unknown>): Promise<T> {
+async function razorpayCall<T>(
+  path: string,
+  body: Record<string, unknown>,
+  method: "POST" | "GET" = "POST",
+): Promise<T> {
   const res = await fetch(`https://api.razorpay.com/v1/${path}`, {
-    method: "POST",
+    method,
     headers: {
       "content-type": "application/json",
       authorization: basicAuthHeader(),
     },
-    body: JSON.stringify(body),
+    ...(method === "POST" ? { body: JSON.stringify(body) } : {}),
   });
   const data = (await res.json().catch(() => null)) as
     (T & { error?: { description?: string } }) | null;
@@ -78,6 +82,28 @@ export function createRazorpaySubscription(input: {
 }
 
 /**
+ * [SESSION_STUCK_PENDING_CHECKOUT §2] Fetches a Razorpay subscription's
+ * current SERVER-SIDE state — GET /v1/subscriptions/:id. Read-only
+ * reconnaissance used before re-handing a locally-`pending` row's id
+ * back to Checkout: an abandoned sheet stays `created` on Razorpay's
+ * side forever and fires ZERO webhooks, so local status alone can
+ * never tell us whether the mandate is worth reopening.
+ *
+ * Status vocabulary per Razorpay's Subscriptions API docs:
+ *   created · authenticated · active · pending · halted ·
+ *   cancelled · completed · expired
+ * This function NEVER promotes anything locally — activation remains
+ * webhook-exclusive; it only informs discard-vs-reuse decisions.
+ */
+export function fetchRazorpaySubscription(razorpaySubId: string): Promise<RazorpaySubscription> {
+  return razorpayCall<RazorpaySubscription>(
+    `subscriptions/${encodeURIComponent(razorpaySubId)}`,
+    {},
+    "GET",
+  );
+}
+
+/**
  * Resumes a halted/paused Razorpay subscription whose mandate is
  * still alive. Endpoint + body verified against Razorpay's current
  * Subscriptions API docs on 2026-08-23:
@@ -94,6 +120,25 @@ export function resumeRazorpaySubscription(razorpaySubId: string): Promise<Razor
   return razorpayCall<RazorpaySubscription>(
     `subscriptions/${encodeURIComponent(razorpaySubId)}/resume`,
     { resume_at: "now" },
+  );
+}
+
+/**
+ * Cancels a Razorpay Subscription that was created but whose Punyata
+ * checkout subsequently failed (coupon exhausted, DB link failure,
+ * …). Without this, every error path leaks a LIVE subscription object
+ * in the Razorpay dashboard whose webhooks can never resolve to a
+ * local row ("ignored_unknown_subscription").
+ *
+ * Best-effort by contract: callers invoke it inside their cleanup
+ * paths and swallow failures — a cancel that fails only leaves the
+ * same orphan that existed before this helper existed. Never flips
+ * subscriptions.status (activation discipline unchanged).
+ */
+export function cancelRazorpaySubscription(razorpaySubId: string): Promise<RazorpaySubscription> {
+  return razorpayCall<RazorpaySubscription>(
+    `subscriptions/${encodeURIComponent(razorpaySubId)}/cancel`,
+    { cancel_at_cycle_end: false },
   );
 }
 

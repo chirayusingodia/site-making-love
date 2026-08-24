@@ -85,7 +85,6 @@ function QueueWorkListPage() {
         setLoading(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [queueKey, cursor],
   );
 
@@ -106,13 +105,12 @@ function QueueWorkListPage() {
             {meta?.title ?? queueKey}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {meta?.why} ·{" "}
-            <span className="font-semibold text-slate-700">{total}</span> log
+            {meta?.why} · <span className="font-semibold text-slate-700">{total}</span> log
             {leadQueue && total > 0 && (
               <>
                 {" · "}
-                <Target className="inline w-3.5 h-3.5 text-indigo-600 -mt-0.5" />{" "}
-                target: {DAILY_LEAD_TARGET}
+                <Target className="inline w-3.5 h-3.5 text-indigo-600 -mt-0.5" /> target:{" "}
+                {DAILY_LEAD_TARGET}
                 {total >= DAILY_LEAD_TARGET && (
                   <span className="ml-1 text-emerald-700 font-semibold">— aaj ka quota poora!</span>
                 )}
@@ -160,14 +158,23 @@ function QueueWorkListPage() {
             🎉 Yeh queue khaali hai.
           </div>
         )}
-        {loading &&
-          [0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
+        {loading && [0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
       </div>
 
       {!loading && !exhausted && items.length > 0 && (
         <div className="flex justify-center pt-1 pb-4">
-          <Button onClick={() => loadPage(false)} variant="outline" size="sm" className="gap-1">
-            Aage ke {Math.min(50, Math.max(0, total - items.length))} <ChevronRight className="w-3.5 h-3.5" />
+          {/* [Pass-2 F5] disabled while a fetch is in flight — belt and
+              braces against duplicate page appends even if the
+              surrounding conditional render ever changes. */}
+          <Button
+            onClick={() => loadPage(false)}
+            disabled={loading}
+            variant="outline"
+            size="sm"
+            className="gap-1"
+          >
+            Aage ke {Math.min(50, Math.max(0, total - items.length))}{" "}
+            <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         </div>
       )}
@@ -206,7 +213,9 @@ function LeadListItem({ lead, queueKey }: { lead: TelecallerLeadRow; queueKey: s
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-bold text-slate-900">{lead.fullName ?? "(naam nahi)"}</span>
+            <span className="text-sm font-bold text-slate-900">
+              {lead.fullName ?? "(naam nahi)"}
+            </span>
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${
                 LEAD_STATUS_CLS[lead.status] ?? LEAD_STATUS_CLS.new
@@ -243,13 +252,7 @@ function LeadListItem({ lead, queueKey }: { lead: TelecallerLeadRow; queueKey: s
   );
 }
 
-function SubscriberListItem({
-  row,
-  queueKey,
-}: {
-  row: TelecallerQueueRow;
-  queueKey: string;
-}) {
+function SubscriberListItem({ row, queueKey }: { row: TelecallerQueueRow; queueKey: string }) {
   const badge = (row.subscriptionStatus && STATUS_BADGE[row.subscriptionStatus]) ?? null;
   return (
     <Link

@@ -104,18 +104,14 @@ export const Route = createFileRoute("/api/telecaller/log-call")({
           }
 
           // ── C2 gate 2: daily rate limit ─────────────────────────
-          const { count: todayCount, error: rlErr } = await auth.db
-            .from("call_logs")
-            .select("id", { count: "exact", head: true })
-            .eq("called_by", auth.callerId)
-            .gte("created_at", new Date(Date.now() - 24 * 3_600_000).toISOString());
-          if (rlErr) return json({ error: rlErr.message }, 500);
-          if ((todayCount ?? 0) >= LOG_CALL_DAILY_LIMIT) {
-            return json(
-              { error: `Aaj ki call-logging limit poori ho gayi (${LOG_CALL_DAILY_LIMIT})` },
-              429,
-            );
-          }
+          // [Pass-2 P10 + residual fix] "per caller per IST day" is
+          // enforced ATOMICALLY by log_call_limited() (migration 019
+          // §6): per-caller advisory xact lock → count this IST day →
+          // insert, all inside one transaction. The old count-then-
+          // insert let two concurrent requests both read "under
+          // limit" and both land, blowing past the cap. The check now
+          // runs after tray/DND/target resolution so failed lookups
+          // never burn quota slots.
 
           // ── C2 gate 3: DND latch needs the identity tick ────────
           if (outcome === "do_not_call" && body.identity_verified !== true) {
@@ -146,28 +142,33 @@ export const Route = createFileRoute("/api/telecaller/log-call")({
 
           const escalated = outcomeAutoEscalates(outcome) || body.escalate === true;
 
-          const { data: inserted, error: insErr } = await auth.db
-            .from("call_logs")
-            .insert({
-              subscription_id: subscriptionId,
-              ...(leadId ? { lead_id: leadId } : {}),
-              profile_id: profileId,
-              called_by: auth.callerId,
-              queue: typeof body.queue === "string" ? body.queue : null,
-              outcome,
-              notes:
-                typeof body.notes === "string" && body.notes.trim()
-                  ? body.notes.trim().slice(0, 2000)
-                  : null,
-              callback_at: callbackAt,
-              identity_verified: body.identity_verified === true,
-              escalated,
-            })
-            .select("id")
-            .single();
-          if (insErr || !inserted) {
-            return json({ error: insErr?.message ?? "insert failed" }, 500);
+          // Atomic quota check + insert (C2 gate 2, migration 019 §6).
+          const { data: claim, error: claimErr } = await auth.db.rpc("log_call_limited", {
+            p_called_by: auth.callerId,
+            p_subscription_id: subscriptionId,
+            p_lead_id: leadId,
+            p_profile_id: profileId,
+            p_queue: typeof body.queue === "string" ? body.queue : null,
+            p_outcome: outcome,
+            p_notes:
+              typeof body.notes === "string" && body.notes.trim()
+                ? body.notes.trim().slice(0, 2000)
+                : null,
+            p_callback_at: callbackAt,
+            p_identity_verified: body.identity_verified === true,
+            p_escalated: escalated,
+            p_daily_limit: LOG_CALL_DAILY_LIMIT,
+          });
+          if (claimErr) {
+            return json({ error: claimErr.message }, 500);
           }
+          if (!claim?.ok) {
+            return json(
+              { error: `Aaj ki call-logging limit poori ho gayi (${LOG_CALL_DAILY_LIMIT})` },
+              429,
+            );
+          }
+          const inserted = { id: claim.call_log_id as string };
 
           // Denormalised last-contact stamp + DND latch, same request
           // (only when we know whose profile it is).
@@ -225,6 +226,18 @@ export const Route = createFileRoute("/api/telecaller/log-call")({
             }
 
             if (namedAgentRequested) {
+              // [Pass-2 P14] the agent must EXIST and be active — a
+              // well-formed but unknown uuid used to sail through to a
+              // raw FK-violation 500 mid-call (or, for an inactive
+              // agent, silently stamp misattributed funnel data).
+              const { data: namedAgent } = await auth.db
+                .from("sales_agents")
+                .select("id,is_active")
+                .eq("id", body.named_agent_id as string)
+                .maybeSingle();
+              if (!namedAgent || !namedAgent.is_active) {
+                return json({ error: "Named agent nahi mila ya inactive hai" }, 400);
+              }
               const agentUpdate = await auth.db
                 .from("leads")
                 .update({

@@ -56,9 +56,13 @@ export function useSessionProfile(): SessionState & { refresh: () => void } {
         setUser(null);
         setProfile(null);
       }
-      // SIGNED_IN / TOKEN_REFRESHED are covered by the next render's
-      // callers refetching what they need; profile re-read happens on
-      // explicit refresh().
+      // [Pass-2 L14] SIGNED_IN now re-resolves immediately: sign-in from
+      // a second tab (or while this consumer stayed mounted on the
+      // profile page's login prompt) used to leave userId/profile stale
+      // until an explicit refresh() or remount.
+      if (event === "SIGNED_IN") {
+        setTick((t) => t + 1);
+      }
     });
 
     return () => {

@@ -65,6 +65,7 @@ import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/we
 import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
 import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
+import { Route as ApiAuthReconcileProfileRouteImport } from './routes/api/auth/reconcile-profile'
 import { Route as ApiAuthCompleteGoogleProfileRouteImport } from './routes/api/auth/complete-google-profile'
 import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
@@ -375,6 +376,11 @@ const ApiAuthRequestOtpRoute = ApiAuthRequestOtpRouteImport.update({
   path: '/api/auth/request-otp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthReconcileProfileRoute = ApiAuthReconcileProfileRouteImport.update({
+  id: '/api/auth/reconcile-profile',
+  path: '/api/auth/reconcile-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthCompleteGoogleProfileRoute =
   ApiAuthCompleteGoogleProfileRouteImport.update({
     id: '/api/auth/complete-google-profile',
@@ -542,6 +548,7 @@ export interface FileRoutesByFullPath {
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
+  '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
@@ -622,6 +629,7 @@ export interface FileRoutesByTo {
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
+  '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
@@ -705,6 +713,7 @@ export interface FileRoutesById {
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
+  '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
@@ -789,6 +798,7 @@ export interface FileRouteTypes {
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
     | '/api/auth/complete-google-profile'
+    | '/api/auth/reconcile-profile'
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
@@ -869,6 +879,7 @@ export interface FileRouteTypes {
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
     | '/api/auth/complete-google-profile'
+    | '/api/auth/reconcile-profile'
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
@@ -951,6 +962,7 @@ export interface FileRouteTypes {
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
     | '/api/auth/complete-google-profile'
+    | '/api/auth/reconcile-profile'
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
@@ -1016,6 +1028,7 @@ export interface RootRouteChildren {
   PlanPlanIdRoute: typeof PlanPlanIdRoute
   ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
   ApiAuthCompleteGoogleProfileRoute: typeof ApiAuthCompleteGoogleProfileRoute
+  ApiAuthReconcileProfileRoute: typeof ApiAuthReconcileProfileRoute
   ApiAuthRequestOtpRoute: typeof ApiAuthRequestOtpRoute
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
   ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
@@ -1453,6 +1466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthRequestOtpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/reconcile-profile': {
+      id: '/api/auth/reconcile-profile'
+      path: '/api/auth/reconcile-profile'
+      fullPath: '/api/auth/reconcile-profile'
+      preLoaderRoute: typeof ApiAuthReconcileProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/complete-google-profile': {
       id: '/api/auth/complete-google-profile'
       path: '/api/auth/complete-google-profile'
@@ -1713,6 +1733,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlanPlanIdRoute: PlanPlanIdRoute,
   ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
   ApiAuthCompleteGoogleProfileRoute: ApiAuthCompleteGoogleProfileRoute,
+  ApiAuthReconcileProfileRoute: ApiAuthReconcileProfileRoute,
   ApiAuthRequestOtpRoute: ApiAuthRequestOtpRoute,
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
   ApiCouponsValidateRoute: ApiCouponsValidateRoute,

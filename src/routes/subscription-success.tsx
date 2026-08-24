@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, LogIn, PartyPopper } from "lucide-react";
+import { ArrowRight, LogIn, PartyPopper, AlertCircle } from "lucide-react";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import {
   FamilyAddressForm,
@@ -37,6 +37,12 @@ function SubscriptionSuccessPage() {
   const [members, setMembers] = useState<ExistingMember[]>([]);
   const [address, setAddress] = useState<ExistingAddress | null>(null);
   const [loading, setLoading] = useState(true);
+  // [Pass-2 F1] stays false until the fetch for the CURRENT ref+userId
+  // has landed — the render gate below therefore never mounts
+  // <FamilyAddressForm> on stale-empty state (the form seeds via a
+  // lazy initializer and ignores later prop changes, so a premature
+  // mount meant saved members were invisible AND prunable on save).
+  const [dataReady, setDataReady] = useState(false);
 
   useEffect(() => {
     if (!ref || !userId) {
@@ -62,6 +68,7 @@ function SubscriptionSuccessPage() {
           setMembers([]);
           setAddress(null);
           setLoading(false);
+          setDataReady(true);
         }
         return;
       }
@@ -82,6 +89,7 @@ function SubscriptionSuccessPage() {
       setMembers((fmRes.data as ExistingMember[]) ?? []);
       setAddress((profRes.data as ExistingAddress | null) ?? null);
       setLoading(false);
+      setDataReady(true);
     })();
     return () => {
       active = false;
@@ -92,17 +100,40 @@ function SubscriptionSuccessPage() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="max-w-md mx-auto px-4 pb-24 pt-8 space-y-6">
-        {/* Success banner */}
-        <div className="card-soft p-6 text-center space-y-3 border-2 border-success/30">
-          <div className="w-16 h-16 rounded-full bg-success/15 text-success flex items-center justify-center mx-auto">
-            <PartyPopper size={30} />
+        {/* Success banner — celebrated ONLY when this is the real
+            post-payment hand-off (?ref=… set by the Razorpay callback).
+            The abandoned-checkout path never routes here (dismiss keeps
+            you on /checkout), but a manually typed bare URL must not
+            read as "Payment mil gaya" when nothing was paid
+            (SESSION_STUCK_PENDING_CHECKOUT §3). */}
+        <div
+          className={`card-soft p-6 text-center space-y-3 ${ref ? "border-2 border-success/30" : ""}`}
+        >
+          <div
+            className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
+              ref ? "bg-success/15 text-success" : "bg-secondary text-muted-foreground"
+            }`}
+          >
+            {ref ? <PartyPopper size={30} /> : <AlertCircle size={30} />}
           </div>
           <h1 className="text-xl font-bold text-foreground">
-            🎉 आपकी सदस्यता सफलतापूर्वक शुरू हो गई!
+            {ref ? "🎉 आपकी सदस्यता सफलतापूर्वक शुरू हो गई!" : "Sadasyata sthiti"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Payment mil gaya. Aapki seva ka sankalp ab Pushkar mein liya jayega — har seva ka video
-            proof aapke WhatsApp par milega.
+            {ref ? (
+              <>
+                Payment mil gaya. Aapki seva ka sankalp ab Pushkar mein liya jayega — har seva ka
+                video proof aapke WhatsApp par milega.
+              </>
+            ) : (
+              <>
+                Payment reference nahi mila. Agar payment ho gaya hai, sadasyata ki live status{" "}
+                <Link to="/my-subscription" className="text-brand font-semibold">
+                  Meri Sadasyata
+                </Link>{" "}
+                par dikhegi.
+              </>
+            )}
           </p>
         </div>
 
@@ -130,7 +161,7 @@ function SubscriptionSuccessPage() {
               </p>
             </div>
 
-            {loading || sessionLoading ? (
+            {loading || sessionLoading || !dataReady ? (
               <div className="space-y-3 animate-pulse">
                 <div className="h-24 w-full bg-black/5 rounded-2xl" />
                 <div className="h-40 w-full bg-black/5 rounded-2xl" />

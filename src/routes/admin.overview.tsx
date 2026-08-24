@@ -24,9 +24,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+// [Pass-2 F4] AreaChart/Area imports removed with the fabricated
+// trend chart; the honest subscription-split PieChart remains.
 import {
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   XAxis,
@@ -62,6 +62,8 @@ interface OverviewMetrics {
 // (403 for admin). Null for any non-owner viewer.
 interface OwnerFinancials {
   mrrPaise: number;
+  monthlyPlansActiveCount: number;
+  yearlyPlansActiveCount: number;
   capturedRevenuePaise: number;
   capturedPaymentsCount: number;
 }
@@ -165,7 +167,6 @@ function AdminOverviewPage() {
 
     try {
       const now = new Date();
-      const todayStr = now.toISOString().split("T")[0];
       // IST-anchored month window [Bug 2.5] — the old boundary came
       // from the VIEWER's local Date, so an admin outside India saw a
       // different "Failed Payments (this month)" than the IST-correct
@@ -176,6 +177,11 @@ function AdminOverviewPage() {
         month: "2-digit",
         day: "2-digit",
       }).format(now); // YYYY-MM-DD on an Indian calendar
+      // [Pass-2 F3] "today" for pending-batch comparisons is the same
+      // IST calendar day — toISOString().split() kept using UTC, so a
+      // batch dated today (IST) was excluded from "Pending Seva
+      // Proofs" until 05:30 IST every morning.
+      const todayStr = istNowStr;
       const [istY, istM, istD] = istNowStr.split("-").map(Number);
       const nextMonthIso =
         istM === 12 ? `${istY + 1}-01-01` : `${istY}-${String(istM + 1).padStart(2, "0")}-01`;
@@ -274,11 +280,15 @@ function AdminOverviewPage() {
         try {
           const fin = await callAdminApi<{
             mrrPaise: number;
+            monthlyPlansActiveCount: number;
+            yearlyPlansActiveCount: number;
             capturedRevenuePaise: number;
             capturedPaymentsCount: number;
           }>("/api/admin/overview-financials");
           setFinancials({
             mrrPaise: fin.mrrPaise,
+            monthlyPlansActiveCount: fin.monthlyPlansActiveCount,
+            yearlyPlansActiveCount: fin.yearlyPlansActiveCount,
             capturedRevenuePaise: fin.capturedRevenuePaise,
             capturedPaymentsCount: fin.capturedPaymentsCount,
           });
@@ -322,21 +332,34 @@ function AdminOverviewPage() {
     ];
   }, [metrics]);
 
-  // Projected vs Current Revenue chart data (owner-only figures)
-  const revenueTrendData = useMemo(() => {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
-    const base = Math.round((financials?.capturedRevenuePaise ?? 2510000) / 100);
-    return months.map((m, idx) => ({
-      month: m,
-      Revenue: Math.round(base * (0.6 + idx * 0.08)),
-      MRR: Math.round(((financials?.mrrPaise ?? 2850000) / 100) * (0.7 + idx * 0.05)),
-    }));
-  }, [financials]);
+  // [Pass-2 F4] The old "Revenue & MRR Progression" chart fabricated a
+  // 7-month trend from invented multipliers on ONE real number — under
+  // a "Live Supabase Data" badge. Only current-period figures exist in
+  // this endpoint, so the chart is replaced with honest KPI tiles; a
+  // real month-by-month series belongs to /admin/reports.
+  const financialKpis = [
+    {
+      label: "Captured revenue (this IST month)",
+      value: financials
+        ? `₹${(financials.capturedRevenuePaise / 100).toLocaleString("en-IN", {
+            maximumFractionDigits: 0,
+          })}`
+        : "—",
+      sub: `${financials?.capturedPaymentsCount ?? 0} captured payments`,
+    },
+    {
+      label: "MRR (yearly normalised)",
+      value: financials
+        ? `₹${(financials.mrrPaise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
+        : "—",
+      sub: `${financials?.monthlyPlansActiveCount ?? 0} monthly · ${financials?.yearlyPlansActiveCount ?? 0} yearly active`,
+    },
+  ];
 
   const currentMonthName = new Date().toLocaleString("default", { month: "long", year: "numeric" });
 
   return (
-    <div className="space-[#space-y-6] space-y-6">
+    <div className="space-y-6">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl border border-amber-900/10 shadow-2xs">
         <div>
@@ -485,7 +508,7 @@ function AdminOverviewPage() {
 
       {/* Visual Analytics Section — Recharts Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue & MRR Growth Area Chart — OWNER-ONLY ₹ figures */}
+        {/* Financial KPIs — OWNER-ONLY ₹ figures [Pass-2 F4] */}
         {isOwner ? (
           <Card className="lg:col-span-2 border border-amber-900/10 bg-white">
             <CardHeader>
@@ -493,10 +516,11 @@ function AdminOverviewPage() {
                 <div>
                   <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-amber-700" />
-                    Revenue & MRR Progression
+                    Revenue &amp; MRR — current IST month
                   </CardTitle>
                   <CardDescription className="text-xs text-amber-900/60">
-                    Monthly recurring revenue (normalized) alongside captured revenue performance.
+                    Live owner-only figures for this month. A historical trend chart is served by
+                    the Reports module, which computes real month-by-month data.
                   </CardDescription>
                 </div>
                 <Badge variant="outline" className="text-[10px] font-mono bg-amber-50">
@@ -505,64 +529,21 @@ function AdminOverviewPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-72 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={revenueTrendData}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                {financialKpis.map((kpi) => (
+                  <div
+                    key={kpi.label}
+                    className="rounded-2xl border border-amber-900/10 bg-amber-50/40 p-5"
                   >
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#d97706" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#d97706" stopOpacity={0.0} />
-                      </linearGradient>
-                      <linearGradient id="colorMRR" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fontSize: 12, fill: "#64748b" }}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fontSize: 12, fill: "#64748b" }}
-                      tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      formatter={(value: number | string) => [
-                        `₹${Number(value).toLocaleString("en-IN")}`,
-                        "",
-                      ]}
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "1px solid #f1f5f9",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="Revenue"
-                      stroke="#d97706"
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#colorRevenue)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="MRR"
-                      stroke="#0284c7"
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#colorMRR)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-amber-900/60">
+                      {kpi.label}
+                    </div>
+                    <div className="mt-2 text-3xl font-bold text-slate-900 tabular-nums">
+                      {kpi.value}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">{kpi.sub}</div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

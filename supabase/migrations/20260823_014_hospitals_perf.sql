@@ -211,10 +211,10 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.reallot_hospital(uuid, uuid, text)
+REVOKE EXECUTE ON FUNCTION public.reallot_hospital(uuid, uuid, text, uuid)
     FROM public, anon, authenticated;
 
-COMMENT ON FUNCTION public.reallot_hospital(uuid, uuid, text) IS
+COMMENT ON FUNCTION public.reallot_hospital(uuid, uuid, text, uuid) IS
     'Atomically closes the current allotment and opens a new one (§4.4). EXECUTE revoked (C1): owner/admin only via /api/admin/hospitals/reallot. Writes its own audit_logs row.';
 
 

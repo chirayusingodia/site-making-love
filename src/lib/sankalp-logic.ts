@@ -153,8 +153,16 @@ export function batchLabel(kind: BatchKind, isoDate: string): string {
 
 // ─── Hawan detection (live from sevas rows — never hardcoded IDs) ───
 
+/**
+ * [Pass-2 L3] Mirror-identical with plans-schedule.ts isHawanSeva():
+ * both spellings ("hawan"/"havan") on BOTH fields, tested against the
+ * combined string. The two modules carry a hard parity promise — the
+ * plan page and the Pandit list must never disagree — and they HAD
+ * drifted: a seva spelled "havan" was hawan-classified on the plan
+ * page but ineligible for List B here.
+ */
 export function isHawanSeva(seva: Pick<SevaLite, "name" | "slug">): boolean {
-  return /hawan/i.test(seva.name) || /hawan/i.test(seva.slug);
+  return /hawan|havan/i.test(`${seva.slug} ${seva.name}`);
 }
 
 /**
@@ -162,14 +170,9 @@ export function isHawanSeva(seva: Pick<SevaLite, "name" | "slug">): boolean {
  * Fallback: if schedule rules name none, all hawan sevas — so the list is
  * never silently empty if rules are edited.
  */
-export function saturdayHawanSevaIds(
-  sevas: SevaLite[],
-  rules: ScheduleRuleRow[],
-): string[] {
+export function saturdayHawanSevaIds(sevas: SevaLite[], rules: ScheduleRuleRow[]): string[] {
   const ruled = new Set(
-    rules
-      .filter((r) => r.weekday === "SAT" && r.occurrence === "last")
-      .map((r) => r.seva_id),
+    rules.filter((r) => r.weekday === "SAT" && r.occurrence === "last").map((r) => r.seva_id),
   );
   const hawans = sevas.filter((s) => s.is_active && isHawanSeva(s));
   const matched = hawans.filter((s) => ruled.has(s.id)).map((s) => s.id);
@@ -198,9 +201,14 @@ export interface BatchMembershipRow {
 }
 
 function joinedAtISO(sub: SubscriptionLite): string {
-  // Activation is webhook-driven; start_date is the true join moment.
-  // created_at is the fallback for legacy rows. Date part only.
-  return (sub.start_date ?? sub.created_at).slice(0, 10);
+  // Activation is webhook-driven; start_date is the true join moment
+  // (a DATE column — no zone ambiguity). created_at is the fallback
+  // for legacy rows and is a UTC timestamptz: [Pass-2 L10] convert to
+  // IST before slicing, or activations in the 00:00–05:30 IST band
+  // after a Second Tuesday flipped the strict catch-up comparison.
+  const raw = sub.start_date ?? sub.created_at;
+  if (sub.start_date) return raw.slice(0, 10);
+  return new Date(Date.parse(raw) + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
 function planHasHawan(planId: string, planSevas: PlanSevaRow[], hawanIds: Set<string>): boolean {
@@ -334,9 +342,7 @@ export function sevasForMember(input: {
   const { kind, planId, planSevas, sevas, saturdayHawanSevaIds, scheduleRules } = input;
   const byId = new Map(sevas.map((s) => [s.id, s]));
 
-  const ids = new Set(
-    planSevas.filter((ps) => ps.plan_id === planId).map((ps) => ps.seva_id),
-  );
+  const ids = new Set(planSevas.filter((ps) => ps.plan_id === planId).map((ps) => ps.seva_id));
   if (kind === "last_saturday" && !input.isCatchup) {
     for (const id of saturdayHawanSevaIds) ids.add(id);
   }

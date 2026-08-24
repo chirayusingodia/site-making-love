@@ -102,25 +102,23 @@ export async function completeGoogleProfile(fullName: string, phoneRaw: string):
 
 /**
  * Legacy-edge recovery: auth user exists but its profiles row was
- * lost before this session's server-side creation existed. Inserts
- * the missing own row under the caller's RLS grant. No-op when the
- * row already exists.
+ * lost before this session's server-side creation existed.
+ *
+ * [Pass-2 P13] Runs through /api/auth/reconcile-profile (service
+ * role) instead of a client-side insert: when the caller's VERIFIED
+ * OTP phone is being squatted by an unverified Google-flow claim,
+ * the server evicts the claim and inserts the owner's row. The old
+ * client insert died silently on the UNIQUE violation, leaving an
+ * authenticated-but-profile-less account.
  */
 export async function ensureMyProfile(fullName: string | null): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-  const existing = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
-  if (existing.data) return;
-
-  const phone = (user.phone ?? "").trim() || null;
-  await supabase.from("profiles").insert({
-    id: user.id,
-    full_name: fullName,
-    ...(phone ? { phone } : {}),
+  await callUserApi<{ ok: boolean; created: boolean }>("/api/auth/reconcile-profile", {
+    ...(fullName ? { full_name: fullName } : {}),
   });
 }
+
+/** Alias that names the intent at the new callsites. */
+export const reconcileMyProfile = ensureMyProfile;
 
 /** Authenticated POST helper for user-owned /api routes. */
 export async function callUserApi<T>(path: string, body: Record<string, unknown>): Promise<T> {
@@ -133,9 +131,12 @@ export async function callUserApi<T>(path: string, body: Record<string, unknown>
     },
     body: JSON.stringify(body),
   });
-  const data = (await res.json()) as T & { error?: string };
-  if (!res.ok) throw new AuthApiError(data.error ?? `Request failed (${res.status})`, res.status);
-  return data;
+  // [Pass-2 L6] a non-JSON response (proxy error page, HTML 500) must
+  // surface as an AuthApiError with the real status — not as an opaque
+  // SyntaxError that breaks callers branching on err.status.
+  const data = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
+  if (!res.ok) throw new AuthApiError(data?.error ?? `Request failed (${res.status})`, res.status);
+  return data as T;
 }
 
 export async function signOut(): Promise<void> {

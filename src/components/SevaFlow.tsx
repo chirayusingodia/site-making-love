@@ -32,7 +32,11 @@ const ICON_MAP: { match: RegExp; Icon: LucideIcon; label: string }[] = [
   { match: /(सुंदरकांड|sundarkand|पाठ)/i, Icon: BookOpen, label: "Sundarkand" },
   { match: /(गौ|gau|cow)/i, Icon: Cow, label: "Gau Seva" },
   { match: /(वानर|vanara?|monkey)/i, Icon: Banana, label: "Vanara" },
-  { match: /(sadhu|santo|ब्राह्मण|brahmin|भोजन|bhojan)/i, Icon: UtensilsCrossed, label: "Saadhu Santo Ko Bhojan" },
+  {
+    match: /(sadhu|santo|ब्राह्मण|brahmin|भोजन|bhojan)/i,
+    Icon: UtensilsCrossed,
+    label: "Saadhu Santo Ko Bhojan",
+  },
 ];
 
 function chipFor(title: string) {
@@ -62,6 +66,9 @@ export function SevaFlow({ sevaTitles }: Props) {
       return;
     }
 
+    // [Pass-2 F18] tracked so unmount can cancel pending reveals
+    // instead of calling setState after the component is gone.
+    const timers: number[] = [];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -69,21 +76,25 @@ export function SevaFlow({ sevaTitles }: Props) {
             const index = Number(entry.target.getAttribute("data-index"));
             const delay = Number(entry.target.getAttribute("data-delay") ?? 0);
 
-            setTimeout(() => {
+            const t = window.setTimeout(() => {
               setVisibleNodes((prev) => ({ ...prev, [index]: true }));
             }, delay);
+            timers.push(t);
 
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.05, rootMargin: "0px 0px -20px 0px" }
+      { threshold: 0.05, rootMargin: "0px 0px -20px 0px" },
     );
 
     const elements = containerRef.current?.querySelectorAll(".reveal-node");
     elements?.forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect();
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      observer.disconnect();
+    };
   }, []);
 
   return (
@@ -112,7 +123,12 @@ export function SevaFlow({ sevaTitles }: Props) {
               repeatCount="indefinite"
               path="M 80 60 Q 300 20 300 170 Q 300 320 520 280"
             />
-            <animate attributeName="opacity" values="0.4;1;0.4" dur="1.5s" repeatCount="indefinite" />
+            <animate
+              attributeName="opacity"
+              values="0.4;1;0.4"
+              dur="1.5s"
+              repeatCount="indefinite"
+            />
           </circle>
         </svg>
 
@@ -218,7 +234,9 @@ function NodeBadge({
     mint: "bg-[#DDF1E2] text-[#1E6B3A]",
   }[tone];
   return (
-    <div className={`relative rounded-2xl px-4 py-3 md:px-5 md:py-4 shadow-sm ${toneClass} max-w-[92%] flex items-center justify-between`}>
+    <div
+      className={`relative rounded-2xl px-4 py-3 md:px-5 md:py-4 shadow-sm ${toneClass} max-w-[92%] flex items-center justify-between`}
+    >
       {corner && (
         <span className="absolute -top-1.5 -right-1.5 bg-whatsapp text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
           {corner}
@@ -226,11 +244,19 @@ function NodeBadge({
       )}
       <div className="flex items-center gap-3">
         <div className="w-14 h-14 rounded-full bg-white/70 flex items-center justify-center shrink-0 overflow-hidden">
-          <LottieIcon animationData={lottieData} size={56} playOnView loop={false} fallback={fallback} />
+          <LottieIcon
+            animationData={lottieData}
+            size={56}
+            playOnView
+            loop={false}
+            fallback={fallback}
+          />
         </div>
         <div>
           <div className="font-bold text-[15px] leading-snug">{title}</div>
-          <div className="text-[12px] md:text-[13px] opacity-80 leading-snug mt-0.5">{subtitle}</div>
+          <div className="text-[12px] md:text-[13px] opacity-80 leading-snug mt-0.5">
+            {subtitle}
+          </div>
         </div>
       </div>
     </div>

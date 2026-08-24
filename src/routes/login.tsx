@@ -9,7 +9,7 @@ import {
   InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { requestOtp, verifyOtp, ensureMyProfile, AuthApiError } from "@/lib/auth-api";
+import { requestOtp, verifyOtp, reconcileMyProfile, AuthApiError } from "@/lib/auth-api";
 import { turnstileEnabled, renderTurnstile, type RenderedTurnstile } from "@/lib/turnstile";
 
 export const Route = createFileRoute("/login")({
@@ -169,7 +169,13 @@ function LoginPage() {
     try {
       await verifyOtp(otpSentFor.current, code);
       // Recover any pre-session legacy auth user missing its profile row.
-      await ensureMyProfile(name.trim() || null).catch(() => {});
+      // [Pass-2 P13] the server route also repairs the phone-squatting
+      // collision (verified OTP owner evicts an unverified Google claim)
+      // — failures are logged, never silently swallowed: a profile-less
+      // session is exactly the support-ticket factory this replaces.
+      await reconcileMyProfile(name.trim() || null).catch((e) => {
+        console.warn("profile reconciliation failed:", e);
+      });
       navigate({ to: target, replace: true });
     } catch (err) {
       setOtp("");
