@@ -43,7 +43,29 @@ function SubscriptionSuccessPage() {
       setLoading(false);
       return;
     }
+    let active = true;
     (async () => {
+      // [Bug 3.3] `ref` came straight from the URL and drove the
+      // family_members query with no application-level ownership check
+      // — only RLS stood between any logged-in user and another
+      // subscriber's names/gotra. Verify the subscription is OURS
+      // first (RLS scopes this read AND the .eq below double-gates).
+      const { data: owned } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("id", ref)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!owned) {
+        if (active) {
+          setMembers([]);
+          setAddress(null);
+          setLoading(false);
+        }
+        return;
+      }
+
       const [fmRes, profRes] = await Promise.all([
         supabase
           .from("family_members")
@@ -56,10 +78,14 @@ function SubscriptionSuccessPage() {
           .eq("id", userId)
           .maybeSingle(),
       ]);
+      if (!active) return;
       setMembers((fmRes.data as ExistingMember[]) ?? []);
       setAddress((profRes.data as ExistingAddress | null) ?? null);
       setLoading(false);
     })();
+    return () => {
+      active = false;
+    };
   }, [ref, userId]);
 
   return (

@@ -76,6 +76,19 @@ export const Route = createFileRoute("/api/profile/family-members")({
           .upsert(rows, { onConflict: "subscription_id,slot_number" });
         if (upsertErr) return json({ error: upsertErr.message }, 500);
 
+        // [Bug 3.1] The form renumbers remaining members 1..N after a
+        // removal, so any stored slot > N is now a phantom duplicate
+        // (it used to surface in the Pandit sankalp list and got its
+        // name recited in the puja). Prune everything beyond N — zero
+        // members remains a valid state ("Sankalp Pending").
+        // RLS: "family_members: user deletes own" (migration 018).
+        const { error: pruneErr } = await auth.db
+          .from("family_members")
+          .delete()
+          .eq("subscription_id", subscriptionId)
+          .gt("slot_number", rows.length);
+        if (pruneErr) return json({ error: pruneErr.message }, 500);
+
         return json({ ok: true, saved: rows.length });
       },
     },

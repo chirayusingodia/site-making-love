@@ -112,6 +112,10 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
             // untouched — this route serves non-reissue sends too.
             if (sub.status === "halted") {
               const nowIso = new Date().toISOString();
+              // [Bug 1.1 twin] Same atomic guard as reissue-link.ts:
+              // zero affected rows means someone else already retired
+              // this halted row — creating a SECOND checkout link for
+              // the same customer is exactly the double-reissue bug.
               const { data: retired, error: cancelErr } = await auth.db
                 .from("subscriptions")
                 .update({
@@ -121,27 +125,17 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
                   updated_at: nowIso,
                 })
                 .eq("id", sub.id)
-                .eq("status", "halted") // race guard: someone may have just resumed/reissued
+                .eq("status", "halted")
                 .select("id");
               if (cancelErr) return json({ error: cancelErr.message }, 500);
               if (!retired || retired.length === 0) {
-                const { data: reread } = await auth.db
-                  .from("subscriptions")
-                  .select("cancel_reason")
-                  .eq("id", sub.id)
-                  .maybeSingle();
-                if (!reread || reread.cancel_reason !== "mandate_dead_reissued") {
-                  return json(
-                    {
-                      error:
-                        "Yeh subscription kisi aur ne abhi resume/reissue kar diya — page refresh karke dobara try karein",
-                    },
-                    409,
-                  );
-                }
-                // reread says mandate_dead_reissued: another admin/agent
-                // already retired it mid-flight — safe to proceed with
-                // her own new checkout for the customer.
+                return json(
+                  {
+                    error:
+                      "Yeh subscription kisi aur ne abhi resume/reissue kar diya — page refresh karke dobara try karein",
+                  },
+                  409,
+                );
               }
               retiredHaltedSubId = sub.id;
             }

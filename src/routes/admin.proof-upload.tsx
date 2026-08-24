@@ -715,7 +715,13 @@ function SegmentsCard({
       const assignment = assignSegmentsTierPure(
         ordered.map((r) => ({
           subscription_id: r.subscription_id,
-          tierKey: tierKeyForMember(sevasBySub.get(r.subscription_id) ?? []),
+          // [Bug 4.8] Scope the tier bucket per plan so identical-seva
+          // plans stay distinguishable in segment reporting (they can
+          // never share a segment anyway without violating tier purity).
+          tierKey: tierKeyForMember(
+            sevasBySub.get(r.subscription_id) ?? [],
+            subs.get(r.subscription_id)?.plan_id ?? null,
+          ),
         })),
       );
       const segBySub = new Map(assignment.map((a) => [a.subscription_id, a.segment_number]));

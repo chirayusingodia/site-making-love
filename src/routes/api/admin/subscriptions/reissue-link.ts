@@ -75,7 +75,14 @@ export const Route = createFileRoute("/api/admin/subscriptions/reissue-link")({
 
           // ── Retire the dead row FIRST ────────────────────────
           const nowIso = new Date().toISOString();
-          const { error: cancelErr } = await auth.db
+          // [Bug 1.1] The atomic race guard IS the conditional update:
+          // Postgres matches `.eq("status","halted")` for exactly ONE
+          // racer — the loser's UPDATE affects zero rows, detected via
+          // .select(). (The old re-read compared cancel_reason against
+          // the same literal the OTHER racer had just written, so it
+          // could never detect the race and both admins proceeded to
+          // create two subscriptions.)
+          const { data: retiredRows, error: cancelErr } = await auth.db
             .from("subscriptions")
             .update({
               status: "cancelled",
@@ -84,17 +91,13 @@ export const Route = createFileRoute("/api/admin/subscriptions/reissue-link")({
               updated_at: nowIso,
             })
             .eq("id", oldSub.id)
-            .eq("status", "halted"); // guard: another admin may have just reissued
+            .eq("status", "halted")
+            .select("id");
           if (cancelErr) return json({ error: cancelErr.message }, 500);
 
-          // If the guard above matched nothing, someone else got here
-          // first — re-read to detect and bail instead of double-reissue.
-          const { data: reread } = await auth.db
-            .from("subscriptions")
-            .select("status,cancel_reason")
-            .eq("id", oldSub.id)
-            .maybeSingle();
-          if (!reread || reread.cancel_reason !== "mandate_dead_reissued") {
+          if (!retiredRows || retiredRows.length === 0) {
+            // Someone else already cancelled/resumed this row between
+            // our read and write — bail instead of double-reissuing.
             return json({ error: "Doosre admin ne pehle hi iska reissue kar diya tha" }, 409);
           }
 

@@ -166,14 +166,24 @@ function AdminOverviewPage() {
     try {
       const now = new Date();
       const todayStr = now.toISOString().split("T")[0];
-      const startOfMonthIso = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      // IST-anchored month window [Bug 2.5] — the old boundary came
+      // from the VIEWER's local Date, so an admin outside India saw a
+      // different "Failed Payments (this month)" than the IST-correct
+      // figure everywhere else in the product. Mirrors monthWindow().
+      const istNowStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(now); // YYYY-MM-DD on an Indian calendar
+      const [istY, istM, istD] = istNowStr.split("-").map(Number);
+      const nextMonthIso =
+        istM === 12 ? `${istY + 1}-01-01` : `${istY}-${String(istM + 1).padStart(2, "0")}-01`;
+      const startOfMonthIso = new Date(
+        Date.parse(`${istY}-${String(istM).padStart(2, "0")}-01T00:00:00+05:30`),
+      ).toISOString();
       const endOfMonthIso = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0,
-        23,
-        59,
-        59,
+        Date.parse(`${nextMonthIso}T00:00:00+05:30`) - 1,
       ).toISOString();
 
       // 1. Live Query: Active Subscriptions + plan billing_period ONLY.

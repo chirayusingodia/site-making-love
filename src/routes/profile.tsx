@@ -16,6 +16,7 @@ import {
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { signOut } from "@/lib/auth-api";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { supabase } from "@/lib/supabase";
 import { FamilyAddressForm, type ExistingMember } from "@/components/profile-completion";
 
@@ -116,48 +117,57 @@ function LoggedOutView() {
 }
 
 function LoggedInView() {
-  const { profile, refresh } = useSessionProfile();
+  // [Bug 3.8] Reuse the session already resolved by the hook instead
+  // of a second supabase.auth.getUser(), and guard every setState
+  // against a post-unmount resolution.
+  const { userId, profile, refresh } = useSessionProfile();
   const navigate = useNavigate();
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [membersBySub, setMembersBySub] = useState<Record<string, ExistingMember[]>>({});
   const [loadingData, setLoadingData] = useState(true);
   const [formOpenFor, setFormOpenFor] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoadingData(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setSubs([]);
-      setLoadingData(false);
-      return;
-    }
-    const subsRes = await supabase
-      .from("subscriptions")
-      .select("id,status,start_date,next_billing_date,plans(name,billing_period,price_paise)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    const rows = (subsRes.data as unknown as SubRow[]) ?? [];
-    setSubs(rows);
+  const loadData = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      setLoadingData(true);
+      if (!userId) {
+        setSubs([]);
+        setMembersBySub({});
+        setLoadingData(false);
+        return;
+      }
+      const subsRes = await supabase
+        .from("subscriptions")
+        .select("id,status,start_date,next_billing_date,plans(name,billing_period,price_paise)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      const rows = (subsRes.data as unknown as SubRow[]) ?? [];
+      if (!isCancelled()) setSubs(rows);
 
-    const counts: Record<string, ExistingMember[]> = {};
-    await Promise.all(
-      rows.map(async (r) => {
-        const fm = await supabase
-          .from("family_members")
-          .select("id,slot_number,full_name,gotra,relation,dob")
-          .eq("subscription_id", r.id)
-          .order("slot_number");
-        counts[r.id] = (fm.data as ExistingMember[]) ?? [];
-      }),
-    );
-    setMembersBySub(counts);
-    setLoadingData(false);
-  }, []);
+      const counts: Record<string, ExistingMember[]> = {};
+      await Promise.all(
+        rows.map(async (r) => {
+          const fm = await supabase
+            .from("family_members")
+            .select("id,slot_number,full_name,gotra,relation,dob")
+            .eq("subscription_id", r.id)
+            .order("slot_number");
+          counts[r.id] = (fm.data as ExistingMember[]) ?? [];
+        }),
+      );
+      if (!isCancelled()) setMembersBySub(counts);
+      if (!isCancelled()) setLoadingData(false);
+    },
+    [userId],
+  );
 
   useEffect(() => {
-    loadData();
+    // [Bug 3.8] Guard against setState-after-unmount on slow loads.
+    let cancelled = false;
+    loadData(() => cancelled).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [loadData]);
 
   const initials =
@@ -185,9 +195,7 @@ function LoggedInView() {
             {profile?.full_name || "Punyata Sadasya"}
           </div>
           <div className="text-sm text-muted-foreground truncate">
-            {profile?.phone?.startsWith("+91")
-              ? `+91 ${profile.phone.slice(3)}`
-              : profile?.phone || ""}
+            {formatPhoneDisplay(profile?.phone)}
           </div>
           {current && (
             <div

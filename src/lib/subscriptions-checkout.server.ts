@@ -132,6 +132,59 @@ export async function createCheckoutForUser(input: {
     throw new CheckoutError("Yeh plan abhi payment ke liye configure nahi hua hai.", 503);
   }
 
+  // [Bug 1.9] Double-click / retried requests used to spawn unbounded
+  // pending Razorpay subscriptions for the same user+plan. Reuse the
+  // live one when it exists and the caller brings NO extra attribution
+  // (those callers need their own stamped row); clean up a stale
+  // linkless row otherwise.
+  const carriesAttribution =
+    Boolean(couponCode) ||
+    Boolean(input.acquisitionChannel) ||
+    Boolean(input.salesAgentId) ||
+    Boolean(input.telecallerId);
+
+  let existingPending:
+    | {
+        id: string;
+        razorpay_sub_id: string | null;
+        razorpay_customer_id: string | null;
+      }
+    | null = null;
+
+  if (!carriesAttribution) {
+    const { data } = await adminDb
+      .from("subscriptions")
+      .select("id,razorpay_sub_id,razorpay_customer_id")
+      .eq("user_id", userId)
+      .eq("plan_id", plan.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    existingPending = data ?? null;
+
+    if (existingPending?.razorpay_sub_id) {
+      return {
+        subscriptionDbId: existingPending.id,
+        razorpaySubscriptionId: existingPending.razorpay_sub_id,
+        razorpayCustomerId: existingPending.razorpay_customer_id ?? null,
+        planName: plan.name,
+        planPricePaise: plan.price_paise,
+        couponCode: null, // already stamped on the reused row's attribution
+        coupon: null,
+      };
+    }
+    if (existingPending && !existingPending.razorpay_sub_id) {
+      // Unusable orphan from a crashed creation — the error path below
+      // deletes these; remove it so the fresh insert is the only row.
+      await adminDb
+        .from("subscriptions")
+        .delete()
+        .eq("id", existingPending.id)
+        .eq("user_id", userId);
+    }
+  }
+
   let couponDecision: CouponDecision | null = null;
   if (couponCode) {
     // §2.2 (Hospitals session): the agent-visibility WIDENING is gone.
@@ -198,6 +251,23 @@ export async function createCheckoutForUser(input: {
       // Row exists but is not linked to Razorpay yet — the webhook would
       // land on an unknown subscription. Fail loudly; retry creates fresh.
       throw new CheckoutError(`linking razorpay id failed: ${updErr.message}`, 500);
+    }
+
+    // [Bug 1.2] The coupon cap was only ever PREVIEWED — nothing
+    // incremented times_redeemed, so max_redemptions never bound
+    // anything. redeem_coupon() (migration 018) increments
+    // atomically and refuses past-cap codes; a NULL here means the
+    // coupon ran out between validation and now → fail the checkout.
+    if (couponDecision?.ok && couponDecision.coupon) {
+      const { data: redeemed, error: redeemErr } = await adminDb
+        .rpc("redeem_coupon", { p_code: couponDecision.coupon.code })
+        .single();
+      if (redeemErr || redeemed === null) {
+        if (redeemErr && !/pgrst202|42P01|does not exist/i.test(redeemErr.message)) {
+          throw new CheckoutError(`coupon redemption failed: ${redeemErr.message}`, 500);
+        }
+        throw new CheckoutError("Coupon code valid nahi hai.", 400);
+      }
     }
 
     return {

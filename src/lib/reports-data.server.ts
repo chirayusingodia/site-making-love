@@ -33,9 +33,13 @@ export async function fetchMonthlyReportData(
     fetchAllRows<MonthPayment>((from, to) =>
       db
         .from("payments")
-        .select("subscription_id, amount_paise, status, created_at")
-        .gte("created_at", monthStart)
-        .lte("created_at", monthEnd)
+        .select("subscription_id, amount_paise, status, created_at, paid_at")
+        // [Bug 2.4] Key the month on paid_at (capture time) to match
+        // /api/admin/overview-financials — filtering by created_at made
+        // a payment created in one month and captured in the next show
+        // different "this month" figures on Reports vs Overview.
+        .gte("paid_at", monthStart)
+        .lte("paid_at", monthEnd)
         .range(from, to),
     ),
     // Reactivations = webhook 'resumed' events (pause → active).

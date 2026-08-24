@@ -46,8 +46,10 @@ export const Route = createFileRoute("/api/payments/webhook")({
         try {
           body = JSON.parse(rawBody);
         } catch {
-          // Signature was valid but body isn't JSON — ack, don't retry.
-          return json({ error: "Invalid JSON body" }, 400);
+          // Signature was valid but body isn't JSON — retrying can
+          // never change the bytes, so ACK with 200 (a 400 here made
+          // Razorpay retry for ~24h against its own contract) [Bug 1.4].
+          return json({ received: true, ignored: "invalid_json" }, 200);
         }
 
         try {

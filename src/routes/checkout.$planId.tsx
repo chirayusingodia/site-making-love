@@ -5,6 +5,7 @@ import { usePublicPlans, getPlanById } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
+import { formatPhoneDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/checkout/$planId")({
   // §9.1: telecaller payment links arrive as /checkout/<slug>?att=<token>.
@@ -65,12 +66,9 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-function formatPhone(e164: string | null): string {
-  if (!e164) return "";
-  const d = e164.replace(/\D/g, "");
-  if (d.length === 12 && d.startsWith("91")) return `+91 ${d.slice(2)}`;
-  return e164;
-}
+// [Bug 3.6] Shared display formatter — profile.tsx used to render the
+// same stored number differently (it only handled a literal "+91…").
+const formatPhone = formatPhoneDisplay;
 
 function CheckoutPage() {
   const { planId } = Route.useParams();

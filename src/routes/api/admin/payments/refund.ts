@@ -60,7 +60,9 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
 
         const { data: pay, error: payErr } = await auth.db
           .from("payments")
-          .select("id,subscription_id,razorpay_payment_id,amount_paise,status,refund_status")
+          .select(
+            "id,subscription_id,razorpay_payment_id,amount_paise,status,refund_status,refund_amount_paise",
+          )
           .eq("id", paymentId)
           .maybeSingle();
         if (payErr) return json({ error: payErr.message }, 500);
@@ -78,9 +80,21 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
         if (pay.refund_status === "full") {
           return json({ error: "Yeh payment already fully refunded hai" }, 409);
         }
-        if (typeof amountPaise === "number" && amountPaise > pay.amount_paise) {
+        // [Bug 1.10] Validate against the REMAINING refundable amount
+        // (original minus already-refunded paise), not the original —
+        // the old guard let a second partial refund pass locally and
+        // only Razorpay's own ceiling caught it.
+        const refundedSoFar = pay.refund_amount_paise ?? 0;
+        const refundablePaise = Math.max(0, (pay.amount_paise ?? 0) - refundedSoFar);
+        if (
+          typeof amountPaise === "number" &&
+          amountPaise > refundablePaise &&
+          pay.refund_status !== "full"
+        ) {
           return json(
-            { error: "Refund amount original payment amount se zyada nahi ho sakta" },
+            {
+              error: `Refund amount refundable limit se zyada hai (bacha hua: ₹${(refundablePaise / 100).toFixed(2)})`,
+            },
             400,
           );
         }

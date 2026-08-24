@@ -4,7 +4,6 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -12,7 +11,6 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { PunyataLogo } from "@/components/PunyataLogo";
 
 function NotFoundComponent() {
   return (
@@ -122,26 +120,29 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [loading, setLoading] = useState(true);
 
+  // [Bug 3.5] Dismiss on actual readiness (first painted frame) —
+  // the fixed 1500ms timer blocked the whole app, including 404 and
+  // error pages, behind a delay unrelated to real load state.
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(timer);
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setLoading(false));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, []);
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#FCFAF5] flex flex-col items-center justify-center gap-4">
-        <PunyataLogo className="w-32 h-32" />
-        <div className="text-brand font-extrabold text-lg tracking-wider animate-pulse">पुण्यता</div>
-      </div>
-    );
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div key={pathname} className="animate-fade-in">
+      {/* [Bug 3.5b] No key={pathname}: keying the wrapper remounted the
+          entire route subtree on every navigation just to replay a CSS
+          fade-in, discarding all component state. The fade now plays
+          once per full page load, like any normal app shell. */}
+      <div className="animate-fade-in">
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </div>

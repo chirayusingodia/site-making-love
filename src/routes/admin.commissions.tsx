@@ -68,7 +68,10 @@ function AdminCommissionsPage() {
     for (const e of (entriesRes.data as { payout_period: string; amount_paise: number }[]) ?? []) {
       const b = buckets.get(e.payout_period) ?? { net: 0, count: 0 };
       b.net += e.amount_paise;
-      b.count += e.amount_paise > 0 ? 1 : 0;
+      // [Bug 2.6] Count EVERY ledger row (reversals included) — the
+      // old `amount_paise > 0` filter made the Entries figure diverge
+      // from the Net figure whenever clawbacks were active.
+      b.count += 1;
       buckets.set(e.payout_period, b);
     }
     setByPeriod(

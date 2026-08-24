@@ -18,8 +18,10 @@ export function CountUp({ value, suffix = "+", className = "" }: CountUpProps) {
         duration: 1.5,
         ease: "easeOut",
         onUpdate: (latest) => {
+          // [Bug 3.7] en-IN grouping, matching every other numeric
+          // display in the app (lakh/crore) regardless of browser locale.
           if (ref.current) {
-            ref.current.textContent = Math.round(latest).toLocaleString();
+            ref.current.textContent = Math.round(latest).toLocaleString("en-IN");
           }
         },
       });

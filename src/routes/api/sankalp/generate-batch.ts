@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { json, requireAdmin } from "@/lib/supabase-admin.server";
 import { fetchAllRows } from "@/lib/supabase";
 import {
+  allHawanSevaIds,
   batchKindForDate,
   computeBatchMembership,
-  saturdayHawanSevaIds,
   type BatchKind,
 } from "@/lib/sankalp-logic";
 
@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/sankalp/generate-batch")({
         // Subscriber-scale tables are PAGED — PostgREST caps a single
         // response at ~1000 rows; a silent cap here would corrupt
         // batch membership.
-        const [subsAll, psAll, sevasRes, rulesRes] = await Promise.all([
+        const [subsAll, psAll, sevasRes] = await Promise.all([
           fetchAllRows<{
             id: string;
             plan_id: string;
@@ -74,16 +74,18 @@ export const Route = createFileRoute("/api/sankalp/generate-batch")({
             db.from("plan_sevas").select("plan_id,seva_id").range(from, to),
           ),
           db.from("sevas").select("id,name,slug,sort_order,is_active"),
-          db.from("seva_schedule_rules").select("seva_id,weekday,occurrence"),
         ]);
         const firstErr =
           (subsAll.error ? { message: subsAll.error } : null) ??
           (psAll.error ? { message: psAll.error } : null) ??
-          sevasRes.error ??
-          rulesRes.error;
+          sevasRes.error;
         if (firstErr) return json({ error: firstErr.message }, 500);
 
-        const hawanSevaIds = saturdayHawanSevaIds(sevasRes.data ?? [], rulesRes.data ?? []);
+        // [Bug 4.5] Membership ELIGIBILITY uses every hawan seva — a
+        // plan whose hawan is Tuesday-scheduled is still a hawan plan
+        // and belongs in List B permanently. Day-scoped resolution for
+        // the Pandit list stays with saturdayHawanSevaIds.
+        const hawanSevaIds = allHawanSevaIds(sevasRes.data ?? []);
         const membership = computeBatchMembership({
           kind,
           batchDate: date,
@@ -93,101 +95,62 @@ export const Route = createFileRoute("/api/sankalp/generate-batch")({
         });
         const catchupCount = membership.filter((m) => m.is_catchup).length;
 
-        // ── EXACTLY ONE batch row per (kind, date) ──
-        // The former 'hawan_only' / 'full_package' variant split created two
-        // rows here and inserted this same `membership` into BOTH, enrolling
-        // every List B subscriber twice. One kind, one date, one batch.
+        // ── EXACTLY ONE batch row per (kind, date), atomically ──
+        // [Bugs 4.1 / 4.2] Create-or-refresh used to be four separate
+        // round trips (read → check → delete → chunked insert) with no
+        // transaction: concurrent triggers raced the read, and a
+        // mid-refresh chunk failure left the batch partially or fully
+        // EMPTY with no rollback.
+        //
+        // generate_sankalp_batch() (migration 018) now does everything
+        // in ONE transaction: racers serialize on the (batch_date,
+        // batch_type) UNIQUE via ON CONFLICT, and a failed member
+        // insert rolls back the whole refresh including the batch row
+        // on first creation. 'done' batches are never touched.
+        const { data: rpcResult, error: rpcErr } = await db.rpc("generate_sankalp_batch", {
+          p_date: date,
+          p_kind: kind,
+          p_membership: membership.map((m) => ({
+            subscription_id: m.subscription_id,
+            is_catchup: m.is_catchup,
+          })),
+        });
+        if (rpcErr) return json({ error: rpcErr.message }, 500);
+
+        const result = rpcResult as unknown as {
+          batch_id: string;
+          action: "created" | "refreshed" | "skipped_done";
+          subscriber_count?: number;
+        };
+
         const results: {
           batch_id: string;
           batch_type: BatchKind;
           action: "created" | "refreshed" | "skipped_done";
           subscriber_count: number;
-        }[] = [];
-
-        {
-          const { data: existing, error: exErr } = await db
-            .from("sankalp_batches")
-            .select("id,status")
-            .eq("batch_date", date)
-            .eq("batch_type", kind)
-            .maybeSingle();
-          if (exErr) return json({ error: exErr.message }, 500);
-
-          if (existing?.status === "done") {
-            results.push({
-              batch_id: existing.id,
-              batch_type: kind,
-              action: "skipped_done",
-              subscriber_count: membership.length,
-            });
-          } else {
-            let batchId: string;
-            if (existing) {
-              batchId = existing.id;
-              // Refresh membership: wipe THIS batch's rows only.
-              const { error: delErr } = await db
-                .from("sankalp_batch_subscriptions")
-                .delete()
-                .eq("batch_id", batchId);
-              if (delErr) return json({ error: delErr.message }, 500);
-            } else {
-              const { data: inserted, error: insErr } = await db
-                .from("sankalp_batches")
-                .insert({
-                  batch_type: kind,
-                  batch_date: date,
-                  status: "pending",
-                })
-                .select("id")
-                .single();
-              if (insErr || !inserted) {
-                return json({ error: insErr?.message ?? "insert failed" }, 500);
-              }
-              batchId = inserted.id;
-            }
-
-            if (membership.length > 0) {
-              const rows = membership.map((m) => ({
-                batch_id: batchId,
-                subscription_id: m.subscription_id,
-                is_catchup: m.is_catchup,
-              }));
-              for (let i = 0; i < rows.length; i += 500) {
-                const { error: sbsErr } = await db
-                  .from("sankalp_batch_subscriptions")
-                  .insert(rows.slice(i, i + 500));
-                if (sbsErr) return json({ error: sbsErr.message }, 500);
-              }
-            }
-
-            // Snapshot count onto THIS batch row only.
-            const { error: updErr } = await db
-              .from("sankalp_batches")
-              .update({ subscriber_count: membership.length })
-              .eq("id", batchId);
-            if (updErr) return json({ error: updErr.message }, 500);
-
-            results.push({
-              batch_id: batchId,
-              batch_type: kind,
-              action: existing ? "refreshed" : "created",
-              subscriber_count: membership.length,
-            });
-          }
-        }
+        }[] = [
+          {
+            batch_id: result.batch_id,
+            batch_type: kind,
+            action: result.action,
+            subscriber_count:
+              result.action === "skipped_done" ? membership.length : (result.subscriber_count ?? 0),
+          },
+        ];
 
         await db.from("audit_logs").insert({
           admin_id: staffId,
           action: "sankalp_batch_generated",
           entity: "sankalp_batches",
-          entity_id: null,
+          entity_id: result.batch_id,
           meta: { date, kind, catchup_count: catchupCount, results },
         });
 
         return json({
           date,
           batch_type: kind,
-          subscriber_count: membership.length,
+          subscriber_count:
+            result.action === "skipped_done" ? membership.length : (result.subscriber_count ?? 0),
           catchup_count: catchupCount,
           batches: results,
         });

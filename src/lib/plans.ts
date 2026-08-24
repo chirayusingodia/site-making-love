@@ -315,8 +315,18 @@ function genericPresentation(plan: DbPlan): PlanPresentation {
 const LOCATION_LABEL = "तीर्थ गुरु पुष्करराज, पुष्कर";
 
 // ─── Pure derivation helpers ─────────────────────────────────────────────────
+/**
+ * [Bug 4.6] Exact rupee rendering — the old Math.round silently turned
+ * a ₹251.50 plan into "₹252" while Razorpay charged ₹251.50, so the
+ * displayed price disagreed with the bank statement. Whole rupees
+ * still render without decimals.
+ */
 export function formatINR(pricePaise: number): string {
-  return `₹${Math.round(pricePaise / 100).toLocaleString("en-IN")}`;
+  const rupees = pricePaise / 100;
+  return `₹${rupees.toLocaleString("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 /** Cadence hint parsed from an addon's admin-written description (e.g. "Quarterly Prasad Box — …"). */
@@ -334,7 +344,18 @@ function buildPlan(
   planSevas: DbPlanSeva[],
   planAddons: DbPlanAddon[]
 ): Plan {
-  const pres = PLAN_PRESENTATION[dbPlan.slug] ?? genericPresentation(dbPlan);
+  // [Bug 4.11] Presentation content is keyed by hardcoded slugs. If a
+  // DB slug ever drifts, the generic fallback silently stripped the
+  // plan of its slides/benefits/reviews with NO signal anywhere. Log
+  // loudly so the drift is fixable instead of invisible.
+  const pres = PLAN_PRESENTATION[dbPlan.slug];
+  if (!pres) {
+    console.warn(
+      `[plans] No PLAN_PRESENTATION entry for slug "${dbPlan.slug}" (plan "${dbPlan.name}", id ${dbPlan.id}) — using generic fallback. ` +
+        `Add a matching entry in src/lib/plans.ts or correct the DB slug.`,
+    );
+  }
+  const resolvedPres = pres ?? genericPresentation(dbPlan);
   const includedIds = new Set(planSevas.filter((ps) => ps.plan_id === dbPlan.id).map((ps) => ps.seva_id));
   // Rule days are GLOBAL (seva_schedule_rules has no plan dimension); what a
   // subscriber actually receives depends on their tier, so re-derive per plan.
@@ -371,38 +392,38 @@ function buildPlan(
   ];
 
   return {
-    id: pres.planId,
+    id: resolvedPres.planId,
     slug: dbPlan.slug,
     name: dbPlan.name,
-    heading: pres.heading,
-    subheading: pres.subheading,
-    tagline: dbPlan.tagline ?? pres.tagline,
+    heading: resolvedPres.heading,
+    subheading: resolvedPres.subheading,
+    tagline: dbPlan.tagline ?? resolvedPres.tagline,
     price: formatINR(dbPlan.price_paise),
-    priceNumeric: Math.round(dbPlan.price_paise / 100),
+    priceNumeric: dbPlan.price_paise / 100, // [Bug 4.6] exact — no rounding
     cycle: dbPlan.billing_period === "monthly" ? "/Monthly" : "/Yearly",
     billingPeriod: dbPlan.billing_period,
-    strikePrice: pres.strikePrice,
+    strikePrice: resolvedPres.strikePrice,
     // An admin-entered card_image_url is an explicit override and always wins
     // over the bundled/Cloudinary manifest entry for this slug.
     image: dbPlan.card_image_url?.trim()
       ? externalImage(dbPlan.card_image_url.trim(), dbPlan.name)
-      : pres.image,
-    slides: pres.slides,
-    ribbon: pres.ribbon,
-    badge: pres.badge,
+      : resolvedPres.image,
+    slides: resolvedPres.slides,
+    ribbon: resolvedPres.ribbon,
+    badge: resolvedPres.badge,
     location: LOCATION_LABEL,
     serviceTags,
     features,
     includedSevas,
     comparison,
     detail: {
-      description: pres.detail.description,
+      description: resolvedPres.detail.description,
       sevas: includedSevas.map((s) => ({
         title: s.name,
         note: s.description ?? (s.days.length ? `हर माह — ${s.days.join(" & ")}` : ""),
       })),
-      benefits: pres.detail.benefits,
-      reviews: pres.detail.reviews,
+      benefits: resolvedPres.detail.benefits,
+      reviews: resolvedPres.detail.reviews,
     },
     isVisible: true,
   };

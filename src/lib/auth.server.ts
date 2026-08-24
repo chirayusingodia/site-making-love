@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { normalizePhoneE164 } from "@/lib/phone";
 
 // ─────────────────────────────────────────────────────────────
 // PUNYATA — Signup-first checkout: phone OTP auth (server-only)
@@ -20,18 +21,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Normalise any India-shaped input to Supabase's required E.164:
- * '9876543210' | '09876543210' | '919876543210' | '+91-98765 43210'
- * → '+919876543210'. Returns null for anything unusable.
+ * Normalise any India-shaped input to Supabase's required E.164.
+ * The single shared implementation lives in lib/phone.ts (the
+ * browser verifyOtp path must normalise identically) [Bug 1.3].
  */
-export function normalizePhoneE164(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 10 && /^[6-9]/.test(digits)) return `+91${digits}`;
-  if (digits.length === 11 && digits.startsWith("0")) return `+91${digits.slice(1)}`;
-  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
-  if (digits.length === 13 && digits.startsWith("091")) return `+${digits.slice(1)}`;
-  return null;
-}
+export { normalizePhoneE164 };
 
 export interface RequestOtpResult {
   isNewUser: boolean;
@@ -57,9 +51,8 @@ export const OTP_RATE_LIMITS = {
   IP_MAX_DISTINCT_PHONES_PER_HOUR: 5,
 } as const;
 
-const TEN_MINUTES_MS = 10 * 60 * 1000;
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const ONE_HOUR_MS = 60 * 60 * 1000;
+// Window lengths now live in public.otp_check_and_log's SQL
+// (migration 018 §16) — tune BOTH together when loosening/tightening.
 
 /** Rejections MUST map to one generic client-facing message (429) —
  *  never reveal WHICH limit tripped; that distinction is itself
@@ -92,88 +85,41 @@ let warnedLedgerMissing = false;
  * otp_send_log and RECORDS the attempt (allowed or blocked).
  * Throws OtpRateLimitError when blocked. Runs BEFORE anything
  * touches auth users or Supabase's SMS send.
+ *
+ * [Bug 1.7] The check + ledger write run ATOMICALLY inside
+ * public.otp_check_and_log (migration 018) under transaction
+ * advisory locks — the old count-then-insert let two concurrent
+ * requests both slip under the cap.
  */
 async function enforceAndLogOtpSend(
   db: SupabaseClient,
   phone: string,
   ip: string | null,
 ): Promise<void> {
-  const now = Date.now();
-
-  // ── Per-phone checks (indexed range counts, no rows shipped) ──
-  const countSince = async (sinceMs: number): Promise<number | null> => {
-    const { count, error } = await db
-      .from("otp_send_log")
-      .select("id", { count: "exact", head: true })
-      .eq("phone", phone)
-      .gte("created_at", new Date(now - sinceMs).toISOString());
-    if (error) throw error;
-    return count;
-  };
-
-  let blockedAs: OtpRateLimitError["reason"] | null = null;
-  try {
-    const burst = await countSince(TEN_MINUTES_MS);
-    if (burst !== null && burst >= OTP_RATE_LIMITS.PHONE_MAX_PER_10_MIN) {
-      blockedAs = "phone_burst_10m";
-    } else {
-      const daily = await countSince(ONE_DAY_MS);
-      if (daily !== null && daily >= OTP_RATE_LIMITS.PHONE_MAX_PER_24_H) {
-        blockedAs = "phone_daily";
-      }
-    }
-
-    // ── Per-IP check: distinct victim numbers in the last hour ──
-    // No IP header (direct dev access etc.) → unattributable, skip
-    // only THIS check; the per-phone limits still apply.
-    if (!blockedAs && ip) {
-      const { data: distinct, error: rpcErr } = await db.rpc("otp_send_ip_phone_count", {
-        p_ip: ip,
-        p_since: new Date(now - ONE_HOUR_MS).toISOString(),
-      });
-      if (rpcErr) throw rpcErr;
-      if ((distinct ?? 0) >= OTP_RATE_LIMITS.IP_MAX_DISTINCT_PHONES_PER_HOUR) {
-        blockedAs = "ip_distinct_phones";
-      }
-    }
-  } catch (err) {
-    if (isLedgerNotDeployed((err as LedgerError) ?? null)) {
-      // Migration 016 not applied yet: deploy-safety valve — checks
-      // degrade OPEN until Chirayu applies it. Loud, once per process.
-      if (!warnedLedgerMissing) {
-        warnedLedgerMissing = true;
-        console.error(
-          "⚠️ otp_send_log missing — apply supabase/migrations/20260823_016_otp_rate_limit.sql. " +
-            "OTP rate limiting is INACTIVE until then.",
-        );
-      }
-      return;
-    }
-    throw new Error(`otp_send_log check failed: ${(err as Error)?.message ?? err}`);
-  }
-
-  // ── Record EVERY attempt, allowed or blocked ──────────────────
-  const { error: logErr } = await db.from("otp_send_log").insert({
-    phone,
-    ...(ip ? { ip } : {}),
-    allowed: !blockedAs,
-    ...(blockedAs ? { reason: blockedAs } : {}),
+  const { data, error } = await db.rpc("otp_check_and_log", {
+    p_phone: phone,
+    p_ip: ip,
   });
-  if (logErr) {
-    if (isLedgerNotDeployed(logErr)) {
+  if (error) {
+    if (isLedgerNotDeployed((error as LedgerError) ?? null)) {
+      // Migration 016/018 not applied yet: deploy-safety valve — checks
+      // degrade OPEN until Chirayu applies them. Loud, once per process.
       if (!warnedLedgerMissing) {
         warnedLedgerMissing = true;
         console.error(
-          "⚠️ otp_send_log missing — apply supabase/migrations/20260823_016_otp_rate_limit.sql. " +
-            "OTP rate limiting is INACTIVE until then.",
+          "⚠️ otp_check_and_log missing — apply supabase/migrations/20260823_016_otp_rate_limit.sql " +
+            "and 20260824_018_bugfix_hardening.sql. OTP rate limiting is INACTIVE until then.",
         );
       }
       return;
     }
-    throw new Error(`otp_send_log insert failed: ${logErr.message}`);
+    throw new Error(`otp_send_log check failed: ${error.message}`);
   }
 
-  if (blockedAs) throw new OtpRateLimitError(blockedAs);
+  const verdict = typeof data === "string" ? data : "allowed";
+  if (verdict !== "allowed") {
+    throw new OtpRateLimitError(verdict as OtpRateLimitError["reason"]);
+  }
 }
 
 /**

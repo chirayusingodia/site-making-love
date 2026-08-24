@@ -176,6 +176,20 @@ export function saturdayHawanSevaIds(
   return matched.length > 0 ? matched : hawans.map((s) => s.id);
 }
 
+/**
+ * EVERY active hawan seva regardless of which day it is scheduled on.
+ *
+ * [Bug 4.5] Batch-membership ELIGIBILITY ("is this a hawan plan?") used
+ * the Saturday-scoped list — so a plan whose only hawan was scheduled
+ * for the Second Tuesday was treated as hawan-INELIGIBLE and its
+ * subscribers fell through to the one-time catch-up path instead of
+ * permanent List B membership. Eligibility is about the plan CONTAINING
+ * a hawan; day-scoping stays with sevasForMember/saturdayHawanSevaIds.
+ */
+export function allHawanSevaIds(sevas: SevaLite[]): string[] {
+  return sevas.filter((s) => s.is_active && isHawanSeva(s)).map((s) => s.id);
+}
+
 // ─── Membership computation (the locked List A / List B rules) ───
 
 export interface BatchMembershipRow {
@@ -375,12 +389,21 @@ export function assignSegmentsTierPure(
   return out;
 }
 
-/** Seva-signature tier key for one subscriber in one batch. */
-export function tierKeyForMember(sevas: SevaLite[]): string {
-  return sevas
+/**
+ * Seva-signature tier key for one subscriber in one batch.
+ *
+ * [Bug 4.8] The key used to be ONLY the seva-id signature, so two
+ * genuinely different plans with identical composition were
+ * indistinguishable in segment-level reporting. Pass `planId` to
+ * scope the bucket per plan (stricter than "MAY share a segment",
+ * never mixes tiers, and keeps every plan auditable on its own).
+ */
+export function tierKeyForMember(sevas: SevaLite[], planId?: string | null): string {
+  const sig = sevas
     .map((s) => s.id)
     .sort()
     .join("|");
+  return planId ? `${planId}::${sig}` : sig;
 }
 
 // ─── Pandit-facing grouping (seva name + name-gotra ONLY) ───

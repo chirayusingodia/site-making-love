@@ -122,8 +122,16 @@ export async function loadPerformanceData(
             .select(
               "id,telecaller_id,sales_agent_id,status,start_date,created_at,paused_at,cancelled_at,halted_at",
             )
-            .gte("created_at", gte)
-            .lte("created_at", lte)
+            // [Bug 2.3] Keep subscriptions whose ACTIVATION (start_date,
+            // the column activatedInRange credits) falls inside the
+            // range even when created_at fell in a previous one —
+            // otherwise a sub created late last month but activated
+            // this month vanished from BOTH months and the telecaller
+            // lost credit for a real conversion.
+            .or(
+              `and(created_at.gte.${gte},created_at.lte.${lte}),` +
+                `and(start_date.gte.${rangeFrom},start_date.lte.${rangeTo})`,
+            )
             .range(f, t),
         (raw: AnyRow): PerfSubRow => ({
           id: raw.id,

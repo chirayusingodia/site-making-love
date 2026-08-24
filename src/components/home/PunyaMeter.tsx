@@ -309,7 +309,11 @@ export function PunyaMeter() {
                     {isPass ? t("pm_pass_msg") : t("pm_fail_msg")}
                   </div>
                   <div className="text-sm font-semibold text-muted-foreground">
-                    {t("pm_score")}: <span className="text-foreground font-black text-lg">{yesCount}</span> / 5
+                    {/* [Bug 3.2] was a hardcoded "/ 5" while the quiz has
+                        QUESTIONS.length items — all-yes showed "6 / 5". */}
+                    {t("pm_score")}:{" "}
+                    <span className="text-foreground font-black text-lg">{yesCount}</span> /{" "}
+                    {QUESTIONS.length}
                   </div>
                 </div>
 
