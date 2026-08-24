@@ -48,7 +48,14 @@ export function cldUrl(publicId: string, opts: CldTransform = {}): string {
   if (opts.crop) transforms.push(`c_${opts.crop}`);
   if (opts.gravity) transforms.push(`g_${opts.gravity}`);
 
-  const id = publicId.replace(/^\/+/, "");
+  // [Bug 4.10] Encode each path segment — a publicId containing a
+  // space/#/?/non-ASCII produced a malformed <img src> with no way to
+  // recover. Segment-wise encoding keeps "/" separators intact.
+  const id = publicId
+    .replace(/^\/+/, "")
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
   return `https://res.cloudinary.com/${CLOUD}/image/upload/${transforms.join(",")}/${id}`;
 }
 

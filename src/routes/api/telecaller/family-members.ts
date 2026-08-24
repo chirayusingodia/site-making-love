@@ -84,6 +84,16 @@ export const Route = createFileRoute("/api/telecaller/family-members")({
             .select(TC_FAMILY_COLS);
           if (upsertErr) return json({ error: upsertErr.message }, 500);
 
+          // [Bug 3.1] Mirror of the user route: prune slots that fell
+          // out of the renumbered list so removed names can't linger
+          // as phantom duplicates in the Pandit sankalp list.
+          const { error: pruneErr } = await auth.db
+            .from("family_members")
+            .delete()
+            .eq("subscription_id", subscriptionId)
+            .gt("slot_number", rows.length);
+          if (pruneErr) return json({ error: pruneErr.message }, 500);
+
           await writeTelecallerAudit(
             auth.db,
             auth.callerId,

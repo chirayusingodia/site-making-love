@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { getAccessToken } from "@/lib/admin-api";
+import { normalizePhoneE164 } from "@/lib/phone";
 
 // ─────────────────────────────────────────────────────────────
 // PUNYATA — Signup-first checkout: auth client wrappers
@@ -49,15 +50,11 @@ export async function requestOtp(
  * device. Works identically for new signups and returning logins.
  */
 export async function verifyOtp(phoneRaw: string, otp: string): Promise<void> {
-  // The server normalised the number before sending; mirror that so
-  // Supabase sees the exact E.164 identity the code was issued to.
-  const digits = phoneRaw.replace(/\D/g, "");
-  let e164: string;
-  if (digits.length === 10 && /^[6-9]/.test(digits)) e164 = `+91${digits}`;
-  else if (digits.length === 11 && digits.startsWith("0")) e164 = `+91${digits.slice(1)}`;
-  else if (digits.length === 12 && digits.startsWith("91")) e164 = `+${digits}`;
-  else if (digits.length === 13 && digits.startsWith("091")) e164 = `+${digits.slice(1)}`;
-  else throw new AuthApiError("Invalid mobile number", 400);
+  // The server normalised the number before sending; mirror that
+  // through the SAME shared helper (lib/phone.ts) so Supabase sees
+  // the exact E.164 identity the code was issued to [Bug 1.3].
+  const e164 = normalizePhoneE164(phoneRaw);
+  if (!e164) throw new AuthApiError("Invalid mobile number", 400);
 
   const { error } = await supabase.auth.verifyOtp({ phone: e164, token: otp, type: "sms" });
   if (error) throw new AuthApiError(error.message, 400);

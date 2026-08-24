@@ -252,28 +252,17 @@ function MySubscriptionPage() {
 }
 
 function AddressCard() {
-  const [addr, setAddr] = useState<{
-    address_line1: string | null;
-    state: string | null;
-    pincode: string | null;
-  } | null>(null);
+  // [Bug 3.8] Used to re-run supabase.auth.getUser() + a profiles
+  // query of its own with no unmount guard; useSessionProfile()
+  // already resolved exactly this data for the parent page.
+  const { profile } = useSessionProfile();
+  const addr = {
+    address_line1: profile?.address_line1 ?? null,
+    state: profile?.state ?? null,
+    pincode: profile?.pincode ?? null,
+  };
 
-  useEffect(() => {
-    (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      const res = await supabase
-        .from("profiles")
-        .select("address_line1,state,pincode")
-        .eq("id", user.id)
-        .maybeSingle();
-      setAddr(res.data as typeof addr);
-    })();
-  }, []);
-
-  const filled = addr?.address_line1?.trim();
+  const filled = addr.address_line1?.trim();
 
   return (
     <div className="card-soft p-5 flex items-start gap-3">
@@ -282,8 +271,8 @@ function AddressCard() {
         <div className="text-sm font-bold">Prasad Address</div>
         {filled ? (
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            {addr?.address_line1}
-            {addr?.state ? `, ${addr.state}` : ""} {addr?.pincode ? `- ${addr.pincode}` : ""}
+            {addr.address_line1}
+            {addr.state ? `, ${addr.state}` : ""} {addr.pincode ? `- ${addr.pincode}` : ""}
           </p>
         ) : (
           <p className="text-xs text-muted-foreground mt-0.5">

@@ -87,12 +87,18 @@ export function buildGroups(
 ): { groups: SankalpGroup[]; ungrouped: Subscription[] } {
   const sevaById = new Map(sevas.map((s) => [s.id, s]));
 
-  const signatureFor = (planId: string) =>
-    planSevas
+  // [Bug 3.9] A plan with no plan_sevas rows yet used to hash to the
+  // same EMPTY signature as every other such plan, merging unrelated
+  // plans (and their subscribers) into one combined list. Give each
+  // zero-seva plan its own sentinel key so it can never merge.
+  const signatureFor = (planId: string) => {
+    const sig = planSevas
       .filter((ps) => ps.plan_id === planId)
       .map((ps) => ps.seva_id)
       .sort()
       .join("|");
+    return sig || `__plan_only:${planId}`;
+  };
 
   const groupMap = new Map<string, SankalpGroup>();
   const activePlans = plans.filter((p) => p.is_active);

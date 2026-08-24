@@ -14,6 +14,8 @@
 // network response never contains the real values — not hidden,
 // ABSENT (null).
 
+import { csvCell } from "@/lib/csv";
+
 export const PAYMENT_MASKED_FIELDS = [
   "amount_paise",
   "razorpay_payment_id",
@@ -150,7 +152,8 @@ export function buildPaymentsCsv(
   role: "admin" | "owner",
   nameMap: PaymentsCsvNameMap,
 ): string {
-  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  // [Bug 4.9] Shared injection-safe escape (formula prefix + RFC quoting).
+  const esc = csvCell;
 
   const headers = [
     "created_at_ist",

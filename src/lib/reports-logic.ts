@@ -5,10 +5,11 @@
 // Keeping one implementation means the CSV can never drift from
 // what the owner sees on screen. Unit-tested in scratch/.
 
-// NOTE: relative import with explicit .ts extension (not "@/…") so
+// NOTE: relative imports with explicit .ts extensions (not "@/…") so
 // this module is also loadable by the plain-Node verification
 // harness in scratch/ (no alias/extension resolution outside Vite).
 import { daysInMonth, lastSaturdayOf, secondTuesdayOf, toISODate } from "./sankalp-logic.ts";
+import { csvCell, csvRow } from "./csv.ts";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -30,6 +31,8 @@ export interface MonthPayment {
   amount_paise: number;
   status: string;
   created_at: string;
+  /** Capture time — the month bucket Reports and Overview share [Bug 2.4]. */
+  paid_at?: string | null;
 }
 
 export interface ProofRow {
@@ -306,12 +309,12 @@ export function computePendingSevas(
 }
 
 // ─── CSV builders ────────────────────────────────────────────
-// Identical wire format to the page's original exporters: every
-// cell double-quoted, embedded quotes doubled, \n row separators.
+// [Bug 4.9] Injection-safe shared escape (formula prefix + RFC-4180
+// quoting) instead of quote-doubling only.
 
 export function toCsv(headers: string[], rows: (string | number)[][]): string {
-  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-  return [headers.map(esc).join(","), ...rows.map((r) => r.map(esc).join(","))].join("\n");
+  const esc = csvCell;
+  return [csvRow(headers), ...rows.map((r) => csvRow(r))].join("\n");
 }
 
 export function buildSubscribersCsv(month: string, r: SubscriberReport): string {

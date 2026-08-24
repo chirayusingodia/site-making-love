@@ -28,6 +28,27 @@ export type ValidationResult<T> = { ok: true; value: T } | { ok: false; error: s
 const DOB_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * [Bug 4.7] The old regex accepted shape only — "2024-02-30",
+ * "2024-13-05" and future dates all passed. This adds real calendar
+ * validity plus sane bounds: must be a real date, in the past, and
+ * after 1900.
+ */
+function isValidDob(value: string): boolean {
+  if (!DOB_RE.test(value)) return false;
+  const [y, m, d] = value.split("-").map(Number);
+  if (y < 1900) return false;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (
+    dt.getUTCFullYear() !== y ||
+    dt.getUTCMonth() !== m - 1 ||
+    dt.getUTCDate() !== d
+  ) {
+    return false;
+  }
+  return dt.getTime() < Date.now(); // not in the future
+}
+
+/**
  * Validates + normalises a family-members submission.
  * Extracted verbatim from the original route logic (same rules,
  * same Hinglish copy): 1–4 members, unique slots 1–4, name ≥ 2
@@ -58,10 +79,14 @@ export function validateFamilyMembers(members: unknown): ValidationResult<Family
         : null;
     let dob: string | null = null;
     if (typeof raw.dob === "string" && raw.dob.trim()) {
-      if (!DOB_RE.test(raw.dob.trim())) {
+      const candidate = raw.dob.trim();
+      if (!DOB_RE.test(candidate)) {
         return { ok: false, error: `Slot ${slot}: dob YYYY-MM-DD format mein ho` };
       }
-      dob = raw.dob.trim();
+      if (!isValidDob(candidate)) {
+        return { ok: false, error: `Slot ${slot}: dob ek sahi, past ki date ho` };
+      }
+      dob = candidate;
     }
 
     rows.push({
@@ -130,9 +155,21 @@ export interface TelecallerProfileEditFields {
  * account takeover. A wrong number becomes a wrong_number call
  * outcome and an owner escalation, never an inline edit. This
  * validator rejects any attempt to smuggle one in.
+ *
+ * [Bug 4.4] The state+pincode completeness rule used to check only
+ * the request body, so fixing a one-field typo ("address_line1")
+ * was falsely rejected even when the DB already held a valid
+ * state/pincode for that customer. Pass the persisted row as
+ * `persisted` to have the rule satisfied by saved values too.
  */
 export function validateTelecallerProfileEdit(
   body: Record<string, unknown>,
+  opts?: {
+    persisted?: {
+      state?: string | null;
+      pincode?: string | null;
+    } | null;
+  },
 ): ValidationResult<TelecallerProfileEditFields> {
   if ("phone" in body) {
     return { ok: false, error: "Phone yahan badla nahi ja sakta — owner ko bataayein" };
@@ -192,9 +229,14 @@ export function validateTelecallerProfileEdit(
   }
 
   if (!touched) return { ok: false, error: "Kuch badalne ki zaroorat nahi thi" };
+
   // A street address without its state/pincode can never ship —
   // mirror the /api/profile/address rule at the subset level too.
-  if (out.address_line1 && (!out.state || !out.pincode)) {
+  // Satisfied by THIS request OR the already-persisted DB values
+  // [Bug 4.4].
+  const effectiveState = out.state ?? opts?.persisted?.state ?? null;
+  const effectivePincode = out.pincode ?? opts?.persisted?.pincode ?? null;
+  if (out.address_line1 && (!effectiveState || !/^\d{6}$/.test(effectivePincode ?? ""))) {
     return { ok: false, error: "Address ke saath state aur pincode zaroori hain" };
   }
   return { ok: true, value: out };

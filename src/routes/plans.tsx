@@ -335,8 +335,14 @@ function PlanCard({ plan }: { plan: Plan }) {
   );
 }
 
+// [Bug 3.10] The CountUp path requires the explicit "N+ text"
+// convention (digits, plus, WHITESPACE). The old regex matched ANY
+// "digits+anything", so content like "2+1 ऑफर" silently re-rendered
+// through the animated counter branch.
+const RIBBON_COUNTUP_RE = /^(\d{1,6})\+\s+(.+)$/;
+
 function PlanRibbon({ text }: { text: string }) {
-  const match = text.match(/^(\d+)\+(.*)$/);
+  const match = text.match(RIBBON_COUNTUP_RE);
   if (match) {
     const num = parseInt(match[1], 10);
     const rest = match[2];

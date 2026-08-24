@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireTelecaller, writeTelecallerAudit } from "@/lib/supabase-admin.server";
+import { isInCallersTray } from "@/lib/telecaller-data.server";
 import { validateTelecallerProfileEdit } from "@/lib/family-validation";
 import { stripMaskedFieldsDeep, TC_PROFILE_COLS } from "@/lib/telecaller-logic";
 
@@ -12,6 +13,12 @@ import { stripMaskedFieldsDeep, TC_PROFILE_COLS } from "@/lib/telecaller-logic";
 // the identity key (UNIQUE, mirrors auth.users) and changing it
 // would be an account takeover; a wrong number becomes a
 // wrong_number call outcome + owner escalation instead.
+//
+// [Bug 2.2] Ownership gate: every sibling route runs
+// isInCallersTray() before mutating — this one now does too. A
+// telecaller may only edit customers provably hers (assigned lead,
+// self-created lead, or her own call-log row); admin/owner seats
+// bypass via privilegedSeat.
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -35,12 +42,12 @@ export const Route = createFileRoute("/api/telecaller/profile")({
             : "";
         if (!profileId) return json({ error: "profile_id must be a uuid" }, 400);
 
-        // The validator sees ONLY the edit fields — profile_id is
-        // addressing, not an edit.
-        const editBody = { ...body };
-        delete editBody.profile_id;
-        const validated = validateTelecallerProfileEdit(editBody);
-        if (!validated.ok) return json({ error: validated.error }, 400);
+        // [Bug 2.2] Fail-closed tray check BEFORE any read/write —
+        // same discipline as family-members/log-call/person/proof-resend.
+        const inTray = await isInCallersTray(auth.db, auth.callerId, auth.role !== "telecaller", {
+          profileId,
+        });
+        if (!inTray) return json({ error: "Yeh person aapki tray mein nahi hai" }, 403);
 
         try {
           const { data: before, error: beforeErr } = await auth.db
@@ -50,6 +57,20 @@ export const Route = createFileRoute("/api/telecaller/profile")({
             .maybeSingle();
           if (beforeErr) return json({ error: beforeErr.message }, 500);
           if (!before) return json({ error: "Profile not found" }, 404);
+
+          // The validator sees ONLY the edit fields — profile_id is
+          // addressing, not an edit. [Bug 4.4] The persisted row rides
+          // along so a one-field typo fix isn't falsely rejected when
+          // state/pincode are already saved on the profile.
+          const editBody = { ...body };
+          delete editBody.profile_id;
+          const validated = validateTelecallerProfileEdit(editBody, {
+            persisted: {
+              state: (before as { state?: string | null } | null)?.state ?? null,
+              pincode: (before as { pincode?: string | null } | null)?.pincode ?? null,
+            },
+          });
+          if (!validated.ok) return json({ error: validated.error }, 400);
 
           const patch = Object.fromEntries(
             Object.entries(validated.value).filter(([, v]) => v !== undefined),

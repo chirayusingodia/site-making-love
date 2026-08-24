@@ -307,6 +307,14 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
               }
             }
 
+            // [Bug 2.1] `isFirst` used to be recomputed from
+            // subsWithFirstDealEver, which was derived ONCE before the
+            // loop — several already-captured payments of one
+            // subscription in a single backlog run ALL saw true and ALL
+            // paid the 20% bonus (dedupe keyed by payment_id only).
+            // Payments sort oldest-first, so the claim now happens
+            // inside acceptDrafts the moment first_deal drafts are
+            // queued; every later iteration sees false.
             const isFirst = !subsWithFirstDealEver.has(sub.id);
 
             const beneficiaries = [
@@ -339,8 +347,15 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
                 }
                 existingKeys.add(entryKey(d));
                 toInsert.push(d);
-                if (kind === "first_deal") firstDealEntries++;
-                else trailEntries++;
+                if (kind === "first_deal") {
+                  // [Bug 2.1] Claim the subscription's one-and-only
+                  // first_deal as soon as its drafts are queued —
+                  // later payments in THIS run can never re-earn it.
+                  subsWithFirstDealEver.add(sub.id);
+                  firstDealEntries++;
+                } else {
+                  trailEntries++;
+                }
               }
             };
 

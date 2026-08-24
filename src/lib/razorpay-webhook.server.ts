@@ -270,7 +270,10 @@ export function subscriptionPatchForEvent(
       // "unsupported" — just never applied to subscriptions.status.
       return null;
     case "subscription.paused":
-      return { status: "paused", paused_at: nowIso };
+      // Clearing halted_at mirrors charged/resumed: a halt that moved
+      // on to a pause must not leave a stale halt timestamp behind
+      // [Bug 1.8].
+      return { status: "paused", paused_at: nowIso, halted_at: null };
     case "subscription.halted":
       // Razorpay's own retry schedule is exhausted (~3 days of
       // attempts). Authoritative signal — applies on top of any
@@ -583,27 +586,41 @@ export async function processWebhookEvent(
     // Status patch events (activated/charged/paused/halted/resumed/cancelled/completed)
     const patch = subscriptionPatchForEvent(ctx.event, ctx, nowIso);
     if (patch) {
-      const { error: updErr } = await db
-        .from("subscriptions")
-        .update({ ...patch, updated_at: nowIso })
-        .eq("id", sub.id);
-      if (updErr) throw new Error(`subscription update failed: ${updErr.message}`);
-      action =
-        ctx.event === "subscription.activated"
-          ? "activated"
-          : ctx.event === "subscription.charged"
-            ? "charged"
-            : ctx.event === "subscription.paused"
-              ? "paused"
-              : ctx.event === "subscription.halted"
-                ? "halted"
-                : ctx.event === "subscription.resumed"
-                  ? "resumed"
-                  : ctx.event === "subscription.cancelled"
-                    ? "cancelled"
-                    : "completed";
+      // [Bug 1.5] Razorpay does not guarantee webhook delivery order.
+      // A delayed charged/resumed/activated event arriving AFTER a
+      // cancellation (or natural expiry) must never silently revive
+      // the subscription. Terminal states win, exactly like the
+      // 3-failure demotion path guards with .eq("status","active").
+      const terminalBlocked =
+        patch.status === "active" && (sub.status === "cancelled" || sub.status === "expired");
+
+      if (terminalBlocked) {
+        action = "skipped_no_change";
+      } else {
+        const { error: updErr } = await db
+          .from("subscriptions")
+          .update({ ...patch, updated_at: nowIso })
+          .eq("id", sub.id);
+        if (updErr) throw new Error(`subscription update failed: ${updErr.message}`);
+        action =
+          ctx.event === "subscription.activated"
+            ? "activated"
+            : ctx.event === "subscription.charged"
+              ? "charged"
+              : ctx.event === "subscription.paused"
+                ? "paused"
+                : ctx.event === "subscription.halted"
+                  ? "halted"
+                  : ctx.event === "subscription.resumed"
+                    ? "resumed"
+                    : ctx.event === "subscription.cancelled"
+                      ? "cancelled"
+                      : "completed";
+      }
     }
-    // Successful-charge events also record the payment.
+    // Successful-charge events also record the payment — money that
+    // actually moved is recorded even when a stale activation event
+    // loses to a terminal local state above.
     if (ctx.event === "subscription.activated" || ctx.event === "subscription.charged") {
       const row = capturedPaymentRow(sub.id, ctx);
       if (row) {

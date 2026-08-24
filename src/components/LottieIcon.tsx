@@ -52,8 +52,19 @@ export function LottieIcon({
     }
   }, [isInView, playOnView, hasPlayed, delay, activeLottieRef, isPlaceholder]);
 
-  // Scaling down by 20% on small screens (max-width: 640px)
+  // Scaling down by 20% on small screens (max-width: 640px).
   const mobileSize = Math.round(size * 0.8);
+  // [Bug 3.4] The old `sm:[--lottie-size:${size}px]` interpolated the
+  // size INTO the class name — Tailwind's JIT can't see dynamic
+  // strings, so the override class never existed in the CSS bundle
+  // and every icon stayed mobile-sized on desktop. Now both values
+  // ride in as inline CSS variables and a STATIC (JIT-detectable)
+  // arbitrary-property class swaps them at sm+.
+  const responsiveClass = "sm:[--lottie-size:var(--lottie-size-desktop)]";
+  const sizeStyle = {
+    "--lottie-size": `${mobileSize}px`,
+    "--lottie-size-desktop": `${size}px`,
+  } as React.CSSProperties;
 
   if (isPlaceholder && fallback) {
     return (
@@ -62,9 +73,9 @@ export function LottieIcon({
         style={{
           width: "var(--lottie-size)",
           height: "var(--lottie-size)",
-          "--lottie-size": `${mobileSize}px`,
-        } as React.CSSProperties}
-        className={`inline-flex items-center justify-center sm:[--lottie-size:${size}px] ${className}`}
+          ...sizeStyle,
+        }}
+        className={`inline-flex items-center justify-center ${responsiveClass} ${className}`}
       >
         {fallback}
       </div>
@@ -77,9 +88,9 @@ export function LottieIcon({
       style={{
         width: "var(--lottie-size)",
         height: "var(--lottie-size)",
-        "--lottie-size": `${mobileSize}px`,
-      } as React.CSSProperties}
-      className={`inline-block sm:[--lottie-size:${size}px] ${className}`}
+        ...sizeStyle,
+      }}
+      className={`inline-block ${responsiveClass} ${className}`}
     >
       <LottieComponent
         lottieRef={activeLottieRef}

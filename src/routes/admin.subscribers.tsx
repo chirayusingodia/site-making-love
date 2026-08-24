@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { csvCell } from "@/lib/csv";
 import {
   Search,
   Download,
@@ -349,7 +350,7 @@ async function exportCSVServerSide(filters: FilterState, setExporting: (v: boole
         r.family_member_count,
         r.sub_created_at,
       ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .map(csvCell) // [Bug 4.9] injection-safe escape
         .join(","),
     );
 

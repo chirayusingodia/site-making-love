@@ -4,9 +4,17 @@ const supabaseUrl =
   (import.meta.env.VITE_SUPABASE_URL as string) ||
   "https://omjivlmfsikeqwndtlcn.supabase.co";
 
-const supabaseAnonKey =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string) ||
-  "sb_anon_key_placeholder";
+// [Bug 1.6] Fail LOUDLY on a missing anon key. The old silent
+// "sb_anon_key_placeholder" fallback turned a misconfigured deploy
+// into confusing generic 401s on every query; mirroring
+// supabase-admin.server.ts, a broken build env must stop here.
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+if (!supabaseAnonKey) {
+  throw new Error(
+    "VITE_SUPABASE_ANON_KEY is not set — the browser Supabase client cannot be created. " +
+      "Check .env / deployment environment configuration.",
+  );
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

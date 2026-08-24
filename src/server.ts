@@ -1,6 +1,6 @@
 import "./lib/error-capture";
 
-import { consumeLastCapturedError } from "./lib/error-capture";
+import { drainRecentCapturedErrors } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
 type ServerEntry = {
@@ -30,7 +30,16 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  // [Bug 4.3] Drain and log EVERY recent capture — with concurrent
+  // requests there is no safe way to attribute one error to one
+  // request, so all TTL-fresh candidates get logged rather than a
+  // possibly-unrelated "last" one.
+  const recent = drainRecentCapturedErrors();
+  if (recent.length === 0) {
+    console.error(new Error(`h3 swallowed SSR error: ${body}`));
+  } else {
+    for (const err of recent) console.error(err);
+  }
   return new Response(renderErrorPage(), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },

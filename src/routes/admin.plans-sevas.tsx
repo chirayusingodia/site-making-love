@@ -192,8 +192,19 @@ function TierAssignmentMatrix({
       if (error) { showToast(`Error: ${error.message}`, false); setToggling(null); return; }
     }
 
-    const { data: freshPs } = await supabase.from("plan_sevas").select("*");
-    const { error: fe } = await regeneratePlanFeatures(planId, sevas, (freshPs as PlanSeva[]) ?? planSevas, planAddons);
+    // [Bug 3.11] Re-fetch BOTH inputs — the old call passed the stale
+    // planAddons prop, so a concurrent addon edit in another tab was
+    // silently erased from plans.features until the next refresh.
+    const [{ data: freshPs }, { data: freshAddons }] = await Promise.all([
+      supabase.from("plan_sevas").select("*"),
+      supabase.from("plan_addons").select("*"),
+    ]);
+    const { error: fe } = await regeneratePlanFeatures(
+      planId,
+      sevas,
+      (freshPs as PlanSeva[]) ?? planSevas,
+      (freshAddons as PlanAddon[]) ?? planAddons
+    );
     showToast(
       fe ? `plan_sevas updated, features regen failed: ${fe}` : (currently ? "Seva removed. features JSONB updated." : "Seva added. features JSONB updated."),
       !fe
@@ -742,8 +753,18 @@ function PlanAddonEditor({
       const { error: err } = await supabase.from("plan_addons").insert({ plan_id: plan.id, addon_type: addonType, description: defaultDesc, is_active: true });
       if (err) { setError(err.message); setToggling(null); return; }
     }
-    const { data: freshAddons } = await supabase.from("plan_addons").select("*");
-    const { error: fe } = await regeneratePlanFeatures(plan.id, sevas, planSevas, (freshAddons as PlanAddon[]) ?? planAddons);
+    // [Bug 3.11 mirrored] Re-fetch BOTH inputs — stale planSevas here
+    // had the same concurrent-edit hazard as handleToggle.
+    const [{ data: freshPs }, { data: freshAddons }] = await Promise.all([
+      supabase.from("plan_sevas").select("*"),
+      supabase.from("plan_addons").select("*"),
+    ]);
+    const { error: fe } = await regeneratePlanFeatures(
+      plan.id,
+      sevas,
+      (freshPs as PlanSeva[]) ?? planSevas,
+      (freshAddons as PlanAddon[]) ?? planAddons
+    );
     if (fe) { showToast(`Addon updated, features regen failed: ${fe}`); } else { showToast(`${addonType} toggled. features JSONB updated.`); }
     setToggling(null); onUpdated();
   };
