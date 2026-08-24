@@ -97,7 +97,13 @@ export function FamilyAddressForm({
     setMembers((ms) => (ms.length > 1 ? ms.filter((_, i) => i !== idx) : ms));
 
   // Address is validated as a unit only when the user started filling it.
-  const addressTouched = address.line1.trim() || address.state.trim() || address.pincode.trim();
+  // [Pass-2 residual F21] line2 counts too — an edit confined to
+  // landmark/line2 must not be silently dropped on save.
+  const addressTouched =
+    address.line1.trim() ||
+    address.line2.trim() ||
+    address.state.trim() ||
+    address.pincode.trim();
   const addressValid =
     !addressTouched ||
     (address.line1.trim().length >= 5 &&
@@ -113,6 +119,7 @@ export function FamilyAddressForm({
   const save = async () => {
     setError(null);
     setBusy(true);
+    let familySaved = false;
     try {
       await callUserApi("/api/profile/family-members", {
         subscription_id: subscriptionId,
@@ -124,6 +131,7 @@ export function FamilyAddressForm({
           ...(m.dob ? { dob: m.dob } : {}),
         })),
       });
+      familySaved = true;
       if (addressTouched) {
         await callUserApi("/api/profile/address", {
           address_line1: address.line1.trim(),
@@ -136,7 +144,15 @@ export function FamilyAddressForm({
       setTimeout(() => setSavedFlash(false), 2500);
       onSaved?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save nahi ho paya — dobara try karein.");
+      // [Pass-2 F21] two-step save: when the family POST already
+      // landed, "nothing was saved" copy is a lie — say exactly what
+      // happened so the user doesn't re-enter everything.
+      const detail = err instanceof Error ? err.message : "Save nahi ho paya — dobara try karein.";
+      setError(
+        familySaved
+          ? `Parivaar ke naam save ho gaye hain, par address mein dikkat: ${detail}`
+          : detail,
+      );
     } finally {
       setBusy(false);
     }
@@ -280,6 +296,18 @@ export function FamilyAddressForm({
       </div>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
+      {/* [Pass-2 F21] explain WHY Save is disabled — a partially-filled
+          address used to dead-end the button silently. */}
+      {!canSave && !busy && addressTouched && !addressValid && (
+        <p className="text-xs text-amber-600">
+          Address poora bharein — line 1 (kam se kam 5 akshar), state aur 6-anki pincode.
+        </p>
+      )}
+      {!canSave && !busy && !membersValid && (
+        <p className="text-xs text-amber-600">
+          Kam se kam ek naam likhein aur gotra bharein (ya "gotra nahi pata" chunein).
+        </p>
+      )}
 
       <button
         onClick={save}

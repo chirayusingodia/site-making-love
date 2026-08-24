@@ -331,6 +331,9 @@ export interface PaymentRefundPatch {
   refund_amount_paise: number;
   refund_status: "partial" | "full";
   refunded_at: string;
+  /** [Pass-2 P9] clears the endpoint's double-click claim latch once
+   *  Razorpay confirms the money moved. */
+  refund_claimed_at: string | null;
 }
 
 /**
@@ -341,10 +344,19 @@ export interface PaymentRefundPatch {
  * never moved — writing a patch for either would record a refund
  * that didn't (yet, or ever) happen. Those two events are still
  * audit-logged by processRefundEvent, just without a payments patch.
+ *
+ * [Pass-2 P4] refund_amount_paise is CUMULATIVE across multiple
+ * partial refunds — it stores what has been refunded SO FAR, which is
+ * exactly what the admin refund endpoint's remaining-refundable check
+ * re-reads. The previous per-refund overwrite made the second partial
+ * of a payment erase the first from the ledger math. The single
+ * UNIQUE razorpay_refund_id column keeps the LATEST refund's id (the
+ * full history lives in audit_logs meta).
  */
 export function refundPatchForEvent(
   ctx: RefundWebhookContext,
   nowIso: string,
+  previouslyRefundedPaise = 0,
 ): PaymentRefundPatch | null {
   if (ctx.event !== "refund.processed") return null;
   const refund = ctx.refund;
@@ -353,9 +365,13 @@ export function refundPatchForEvent(
   return {
     ...(isFull ? { status: "refunded" as const } : {}),
     razorpay_refund_id: refund.id,
-    refund_amount_paise: refund.amount,
+    refund_amount_paise:
+      (previouslyRefundedPaise > 0 ? previouslyRefundedPaise : 0) + refund.amount,
     refund_status: isFull ? "full" : "partial",
     refunded_at: nowIso,
+    // [Pass-2 P9] the endpoint's double-click claim latch ends here —
+    // money confirmed moved, future refunds claim afresh.
+    refund_claimed_at: null,
   };
 }
 
@@ -402,7 +418,8 @@ export interface ProcessResult {
     | "ignored_missing_payment_id"
     | "ignored_unknown_subscription"
     | "ignored_unknown_payment"
-    | "skipped_no_change";
+    | "skipped_no_change"
+    | "skipped_stale_status";
   subscriptionId?: string;
   consecutiveFailures?: number;
   detail?: string;
@@ -437,7 +454,7 @@ export async function processRefundEvent(
 
   const { data: pay, error: payErr } = await db
     .from("payments")
-    .select("id,subscription_id,status")
+    .select("id,subscription_id,status,refund_amount_paise")
     .eq("razorpay_payment_id", razorpayPaymentId)
     .maybeSingle();
   if (payErr) throw new Error(`payments lookup failed: ${payErr.message}`);
@@ -462,7 +479,15 @@ export async function processRefundEvent(
   let action: ProcessResult["action"];
 
   if (ctx.event === "refund.processed") {
-    const patch = refundPatchForEvent(ctx, nowIso);
+    // [Pass-2 P4] pass the already-refunded total so the patch
+    // ACCUMULATES instead of overwriting prior partial refunds.
+    const patch = refundPatchForEvent(
+      ctx,
+      nowIso,
+      typeof (pay as { refund_amount_paise?: number | null }).refund_amount_paise === "number"
+        ? ((pay as { refund_amount_paise: number }).refund_amount_paise as number)
+        : 0,
+    );
     if (patch) {
       const { error: updErr } = await db.from("payments").update(patch).eq("id", pay.id);
       if (updErr) throw new Error(`payment refund update failed: ${updErr.message}`);
@@ -586,36 +611,52 @@ export async function processWebhookEvent(
     // Status patch events (activated/charged/paused/halted/resumed/cancelled/completed)
     const patch = subscriptionPatchForEvent(ctx.event, ctx, nowIso);
     if (patch) {
-      // [Bug 1.5] Razorpay does not guarantee webhook delivery order.
-      // A delayed charged/resumed/activated event arriving AFTER a
-      // cancellation (or natural expiry) must never silently revive
-      // the subscription. Terminal states win, exactly like the
-      // 3-failure demotion path guards with .eq("status","active").
-      const terminalBlocked =
-        patch.status === "active" && (sub.status === "cancelled" || sub.status === "expired");
+      // [Bug 1.5 + Pass-2 P2] Razorpay does not guarantee webhook
+      // delivery order, and retries can arrive CONCURRENTLY. Two guards
+      // now make terminal states sticky and every write linearizable:
+      //   1. A locally cancelled/expired subscription absorbs every
+      //      non-terminal patch — a delayed paused/resumed/charged can
+      //      no longer resurrect it (previously only active-producing
+      //      events were blocked).
+      //   2. The update is a CAS on the status we just read: exactly
+      //      one of two racing handlers wins; the loser detects zero
+      //      affected rows and skips instead of blind last-write-wins.
+      const localStatus = sub.status;
+      const localTerminal = localStatus === "cancelled" || localStatus === "expired";
+      const patchTerminal = patch.status === "cancelled" || patch.status === "expired";
+      const blocked = (localTerminal && !patchTerminal) || undefined;
 
-      if (terminalBlocked) {
+      if (blocked) {
         action = "skipped_no_change";
       } else {
-        const { error: updErr } = await db
+        const { data: updatedRows, error: updErr } = await db
           .from("subscriptions")
           .update({ ...patch, updated_at: nowIso })
-          .eq("id", sub.id);
+          .eq("id", sub.id)
+          .eq("status", localStatus) // CAS: read-state must still hold
+          .select("id");
         if (updErr) throw new Error(`subscription update failed: ${updErr.message}`);
-        action =
-          ctx.event === "subscription.activated"
-            ? "activated"
-            : ctx.event === "subscription.charged"
-              ? "charged"
-              : ctx.event === "subscription.paused"
-                ? "paused"
-                : ctx.event === "subscription.halted"
-                  ? "halted"
-                  : ctx.event === "subscription.resumed"
-                    ? "resumed"
-                    : ctx.event === "subscription.cancelled"
-                      ? "cancelled"
-                      : "completed";
+        if (!updatedRows || updatedRows.length === 0) {
+          // Another delivery changed the status between our read and
+          // write — Razorpay will re-send this event if it still
+          // applies, and the fresh read will see the new state.
+          action = "skipped_stale_status";
+        } else {
+          action =
+            ctx.event === "subscription.activated"
+              ? "activated"
+              : ctx.event === "subscription.charged"
+                ? "charged"
+                : ctx.event === "subscription.paused"
+                  ? "paused"
+                  : ctx.event === "subscription.halted"
+                    ? "halted"
+                    : ctx.event === "subscription.resumed"
+                      ? "resumed"
+                      : ctx.event === "subscription.cancelled"
+                        ? "cancelled"
+                        : "completed";
+        }
       }
     }
     // Successful-charge events also record the payment — money that

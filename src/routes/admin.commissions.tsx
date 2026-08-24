@@ -218,7 +218,7 @@ function AdminCommissionsPage() {
                         ) : (
                           <Lock className="w-3 h-3" />
                         )}
-                        {locked ? "Unlock" : "Lock &amp; pay"}
+                        {locked ? "Unlock" : "Lock & pay"}
                       </Button>
                     </td>
                   </tr>

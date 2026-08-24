@@ -38,11 +38,7 @@ function isValidDob(value: string): boolean {
   const [y, m, d] = value.split("-").map(Number);
   if (y < 1900) return false;
   const dt = new Date(Date.UTC(y, m - 1, d));
-  if (
-    dt.getUTCFullYear() !== y ||
-    dt.getUTCMonth() !== m - 1 ||
-    dt.getUTCDate() !== d
-  ) {
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {
     return false;
   }
   return dt.getTime() < Date.now(); // not in the future
@@ -61,9 +57,16 @@ export function validateFamilyMembers(members: unknown): ValidationResult<Family
 
   const seen = new Set<number>();
   const rows: FamilyMemberInputRow[] = [];
-  for (const raw of members as Record<string, unknown>[]) {
-    const slot = typeof raw.slot_number === "number" ? Math.trunc(raw.slot_number) : NaN;
-    const name = typeof raw.full_name === "string" ? raw.full_name.trim() : "";
+  for (const raw of members as unknown[]) {
+    // [Pass-2 L5] the old cast let null/primitive elements reach
+    // property access and throw a TypeError — the contract is a clean
+    // {ok:false}, never an exception.
+    if (raw === null || raw === undefined || typeof raw !== "object" || Array.isArray(raw)) {
+      return { ok: false, error: "Har member ek object hona chahiye" };
+    }
+    const rec = raw as Record<string, unknown>;
+    const slot = typeof rec.slot_number === "number" ? Math.trunc(rec.slot_number) : NaN;
+    const name = typeof rec.full_name === "string" ? rec.full_name.trim() : "";
     if (!(slot >= 1 && slot <= 4)) {
       return { ok: false, error: "slot_number 1-4 hona chahiye" };
     }
@@ -72,14 +75,14 @@ export function validateFamilyMembers(members: unknown): ValidationResult<Family
     if (!name || name.length < 2) return { ok: false, error: `Slot ${slot}: naam zaroori hai` };
 
     const gotra =
-      typeof raw.gotra === "string" && raw.gotra.trim() ? raw.gotra.trim().slice(0, 60) : null;
+      typeof rec.gotra === "string" && rec.gotra.trim() ? rec.gotra.trim().slice(0, 60) : null;
     const relation =
-      typeof raw.relation === "string" && raw.relation.trim()
-        ? raw.relation.trim().slice(0, 40)
+      typeof rec.relation === "string" && rec.relation.trim()
+        ? rec.relation.trim().slice(0, 40)
         : null;
     let dob: string | null = null;
-    if (typeof raw.dob === "string" && raw.dob.trim()) {
-      const candidate = raw.dob.trim();
+    if (typeof rec.dob === "string" && rec.dob.trim()) {
+      const candidate = rec.dob.trim();
       if (!DOB_RE.test(candidate)) {
         return { ok: false, error: `Slot ${slot}: dob YYYY-MM-DD format mein ho` };
       }

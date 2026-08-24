@@ -46,6 +46,12 @@ export const Route = createFileRoute("/api/admin/subscriptions/reissue-link")({
             : null;
         if (!oldSubscriptionId) return json({ error: "subscription_id zaroori hai" }, 400);
 
+        // [Pass-2 P6] Set once the atomic claim below succeeds — the
+        // catch uses it to decide whether a compensating revert to
+        // 'halted' is needed (and must be visible in the catch's scope).
+        let claimed = false;
+        let claimedSubscriptionId: string | null = null;
+
         try {
           const { data: oldSub, error: subErr } = await auth.db
             .from("subscriptions")
@@ -73,7 +79,7 @@ export const Route = createFileRoute("/api/admin/subscriptions/reissue-link")({
             return json({ error: "Plan abhi active nahi hai — naya link nahi ban sakta" }, 400);
           }
 
-          // ── Retire the dead row FIRST ────────────────────────
+          // ── Atomically CLAIM the dead row ────────────────────
           const nowIso = new Date().toISOString();
           // [Bug 1.1] The atomic race guard IS the conditional update:
           // Postgres matches `.eq("status","halted")` for exactly ONE
@@ -100,6 +106,8 @@ export const Route = createFileRoute("/api/admin/subscriptions/reissue-link")({
             // our read and write — bail instead of double-reissuing.
             return json({ error: "Doosre admin ne pehle hi iska reissue kar diya tha" }, 409);
           }
+          claimed = true;
+          claimedSubscriptionId = oldSub.id;
 
           // ── Fresh checkout — organic, credits nobody ─────────
           const outcome = await createCheckoutForUser({
@@ -146,6 +154,28 @@ export const Route = createFileRoute("/api/admin/subscriptions/reissue-link")({
             shareLink,
           });
         } catch (err) {
+          // [Pass-2 P6] Compensating revert: if the claim succeeded but
+          // anything after it failed (checkout creation, notification),
+          // put the subscriber back into 'halted' so every recovery
+          // queue still sees them — the old flow stranded them as
+          // cancelled with nothing to show for it. The guard matches
+          // only OUR claim; a row already moved on by a webhook stays.
+          if (claimed && claimedSubscriptionId) {
+            try {
+              await auth.db
+                .from("subscriptions")
+                .update({
+                  status: "halted",
+                  cancelled_at: null,
+                  cancel_reason: null,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", claimedSubscriptionId)
+                .eq("cancel_reason", "mandate_dead_reissued");
+            } catch {
+              // best-effort compensation only
+            }
+          }
           if (err instanceof CheckoutError) return json({ error: err.message }, err.status);
           console.error("admin/subscriptions/reissue-link error:", err);
           return json({ error: err instanceof Error ? err.message : "Reissue failed" }, 500);

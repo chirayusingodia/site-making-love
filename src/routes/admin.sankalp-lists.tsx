@@ -23,6 +23,22 @@ export const Route = createFileRoute("/admin/sankalp-lists")({
   component: SankalpListsPage,
 });
 
+// [Pass-2 F16] bare YYYY-MM-DD parses as UTC midnight → one-day-early
+// display for non-IST viewers. Anchor date-only strings to IST midnight
+// and render in Asia/Kolkata (same pattern as reports-logic.ts).
+function fmtActiveSince(d: string | null): string {
+  if (!d) return "—";
+  const iso = d.length === 10 ? `${d}T00:00:00+05:30` : d;
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return "—";
+  return dt.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Plan {
   id: string;
@@ -314,16 +330,23 @@ function SankalpListsPage() {
     let mems: FamilyMember[] = [];
     if (subs.length > 0) {
       // All 4 slots for every active subscription — no primary-only filtering.
-      const { data: fmData, error: fmErr } = await supabase
-        .from("family_members")
-        .select("id,subscription_id,full_name,gotra,slot_number")
-        .in(
-          "subscription_id",
-          subs.map((s) => s.id),
-        )
-        .order("slot_number");
-      if (fmErr) errs.push(fmErr.message);
-      mems = (fmData as FamilyMember[]) ?? [];
+      // [Pass-2 F7] chunked like proof-upload/pandit pages: thousands of
+      // UUIDs in one .in() exceed PostgREST URL limits and fail the page.
+      const ids = subs.map((s) => s.id);
+      const collected: FamilyMember[] = [];
+      for (let i = 0; i < ids.length; i += 200) {
+        const { data: fmData, error: fmErr } = await supabase
+          .from("family_members")
+          .select("id,subscription_id,full_name,gotra,slot_number")
+          .in("subscription_id", ids.slice(i, i + 200))
+          .order("slot_number");
+        if (fmErr) {
+          errs.push(fmErr.message);
+          break;
+        }
+        collected.push(...((fmData as FamilyMember[]) ?? []));
+      }
+      mems = collected;
     }
 
     if (errs.length) setGlobalError(`Supabase: ${errs.join("; ")}`);
@@ -596,13 +619,7 @@ function AdminNameList({ group }: { group: SankalpGroup }) {
                       {subscription.id.slice(0, 8)}
                     </td>
                     <td className="px-4 py-2 text-[10px] text-slate-500">
-                      {new Date(
-                        subscription.start_date ?? subscription.created_at,
-                      ).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {fmtActiveSince(subscription.start_date ?? subscription.created_at)}
                     </td>
                   </tr>
                 ))
@@ -619,13 +636,7 @@ function AdminNameList({ group }: { group: SankalpGroup }) {
                       {subscription.id.slice(0, 8)}
                     </td>
                     <td className="px-4 py-2 text-[10px] text-slate-500">
-                      {new Date(
-                        subscription.start_date ?? subscription.created_at,
-                      ).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {fmtActiveSince(subscription.start_date ?? subscription.created_at)}
                     </td>
                   </tr>,
                 ],

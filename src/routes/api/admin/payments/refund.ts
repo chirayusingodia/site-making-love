@@ -99,6 +99,30 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
           );
         }
 
+        // [Pass-2 P9] Optimistic double-click guard. Validation alone
+        // can't stop two rapid requests — both read the same pre-refund
+        // row and both dispatch real refunds to Razorpay. The atomic
+        // claim below matches exactly ONE racer (unclaimed, or a stale
+        // claim older than 10 min); the loser gets 409 instead of
+        // moving money twice.
+        const { data: claimedRows, error: claimErr } = await auth.db
+          .from("payments")
+          .update({ refund_claimed_at: new Date().toISOString() })
+          .eq("id", pay.id)
+          .eq("status", "captured")
+          .or(
+            "refund_claimed_at.is.null," +
+              `refund_claimed_at.lt.${new Date(Date.now() - 10 * 60_000).toISOString()}`,
+          )
+          .select("id");
+        if (claimErr) return json({ error: claimErr.message }, 500);
+        if (!claimedRows || claimedRows.length === 0) {
+          return json(
+            { error: "Refund already in progress — thodi der baad refresh karke check karein" },
+            409,
+          );
+        }
+
         try {
           const rzp = await createRazorpayRefund({
             razorpayPaymentId: pay.razorpay_payment_id,
@@ -136,6 +160,13 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : "Refund call failed";
+          // Release the claim — Razorpay rejected, so a corrected retry
+          // must not be blocked for 10 minutes.
+          try {
+            await auth.db.from("payments").update({ refund_claimed_at: null }).eq("id", pay.id);
+          } catch {
+            // best-effort release only
+          }
           await writeTelecallerAudit(
             auth.db,
             auth.staffId,

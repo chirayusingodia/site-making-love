@@ -17,7 +17,6 @@ import { PizzaComparison } from "@/components/PizzaComparison";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { PunyaMeter } from "@/components/home/PunyaMeter";
-import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 import { useTranslation } from "@/lib/translations";
 import { LottieIcon } from "@/components/LottieIcon";
 import { CountUp } from "@/components/CountUp";
@@ -53,7 +52,6 @@ const heroSlides: Slide[] = [
 ];
 
 function HomePage() {
-  useRevealOnScroll();
   return (
     <SiteChrome>
       {/* Full-width hero carousel — sits above the headline */}

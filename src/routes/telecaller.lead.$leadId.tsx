@@ -177,6 +177,18 @@ function LeadCallCardPage() {
       setLogErr("Outcome chunein");
       return;
     }
+    // [Pass-2 F6] validate before request construction (see person page).
+    if (outcome === "callback_requested") {
+      const parsed = new Date(callbackAt);
+      if (!callbackAt || isNaN(parsed.getTime())) {
+        setLogErr("Callback ki date/time sahi se chunein");
+        return;
+      }
+      if (parsed.getTime() <= Date.now()) {
+        setLogErr("Callback ka time future mein hona chahiye");
+        return;
+      }
+    }
     setLogging(true);
     setLogErr(null);
     try {

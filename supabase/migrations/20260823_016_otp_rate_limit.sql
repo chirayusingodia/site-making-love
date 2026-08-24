@@ -76,6 +76,7 @@ AS $$
     SELECT count(DISTINCT phone)::int
     FROM public.otp_send_log
     WHERE ip = p_ip
+      AND allowed
       AND created_at >= p_since;
 $$;
 

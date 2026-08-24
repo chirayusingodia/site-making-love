@@ -63,6 +63,11 @@ DROP FUNCTION IF EXISTS public.generate_sankalp_batch(date, text, jsonb) CASCADE
 DROP FUNCTION IF EXISTS public.redeem_coupon(text) CASCADE;
 DROP FUNCTION IF EXISTS public.otp_check_and_log(text, text) CASCADE;
 DROP FUNCTION IF EXISTS public.otp_send_ip_phone_count(text, timestamptz) CASCADE;
+-- [Pass-2 P10 residual fix] atomic call-log daily limit (migration 019 §6)
+DROP FUNCTION IF EXISTS public.log_call_limited(uuid, uuid, uuid, uuid, text, text, text, timestamptz, boolean, boolean, int) CASCADE;
+-- [Pass-2 S6 fix] hospitals-session functions (migration 014)
+DROP FUNCTION IF EXISTS public.current_hospital_agent(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.reallot_hospital(uuid, uuid, text, uuid) CASCADE;
 
 -- Confirm clean state
 SELECT 'Teardown complete — ready for fresh migration' AS status;

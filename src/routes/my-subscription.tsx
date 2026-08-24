@@ -1,9 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Sparkles, ShieldCheck, Clock, Users, MapPin, LogIn } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  ShieldCheck,
+  Clock,
+  Users,
+  MapPin,
+  LogIn,
+  AlertCircle,
+  XCircle,
+  CircleStop,
+  RotateCcw,
+} from "lucide-react";
 import { SiteChrome } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { supabase } from "@/lib/supabase";
+import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 
 export const Route = createFileRoute("/my-subscription")({
   head: () => ({
@@ -21,10 +34,16 @@ export const Route = createFileRoute("/my-subscription")({
 // ─────────────────────────────────────────────────────────────
 // MY SUBSCRIPTION — real data via RLS (no placeholders).
 //
-// Reads the caller's own subscriptions + family_members. A pending
-// subscription with a linked Razorpay id shows the honest
-// "payment confirming" state — activation is webhook-driven and
-// this page simply reflects whatever status actually exists.
+// Reads the caller's own subscriptions + family_members. Status is
+// rendered HONESTLY (SESSION_STUCK_PENDING_CHECKOUT, Bug B): a fresh
+// pending row shows grey "Confirming…", a stale one (past the
+// checkout reuse window in checkout-ttl.ts — the same threshold the
+// server uses to stop re-handing back dead razorpay ids) shows an
+// explicit "payment complete nahi hua" state with a working retry
+// action into /checkout/$planId. cancelled/expired/halted get their
+// own labels mirroring admin.subscribers.tsx's StatusBadge vocabulary
+// instead of folding into "Confirming…". Activation itself stays
+// webhook-only; this page simply reflects whatever status exists.
 // ─────────────────────────────────────────────────────────────
 
 interface SubRow {
@@ -34,7 +53,7 @@ interface SubRow {
   start_date: string | null;
   next_billing_date: string | null;
   created_at: string;
-  plans: { name: string; billing_period: string; price_paise: number } | null;
+  plans: { name: string; billing_period: string; price_paise: number; slug: string } | null;
 }
 
 interface MemberRow {
@@ -46,10 +65,59 @@ interface MemberRow {
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  const dt = new Date(d);
+  // [Pass-2 F16] anchor date-only strings to IST midnight — a bare
+  // YYYY-MM-DD parses as UTC and displayed one day early for viewers
+  // west of UTC.
+  const iso = d.length === 10 ? `${d}T00:00:00+05:30` : d;
+  const dt = new Date(iso);
   return isNaN(dt.getTime())
     ? "—"
-    : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    : dt.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "Asia/Kolkata",
+      });
+}
+
+// [Bug B] Honest status pill — colours/icons mirror admin.subscribers.tsx's
+// StatusBadge so customer-facing and admin-facing language for the same
+// status match (paused=amber voluntary, cancelled=rose final,
+// halted=red recoverable, expired=grey). "pending" splits on the shared
+// checkout-ttl threshold: fresh → reassuring "Confirming…", stale → an
+// explicit failure state, never the same grey spinner-equivalent.
+function statusPill(status: string, pendingStale: boolean) {
+  if (status === "active") {
+    return { label: "Active", cls: "bg-success/10 text-success", icon: ShieldCheck };
+  }
+  if (status === "pending") {
+    return pendingStale
+      ? {
+          label: "Payment Pending",
+          cls: "bg-amber-50 text-amber-800 border border-amber-200",
+          icon: AlertCircle,
+        }
+      : { label: "Confirming…", cls: "bg-secondary text-muted-foreground", icon: Clock };
+  }
+  if (status === "cancelled")
+    return {
+      label: "Cancelled",
+      cls: "bg-rose-50 text-rose-800 border border-rose-200",
+      icon: XCircle,
+    };
+  if (status === "halted")
+    return {
+      label: "Halted",
+      cls: "bg-red-50 text-red-800 border border-red-200",
+      icon: CircleStop,
+    };
+  if (status === "expired")
+    return {
+      label: "Expired",
+      cls: "bg-slate-100 text-slate-500 border border-slate-200",
+      icon: AlertCircle,
+    };
+  return { label: status, cls: "bg-secondary text-muted-foreground", icon: AlertCircle };
 }
 
 function MySubscriptionPage() {
@@ -69,7 +137,7 @@ function MySubscriptionPage() {
       const subsRes = await supabase
         .from("subscriptions")
         .select(
-          "id,status,razorpay_sub_id,start_date,next_billing_date,created_at,plans(name,billing_period,price_paise)",
+          "id,status,razorpay_sub_id,start_date,next_billing_date,created_at,plans(name,slug,billing_period,price_paise)",
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
@@ -162,6 +230,25 @@ function MySubscriptionPage() {
   const members = membersBySub[current.id] ?? [];
   const plan = current.plans;
 
+  // [Bug B] one honest read of "what kind of non-active is this?" —
+  // computed once, used by pill + copy + retry CTA below.
+  const pendingStale = current.status === "pending" && pendingCheckoutIsStale(current.created_at);
+  const pill = statusPill(current.status, pendingStale);
+  const PillIcon = pill.icon;
+
+  const statusCopy: string | null =
+    current.status === "pending"
+      ? pendingStale
+        ? "Payment complete nahi hua — dobara try karein."
+        : "Payment mil gaya — activation webhook se poora hota hai, kuch hi minute mein."
+      : current.status === "cancelled"
+        ? "Yeh sadasyata cancel ho gayi hai."
+        : current.status === "expired"
+          ? "Yeh sadasyata expire ho gayi hai — naya plan chunein."
+          : current.status === "halted"
+            ? "Payment ki samasya ki wajah se seva ruki hai — hamari team aapse sampark karegi."
+            : null;
+
   return (
     <SiteChrome>
       <main className="max-w-md mx-auto px-4 pb-24 pt-8 space-y-5">
@@ -169,30 +256,50 @@ function MySubscriptionPage() {
         <div className="card-soft p-5 space-y-1">
           <div className="flex items-center justify-between">
             <div className="text-xs font-bold text-brand">Current Plan</div>
-            {current.status === "active" ? (
-              <span className="inline-flex items-center gap-1 bg-success/10 text-success text-xs font-bold px-2 py-1 rounded-full">
-                <ShieldCheck size={12} /> Active
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 bg-secondary text-muted-foreground text-xs font-bold px-2 py-1 rounded-full">
-                <Clock size={12} /> Confirming…
-              </span>
-            )}
+            <span
+              className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${pill.cls}`}
+            >
+              <PillIcon size={12} /> {pill.label}
+            </span>
           </div>
           <div className="font-bold text-lg mt-1">
             {plan?.name ?? "—"}
             {plan && (
               <span className="text-sm text-muted-foreground font-medium ml-1">
-                ₹{Math.round(plan.price_paise / 100).toLocaleString("en-IN")}/
-                {plan.billing_period === "yearly" ? "Yearly" : "Monthly"}
+                {/* [Pass-2 F9] exact-to-the-paisa display, matching formatINR. */}₹
+                {(plan.price_paise / 100).toLocaleString("en-IN", {
+                  minimumFractionDigits: plan.price_paise % 100 !== 0 ? 2 : 0,
+                  maximumFractionDigits: 2,
+                })}
+                /{plan.billing_period === "yearly" ? "Yearly" : "Monthly"}
               </span>
             )}
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {current.status === "pending"
-              ? "Payment mil gaya — activation webhook se poora hota hai, kuch hi minute mein."
-              : `Next billing: ${fmtDate(current.next_billing_date)}`}
-          </div>
+          {statusCopy && (
+            <div
+              className={`text-xs mt-1 ${pendingStale ? "text-amber-800 font-semibold" : "text-muted-foreground"}`}
+            >
+              {statusCopy}
+            </div>
+          )}
+          {!statusCopy && current.status === "active" && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Next billing: {fmtDate(current.next_billing_date)}
+            </div>
+          )}
+          {pendingStale && plan?.slug && (
+            // [Bug B] the explicit next action — lands on the normal
+            // checkout for this plan; server-side (Part A) discards the
+            // dead pending row and creates a fresh Razorpay subscription
+            // on this very click.
+            <Link
+              to="/checkout/$planId"
+              params={{ planId: plan.slug }}
+              className="mt-3 inline-flex items-center gap-2 bg-brand text-white text-sm font-bold px-5 py-2.5 rounded-full hover:bg-brand-deep transition-colors"
+            >
+              <RotateCcw size={15} /> Payment Dobara Karein <ArrowRight size={15} />
+            </Link>
+          )}
         </div>
 
         {/* Family members */}

@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireAdmin, writeTelecallerAudit } from "@/lib/supabase-admin.server";
 import { normalizePhoneE164 } from "@/lib/auth.server";
+import { fetchAllRows } from "@/lib/supabase";
+
+// [Pass-2 P11] shape-check ids as real UUIDs — length===36 let any
+// 36-char string through to a Postgres uuid-cast 500.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // POST /api/admin/leads/upload
 // Auth: staff (admin OR owner). Body:
@@ -47,11 +52,11 @@ export const Route = createFileRoute("/api/admin/leads/upload")({
         }
 
         const explicitSourceAgentId =
-          typeof body.source_agent_id === "string" && body.source_agent_id.length === 36
+          typeof body.source_agent_id === "string" && UUID_RE.test(body.source_agent_id)
             ? body.source_agent_id
             : null;
         const hospitalId =
-          typeof body.hospital_id === "string" && body.hospital_id.length === 36
+          typeof body.hospital_id === "string" && UUID_RE.test(body.hospital_id)
             ? body.hospital_id
             : null;
         if (!Array.isArray(body.rows) || body.rows.length === 0 || body.rows.length > 500) {
@@ -81,7 +86,9 @@ export const Route = createFileRoute("/api/admin/leads/upload")({
               422,
             );
           }
-          // Validate the hospital exists when given.
+          // Validate the hospital exists when given — and [Pass-2 P11]
+          // an explicit sourcing agent must exist and be ACTIVE, same
+          // as hospital_id (previously stamped onto leads unchecked).
           if (hospitalId) {
             const { data: hosp } = await db
               .from("hospitals")
@@ -90,31 +97,52 @@ export const Route = createFileRoute("/api/admin/leads/upload")({
               .maybeSingle();
             if (!hosp) return json({ error: "Hospital not found" }, 404);
           }
+          if (explicitSourceAgentId) {
+            const { data: agent } = await db
+              .from("sales_agents")
+              .select("id,is_active")
+              .eq("id", explicitSourceAgentId)
+              .maybeSingle();
+            if (!agent || !agent.is_active) {
+              return json({ error: "Sourcing agent not found or inactive" }, 404);
+            }
+          }
 
-          // Catalogue for dedupe decisions.
-          const [openLeadsRes, activeSubsRes] = await Promise.all([
-            db
-              .from("leads")
-              .select("phone,status")
-              .in("status", ["new", "assigned", "in_progress", "link_sent"]),
-            db.from("subscriptions").select("user_id,status").eq("status", "active"),
+          // Catalogue for dedupe decisions. [Pass-2 P7] both catalogues
+          // page through the ~1000-row PostgREST cap — a truncated
+          // catalogue let already-worked numbers pass dedupe and get
+          // PAID twice, the exact fraud this upload guards against.
+          const [openLeadsAll, activeSubsAll] = await Promise.all([
+            fetchAllRows<{ phone: string }>((from, to) =>
+              db
+                .from("leads")
+                .select("phone,status")
+                .in("status", ["new", "assigned", "in_progress", "link_sent"])
+                .range(from, to),
+            ),
+            fetchAllRows<{ user_id: string }>((from, to) =>
+              db
+                .from("subscriptions")
+                .select("user_id,status")
+                .eq("status", "active")
+                .range(from, to),
+            ),
           ]);
-          if (openLeadsRes.error) return json({ error: openLeadsRes.error.message }, 500);
-          if (activeSubsRes.error) return json({ error: activeSubsRes.error.message }, 500);
+          if (openLeadsAll.error) return json({ error: openLeadsAll.error }, 500);
+          if (activeSubsAll.error) return json({ error: activeSubsAll.error }, 500);
 
-          const openLeadPhones = new Set(
-            (openLeadsRes.data as { phone: string }[]).map((l) => l.phone),
-          );
+          const openLeadPhones = new Set(openLeadsAll.data.map((l) => l.phone));
           // Active subscribers' profile ids → their phones.
-          const activeUserIds = new Set(
-            (activeSubsRes.data as { user_id: string }[]).map((s) => s.user_id),
-          );
+          const activeUserIds = new Set(activeSubsAll.data.map((s) => s.user_id));
           const phoneByUserId = new Map<string, string>();
-          if (activeUserIds.size > 0) {
+          // [Pass-2 P7] chunked .in() — thousands of UUIDs in one
+          // filter exceed URL length limits.
+          const activeUserIdList = [...activeUserIds];
+          for (let i = 0; i < activeUserIdList.length; i += 200) {
             const { data: profs } = await db
               .from("profiles")
               .select("id,phone")
-              .in("id", [...activeUserIds]);
+              .in("id", activeUserIdList.slice(i, i + 200));
             for (const p of profs ?? []) {
               if (p.phone) phoneByUserId.set(p.id as string, p.phone as string);
             }

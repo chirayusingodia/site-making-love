@@ -31,13 +31,20 @@ export function computeMrr(subs: ActiveSubPlan[]): {
     const price = s.plan_price_paise ?? 0;
     if (s.plan_billing_period === "yearly") {
       yearlyPlansActiveCount++;
-      mrrPaise += Math.round(price / 12);
+      // [Pass-2 L11] fractional sum, rounded ONCE at the end — the old
+      // per-sub Math.round diverged from reports-logic's fractional
+      // MRR by up to ±N×0.5 paise between the two owner screens.
+      mrrPaise += price / 12;
     } else {
       monthlyPlansActiveCount++;
       mrrPaise += price;
     }
   }
-  return { mrrPaise, monthlyPlansActiveCount, yearlyPlansActiveCount };
+  return {
+    mrrPaise: Math.round(mrrPaise),
+    monthlyPlansActiveCount,
+    yearlyPlansActiveCount,
+  };
 }
 
 export function sumCapturedPayments(payments: { amount_paise: number | null }[]): {

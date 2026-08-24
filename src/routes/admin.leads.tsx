@@ -69,19 +69,28 @@ function AdminLeadsPage() {
         .order("created_at", { ascending: false })
         .limit(50),
     ]);
-    setAgents((agentRows as { id: string; full_name: string | null }[]) ?? []);
+    // [Pass-2 F14] functional updates read the CURRENT state, not the
+    // first-render closure. The stale-closure version re-snapped the
+    // hospital/telecaller select back to the first option on every
+    // refresh (clobbering the admin's manual pick) and never applied a
+    // default reallot agent at all (agents was frozen at []).
+    const freshAgents = (agentRows as { id: string; full_name: string | null }[]) ?? [];
+    setAgents(freshAgents);
     setTelecallers((tcRows as { id: string; full_name: string | null }[]) ?? []);
-    if (!telecallerId && tcRows && tcRows.length > 0) setTelecallerId(tcRows[0].id);
+    if (tcRows && tcRows.length > 0) {
+      setTelecallerId((prev) => prev || tcRows[0].id);
+    }
     setLeads((leadRows as LeadRow[]) ?? []);
     try {
       const h = await callAdminApi<{ hospitals: HospitalRow[] }>("/api/admin/hospitals/list");
       setHospitals(h.hospitals);
-      if (!hospitalId && h.hospitals.length > 0) setHospitalId(h.hospitals[0].id);
-      if (!reallotAgent && agents.length > 0) setReallotAgent(agents[0].id);
+      if (h.hospitals.length > 0) {
+        setHospitalId((prev) => prev || h.hospitals[0].id);
+      }
+      setReallotAgent((prev) => prev || freshAgents[0]?.id || "");
     } catch {
       setHospitals([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

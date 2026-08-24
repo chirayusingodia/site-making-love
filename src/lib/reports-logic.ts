@@ -269,12 +269,15 @@ export function computePendingSevas(
     (b) => b.batch_type === "last_saturday" && b.batch_date === satDate,
   );
 
-  const cellFor = (
-    sub: ViewRow,
-    batch: BatchRow | undefined,
-    batchDate: string,
-  ): BatchCell => {
-    const joined = (sub.start_date ?? sub.sub_created_at).slice(0, 10);
+  // [Pass-2 L10] start_date is a DATE column (safe to slice);
+  // sub_created_at is a UTC timestamptz — shift to IST before slicing
+  // so join dates don't lag a day for activations before 05:30 IST.
+  const joinedIso = (s: ViewRow): string =>
+    s.start_date ??
+    new Date(Date.parse(s.sub_created_at) + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const cellFor = (sub: ViewRow, batch: BatchRow | undefined, batchDate: string): BatchCell => {
+    const joined = joinedIso(sub);
     if (!batch) {
       return { label: "—", note: "Batch not generated", batchDate };
     }
@@ -300,7 +303,7 @@ export function computePendingSevas(
       id: s.subscription_id,
       name: s.primary_member_name || "(no name)",
       plan: s.plan_name || "—",
-      joinedDate: (s.start_date ?? s.sub_created_at).slice(0, 10),
+      joinedDate: joinedIso(s),
       joinedTime: fmtTimeIST(s.sub_created_at),
       tue: cellFor(s, tueBatch, tueDate),
       sat: cellFor(s, satBatch, satDate),

@@ -197,9 +197,14 @@ function BatchStatusCell({ cell }: { cell: import("@/lib/reports-logic").BatchCe
 // ─── Main Page ───────────────────────────────────────────────
 
 function AdminReportsPage() {
-  const now = new Date();
-  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const [month, setMonth] = useState(defaultMonth);
+  // [Pass-2 F12] default month on an IST calendar — the viewer-local
+  // Date preselected the previous month for owners abroad on the 1st.
+  const istToday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+  }).format(new Date()); // YYYY-MM
+  const [month, setMonth] = useState(istToday);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setError] = useState<string | null>(null);
   const [printKey, setPrintKey] = useState<PrintKey>(null);

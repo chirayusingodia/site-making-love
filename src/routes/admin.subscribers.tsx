@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { csvCell } from "@/lib/csv";
 import {
@@ -98,7 +98,17 @@ interface FilterState {
   dateTo: string;
   /** Call queue: subscriptions with 0 family members (Sankalp Pending). */
   sankalpPending: boolean;
+  /**
+   * [SESSION_STUCK_PENDING_CHECKOUT Part C] Ops queue: pending rows older
+   * than STALE_PENDING_OPS_MINUTES — abandoned checkouts that will never
+   * webhook-activate. Deliberately LONGER than the customer-facing reuse
+   * window in checkout-ttl.ts (20 min): by 1h a real in-flight payment is
+   * long resolved, so anything left pending is worth a proactive call.
+   */
+  stalePending: boolean;
 }
+
+const STALE_PENDING_OPS_MINUTES = 60;
 
 const DEFAULT_FILTERS: FilterState = {
   status: "all",
@@ -108,6 +118,7 @@ const DEFAULT_FILTERS: FilterState = {
   dateFrom: "",
   dateTo: "",
   sankalpPending: false,
+  stalePending: false,
 };
 
 // ─── 360 Modal Types (unchanged — still queries real tables) ──
@@ -195,10 +206,18 @@ function fmtINR(paise: number) {
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
-  const dt = new Date(d);
+  // [Pass-2 F16] anchor date-only strings to IST midnight (UTC parse
+  // rendered one day early west of UTC).
+  const iso = d.length === 10 ? `${d}T00:00:00+05:30` : d;
+  const dt = new Date(iso);
   return isNaN(dt.getTime())
     ? "—"
-    : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    : dt.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "Asia/Kolkata",
+      });
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -253,9 +272,12 @@ function StatusBadge({ status }: { status: string }) {
 // Centralised so list query, count query, and CSV query all apply
 // identical filters consistently.
 
-/** Call queue urgency: Sankalp Pending sorts OLDEST purchase first. */
+/** Call-queue urgency: Sankalp Pending AND Stale Pending sort OLDEST first. */
 function orderForFilters(filters: FilterState) {
-  return { column: "sub_created_at" as const, ascending: !filters.sankalpPending };
+  return {
+    column: "sub_created_at" as const,
+    ascending: !filters.sankalpPending && !filters.stalePending,
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -269,6 +291,16 @@ function applyFilters(query: any, filters: FilterState): any {
     // Sankalp Pending call queue — derived, never a stored flag:
     // zero family_members rows on the subscription.
     query = query.eq("family_member_count", 0);
+  }
+  if (filters.stalePending) {
+    // Stale Pending queue [Part C] — pending rows past the ops window.
+    // Abandoned checkouts fire NO Razorpay webhook by design, so this
+    // derived filter (never a stored flag) is the only way "customer
+    // silently stuck" becomes a follow-up queue. Cutoff is computed at
+    // query time so long-open tabs stay correct; list, count, and CSV
+    // export all inherit it via this shared builder.
+    const cutoff = new Date(Date.now() - STALE_PENDING_OPS_MINUTES * 60_000).toISOString();
+    query = query.eq("status", "pending").lt("sub_created_at", cutoff);
   }
   if (filters.search.trim()) {
     // PostgREST ilike on primary_member_name for name search;
@@ -1017,7 +1049,8 @@ function AdminSubscribersPage() {
     filters.dateFrom ||
     filters.dateTo ||
     filters.search ||
-    filters.sankalpPending;
+    filters.sankalpPending ||
+    filters.stalePending;
 
   // ── Open 360 modal: load full family_members lazily ──
   const open360 = async (row: SubscriberListRow) => {
@@ -1210,6 +1243,24 @@ function AdminSubscribersPage() {
               Sankalp Pending (0 members)
             </label>
 
+            {/* Stale Pending queue — abandoned checkouts [Part C] */}
+            <label
+              className={`flex items-center gap-2 text-xs border rounded-lg px-2.5 py-2 cursor-pointer select-none ${
+                pendingFilters.stalePending
+                  ? "border-amber-300 bg-amber-50 text-amber-800 font-semibold"
+                  : "border-amber-200 bg-white text-slate-700"
+              }`}
+              title={`Pending > ${STALE_PENDING_OPS_MINUTES} min — checkout opened but never paid; customer likely stuck. Follow up proactively.`}
+            >
+              <input
+                type="checkbox"
+                checked={pendingFilters.stalePending}
+                onChange={(e) => setPending((p) => ({ ...p, stalePending: e.target.checked }))}
+                className="accent-amber-600"
+              />
+              Stale Pending (abandoned checkout)
+            </label>
+
             {/* Date range */}
             <div className="xl:col-span-1 flex gap-2">
               <input
@@ -1305,9 +1356,10 @@ function AdminSubscribersPage() {
                   const hasMoreMembers = row.family_member_count > 1;
 
                   return (
-                    <>
+                    // [Pass-2 F13] keyed Fragment — keys on the inner <tr>
+                    // don't key the list item React actually reconciles.
+                    <Fragment key={row.subscription_id}>
                       <tr
-                        key={row.subscription_id}
                         className={`border-b border-amber-50 hover:bg-amber-50/30 transition-colors ${isExpanded ? "bg-amber-50/20" : ""}`}
                       >
                         {/* Subscriber */}
@@ -1433,7 +1485,7 @@ function AdminSubscribersPage() {
                           subscriptionId={row.subscription_id}
                         />
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
             </tbody>

@@ -53,6 +53,43 @@ interface Filters {
   search?: string;
 }
 
+// [Pass-2 P11] every filter field is validated BEFORE it can reach a
+// PostgREST filter — the old unchecked `body.filters` let garbage like
+// dateFrom:"{}" interpolate into `{}T00:00:00+05:30` and surface a raw
+// Postgres timestamptz parse error to the client.
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const PAYMENT_STATUSES = new Set(["captured", "failed", "refunded", "pending"]);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function sanitizeFilters(raw: unknown): Filters | null {
+  if (raw === undefined || raw === null) return {};
+  if (typeof raw !== "object" || Array.isArray(raw)) return null;
+  const src = raw as Record<string, unknown>;
+  const out: Filters = {};
+  if (src.status !== undefined) {
+    if (typeof src.status !== "string" || !PAYMENT_STATUSES.has(src.status)) return null;
+    out.status = src.status;
+  }
+  if (src.planId !== undefined) {
+    if (typeof src.planId !== "string" || !UUID_RE.test(src.planId)) return null;
+    out.planId = src.planId;
+  }
+  for (const key of ["dateFrom", "dateTo"] as const) {
+    const v = src[key];
+    if (v === undefined || v === null) continue;
+    if (typeof v !== "string" || !DATE_RE.test(v)) return null;
+    // Real calendar date, not just shape.
+    const d = new Date(`${v}T00:00:00+05:30`);
+    if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v) return null;
+    out[key] = v;
+  }
+  if (src.search !== undefined) {
+    if (typeof src.search !== "string") return null;
+    out.search = src.search.slice(0, 64);
+  }
+  return out;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyFilters(q: any, f: Filters): any {
   if (f.status && f.status !== "all") q = q.eq("status", f.status);
@@ -82,7 +119,11 @@ export const Route = createFileRoute("/api/admin/payments/list")({
             pageSize = Math.min(MAX_PAGE_SIZE, Math.floor(body.pageSize));
           }
           all = body?.all === true;
-          if (body?.filters && typeof body.filters === "object") filters = body.filters;
+          const cleanFilters = sanitizeFilters(body?.filters);
+          if (cleanFilters === null) {
+            return json({ error: "Invalid filters" }, 400);
+          }
+          filters = cleanFilters;
         } catch {
           return json({ error: "Invalid JSON body" }, 400);
         }

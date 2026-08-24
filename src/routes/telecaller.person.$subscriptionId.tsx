@@ -317,7 +317,11 @@ function PersonCard({
 
   useBlocker({
     shouldBlockFn: () => {
-      if (!touchedAny || outcome === "") return false;
+      // [Pass-2 F17] the old `outcome === ""` short-circuit let in-app
+      // navigation silently discard typed notes/family/address edits
+      // whenever no outcome was picked — the opposite of the promise
+      // in the comment above. Only a completely untouched form passes.
+      if (!touchedAny) return false;
       return !window.confirm("Call log kiye bina page chhod rahe hain? Log zaroori hai.");
     },
   });
@@ -409,6 +413,21 @@ function PersonCard({
     if (!outcome) {
       setLogErr("Outcome chunein");
       return;
+    }
+    // [Pass-2 F6] validate the callback time BEFORE request
+    // construction — an untouched datetime-local used to explode inside
+    // new Date("").toISOString() (RangeError) and surface as a cryptic
+    // "Invalid time value" instead of a usable instruction.
+    if (outcome === "callback_requested") {
+      const parsed = new Date(callbackAt);
+      if (!callbackAt || isNaN(parsed.getTime())) {
+        setLogErr("Callback ki date/time sahi se chunein");
+        return;
+      }
+      if (parsed.getTime() <= Date.now()) {
+        setLogErr("Callback ka time future mein hona chahiye");
+        return;
+      }
     }
     setLogging(true);
     setLogErr(null);

@@ -35,9 +35,9 @@ export async function callAdminApi<T>(
     },
     body: JSON.stringify(body),
   });
-  const data = (await res.json()) as T & { error?: string };
-  if (!res.ok) throw new AdminApiError(data.error ?? `Request failed (${res.status})`, res.status);
-  return data;
+  const data = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
+  if (!res.ok) throw new AdminApiError(data?.error ?? `Request failed (${res.status})`, res.status);
+  return data as T;
 }
 
 /**

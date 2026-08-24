@@ -22,8 +22,11 @@ export const Route = createFileRoute("/api/admin/leads/assign")({
         } catch {
           return json({ error: "Invalid JSON body" }, 400);
         }
+        // [Pass-2 P11] shape-check as a real UUID — length===36 let
+        // any 36-char junk through to a Postgres uuid-cast 500.
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const telecallerId =
-          typeof body.telecaller_id === "string" && body.telecaller_id.length === 36
+          typeof body.telecaller_id === "string" && UUID_RE.test(body.telecaller_id)
             ? body.telecaller_id
             : "";
         if (!telecallerId) return json({ error: "telecaller_id required" }, 400);

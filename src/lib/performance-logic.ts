@@ -244,7 +244,12 @@ export function rankTelecallers(ds: PerfDataset): TelecallerPerfRow[] {
   }
 
   for (const tc of ds.telecallers) {
-    const myLeads = ds.leads.filter((l) => l.assignedTo === tc.id);
+    // [Pass-2 L12] leads are range-filtered HERE, matching the calls
+    // filter and the hospital lens — the pure module can no longer
+    // silently depend on every caller pre-filtering the lead rows.
+    const myLeads = ds.leads.filter(
+      (l) => l.assignedTo === tc.id && inRangeIst(l.createdAt, ds.range.from, ds.range.to),
+    );
     const myLeadIds = new Set(myLeads.map((l) => l.id));
     const myCalls = ds.calls.filter(
       (c) => c.calledBy === tc.id && inRangeIst(c.createdAt, ds.range.from, ds.range.to),
@@ -352,7 +357,10 @@ export function rankAgents(ds: PerfDataset): AgentPerfRow[] {
 
   const rows: AgentPerfRow[] = [];
   for (const ag of ds.agents) {
-    const supplied = ds.leads.filter((l) => l.sourceAgentId === ag.id);
+    // [Pass-2 L12] same range discipline as the telecaller/hospital lenses.
+    const supplied = ds.leads.filter(
+      (l) => l.sourceAgentId === ag.id && inRangeIst(l.createdAt, ds.range.from, ds.range.to),
+    );
     const convertedLeads = supplied.filter((l) => l.convertedAt !== null);
 
     const mySubs = ds.subs.filter((s) => s.salesAgentId === ag.id);

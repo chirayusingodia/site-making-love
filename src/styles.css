@@ -149,9 +149,9 @@
   border-top-color: #a72638; border-right-color: #a72638;
 }
 
-/* Reveal on scroll */
-.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.reveal.is-visible { opacity: 1; transform: translateY(0); }
+/* [Pass-2 L9] The .reveal/.is-visible pair was removed with the dead
+   use-reveal-on-scroll hook — no element ever used the class, and the
+   opacity:0 trap silently hid anything that mounted after observe. */
 
 /* Custom Animations */
 @keyframes fade-in {

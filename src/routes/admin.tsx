@@ -50,7 +50,10 @@ function AdminLayout() {
     { label: "Plans & Sevas", href: "/admin/plans-sevas", icon: Layers },
     { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText, badge: "New" },
     { label: "Proof Upload", href: "/admin/proof-upload", icon: Flame, badge: "Session 4" },
-    { label: "Seva Proofs", href: "/admin/proofs", icon: Video, badge: "Session 0.5" },
+    // [Pass-2 F2] was "/admin/proofs" — a route that never existed;
+    // every click landed on the 404 page. Proof upload IS the seva
+    // proofs surface, so both labels now point there.
+    { label: "Seva Proofs", href: "/admin/proof-upload", icon: Video },
     { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 6" },
     // Reports is OWNER-ONLY (financial data). Hidden until the role
     // resolves and confirmed 'owner' — the route itself is also

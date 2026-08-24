@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { json, requireOwner } from "@/lib/supabase-admin.server";
 import { computeMrr, sumCapturedPayments } from "@/lib/financials-logic";
 import { monthWindow } from "@/lib/reports-logic";
+import { fetchAllRows } from "@/lib/supabase";
 
 // POST /api/admin/overview-financials
 // Body: {} (no params — always the current IST month)
@@ -34,23 +35,34 @@ export const Route = createFileRoute("/api/admin/overview-financials")({
           const month = `${istNow.getFullYear()}-${String(istNow.getMonth() + 1).padStart(2, "0")}`;
           const { monthStart, monthEnd } = monthWindow(month);
 
-          const [subsRes, capturedRes] = await Promise.all([
-            db
-              .from("subscriptions")
-              .select("id, plans(price_paise, billing_period)")
-              .eq("status", "active"),
-            db
-              .from("payments")
-              .select("amount_paise")
-              .eq("status", "captured")
-              .gte("paid_at", monthStart)
-              .lte("paid_at", monthEnd),
+          // [Pass-2 P7] PostgREST caps single responses at ~1000 rows —
+          // both aggregates MUST page (fetchAllRows) or MRR/revenue
+          // silently under-report past a thousand subscribers.
+          const [subsAll, capturedAll] = await Promise.all([
+            fetchAllRows<{
+              plans: { price_paise?: number; billing_period?: string } | null;
+            }>((from, to) =>
+              db
+                .from("subscriptions")
+                .select("id, plans(price_paise, billing_period)")
+                .eq("status", "active")
+                .range(from, to),
+            ),
+            fetchAllRows<{ amount_paise: number | null }>((from, to) =>
+              db
+                .from("payments")
+                .select("amount_paise")
+                .eq("status", "captured")
+                .gte("paid_at", monthStart)
+                .lte("paid_at", monthEnd)
+                .range(from, to),
+            ),
           ]);
 
-          if (subsRes.error) throw new Error(`subscriptions: ${subsRes.error.message}`);
-          if (capturedRes.error) throw new Error(`payments: ${capturedRes.error.message}`);
+          if (subsAll.error) throw new Error(`subscriptions: ${subsAll.error}`);
+          if (capturedAll.error) throw new Error(`payments: ${capturedAll.error}`);
 
-          const activeSubs = (subsRes.data || []).map((row) => {
+          const activeSubs = subsAll.data.map((row) => {
             const plan = row.plans as unknown as {
               price_paise?: number;
               billing_period?: string;
@@ -62,7 +74,7 @@ export const Route = createFileRoute("/api/admin/overview-financials")({
           });
 
           const mrr = computeMrr(activeSubs);
-          const captured = sumCapturedPayments(capturedRes.data || []);
+          const captured = sumCapturedPayments(capturedAll.data);
 
           return json({
             ...mrr,

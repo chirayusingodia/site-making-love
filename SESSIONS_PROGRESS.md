@@ -26,6 +26,7 @@
 | Session SFC | Signup-First Checkout (auth + real payments + post-purchase profile) | ✅ Code complete — **needs Supabase/Vercel/Razorpay config to go live** | OpenCode + Kimi K3 |
 | Session TOA | Subscription tenure (until-cancel) + OTP abuse protection (3 layers) | ✅ Complete (config items open) | OpenCode + Kimi K3 |
 | Session GSI | Google Sign-In alongside phone OTP (+ confirm-phone step) | ✅ Code complete — **needs Google OAuth provider config in Supabase** | OpenCode + Kimi K3 |
+| Session SPC | Stuck "Confirming…" pending subscriptions (abandoned-checkout reuse) | ✅ Code complete — **needs live Razorpay staging repro (§7.1/2/5)** | OpenCode + Kimi K3 |
 | Session 7 | SEO + Audit Log + Subscriber 360 polish | ⏳ Pending | — |
 
 ---
@@ -298,6 +299,33 @@ backbone — Google only changes how identity is proven.
 4. Revisit the trust trade-off if abuse shows up: Google-path numbers are format-valid but not
    OTP-verified; the telecaller call queue remains their verification. Account merge remains
    available as a fast-follow if dual-login demand appears.
+
+---
+
+## ✅ Session SPC — Stuck "Confirming…" Pending Subscriptions (Abandoned Checkout Reuse)
+**Prompt:** `SESSION_STUCK_PENDING_CHECKOUT_PROMPT.md` · **Date:** 2026-08-24 · **Severity:** P0 (revenue-blocking) · **Migration:** none required (audit_logs-only writes; 019 slot consumed by pass-2 fixes)
+
+**Live incident this fixes:** owner opened Razorpay Checkout for Premium, closed it without paying — app showed "Payment confirm ho raha hai…" for 2+ hours, and every Subscribe retry re-handed back the SAME dead `sub_TTUW…`/`sub_TTUf…` rows (both stuck Razorpay-status `Created`). Abandoned checkouts fire NO webhook by design, so nothing ever moved the row on.
+
+**Part A — stop reusing dead pending checkouts (server, Bug A):**
+- `razorpay.server.ts`: new `fetchRazorpaySubscription()` (GET /v1/subscriptions/:id) + best-effort-swallowing `cancelRazorpaySubscription()`.
+- `subscriptions-checkout.server.ts` `createCheckoutForUser`: pending reuse now age-gated via shared `src/lib/checkout-ttl.ts` (`PENDING_REUSE_WINDOW_MINUTES = 20`). Fresh → unchanged fast-path reuse (double-click case preserved). Stale → live Razorpay status check: completable states may reuse (flagged judgment call), anything else is cancelled-on-Razorpay (errors swallowed), deleted locally (orphan-cleanup pattern), and falls through to fresh creation. Razorpay API failure fails SAFE (fresh creation, never a 500). Every discard/recheck writes an `audit_logs` row (`checkout.stale_pending_discarded` / `_recheck_failed` / `_kept_alive_mandate`).
+
+**Part B — honest UI (Bug B):**
+- `my-subscription.tsx`: binary Active/“Confirming…” badge replaced with per-state pills mirroring admin vocabulary — fresh pending stays grey "Confirming…" with existing copy; stale pending gets amber "Payment Pending" + "Payment complete nahi hua — dobara try karein." + working "Payment Dobara Karein" button into `/checkout/$planId` (that click triggers Part A's discard-and-recreate); `cancelled`/`expired`/`halted` get their own rose/red/slate labels instead of folding into "Confirming…".
+- `subscription-success.tsx`: celebratory banner now gated on a real checkout hand-off (`?ref=`) — a bare/manually-typed URL shows neutral status copy, not "Payment mil gaya".
+- `profile.tsx` (§6 audit find): had the IDENTICAL collapsed badge ("Payment confirm ho raha hai…" for everything non-active incl. dead rows) — same treatment applied: stale-aware pill + retry CTA in the current-subscription card; `created_at` + plan `slug` added to its select.
+
+**Part C — ops visibility:**
+- `admin.subscribers.tsx`: new "Stale Pending (abandoned checkout)" filter segment — `status='pending'` older than `STALE_PENDING_OPS_MINUTES = 60` (deliberately longer than the 20-min reuse window: by 1h a real payment is long resolved), computed at query time inside the shared `applyFilters` builder so list + count + CSV export all inherit it; oldest-first sort like the Sankalp queue. Turns "customer silently stuck" into a proactive follow-up queue.
+
+**What was deliberately NOT touched:** webhook activation discipline (`status='active'` remains webhook-exclusive; fetch is read-only reconnaissance), no client polling of Razorpay APIs, `FAILURE_DEMOTE_THRESHOLD` renewal-failure path untouched.
+
+**§6 pattern audit results:**
+- *Stale-trust in cached Razorpay ids:* `resume.ts` verified clean — it only resumes webhook-`halted` rows and surfaces Razorpay's own 400 verbatim (the resume call IS the verification); `reissue-link.ts` + telecaller `send-payment-link.ts` both route through the now-protected `createCheckoutForUser`; coupon-mismatch stale rows were already covered by pass-2 cancellation. Nothing else has the shape.
+- *Collapsed pending badges:* `profile.tsx` fixed (above). `admin.payments.tsx` PayStatusBadge's `pending` is a PAYMENT-row state (created-not-captured), a different entity from abandoned SUBSCRIPTION checkouts — no change needed. Telecaller person/queue views render halted/cancelled distinctly already (015 session); admin.overview has no subscription-pending badge (only sankalp-batch pending).
+
+**Verification status:** eslint clean on all touched files (6 remaining errors in admin.subscribers.tsx are pre-existing `as any`/ternary style debt from pass-2, confirmed against HEAD); `tsc --noEmit` passes. Acceptance criteria §7 items 1/2/5 need a live Razorpay staging repro before this session can be called fully closed.
 
 ---
 

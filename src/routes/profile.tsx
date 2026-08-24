@@ -12,13 +12,19 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  AlertCircle,
+  XCircle,
+  CircleStop,
+  RotateCcw,
 } from "lucide-react";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { signOut } from "@/lib/auth-api";
 import { formatPhoneDisplay } from "@/lib/phone";
+import { formatINR } from "@/lib/plans";
 import { supabase } from "@/lib/supabase";
 import { FamilyAddressForm, type ExistingMember } from "@/components/profile-completion";
+import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -38,15 +44,25 @@ interface SubRow {
   status: string;
   start_date: string | null;
   next_billing_date: string | null;
-  plans: { name: string; billing_period: string; price_paise: number } | null;
+  created_at: string;
+  plans: { name: string; slug: string; billing_period: string; price_paise: number } | null;
 }
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  const dt = new Date(d);
+  // [Pass-2 F16] bare YYYY-MM-DD parses as UTC midnight and rendered a
+  // day early for viewers west of UTC; anchor date-only strings to IST
+  // midnight (same pattern as reports-logic.ts).
+  const iso = d.length === 10 ? `${d}T00:00:00+05:30` : d;
+  const dt = new Date(iso);
   return isNaN(dt.getTime())
     ? "—"
-    : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    : dt.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "Asia/Kolkata",
+      });
 }
 
 function ProfilePage() {
@@ -126,6 +142,10 @@ function LoggedInView() {
   const [membersBySub, setMembersBySub] = useState<Record<string, ExistingMember[]>>({});
   const [loadingData, setLoadingData] = useState(true);
   const [formOpenFor, setFormOpenFor] = useState<string | null>(null);
+  // [Pass-2 F22] bumped after every successful load — used as part of
+  // the form's React key so it re-seeds from fresh members instead of
+  // keeping a lazy-initializer snapshot from before the refresh.
+  const [dataRev, setDataRev] = useState(0);
 
   const loadData = useCallback(
     async (isCancelled: () => boolean = () => false) => {
@@ -138,7 +158,9 @@ function LoggedInView() {
       }
       const subsRes = await supabase
         .from("subscriptions")
-        .select("id,status,start_date,next_billing_date,plans(name,billing_period,price_paise)")
+        .select(
+          "id,status,start_date,next_billing_date,created_at,plans(name,slug,billing_period,price_paise)",
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       const rows = (subsRes.data as unknown as SubRow[]) ?? [];
@@ -157,6 +179,7 @@ function LoggedInView() {
       );
       if (!isCancelled()) setMembersBySub(counts);
       if (!isCancelled()) setLoadingData(false);
+      if (!isCancelled()) setDataRev((v) => v + 1);
     },
     [userId],
   );
@@ -183,6 +206,46 @@ function LoggedInView() {
     subs.find((s) => s.status === "active") ?? subs.find((s) => s.status === "pending") ?? subs[0];
   const currentMembers = current ? (membersBySub[current.id] ?? []) : [];
 
+  // [SESSION_STUCK_PENDING_CHECKOUT §6] Same honest status split as
+  // my-subscription.tsx's statusPill — a stale pending row (abandoned
+  // checkout past the shared checkout-ttl window) must not read as
+  // "payment confirm ho raha hai" here either.
+  const pendingStale =
+    !!current && current.status === "pending" && pendingCheckoutIsStale(current.created_at);
+  const profilePill = (() => {
+    const s = current?.status;
+    if (s === "active")
+      return { label: "Active", cls: "bg-success/10 text-success", icon: ShieldCheck };
+    if (s === "pending")
+      return pendingStale
+        ? {
+            label: "Payment Pending",
+            cls: "bg-amber-50 text-amber-800 border border-amber-200",
+            icon: AlertCircle,
+          }
+        : { label: "Confirming…", cls: "bg-secondary text-muted-foreground", icon: Clock };
+    if (s === "cancelled")
+      return {
+        label: "Cancelled",
+        cls: "bg-rose-50 text-rose-800 border border-rose-200",
+        icon: XCircle,
+      };
+    if (s === "halted")
+      return {
+        label: "Halted",
+        cls: "bg-red-50 text-red-800 border border-red-200",
+        icon: CircleStop,
+      };
+    if (s === "expired")
+      return {
+        label: "Expired",
+        cls: "bg-slate-100 text-slate-500 border border-slate-200",
+        icon: AlertCircle,
+      };
+    return null;
+  })();
+  const ProfilePillIcon = profilePill?.icon;
+
   return (
     <div className="space-y-6">
       {/* Identity */}
@@ -197,23 +260,11 @@ function LoggedInView() {
           <div className="text-sm text-muted-foreground truncate">
             {formatPhoneDisplay(profile?.phone)}
           </div>
-          {current && (
+          {current && profilePill && ProfilePillIcon && (
             <div
-              className={`mt-1 inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${
-                current.status === "active"
-                  ? "bg-success/10 text-success"
-                  : "bg-secondary text-muted-foreground"
-              }`}
+              className={`mt-1 inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${profilePill.cls}`}
             >
-              {current.status === "active" ? (
-                <>
-                  <ShieldCheck size={12} /> Active
-                </>
-              ) : (
-                <>
-                  <Clock size={12} /> Payment confirm ho raha hai…
-                </>
-              )}
+              <ProfilePillIcon size={12} /> {profilePill.label}
             </div>
           )}
         </div>
@@ -230,7 +281,9 @@ function LoggedInView() {
               {current.plans?.name ?? "—"}
               {current.plans && (
                 <span className="text-xs text-muted-foreground font-medium ml-1">
-                  ₹{Math.round(current.plans.price_paise / 100).toLocaleString("en-IN")}/
+                  {/* [Pass-2 F9] formatINR, not Math.round — a ₹251.50 plan
+                      must not display as ₹252 against the bank statement. */}
+                  {formatINR(current.plans.price_paise)}/
                   {current.plans.billing_period === "yearly" ? "Yearly" : "Monthly"}
                 </span>
               )}
@@ -242,6 +295,23 @@ function LoggedInView() {
               {fmtDate(current.next_billing_date)}
             </div>
           </div>
+          {pendingStale && current.plans?.slug && (
+            // Same wiring as /my-subscription: this click lands on the
+            // normal checkout; the server discards the dead pending row
+            // and creates a fresh Razorpay subscription (Part A).
+            <div className="px-4 py-4">
+              <p className="text-xs text-amber-800 font-semibold mb-2">
+                Payment complete nahi hua — dobara try karein.
+              </p>
+              <Link
+                to="/checkout/$planId"
+                params={{ planId: current.plans.slug }}
+                className="inline-flex items-center gap-1.5 bg-brand text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-brand-deep transition-colors"
+              >
+                <RotateCcw size={13} /> Payment Dobara Karein <ArrowRight size={13} />
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <div className="card-soft p-5 text-center space-y-3">
@@ -284,9 +354,13 @@ function LoggedInView() {
             </div>
             {formOpenFor === current.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
-          {formOpenFor === current.id && (
+          {/* [Pass-2 F22] gate on !loadingData so the form never mounts
+              in the gap before member counts land (it would seed from
+              []), and key by dataRev so it re-seeds after each save. */}
+          {formOpenFor === current.id && !loadingData && (
             <div className="px-4 pb-4 border-t border-black/5 pt-4">
               <FamilyAddressForm
+                key={`${current.id}:${dataRev}`}
                 subscriptionId={current.id}
                 initialMembers={currentMembers}
                 initialAddress={

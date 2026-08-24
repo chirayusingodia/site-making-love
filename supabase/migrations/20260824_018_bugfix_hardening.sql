@@ -58,10 +58,15 @@ $$;
 COMMENT ON FUNCTION public.is_owner() IS
     'Owner-only RLS check (migration 018). Owner is the ONLY role with financial visibility: payments, sales_agents, commission_entries, staff_commission_rates, commission_payout_periods policies gate on this.';
 
-REVOKE EXECUTE ON FUNCTION public.is_owner()
-    FROM public, anon, authenticated;
--- NOTE: unlike is_admin(), nothing in a policy evaluated for plain
--- users calls is_owner(), so it can stay locked to the service role.
+-- [Pass-2 S3 fix] RLS policy expressions are evaluated with the
+-- INVOKER's privileges, so every role that can reach a policy gated
+-- on this function MUST hold EXECUTE — owners/admins connect over
+-- PostgREST as `authenticated`. Revoking it made the five financial
+-- policies throw "permission denied" for the very users they gate.
+-- SECURITY DEFINER keeps the body's profile read safe; granting to
+-- authenticated leaks only the same one-boolean is_admin() already
+-- leaks (documented C1 exception, migration 013).
+GRANT EXECUTE ON FUNCTION public.is_owner() TO authenticated;
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -503,9 +508,24 @@ BEGIN
     INSERT INTO public.sankalp_batches AS b (batch_type, batch_date, status)
     VALUES (p_kind, p_date, 'pending')
     ON CONFLICT (batch_date, batch_type)
-        DO UPDATE SET id = EXCLUDED.id
+        DO NOTHING
     RETURNING b.id, b.status, (xmax = 0) AS inserted
     INTO v_batch_id, v_status, v_inserted;
+
+    -- [Pass-2 S2 fix] Never rewrite the PK (the old DO UPDATE SET
+    -- id = EXCLUDED.id violated child FKs on every refresh). With
+    -- DO NOTHING the loser's RETURNING is empty; it already blocked
+    -- on the winner's insert above, so the row is now visible.
+    IF v_batch_id IS NULL THEN
+        SELECT sb.id, sb.status, false
+          INTO v_batch_id, v_status, v_inserted
+          FROM public.sankalp_batches sb
+         WHERE sb.batch_type = p_kind
+           AND sb.batch_date = p_date;
+        IF v_batch_id IS NULL THEN
+            RAISE EXCEPTION 'sankalp batch % % vanished during upsert', p_kind, p_date;
+        END IF;
+    END IF;
 
     IF v_status = 'done' THEN
         RETURN jsonb_build_object(
@@ -605,9 +625,14 @@ BEGIN
     -- Consistent lock order (phone → ip) avoids deadlocks.
     PERFORM pg_advisory_xact_lock(hashtextextended('otp:' || p_phone, 0));
 
+    -- [Pass-2 S4 fix] Count only rows where a send actually happened
+    -- (allowed = true). Blocked attempts are logged but must never
+    -- consume quota — OTP_RATE_LIMITS caps SENDS, and counting blocks
+    -- let retries/self-extending lockouts pin a phone forever.
     SELECT COUNT(*) INTO v_burst
       FROM public.otp_send_log
      WHERE phone = p_phone
+       AND allowed
        AND created_at >= now() - interval '10 minutes';
 
     IF v_burst >= 3 THEN
@@ -616,6 +641,7 @@ BEGIN
         SELECT COUNT(*) INTO v_daily
           FROM public.otp_send_log
          WHERE phone = p_phone
+           AND allowed
            AND created_at >= now() - interval '24 hours';
         IF v_daily >= 8 THEN
             v_blocked := 'phone_daily';
@@ -627,6 +653,7 @@ BEGIN
         SELECT COUNT(DISTINCT phone) INTO v_distinct
           FROM public.otp_send_log
          WHERE ip = p_ip
+           AND allowed
            AND created_at >= now() - interval '1 hour';
         IF v_distinct >= 5 THEN
             v_blocked := 'ip_distinct_phones';

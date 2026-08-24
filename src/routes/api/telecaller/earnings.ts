@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { json, requireTelecaller } from "@/lib/supabase-admin.server";
 import { stripMaskedFieldsDeep } from "@/lib/telecaller-logic";
 import { addPeriods, FIRST_DEAL_HOLD_DAYS, periodOf } from "@/lib/commission-logic";
+import { fetchAllRows } from "@/lib/supabase";
 
 // POST /api/telecaller/earnings
 // Gate: requireTelecaller. Body: NONE.
@@ -41,15 +42,21 @@ export const Route = createFileRoute("/api/telecaller/earnings")({
           // widen the query beyond HER uuid.
           void request;
 
-          const [entriesRes, ratesRes, periodsRes] = await Promise.all([
-            auth.db
-              .from("commission_entries")
-              .select(
-                "id,kind,status,amount_paise,payout_period,created_at," +
-                  "subscription_id,base_paise",
-              )
-              .eq("profile_id", auth.callerId)
-              .order("payout_period", { ascending: true }),
+          // [Pass-2 P7] her ENTIRE ledger must page through PostgREST's
+          // ~1000-row cap — unpaged, a veteran telecaller's lifetime
+          // earnings silently stop growing past a thousand entries.
+          const [entriesAll, ratesRes, periodsRes] = await Promise.all([
+            fetchAllRows<Record<string, unknown>>((from, to) =>
+              auth.db
+                .from("commission_entries")
+                .select(
+                  "id,kind,status,amount_paise,payout_period,created_at," +
+                    "subscription_id,base_paise",
+                )
+                .eq("profile_id", auth.callerId)
+                .order("payout_period", { ascending: true })
+                .range(from, to),
+            ),
             auth.db
               .from("staff_commission_rates")
               .select("percent,effective_from,effective_to,reason")
@@ -58,11 +65,11 @@ export const Route = createFileRoute("/api/telecaller/earnings")({
               .limit(5),
             auth.db.from("commission_payout_periods").select("period,locked_at"),
           ]);
-          if (entriesRes.error) return json({ error: entriesRes.error.message }, 500);
+          if (entriesAll.error) return json({ error: entriesAll.error }, 500);
           if (ratesRes.error) return json({ error: ratesRes.error.message }, 500);
           if (periodsRes.error) return json({ error: periodsRes.error.message }, 500);
 
-          const entries = (entriesRes.data ?? []) as unknown as EntryRow[];
+          const entries = entriesAll.data as unknown as EntryRow[];
           const lockedPeriods = new Set(
             ((periodsRes.data ?? []) as { period: string; locked_at: string | null }[])
               .filter((p) => p.locked_at)

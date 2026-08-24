@@ -223,6 +223,12 @@ export interface TrailRateRow {
  * promotion mid-book lifts every FOLLOWING month automatically —
  * that is what "promotion" means — while locked past months were
  * already written at their then-current rates.
+ *
+ * [Pass-2 L4] `to` is EXCLUSIVE, as documented: a row with
+ * effectiveTo = '2026-09-01' expires BEFORE September's payout month,
+ * so it must not match September (the old `>=` made back-dated
+ * endings keep paying the old rate for that whole month — a payout
+ * dispute waiting to happen).
  */
 export function resolveTrailPercent(
   rates: TrailRateRow[],
@@ -234,7 +240,7 @@ export function resolveTrailPercent(
     .filter((r) => r.agentId === (beneficiary.agentId ?? null))
     .filter((r) => r.profileId === (beneficiary.profileId ?? null))
     .filter((r) => r.effectiveFrom <= monthStartIso)
-    .filter((r) => r.effectiveTo === null || r.effectiveTo >= monthStartIso)
+    .filter((r) => r.effectiveTo === null || r.effectiveTo > monthStartIso)
     .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
   return mine.length > 0 ? mine[0].percent : DEFAULT_TRAIL_PERCENT;
 }
@@ -246,9 +252,28 @@ export function roundHalfUp(x: number): number {
   return Math.floor(x + 0.5);
 }
 
-/** 'YYYY-MM-DD...'/'YYYY-MM' → 'YYYY-MM'. */
+/** 'YYYY-MM' of an ISO timestamp, computed in ASIA/KOLKATA.
+ *  [Pass-2 L1] The old raw `.slice(0,7)` bucketed by UTC, so a
+ *  payment captured 00:00–05:30 IST on the 1st landed in the PREVIOUS
+ *  payout period — and once that month locked, acceptDrafts dropped
+ *  it forever. Mirrors performance-logic.ts istPeriodOf (kept local:
+ *  this module stays zero-import pure). */
+export const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+export function istPeriodOf(isoTs: string): string {
+  return new Date(Date.parse(isoTs) + IST_OFFSET_MS).toISOString().slice(0, 7);
+}
+
+/** Legacy alias — every caller now gets the IST-correct period.
+ *  Kept exported because scratch verifiers and earnings.ts import it. */
 export function periodOf(isoDateOrTs: string): string {
-  return isoDateOrTs.slice(0, 7);
+  // Pure date strings ('YYYY-MM-DD', no time) carry no zone ambiguity;
+  // anything with a time component is treated as a UTC instant and
+  // converted to IST before slicing.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(isoDateOrTs)) {
+    return isoDateOrTs.slice(0, 7);
+  }
+  return istPeriodOf(isoDateOrTs);
 }
 
 export function addPeriods(period: string, n: number): string {
@@ -367,7 +392,7 @@ export function buildCommissionEntriesForPayment(input: {
     // Months 2–12, one-twelfth each, created AS EACH MONTH ARRIVES —
     // the caller invokes this once per arrival with the right index.
     // Here we generate ALL 11 drafts only when told to backfill;
-    // normally callers use buildYearlyAccrualSchedule below.
+    // normally callers use buildYearlyAccrualEntries below.
     const monthlyBase = roundHalfUp(pricePaise / 12);
     for (let i = 1; i <= YEARLY_TRAIL_ACCRUAL_MONTHS; i++) {
       makeTrail(monthlyBase, addPeriods(period, i));

@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createRazorpaySubscription } from "@/lib/razorpay.server";
+import {
+  cancelRazorpaySubscription,
+  createRazorpaySubscription,
+  fetchRazorpaySubscription,
+} from "@/lib/razorpay.server";
 import { validateCouponForPlan, type CouponDecision } from "@/lib/coupons.server";
+import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 
 // ─────────────────────────────────────────────────────────────
 // PUNYATA — Signup-first checkout: create-checkout (server-only)
@@ -132,59 +137,14 @@ export async function createCheckoutForUser(input: {
     throw new CheckoutError("Yeh plan abhi payment ke liye configure nahi hua hai.", 503);
   }
 
-  // [Bug 1.9] Double-click / retried requests used to spawn unbounded
-  // pending Razorpay subscriptions for the same user+plan. Reuse the
-  // live one when it exists and the caller brings NO extra attribution
-  // (those callers need their own stamped row); clean up a stale
-  // linkless row otherwise.
-  const carriesAttribution =
-    Boolean(couponCode) ||
-    Boolean(input.acquisitionChannel) ||
-    Boolean(input.salesAgentId) ||
-    Boolean(input.telecallerId);
-
-  let existingPending:
-    | {
-        id: string;
-        razorpay_sub_id: string | null;
-        razorpay_customer_id: string | null;
-      }
-    | null = null;
-
-  if (!carriesAttribution) {
-    const { data } = await adminDb
-      .from("subscriptions")
-      .select("id,razorpay_sub_id,razorpay_customer_id")
-      .eq("user_id", userId)
-      .eq("plan_id", plan.id)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    existingPending = data ?? null;
-
-    if (existingPending?.razorpay_sub_id) {
-      return {
-        subscriptionDbId: existingPending.id,
-        razorpaySubscriptionId: existingPending.razorpay_sub_id,
-        razorpayCustomerId: existingPending.razorpay_customer_id ?? null,
-        planName: plan.name,
-        planPricePaise: plan.price_paise,
-        couponCode: null, // already stamped on the reused row's attribution
-        coupon: null,
-      };
-    }
-    if (existingPending && !existingPending.razorpay_sub_id) {
-      // Unusable orphan from a crashed creation — the error path below
-      // deletes these; remove it so the fresh insert is the only row.
-      await adminDb
-        .from("subscriptions")
-        .delete()
-        .eq("id", existingPending.id)
-        .eq("user_id", userId);
-    }
-  }
-
+  // [Bug 1.9 / Pass-2 P5] Double-click / retried requests used to spawn
+  // unbounded pending Razorpay subscriptions for the same user+plan —
+  // including every telecaller link-send, which always carries
+  // attribution. The pending-row reuse below now applies to ALL flows.
+  //
+  // Coupon must be validated BEFORE the reuse decision — reuse legality
+  // depends on whether the live pending row already carries this coupon
+  // (same coupon → safe reuse; different coupon → stale row retired).
   let couponDecision: CouponDecision | null = null;
   if (couponCode) {
     // §2.2 (Hospitals session): the agent-visibility WIDENING is gone.
@@ -199,6 +159,199 @@ export async function createCheckoutForUser(input: {
     if (!couponDecision.ok || !couponDecision.coupon) {
       throw new CheckoutError("Coupon code valid nahi hai.", 400);
     }
+  }
+
+  const { data: existingPendingRow } = await adminDb
+    .from("subscriptions")
+    .select(
+      "id,razorpay_sub_id,razorpay_customer_id,coupon_id,acquisition_channel,sales_agent_id,telecaller_id,created_at",
+    )
+    .eq("user_id", userId)
+    .eq("plan_id", plan.id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const existingPending = existingPendingRow as {
+    id: string;
+    razorpay_sub_id: string | null;
+    razorpay_customer_id: string | null;
+    coupon_id: string | null;
+    acquisition_channel: string | null;
+    sales_agent_id: string | null;
+    telecaller_id: string | null;
+    created_at: string;
+  } | null;
+
+  // ── [SESSION_STUCK_PENDING_CHECKOUT — Bug A fix] ────────────────
+  // An abandoned Razorpay Checkout sheet stays `created` on THEIR side
+  // forever and fires ZERO webhooks. The old unconditional reuse handed
+  // the same dead id back on every retry — Chirayu's own Premium
+  // checkout bounced twice against two stuck `Created` subscriptions.
+  // Policy now:
+  //   • ≤ PENDING_REUSE_WINDOW_MINUTES old → reuse (the genuine
+  //     double-click fast path [Bug 1.9] stays untouched).
+  //   • older than the window → NEVER trust the cached id blind; ask
+  //     Razorpay what it actually is:
+  //       'created'                        → abandoned sheet: cancel
+  //                                          (best-effort), delete the
+  //                                          local row, audit, fresh
+  //                                          creation below.
+  //       'cancelled'/'expired'/'completed'→ already terminal there:
+  //                                          delete locally, audit,
+  //                                          fresh creation.
+  //       'authenticated'/'active'/'pending'/'halted'
+  //                                        → a mandate may genuinely be
+  //                                          ALIVE that our webhook never
+  //                                          heard about. Never cancel a
+  //                                          working mandate and never
+  //                                          destroy webhook linkage —
+  //                                          keep the row/object and
+  //                                          hand the customer a FRESH
+  //                                          checkout alongside; the
+  //                                          newest-pending ordering
+  //                                          makes every later retry hit
+  //                                          the new one.
+  //       fetch itself failed              → fail safe: keep row AND
+  //                                          object, still create fresh
+  //                                          (a Razorpay hiccup must not
+  //                                          become a 500 or a trap).
+  if (existingPending?.razorpay_sub_id) {
+    const sameCoupon =
+      !couponCode ||
+      existingPending.coupon_id === (couponDecision?.ok ? couponDecision.coupon!.id : null);
+    const stale = pendingCheckoutIsStale(existingPending.created_at);
+
+    if (sameCoupon && !stale) {
+      // [Bug 1.9 / Pass-2 P5] Fast-path reuse + attribution back-fill.
+      const backfill: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (input.acquisitionChannel && !existingPending.acquisition_channel) {
+        backfill.acquisition_channel = input.acquisitionChannel;
+      }
+      if (input.salesAgentId && !existingPending.sales_agent_id) {
+        backfill.sales_agent_id = input.salesAgentId;
+      }
+      if (input.telecallerId && !existingPending.telecaller_id) {
+        backfill.telecaller_id = input.telecallerId;
+        backfill.attribution_source = "token";
+        backfill.attributed_at = new Date().toISOString();
+      }
+      if (Object.keys(backfill).length > 1) {
+        await adminDb.from("subscriptions").update(backfill).eq("id", existingPending.id);
+      }
+      return {
+        subscriptionDbId: existingPending.id,
+        razorpaySubscriptionId: existingPending.razorpay_sub_id,
+        razorpayCustomerId: existingPending.razorpay_customer_id ?? null,
+        planName: plan.name,
+        planPricePaise: plan.price_paise,
+        couponCode: existingPending.coupon_id ? couponCode : null,
+        coupon: existingPending.coupon_id && couponDecision?.ok ? couponDecision.coupon : null,
+      };
+    }
+
+    const ageMinutes = Math.max(
+      0,
+      Math.round((Date.now() - Date.parse(existingPending.created_at)) / 60_000),
+    );
+    let rzpStatus: string | null = null;
+    try {
+      const rzp = await fetchRazorpaySubscription(existingPending.razorpay_sub_id);
+      rzpStatus = typeof rzp.status === "string" ? rzp.status : null;
+    } catch (err) {
+      console.error(
+        "stale-pending recheck failed (failing safe to fresh creation):",
+        err instanceof Error ? err.message : err,
+      );
+      try {
+        await adminDb.from("audit_logs").insert({
+          admin_id: null,
+          action: "checkout.stale_pending_recheck_failed",
+          entity: "subscriptions",
+          entity_id: existingPending.id,
+          meta: {
+            razorpay_sub_id: existingPending.razorpay_sub_id,
+            age_minutes: ageMinutes,
+          },
+        });
+      } catch {
+        /* audit is best-effort */
+      }
+      // fall through — keep row AND object, create fresh below
+    }
+
+    if (rzpStatus === "created") {
+      // The exact live-incident shape: an unauthenticated sheet whose
+      // retries could never complete. Retire BOTH sides, then recreate.
+      await cancelRazorpaySubscription(existingPending.razorpay_sub_id).catch(() => {});
+      await adminDb
+        .from("subscriptions")
+        .delete()
+        .eq("id", existingPending.id)
+        .eq("user_id", userId);
+      try {
+        await adminDb.from("audit_logs").insert({
+          admin_id: null,
+          action: "checkout.stale_pending_discarded",
+          entity: "subscriptions",
+          entity_id: existingPending.id,
+          meta: {
+            razorpay_sub_id: existingPending.razorpay_sub_id,
+            razorpay_status: rzpStatus,
+            age_minutes: ageMinutes,
+          },
+        });
+      } catch {
+        /* audit is best-effort */
+      }
+    } else if (rzpStatus === "cancelled" || rzpStatus === "expired" || rzpStatus === "completed") {
+      // Terminal on Razorpay's side already — nothing to cancel there.
+      await adminDb
+        .from("subscriptions")
+        .delete()
+        .eq("id", existingPending.id)
+        .eq("user_id", userId);
+      try {
+        await adminDb.from("audit_logs").insert({
+          admin_id: null,
+          action: "checkout.stale_pending_discarded",
+          entity: "subscriptions",
+          entity_id: existingPending.id,
+          meta: {
+            razorpay_sub_id: existingPending.razorpay_sub_id,
+            razorpay_status: rzpStatus,
+            age_minutes: ageMinutes,
+          },
+        });
+      } catch {
+        /* audit is best-effort */
+      }
+    } else if (rzpStatus !== null) {
+      // Mandate possibly alive (authenticated/active/pending/halted):
+      // preserve it for webhook reconciliation, fresh checkout alongside.
+      try {
+        await adminDb.from("audit_logs").insert({
+          admin_id: null,
+          action: "checkout.stale_pending_kept_alive_mandate",
+          entity: "subscriptions",
+          entity_id: existingPending.id,
+          meta: {
+            razorpay_sub_id: existingPending.razorpay_sub_id,
+            razorpay_status: rzpStatus,
+            age_minutes: ageMinutes,
+          },
+        });
+      } catch {
+        /* audit is best-effort */
+      }
+    }
+    // In every non-reuse branch control falls through to the normal
+    // fresh-creation path below exactly as if this row hadn't existed.
+  } else if (existingPending && !existingPending.razorpay_sub_id) {
+    // Unusable orphan from a crashed creation — the error path below
+    // deletes these; remove it so the fresh insert is the only row.
+    await adminDb.from("subscriptions").delete().eq("id", existingPending.id).eq("user_id", userId);
   }
 
   // Pending row FIRST so it exists before money moves; razorpay_sub_id
@@ -230,6 +383,11 @@ export async function createCheckoutForUser(input: {
     throw new CheckoutError(`subscription create failed: ${insErr?.message ?? "no row"}`, 500);
   }
 
+  // [Pass-2 P3] Track the Razorpay object so ANY failure after its
+  // creation can cancel it — otherwise every error path leaks a live
+  // Razorpay subscription whose webhooks resolve to a deleted row.
+  let createdRazorpaySubId: string | null = null;
+
   try {
     const rzpSub = await createRazorpaySubscription({
       razorpayPlanId: plan.razorpay_plan_id!,
@@ -237,6 +395,7 @@ export async function createCheckoutForUser(input: {
       couponCode,
       totalCount: totalCountForBillingPeriod(plan.billing_period),
     });
+    createdRazorpaySubId = rzpSub.id;
 
     const { error: updErr } = await adminDb
       .from("subscriptions")
@@ -263,7 +422,11 @@ export async function createCheckoutForUser(input: {
         .rpc("redeem_coupon", { p_code: couponDecision.coupon.code })
         .single();
       if (redeemErr || redeemed === null) {
-        if (redeemErr && !/pgrst202|42P01|does not exist/i.test(redeemErr.message)) {
+        // [Pass-2 residual P3] pgrst116 belongs here too: a coupon that
+        // hits its cap between validate and redeem can surface as a
+        // PostgREST no-rows error — that must be the clean 400 below,
+        // never a raw driver-error 500.
+        if (redeemErr && !/pgrst202|pgrst116|42P01|does not exist/i.test(redeemErr.message)) {
           throw new CheckoutError(`coupon redemption failed: ${redeemErr.message}`, 500);
         }
         throw new CheckoutError("Coupon code valid nahi hai.", 400);
@@ -280,7 +443,13 @@ export async function createCheckoutForUser(input: {
       coupon: couponDecision && couponDecision.ok ? couponDecision.coupon : null,
     };
   } catch (err) {
-    // No orphaned pending rows from failed Razorpay calls.
+    // No orphaned pending rows from failed Razorpay calls — and no
+    // orphaned RAZORPAY objects either (Pass-2 P3): the mandate we
+    // just created is cancelled best-effort so its webhooks never land
+    // on a row that no longer exists.
+    if (createdRazorpaySubId) {
+      await cancelRazorpaySubscription(createdRazorpaySubId).catch(() => {});
+    }
     await adminDb.from("subscriptions").delete().eq("id", subRow.id).eq("user_id", userId);
     throw err;
   }

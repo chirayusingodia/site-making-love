@@ -6,6 +6,7 @@ import {
   type SalesAgentRow,
   type SalesAgentsListResponse,
 } from "@/lib/sales-agents-logic";
+import { fetchAllRows } from "@/lib/supabase";
 
 // POST /api/admin/sales-agents/list
 // Body: {} (no params — full active+inactive roster with counts)
@@ -31,7 +32,10 @@ export const Route = createFileRoute("/api/admin/sales-agents/list")({
         const { role, db } = auth;
 
         try {
-          const [agentsRes, subsRes] = await Promise.all([
+          // [Pass-2 P7] attribution counts page through the ~1000-row
+          // PostgREST cap (fetchAllRows) — unpaged counts silently
+          // freeze once attributed subscriptions pass a thousand.
+          const [agentsRes, subsAll] = await Promise.all([
             db
               .from("sales_agents")
               .select("id, full_name, phone, agent_code, commission_percent, is_active, created_at")
@@ -39,14 +43,20 @@ export const Route = createFileRoute("/api/admin/sales-agents/list")({
             // Count of subscriptions attributed to each agent.
             // PostgREST can't GROUP BY, so aggregate in JS from the
             // leanest possible projection.
-            db.from("subscriptions").select("sales_agent_id").not("sales_agent_id", "is", null),
+            fetchAllRows<{ sales_agent_id: string | null }>((from, to) =>
+              db
+                .from("subscriptions")
+                .select("sales_agent_id")
+                .not("sales_agent_id", "is", null)
+                .range(from, to),
+            ),
           ]);
 
           if (agentsRes.error) throw new Error(`sales_agents: ${agentsRes.error.message}`);
-          if (subsRes.error) throw new Error(`subscriptions: ${subsRes.error.message}`);
+          if (subsAll.error) throw new Error(`subscriptions: ${subsAll.error}`);
 
           const counts = new Map<string, number>();
-          for (const s of subsRes.data || []) {
+          for (const s of subsAll.data) {
             const id = s.sales_agent_id as string;
             counts.set(id, (counts.get(id) ?? 0) + 1);
           }

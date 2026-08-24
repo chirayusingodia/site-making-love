@@ -6,7 +6,7 @@
 // file is a named, exported, dependency-free function — no
 // Supabase client, no env, no hidden Date.now(). Callers pass
 // data in (nowMs included); results come out. This is what makes
-// the twelve work queues and the ₹ masking unit-testable
+// the thirteen work queues and the ₹ masking unit-testable
 // (scratch/verify_telecaller_panel.ts).
 //
 // ONLY import allowed: ./sankalp-logic — itself zero-import — so
@@ -28,12 +28,7 @@
 // NOTE: relative import WITH explicit .ts extension (same as
 // reports-logic.ts) so this module loads under plain-node scratch
 // verification harnesses — no alias/bundler resolution available there.
-import {
-  type BatchKind,
-  lastSaturdayOf,
-  secondTuesdayOf,
-  toISODate,
-} from "./sankalp-logic.ts";
+import { type BatchKind, lastSaturdayOf, secondTuesdayOf, toISODate } from "./sankalp-logic.ts";
 
 // ─── Tunable constants — ONE place, never inline literals ────
 
@@ -386,7 +381,7 @@ export function isIncompleteDetails(row: TelecallerQueueRow): boolean {
   );
 }
 
-// ─── The twelve queue predicates (named, one per queue) ──────
+// ─── The thirteen queue predicates (named, one per queue) ──────
 
 export function matchesSankalpPending(row: TelecallerQueueRow): boolean {
   return !row.doNotCall && isSankalpPending(row);
@@ -482,17 +477,27 @@ export interface NextBatchInfo {
 }
 
 /**
- * The next upcoming Sankalp batch day at/after today (UTC day of
+ * The next upcoming Sankalp batch day at/after today (IST day of
  * `now`). Reuses secondTuesdayOf()/lastSaturdayOf() from
  * sankalp-logic — the calendar is NEVER re-derived here, so the
  * Pandit's batches and the telecaller's countdown can never
  * disagree.
+ *
+ * [Pass-2 L2] "Today" is the IST calendar day, not the UTC one: the
+ * old getUTC* read lagged a day between 00:00–05:30 IST, returning an
+ * ALREADY-PAST Second Tuesday with negative remaining hours right
+ * after it passed.
  */
 export function nextBatchCutoff(now: Date): NextBatchInfo {
-  const todayIso = toISODate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate());
+  const istShifted = new Date(now.getTime() + IST_OFFSET_MS);
+  const todayIso = toISODate(
+    istShifted.getUTCFullYear(),
+    istShifted.getUTCMonth() + 1,
+    istShifted.getUTCDate(),
+  );
 
   for (let offset = 0; offset <= 62; offset++) {
-    const d = new Date(now.getTime() + offset * DAY_MS);
+    const d = new Date(istShifted.getTime() + offset * DAY_MS);
     const y = d.getUTCFullYear();
     const m = d.getUTCMonth() + 1;
     const candidates: { kind: BatchKind; isoDate: string }[] = [];
@@ -500,10 +505,8 @@ export function nextBatchCutoff(now: Date): NextBatchInfo {
     const satIso = lastSaturdayOf(y, m);
     // Zero-padded ISO strings only — a naive join() would compare
     // "2026-8-5" against "2026-08-11" and silently never match.
-    if (todayIso <= tueIso)
-      candidates.push({ kind: "second_tuesday", isoDate: tueIso });
-    if (todayIso <= satIso)
-      candidates.push({ kind: "last_saturday", isoDate: satIso });
+    if (todayIso <= tueIso) candidates.push({ kind: "second_tuesday", isoDate: tueIso });
+    if (todayIso <= satIso) candidates.push({ kind: "last_saturday", isoDate: satIso });
     if (candidates.length === 0) continue;
     candidates.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
     const picked = candidates[0];
@@ -533,7 +536,7 @@ function descendingBy(get: (r: TelecallerQueueRow) => number | null) {
 
 /**
  * Runs every predicate over the merged dataset and returns the
- * twelve queues, each already sorted work-order. A row MAY appear
+ * thirteen queues, each already sorted work-order. A row MAY appear
  * in several queues — that is correct (a sankalp-pending person
  * whose batch is close belongs in both #1 and #2).
  *
