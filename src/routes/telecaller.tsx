@@ -4,6 +4,12 @@ import { PunyataLogo } from "@/components/PunyataLogo";
 import { fetchMyRole } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/telecaller")({
+  // ssr:false for the SAME reason as the /admin shell: the role
+  // guard below reads the browser-only localStorage session, so
+  // running it during SSR bounced every hard navigation to /login.
+  // The client re-runs this guard after hydration with the real
+  // session; requireTelecaller on the APIs stays layer 3.
+  ssr: false,
   // THREE-LAYER GUARD, layer 1 (route shell) — layers 2 and 3 are
   // per-page guards where needed and the requireTelecaller gate on
   // every /api/telecaller/* endpoint. Not signed in → /login; a

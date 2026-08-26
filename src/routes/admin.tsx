@@ -22,6 +22,15 @@ import { useUserRole } from "@/hooks/use-user-role";
 import { fetchMyRole } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin")({
+  // SSR has no access to the browser's localStorage session, so
+  // supabase.auth.getSession() is ALWAYS null on the server — the
+  // role guard below would 307-bounce every hard navigation to
+  // /admin straight to "/" even for a verified owner. ssr:false
+  // skips this route (and, by inheritance, every /admin/* child)
+  // during SSR and re-runs the full load cycle — guard included —
+  // on the client, where the real session exists. The API gates
+  // stay EXACTLY as they are — this is still layer 1 of 3.
+  ssr: false,
   // 🚩 §6.1 gap fixed: this shell previously rendered for ANYONE and
   // relied on API 401/403 to keep the tables empty. With a
   // lower-privilege staff role in the system that is no longer
