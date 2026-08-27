@@ -246,6 +246,10 @@ export const Route = createFileRoute("/api/admin/leads/upload")({
               city: typeof raw.city === "string" ? raw.city.trim().slice(0, 80) : null,
               notes: typeof raw.notes === "string" ? raw.notes.slice(0, 1000) : null,
               source_agent_id: sourceAgentId,
+              // Keep the upload's hospital attribution on normal inserts too.
+              // The duplicate branch already stamps this; omitting it here
+              // silently broke hospital reporting for every fresh lead.
+              hospital_id: hospitalId,
               created_by: auth.staffId,
               ...(stamp ?? {}),
             });
