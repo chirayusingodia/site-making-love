@@ -40,9 +40,12 @@ const IST_OFFSET_MS = 5.5 * HOUR_MS;
  * adapter is the honest boundary — same escape hatch the payments
  * list route takes with `any`.
  */
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyBuilder = any;
+
 function asRows<T>(
-  builder: any,
+  builder: AnyBuilder,
 ): PromiseLike<{ data: T[] | null; error: { message: string } | null }> {
   return builder;
 }
@@ -418,6 +421,7 @@ export async function loadTodaysLeads(
     phone: string;
     city: string | null;
     notes: string | null;
+    family_names: string[] | null;
     status: string;
     profile_id: string | null;
     attribution_token: string | null;
@@ -433,7 +437,7 @@ export async function loadTodaysLeads(
         db
           .from("leads")
           .select(
-            "id,full_name,phone,city,notes,status,profile_id,attribution_token," +
+            "id,full_name,phone,city,notes,family_names,status,profile_id,attribution_token," +
               "assigned_on,created_at,plans(name)",
           )
           .eq("assigned_to", callerId)
@@ -442,8 +446,30 @@ export async function loadTodaysLeads(
           .range(from, to),
       ),
     );
-    if (res.error) throw new Error(res.error);
-    leadRows = res.data;
+    if (res.error) {
+      // Migration 020 lagging behind the deploy: without the column the
+      // whole tray would 500. Retry WITHOUT it — family names degrade
+      // to null instead of taking Aaj Ke Leads down.
+      if (!/family_names/i.test(res.error)) throw new Error(res.error);
+      const retry = await fetchAllRows<LeadDbRow>((from, to) =>
+        asRows<LeadDbRow>(
+          db
+            .from("leads")
+            .select(
+              "id,full_name,phone,city,notes,status,profile_id,attribution_token," +
+                "assigned_on,created_at,plans(name)",
+            )
+            .eq("assigned_to", callerId)
+            .gte("assigned_on", dayStartIso.slice(0, 10))
+            .order("created_at", { ascending: true })
+            .range(from, to),
+        ),
+      );
+      if (retry.error) throw new Error(retry.error);
+      leadRows = retry.data.map((r) => ({ ...r, family_names: null }));
+    } else {
+      leadRows = res.data;
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (/relation|schema cache|could not find the table|does not exist/i.test(msg)) {
@@ -474,6 +500,7 @@ export async function loadTodaysLeads(
     phone: l.phone,
     city: l.city,
     notes: l.notes,
+    familyNames: Array.isArray(l.family_names) ? l.family_names : null,
     status: l.status,
     interestedPlanName: l.plans?.name ?? null,
     profileId: l.profile_id,

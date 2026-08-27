@@ -18,6 +18,7 @@ interface LeadRow {
   phone: string;
   city: string | null;
   notes: string | null;
+  family_names: string[] | null;
   status: string;
   profile_id: string | null;
   subscription_id: string | null;
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/api/telecaller/lead")({
           const { data: lead, error } = await auth.db
             .from("leads")
             .select(
-              `id,full_name,phone,city,notes,status,profile_id,subscription_id,
+              `id,full_name,phone,city,notes,family_names,status,profile_id,subscription_id,
                attribution_token,source_agent_id,assigned_to,created_by,
                interested_plan_id,plans(${TC_PLAN_COLS})`,
             )
@@ -83,6 +84,7 @@ export const Route = createFileRoute("/api/telecaller/lead")({
                 phone: row.phone,
                 city: row.city,
                 notes: row.notes,
+                familyNames: Array.isArray(row.family_names) ? row.family_names : null,
                 status: row.status,
                 profileId: row.profile_id,
                 subscriptionId: row.subscription_id,

@@ -204,6 +204,49 @@ export function json(data: unknown, status = 200): Response {
   });
 }
 
+// ─── Agent portal gate (migration 020) ───────────────────────
+
+export interface AgentAuth {
+  userId: string;
+  salesAgentId: string | null;
+  db: SupabaseClient;
+}
+
+/**
+ * Gate for EVERY /api/agent/* endpoint. The caller must be a
+ * profiles.role === 'agent' user whose profile carries a
+ * sales_agent_id link (set when the owner created the login).
+ * admin/owner are NOT auto-trusted here: they have no agent row,
+ * and the portal exists to attribute uploads to a real field agent.
+ * The returned client is the SERVICE-ROLE client — leads RLS is
+ * admin-only by design; the gate itself is the authorization.
+ */
+export async function requireAgent(request: Request): Promise<AgentAuth | null> {
+  const auth = request.headers.get("authorization") ?? "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token) return null;
+
+  const db = getServiceClient();
+  const {
+    data: { user },
+    error,
+  } = await db.auth.getUser(token);
+  if (error || !user) return null;
+
+  const { data: profile } = await db
+    .from("profiles")
+    .select("role, sales_agent_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== "agent") return null;
+  return {
+    userId: user.id,
+    salesAgentId: (profile.sales_agent_id as string | null) ?? null,
+    db,
+  };
+}
+
 // ─── End-user (non-staff) auth helpers ───────────────────────
 // Signup-first checkout session: /api routes that act on the
 // CALLER'S OWN data (profile, subscriptions, family_members) run

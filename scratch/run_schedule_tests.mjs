@@ -14,7 +14,10 @@ let failed = 0;
 
 function run(file, tz) {
   const label = tz ? `${file}  [TZ=${tz}]` : file;
-  const res = spawnSync(process.execPath, [file], {
+  // The harnesses import app modules which use Vite's @/ alias. Node
+  // does not resolve that alias on its own, so every child suite must
+  // use the same loader hook as the documented standalone command.
+  const res = spawnSync(process.execPath, ["--import", "./scratch/ts-aliases.mjs", file], {
     stdio: "inherit",
     env: tz ? { ...process.env, TZ: tz } : process.env,
   });

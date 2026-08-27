@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { json, requireAdmin, writeTelecallerAudit } from "@/lib/supabase-admin.server";
 import { normalizePhoneE164 } from "@/lib/auth.server";
 import { fetchAllRows } from "@/lib/supabase";
+import { routingStamp } from "@/lib/agent-portal-logic";
 
 // [Pass-2 P11] shape-check ids as real UUIDs — length===36 let any
 // 36-char string through to a Postgres uuid-cast 500.
@@ -29,7 +30,7 @@ interface UploadRow {
   index: number;
   ok: boolean;
   leadId?: string;
-  status?: "inserted" | "duplicate";
+  status?: "inserted" | "duplicate" | "assigned";
   reason?: string;
 }
 
@@ -106,6 +107,27 @@ export const Route = createFileRoute("/api/admin/leads/upload")({
             if (!agent || !agent.is_active) {
               return json({ error: "Sourcing agent not found or inactive" }, 404);
             }
+          }
+
+          // Migration 020: an ACTIVE lead_routing row for the resolved
+          // sourcing agent sends every FRESH insert straight into that
+          // telecaller's Aaj Ke Leads tray. Duplicates stay unstamped —
+          // they must never surface in a caller's working queue.
+          let stamp: ReturnType<typeof routingStamp> = null;
+          if (sourceAgentId) {
+            const { data: route, error: routeErr } = await db
+              .from("lead_routing")
+              .select("telecaller_id,is_active")
+              .eq("sales_agent_id", sourceAgentId)
+              .maybeSingle();
+            if (routeErr && !/relation|does not exist/i.test(routeErr.message)) {
+              return json({ error: `routing lookup failed: ${routeErr.message}` }, 500);
+            }
+            stamp = routingStamp(
+              route
+                ? { telecallerId: route.telecaller_id as string, isActive: route.is_active as boolean }
+                : null,
+            );
           }
 
           // Catalogue for dedupe decisions. [Pass-2 P7] both catalogues
@@ -224,10 +246,10 @@ export const Route = createFileRoute("/api/admin/leads/upload")({
               city: typeof raw.city === "string" ? raw.city.trim().slice(0, 80) : null,
               notes: typeof raw.notes === "string" ? raw.notes.slice(0, 1000) : null,
               source_agent_id: sourceAgentId,
-              hospital_id: hospitalId,
               created_by: auth.staffId,
+              ...(stamp ?? {}),
             });
-            results.push({ index: i, ok: true, status: "inserted" });
+            results.push({ index: i, ok: true, status: stamp ? "assigned" : "inserted" });
           }
 
           let insertedCount = 0;
@@ -240,9 +262,10 @@ export const Route = createFileRoute("/api/admin/leads/upload")({
           await writeTelecallerAudit(db, auth.staffId, "admin.leads.uploaded", "leads", null, {
             total_rows: (body.rows as unknown[]).length,
             inserted: insertedCount,
-            duplicates_or_errors: results.filter((r) => r.status !== "inserted").length,
+            duplicates_or_errors: results.filter((r) => r.status !== "inserted" && r.status !== "assigned").length,
             source_agent_id: sourceAgentId,
             hospital_id: hospitalId,
+            auto_assigned_to: stamp?.assigned_to ?? null,
           });
 
           return json({
