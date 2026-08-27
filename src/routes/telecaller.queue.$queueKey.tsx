@@ -8,6 +8,7 @@ import {
   RefreshCw,
   StickyNote,
   Target,
+  Users,
 } from "lucide-react";
 import { callAdminApi } from "@/lib/admin-api";
 import {
@@ -235,6 +236,15 @@ function LeadListItem({ lead, queueKey }: { lead: TelecallerLeadRow; queueKey: s
               <>
                 <span className="text-slate-300">·</span>
                 <span>{lead.city}</span>
+              </>
+            )}
+            {/* Migration 020 — family names the field agent collected.
+                They are the sankalp script for this call. */}
+            {lead.familyNames && lead.familyNames.length > 0 && (
+              <>
+                <span className="text-slate-300">·</span>
+                <Users className="w-3 h-3 inline text-indigo-500" />
+                <span className="text-indigo-900">{lead.familyNames.join(", ")}</span>
               </>
             )}
             {lead.notes && (

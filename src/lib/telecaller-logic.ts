@@ -288,6 +288,8 @@ export interface TelecallerLeadRow {
   phone: string;
   city: string | null;
   notes: string | null;
+  /** Migration 020 — family-member names the field agent collected. */
+  familyNames: string[] | null;
   status: string;
   interestedPlanName: string | null;
   profileId: string | null;

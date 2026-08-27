@@ -10,6 +10,7 @@ import {
   Phone,
   ShieldAlert,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { callAdminApi } from "@/lib/admin-api";
 import { OUTCOME_LABELS, type CallOutcome } from "@/lib/telecaller-logic";
@@ -42,6 +43,7 @@ interface LeadPayload {
     phone: string;
     city: string | null;
     notes: string | null;
+    familyNames: string[] | null;
     status: string;
     profileId: string | null;
     subscriptionId: string | null;
@@ -272,6 +274,17 @@ function LeadCallCardPage() {
               {lead.city && <span>{lead.city}</span>}
               <span>{data.callHistory.length} calls</span>
             </div>
+            {(lead.familyNames?.length ?? 0) > 0 && (
+              <div className="mt-2 rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-1.5 text-xs text-indigo-900">
+                <span className="font-semibold flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-indigo-600" /> Family:
+                </span>
+                <span className="block mt-0.5">{lead.familyNames!.join(", ")}</span>
+                <span className="block text-[10px] text-indigo-700/70 mt-0.5">
+                  Sankalp bharte waqt yehi naam kaam aayenge.
+                </span>
+              </div>
+            )}
             {lead.notes && (
               <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs text-amber-900 italic">
                 Agent ki note: {lead.notes}

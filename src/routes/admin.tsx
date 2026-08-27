@@ -13,8 +13,10 @@ import {
   BarChart3,
   PhoneCall,
   UserPlus,
+  UserCog,
   BadgeIndianRupee,
   TrendingUp,
+  Split,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +91,12 @@ function AdminLayout() {
             icon: TrendingUp,
             badge: "Owner",
           },
+          // Staff role management (make/remove admin) — owner-only,
+          // same three-layer discipline as Commissions/Performance.
+          { label: "Staff Roles", href: "/admin/staff", icon: UserCog, badge: "Owner" },
+          // Migration 020 — "kis agent ki lead kis telecaller ke paas":
+          // per-agent → telecaller routing, applied at upload time.
+          { label: "Lead Routing", href: "/admin/routing", icon: Split, badge: "Owner" },
         ]
       : []),
   ];

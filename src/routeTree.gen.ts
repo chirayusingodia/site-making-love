@@ -19,10 +19,12 @@ import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CompleteProfileRouteImport } from './routes/complete-profile'
+import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TelecallerIndexRouteImport } from './routes/telecaller.index'
+import { Route as AgentIndexRouteImport } from './routes/agent.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TelecallerScriptRouteImport } from './routes/telecaller.script'
 import { Route as TelecallerQueuesRouteImport } from './routes/telecaller.queues'
@@ -31,8 +33,11 @@ import { Route as TelecallerMyDayRouteImport } from './routes/telecaller.my-day'
 import { Route as TelecallerEarningsRouteImport } from './routes/telecaller.earnings'
 import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
 import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
+import { Route as AgentMyLeadsRouteImport } from './routes/agent.my-leads'
 import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
+import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-lists'
+import { Route as AdminRoutingRouteImport } from './routes/admin.routing'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminProofUploadRouteImport } from './routes/admin.proof-upload'
 import { Route as AdminPlansSevasRouteImport } from './routes/admin.plans-sevas'
@@ -67,13 +72,19 @@ import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudi
 import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
 import { Route as ApiAuthReconcileProfileRouteImport } from './routes/api/auth/reconcile-profile'
 import { Route as ApiAuthCompleteGoogleProfileRouteImport } from './routes/api/auth/complete-google-profile'
+import { Route as ApiAgentMyLeadsRouteImport } from './routes/api/agent/my-leads'
 import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
 import { Route as ApiTelecallerQueueListRouteImport } from './routes/api/telecaller/queue/list'
 import { Route as ApiTelecallerLeadUpdateRouteImport } from './routes/api/telecaller/lead/update'
+import { Route as ApiAgentLeadsUploadRouteImport } from './routes/api/agent/leads/upload'
 import { Route as ApiAdminSubscriptionsResumeRouteImport } from './routes/api/admin/subscriptions/resume'
 import { Route as ApiAdminSubscriptionsReissueLinkRouteImport } from './routes/api/admin/subscriptions/reissue-link'
+import { Route as ApiAdminStaffSetRoleRouteImport } from './routes/api/admin/staff/set-role'
+import { Route as ApiAdminStaffListRouteImport } from './routes/api/admin/staff/list'
+import { Route as ApiAdminStaffCreateStaffRouteImport } from './routes/api/admin/staff/create-staff'
 import { Route as ApiAdminSalesAgentsListRouteImport } from './routes/api/admin/sales-agents/list'
+import { Route as ApiAdminSalesAgentsCreateRouteImport } from './routes/api/admin/sales-agents/create'
 import { Route as ApiAdminReportsPendingSevasRouteImport } from './routes/api/admin/reports/pending-sevas'
 import { Route as ApiAdminReportsMonthlyRouteImport } from './routes/api/admin/reports/monthly'
 import { Route as ApiAdminReportsExportRouteImport } from './routes/api/admin/reports/export'
@@ -84,6 +95,7 @@ import { Route as ApiAdminPaymentsRefundRouteImport } from './routes/api/admin/p
 import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/payments/list'
 import { Route as ApiAdminLeadsUploadRouteImport } from './routes/api/admin/leads/upload'
 import { Route as ApiAdminLeadsSweepRouteImport } from './routes/api/admin/leads/sweep'
+import { Route as ApiAdminLeadsRoutingRouteImport } from './routes/api/admin/leads/routing'
 import { Route as ApiAdminLeadsAssignRouteImport } from './routes/api/admin/leads/assign'
 import { Route as ApiAdminHospitalsReallotRouteImport } from './routes/api/admin/hospitals/reallot'
 import { Route as ApiAdminHospitalsListRouteImport } from './routes/api/admin/hospitals/list'
@@ -141,6 +153,11 @@ const CompleteProfileRoute = CompleteProfileRouteImport.update({
   path: '/complete-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentRoute = AgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -160,6 +177,11 @@ const TelecallerIndexRoute = TelecallerIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => TelecallerRoute,
+} as any)
+const AgentIndexRoute = AgentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AgentRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -201,14 +223,29 @@ const CheckoutPlanIdRoute = CheckoutPlanIdRouteImport.update({
   path: '/checkout/$planId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentMyLeadsRoute = AgentMyLeadsRouteImport.update({
+  id: '/my-leads',
+  path: '/my-leads',
+  getParentRoute: () => AgentRoute,
+} as any)
 const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
   id: '/subscribers',
   path: '/subscribers',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminStaffRoute = AdminStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSankalpListsRoute = AdminSankalpListsRouteImport.update({
   id: '/sankalp-lists',
   path: '/sankalp-lists',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRoutingRoute = AdminRoutingRouteImport.update({
+  id: '/routing',
+  path: '/routing',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
@@ -387,6 +424,11 @@ const ApiAuthCompleteGoogleProfileRoute =
     path: '/api/auth/complete-google-profile',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAgentMyLeadsRoute = ApiAgentMyLeadsRouteImport.update({
+  id: '/api/agent/my-leads',
+  path: '/api/agent/my-leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminOverviewFinancialsRoute =
   ApiAdminOverviewFinancialsRouteImport.update({
     id: '/api/admin/overview-financials',
@@ -408,6 +450,11 @@ const ApiTelecallerLeadUpdateRoute = ApiTelecallerLeadUpdateRouteImport.update({
   path: '/update',
   getParentRoute: () => ApiTelecallerLeadRoute,
 } as any)
+const ApiAgentLeadsUploadRoute = ApiAgentLeadsUploadRouteImport.update({
+  id: '/api/agent/leads/upload',
+  path: '/api/agent/leads/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminSubscriptionsResumeRoute =
   ApiAdminSubscriptionsResumeRouteImport.update({
     id: '/api/admin/subscriptions/resume',
@@ -420,11 +467,33 @@ const ApiAdminSubscriptionsReissueLinkRoute =
     path: '/api/admin/subscriptions/reissue-link',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminStaffSetRoleRoute = ApiAdminStaffSetRoleRouteImport.update({
+  id: '/api/admin/staff/set-role',
+  path: '/api/admin/staff/set-role',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminStaffListRoute = ApiAdminStaffListRouteImport.update({
+  id: '/api/admin/staff/list',
+  path: '/api/admin/staff/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminStaffCreateStaffRoute =
+  ApiAdminStaffCreateStaffRouteImport.update({
+    id: '/api/admin/staff/create-staff',
+    path: '/api/admin/staff/create-staff',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminSalesAgentsListRoute = ApiAdminSalesAgentsListRouteImport.update({
   id: '/api/admin/sales-agents/list',
   path: '/api/admin/sales-agents/list',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminSalesAgentsCreateRoute =
+  ApiAdminSalesAgentsCreateRouteImport.update({
+    id: '/api/admin/sales-agents/create',
+    path: '/api/admin/sales-agents/create',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminReportsPendingSevasRoute =
   ApiAdminReportsPendingSevasRouteImport.update({
     id: '/api/admin/reports/pending-sevas',
@@ -479,6 +548,11 @@ const ApiAdminLeadsSweepRoute = ApiAdminLeadsSweepRouteImport.update({
   path: '/api/admin/leads/sweep',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminLeadsRoutingRoute = ApiAdminLeadsRoutingRouteImport.update({
+  id: '/api/admin/leads/routing',
+  path: '/api/admin/leads/routing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminLeadsAssignRoute = ApiAdminLeadsAssignRouteImport.update({
   id: '/api/admin/leads/assign',
   path: '/api/admin/leads/assign',
@@ -516,6 +590,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/agent': typeof AgentRouteWithChildren
   '/complete-profile': typeof CompleteProfileRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
@@ -534,8 +609,11 @@ export interface FileRoutesByFullPath {
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
+  '/agent/my-leads': typeof AgentMyLeadsRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/telecaller/earnings': typeof TelecallerEarningsRoute
@@ -544,9 +622,11 @@ export interface FileRoutesByFullPath {
   '/telecaller/queues': typeof TelecallerQueuesRoute
   '/telecaller/script': typeof TelecallerScriptRoute
   '/admin/': typeof AdminIndexRoute
+  '/agent/': typeof AgentIndexRoute
   '/telecaller/': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
@@ -579,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
   '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
@@ -589,9 +670,14 @@ export interface FileRoutesByFullPath {
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/sales-agents/create': typeof ApiAdminSalesAgentsCreateRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
+  '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
+  '/api/admin/staff/list': typeof ApiAdminStaffListRoute
+  '/api/admin/staff/set-role': typeof ApiAdminStaffSetRoleRoute
   '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
   '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
+  '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
   '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
   '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
 }
@@ -615,8 +701,11 @@ export interface FileRoutesByTo {
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
+  '/agent/my-leads': typeof AgentMyLeadsRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/telecaller/earnings': typeof TelecallerEarningsRoute
@@ -625,9 +714,11 @@ export interface FileRoutesByTo {
   '/telecaller/queues': typeof TelecallerQueuesRoute
   '/telecaller/script': typeof TelecallerScriptRoute
   '/admin': typeof AdminIndexRoute
+  '/agent': typeof AgentIndexRoute
   '/telecaller': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
@@ -660,6 +751,7 @@ export interface FileRoutesByTo {
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
   '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
@@ -670,9 +762,14 @@ export interface FileRoutesByTo {
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/sales-agents/create': typeof ApiAdminSalesAgentsCreateRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
+  '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
+  '/api/admin/staff/list': typeof ApiAdminStaffListRoute
+  '/api/admin/staff/set-role': typeof ApiAdminStaffSetRoleRoute
   '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
   '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
+  '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
   '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
   '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
 }
@@ -681,6 +778,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/agent': typeof AgentRouteWithChildren
   '/complete-profile': typeof CompleteProfileRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
@@ -699,8 +797,11 @@ export interface FileRoutesById {
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
+  '/agent/my-leads': typeof AgentMyLeadsRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/telecaller/earnings': typeof TelecallerEarningsRoute
@@ -709,9 +810,11 @@ export interface FileRoutesById {
   '/telecaller/queues': typeof TelecallerQueuesRoute
   '/telecaller/script': typeof TelecallerScriptRoute
   '/admin/': typeof AdminIndexRoute
+  '/agent/': typeof AgentIndexRoute
   '/telecaller/': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
@@ -744,6 +847,7 @@ export interface FileRoutesById {
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
   '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
@@ -754,9 +858,14 @@ export interface FileRoutesById {
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/sales-agents/create': typeof ApiAdminSalesAgentsCreateRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
+  '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
+  '/api/admin/staff/list': typeof ApiAdminStaffListRoute
+  '/api/admin/staff/set-role': typeof ApiAdminStaffSetRoleRoute
   '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
   '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
+  '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
   '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
   '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
 }
@@ -766,6 +875,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/agent'
     | '/complete-profile'
     | '/faq'
     | '/login'
@@ -784,8 +894,11 @@ export interface FileRouteTypes {
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
     | '/admin/reports'
+    | '/admin/routing'
     | '/admin/sankalp-lists'
+    | '/admin/staff'
     | '/admin/subscribers'
+    | '/agent/my-leads'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/telecaller/earnings'
@@ -794,9 +907,11 @@ export interface FileRouteTypes {
     | '/telecaller/queues'
     | '/telecaller/script'
     | '/admin/'
+    | '/agent/'
     | '/telecaller/'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
     | '/api/auth/reconcile-profile'
     | '/api/auth/request-otp'
@@ -829,6 +944,7 @@ export interface FileRouteTypes {
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
     | '/api/admin/leads/assign'
+    | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
@@ -839,9 +955,14 @@ export interface FileRouteTypes {
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
+    | '/api/admin/sales-agents/create'
     | '/api/admin/sales-agents/list'
+    | '/api/admin/staff/create-staff'
+    | '/api/admin/staff/list'
+    | '/api/admin/staff/set-role'
     | '/api/admin/subscriptions/reissue-link'
     | '/api/admin/subscriptions/resume'
+    | '/api/agent/leads/upload'
     | '/api/telecaller/lead/update'
     | '/api/telecaller/queue/list'
   fileRoutesByTo: FileRoutesByTo
@@ -865,8 +986,11 @@ export interface FileRouteTypes {
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
     | '/admin/reports'
+    | '/admin/routing'
     | '/admin/sankalp-lists'
+    | '/admin/staff'
     | '/admin/subscribers'
+    | '/agent/my-leads'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/telecaller/earnings'
@@ -875,9 +999,11 @@ export interface FileRouteTypes {
     | '/telecaller/queues'
     | '/telecaller/script'
     | '/admin'
+    | '/agent'
     | '/telecaller'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
     | '/api/auth/reconcile-profile'
     | '/api/auth/request-otp'
@@ -910,6 +1036,7 @@ export interface FileRouteTypes {
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
     | '/api/admin/leads/assign'
+    | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
@@ -920,9 +1047,14 @@ export interface FileRouteTypes {
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
+    | '/api/admin/sales-agents/create'
     | '/api/admin/sales-agents/list'
+    | '/api/admin/staff/create-staff'
+    | '/api/admin/staff/list'
+    | '/api/admin/staff/set-role'
     | '/api/admin/subscriptions/reissue-link'
     | '/api/admin/subscriptions/resume'
+    | '/api/agent/leads/upload'
     | '/api/telecaller/lead/update'
     | '/api/telecaller/queue/list'
   id:
@@ -930,6 +1062,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/agent'
     | '/complete-profile'
     | '/faq'
     | '/login'
@@ -948,8 +1081,11 @@ export interface FileRouteTypes {
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
     | '/admin/reports'
+    | '/admin/routing'
     | '/admin/sankalp-lists'
+    | '/admin/staff'
     | '/admin/subscribers'
+    | '/agent/my-leads'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/telecaller/earnings'
@@ -958,9 +1094,11 @@ export interface FileRouteTypes {
     | '/telecaller/queues'
     | '/telecaller/script'
     | '/admin/'
+    | '/agent/'
     | '/telecaller/'
     | '/admin/pandit/$batchId'
     | '/api/admin/overview-financials'
+    | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
     | '/api/auth/reconcile-profile'
     | '/api/auth/request-otp'
@@ -993,6 +1131,7 @@ export interface FileRouteTypes {
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
     | '/api/admin/leads/assign'
+    | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
     | '/api/admin/payments/list'
@@ -1003,9 +1142,14 @@ export interface FileRouteTypes {
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
+    | '/api/admin/sales-agents/create'
     | '/api/admin/sales-agents/list'
+    | '/api/admin/staff/create-staff'
+    | '/api/admin/staff/list'
+    | '/api/admin/staff/set-role'
     | '/api/admin/subscriptions/reissue-link'
     | '/api/admin/subscriptions/resume'
+    | '/api/agent/leads/upload'
     | '/api/telecaller/lead/update'
     | '/api/telecaller/queue/list'
   fileRoutesById: FileRoutesById
@@ -1014,6 +1158,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AgentRoute: typeof AgentRouteWithChildren
   CompleteProfileRoute: typeof CompleteProfileRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
@@ -1027,6 +1172,7 @@ export interface RootRouteChildren {
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
   ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
+  ApiAgentMyLeadsRoute: typeof ApiAgentMyLeadsRoute
   ApiAuthCompleteGoogleProfileRoute: typeof ApiAuthCompleteGoogleProfileRoute
   ApiAuthReconcileProfileRoute: typeof ApiAuthReconcileProfileRoute
   ApiAuthRequestOtpRoute: typeof ApiAuthRequestOtpRoute
@@ -1056,6 +1202,7 @@ export interface RootRouteChildren {
   ApiAdminHospitalsListRoute: typeof ApiAdminHospitalsListRoute
   ApiAdminHospitalsReallotRoute: typeof ApiAdminHospitalsReallotRoute
   ApiAdminLeadsAssignRoute: typeof ApiAdminLeadsAssignRoute
+  ApiAdminLeadsRoutingRoute: typeof ApiAdminLeadsRoutingRoute
   ApiAdminLeadsSweepRoute: typeof ApiAdminLeadsSweepRoute
   ApiAdminLeadsUploadRoute: typeof ApiAdminLeadsUploadRoute
   ApiAdminPaymentsListRoute: typeof ApiAdminPaymentsListRoute
@@ -1066,9 +1213,14 @@ export interface RootRouteChildren {
   ApiAdminReportsExportRoute: typeof ApiAdminReportsExportRoute
   ApiAdminReportsMonthlyRoute: typeof ApiAdminReportsMonthlyRoute
   ApiAdminReportsPendingSevasRoute: typeof ApiAdminReportsPendingSevasRoute
+  ApiAdminSalesAgentsCreateRoute: typeof ApiAdminSalesAgentsCreateRoute
   ApiAdminSalesAgentsListRoute: typeof ApiAdminSalesAgentsListRoute
+  ApiAdminStaffCreateStaffRoute: typeof ApiAdminStaffCreateStaffRoute
+  ApiAdminStaffListRoute: typeof ApiAdminStaffListRoute
+  ApiAdminStaffSetRoleRoute: typeof ApiAdminStaffSetRoleRoute
   ApiAdminSubscriptionsReissueLinkRoute: typeof ApiAdminSubscriptionsReissueLinkRoute
   ApiAdminSubscriptionsResumeRoute: typeof ApiAdminSubscriptionsResumeRoute
+  ApiAgentLeadsUploadRoute: typeof ApiAgentLeadsUploadRoute
   ApiTelecallerQueueListRoute: typeof ApiTelecallerQueueListRoute
 }
 
@@ -1144,6 +1296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompleteProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agent': {
+      id: '/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -1171,6 +1330,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/telecaller/'
       preLoaderRoute: typeof TelecallerIndexRouteImport
       parentRoute: typeof TelecallerRoute
+    }
+    '/agent/': {
+      id: '/agent/'
+      path: '/'
+      fullPath: '/agent/'
+      preLoaderRoute: typeof AgentIndexRouteImport
+      parentRoute: typeof AgentRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -1228,6 +1394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutPlanIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agent/my-leads': {
+      id: '/agent/my-leads'
+      path: '/my-leads'
+      fullPath: '/agent/my-leads'
+      preLoaderRoute: typeof AgentMyLeadsRouteImport
+      parentRoute: typeof AgentRoute
+    }
     '/admin/subscribers': {
       id: '/admin/subscribers'
       path: '/subscribers'
@@ -1235,11 +1408,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSubscribersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/staff': {
+      id: '/admin/staff'
+      path: '/staff'
+      fullPath: '/admin/staff'
+      preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/sankalp-lists': {
       id: '/admin/sankalp-lists'
       path: '/sankalp-lists'
       fullPath: '/admin/sankalp-lists'
       preLoaderRoute: typeof AdminSankalpListsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/routing': {
+      id: '/admin/routing'
+      path: '/routing'
+      fullPath: '/admin/routing'
+      preLoaderRoute: typeof AdminRoutingRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/reports': {
@@ -1480,6 +1667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthCompleteGoogleProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/agent/my-leads': {
+      id: '/api/agent/my-leads'
+      path: '/api/agent/my-leads'
+      fullPath: '/api/agent/my-leads'
+      preLoaderRoute: typeof ApiAgentMyLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/overview-financials': {
       id: '/api/admin/overview-financials'
       path: '/api/admin/overview-financials'
@@ -1508,6 +1702,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTelecallerLeadUpdateRouteImport
       parentRoute: typeof ApiTelecallerLeadRoute
     }
+    '/api/agent/leads/upload': {
+      id: '/api/agent/leads/upload'
+      path: '/api/agent/leads/upload'
+      fullPath: '/api/agent/leads/upload'
+      preLoaderRoute: typeof ApiAgentLeadsUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/subscriptions/resume': {
       id: '/api/admin/subscriptions/resume'
       path: '/api/admin/subscriptions/resume'
@@ -1522,11 +1723,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminSubscriptionsReissueLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/staff/set-role': {
+      id: '/api/admin/staff/set-role'
+      path: '/api/admin/staff/set-role'
+      fullPath: '/api/admin/staff/set-role'
+      preLoaderRoute: typeof ApiAdminStaffSetRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/staff/list': {
+      id: '/api/admin/staff/list'
+      path: '/api/admin/staff/list'
+      fullPath: '/api/admin/staff/list'
+      preLoaderRoute: typeof ApiAdminStaffListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/staff/create-staff': {
+      id: '/api/admin/staff/create-staff'
+      path: '/api/admin/staff/create-staff'
+      fullPath: '/api/admin/staff/create-staff'
+      preLoaderRoute: typeof ApiAdminStaffCreateStaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/sales-agents/list': {
       id: '/api/admin/sales-agents/list'
       path: '/api/admin/sales-agents/list'
       fullPath: '/api/admin/sales-agents/list'
       preLoaderRoute: typeof ApiAdminSalesAgentsListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/sales-agents/create': {
+      id: '/api/admin/sales-agents/create'
+      path: '/api/admin/sales-agents/create'
+      fullPath: '/api/admin/sales-agents/create'
+      preLoaderRoute: typeof ApiAdminSalesAgentsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/reports/pending-sevas': {
@@ -1599,6 +1828,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminLeadsSweepRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/leads/routing': {
+      id: '/api/admin/leads/routing'
+      path: '/api/admin/leads/routing'
+      fullPath: '/api/admin/leads/routing'
+      preLoaderRoute: typeof ApiAdminLeadsRoutingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/leads/assign': {
       id: '/api/admin/leads/assign'
       path: '/api/admin/leads/assign'
@@ -1653,7 +1889,9 @@ interface AdminRouteChildren {
   AdminPlansSevasRoute: typeof AdminPlansSevasRoute
   AdminProofUploadRoute: typeof AdminProofUploadRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminRoutingRoute: typeof AdminRoutingRoute
   AdminSankalpListsRoute: typeof AdminSankalpListsRoute
+  AdminStaffRoute: typeof AdminStaffRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminPanditBatchIdRoute: typeof AdminPanditBatchIdRoute
@@ -1668,13 +1906,27 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPlansSevasRoute: AdminPlansSevasRoute,
   AdminProofUploadRoute: AdminProofUploadRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminRoutingRoute: AdminRoutingRoute,
   AdminSankalpListsRoute: AdminSankalpListsRoute,
+  AdminStaffRoute: AdminStaffRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminPanditBatchIdRoute: AdminPanditBatchIdRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface AgentRouteChildren {
+  AgentMyLeadsRoute: typeof AgentMyLeadsRoute
+  AgentIndexRoute: typeof AgentIndexRoute
+}
+
+const AgentRouteChildren: AgentRouteChildren = {
+  AgentMyLeadsRoute: AgentMyLeadsRoute,
+  AgentIndexRoute: AgentIndexRoute,
+}
+
+const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
 
 interface TelecallerRouteChildren {
   TelecallerEarningsRoute: typeof TelecallerEarningsRoute
@@ -1719,6 +1971,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  AgentRoute: AgentRouteWithChildren,
   CompleteProfileRoute: CompleteProfileRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
@@ -1732,6 +1985,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
   ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
+  ApiAgentMyLeadsRoute: ApiAgentMyLeadsRoute,
   ApiAuthCompleteGoogleProfileRoute: ApiAuthCompleteGoogleProfileRoute,
   ApiAuthReconcileProfileRoute: ApiAuthReconcileProfileRoute,
   ApiAuthRequestOtpRoute: ApiAuthRequestOtpRoute,
@@ -1761,6 +2015,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminHospitalsListRoute: ApiAdminHospitalsListRoute,
   ApiAdminHospitalsReallotRoute: ApiAdminHospitalsReallotRoute,
   ApiAdminLeadsAssignRoute: ApiAdminLeadsAssignRoute,
+  ApiAdminLeadsRoutingRoute: ApiAdminLeadsRoutingRoute,
   ApiAdminLeadsSweepRoute: ApiAdminLeadsSweepRoute,
   ApiAdminLeadsUploadRoute: ApiAdminLeadsUploadRoute,
   ApiAdminPaymentsListRoute: ApiAdminPaymentsListRoute,
@@ -1771,9 +2026,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminReportsExportRoute: ApiAdminReportsExportRoute,
   ApiAdminReportsMonthlyRoute: ApiAdminReportsMonthlyRoute,
   ApiAdminReportsPendingSevasRoute: ApiAdminReportsPendingSevasRoute,
+  ApiAdminSalesAgentsCreateRoute: ApiAdminSalesAgentsCreateRoute,
   ApiAdminSalesAgentsListRoute: ApiAdminSalesAgentsListRoute,
+  ApiAdminStaffCreateStaffRoute: ApiAdminStaffCreateStaffRoute,
+  ApiAdminStaffListRoute: ApiAdminStaffListRoute,
+  ApiAdminStaffSetRoleRoute: ApiAdminStaffSetRoleRoute,
   ApiAdminSubscriptionsReissueLinkRoute: ApiAdminSubscriptionsReissueLinkRoute,
   ApiAdminSubscriptionsResumeRoute: ApiAdminSubscriptionsResumeRoute,
+  ApiAgentLeadsUploadRoute: ApiAgentLeadsUploadRoute,
   ApiTelecallerQueueListRoute: ApiTelecallerQueueListRoute,
 }
 export const routeTree = rootRouteImport

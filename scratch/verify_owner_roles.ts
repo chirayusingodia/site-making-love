@@ -179,7 +179,7 @@ check("admin CSV: no real amount value", !adminCsv.includes("399.00"));
 check("admin CSV: no real razorpay ids", !adminCsv.includes("pay_RzpABC123"));
 check(
   "admin CSV: keeps operational cols",
-  adminCsv.split("\n")[0].includes('"status"') && adminCsv.split("\n")[0].includes('"subscriber"'),
+  adminCsv.split("\n")[0].includes("status") && adminCsv.split("\n")[0].includes("subscriber"),
 );
 check("owner CSV: has amount_inr column", ownerCsv.split("\n")[0].includes("amount_inr"));
 check("owner CSV: has razorpay columns", ownerCsv.split("\n")[0].includes("razorpay_payment_id"));
@@ -381,13 +381,14 @@ check("revenue: churn base", revReport.churnBase === 2 + 1 - 1);
 check("revenue: churn rate", Math.abs(revReport.churn - 0.5) < 1e-9);
 
 const subCsv = buildSubscribersCsv("2026-08", subReport);
-check("subscribers CSV: header", subCsv.split("\n")[0] === '"metric","value"');
-check("subscribers CSV: month label", subCsv.includes('"month","August 2026"'));
-check("subscribers CSV: active value", subCsv.includes('"active_now","2"'));
+// csvCell only adds RFC-4180 quotes when a cell actually needs them.
+check("subscribers CSV: header", subCsv.split("\n")[0] === "metric,value");
+check("subscribers CSV: month label", subCsv.includes("month,August 2026"));
+check("subscribers CSV: active value", subCsv.includes("active_now,2"));
 
 const revCsv = buildRevenueCsv("2026-08", revReport);
-check("revenue CSV: gross in INR", revCsv.includes('"gross_revenue_inr","4352.00"'));
-check("revenue CSV: churn pct", revCsv.includes('"churn_rate_pct","50.00"'));
+check("revenue CSV: gross in INR", revCsv.includes("gross_revenue_inr,4352.00"));
+check("revenue CSV: churn pct", revCsv.includes("churn_rate_pct,50.00"));
 
 const sevaCsv = buildSevaCsv(
   "2026-08",
@@ -427,7 +428,7 @@ const sevaCsv = buildSevaCsv(
     },
   ]),
 );
-check("seva CSV: aggregates per seva", sevaCsv.includes('"Gau Seva","August 2026","2","1","1"'));
+check("seva CSV: aggregates per seva", sevaCsv.includes("Gau Seva,August 2026,2,1,1"));
 check("seva CSV: removed-seva fallback label", sevaCsv.includes("(seva removed)"));
 
 const batches: BatchRow[] = [
