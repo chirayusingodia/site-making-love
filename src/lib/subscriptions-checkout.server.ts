@@ -434,6 +434,7 @@ export async function createCheckoutForUser(input: {
     createdMandate = await createMandateForSubscription(adminDb, {
       subscriptionId: subRow.id,
       planId: plan.id,
+      planPricePaise: plan.price_paise,
       billingPeriod: plan.billing_period,
       couponCode,
       // First mandate on a brand-new pending subscription: nothing to

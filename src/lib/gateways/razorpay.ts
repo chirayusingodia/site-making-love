@@ -37,6 +37,46 @@ import {
  */
 export const RAZORPAY_MAX_END_TIME_SECONDS = 4765046400;
 
+/**
+ * Razorpay's SEPARATE ceiling on UPI Autopay mandate validity: 30
+ * years from creation, enforced on the computed expire_at whenever UPI
+ * is a payment method on offer. This is what broke checkout again on
+ * 2026-08-28, hours after the end_time fix above landed — the 50-year
+ * policy tenure sailed past the 2120 wall with headroom to spare, then
+ * hit this unrelated, much tighter, RELATIVE limit the moment a
+ * customer picked "UPI - Google Pay":
+ *   "expire_at cannot be more than 30 years for upi"
+ * UPI is recommended at checkout for every subscription and Razorpay
+ * computes one total_count for the whole subscription object, so this
+ * cap must be treated as gateway-wide, not UPI-specific — see
+ * tenureFitsGatewayCeiling() / totalCountForTenure() in tenure.ts.
+ */
+export const RAZORPAY_UPI_MAX_TENURE_YEARS = 30;
+
+/**
+ * NPCI's ceiling on a UPI Autopay mandate's per-cycle amount: ₹99,999
+ * for a general-category merchant. (Lending/insurance/mutual-fund MCCs
+ * get ₹2,00,000 instead — Punyata is registered as neither, so the
+ * lower figure is the real one.) Exceeding it gets a mandate REJECTED
+ * outright, same failure class as RAZORPAY_UPI_MAX_TENURE_YEARS —
+ * checked below for the identical reason.
+ */
+export const RAZORPAY_UPI_MAX_MANDATE_AMOUNT_PAISE = 99_999_00;
+
+/**
+ * NPCI's Additional Factor Authentication (AFA) threshold: ₹15,000 per
+ * cycle. This one does NOT reject the mandate — a plan priced above it
+ * still creates fine — but every debit above it stops being silent:
+ * the customer must open their UPI app and enter their PIN for THAT
+ * charge, same as a one-off payment. A "recurring" plan priced above
+ * this is recurring in name only, so treat it as a pricing constraint,
+ * not a gateway error to catch. NOT enforced here — there is nothing
+ * to reject — but kept beside the hard ceiling above so both NPCI
+ * rules affecting mandate amount live in one place. Re-check this
+ * before ever pricing a plan at or above ₹15,000/cycle.
+ */
+export const RAZORPAY_UPI_AFA_FREE_AMOUNT_PAISE = 15_000_00;
+
 /** A hung gateway must trip the breaker, not hang the request until
  *  the serverless function is killed (which would leave the customer
  *  staring at a spinner and teach us nothing). */
@@ -178,6 +218,8 @@ export const razorpayAdapter: PaymentGatewayAdapter = {
   id: GATEWAY_ID,
   displayName: "Razorpay",
   maxEndTimeSeconds: RAZORPAY_MAX_END_TIME_SECONDS,
+  maxRelativeTenureYears: RAZORPAY_UPI_MAX_TENURE_YEARS,
+  maxRecurringAmountPaise: RAZORPAY_UPI_MAX_MANDATE_AMOUNT_PAISE,
   checkoutStrategy: "razorpay_sdk",
 
   isConfigured() {

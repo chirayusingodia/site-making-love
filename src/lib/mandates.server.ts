@@ -118,6 +118,10 @@ export async function findMandateByGatewayId(
 export interface CreateMandateOptions {
   subscriptionId: string;
   planId: string;
+  /** Plan's charge amount, in paise — checked against each gateway's
+   *  maxRecurringAmountPaise before the mandate is raised (the amount
+   *  counterpart to the tenure ceiling checks below). */
+  planPricePaise: number;
   billingPeriod: BillingPeriod;
   couponCode?: string | null;
   /**
@@ -182,10 +186,28 @@ export async function createMandateForSubscription(
   const mandateDbId = randomUUID();
 
   const result = await withGatewayFailover(db, candidates, async (candidate) => {
+    // Amount ceiling first: a plan priced above what this gateway can
+    // register on a recurring UPI mandate at all (NPCI limit, not a
+    // Razorpay one — see maxRecurringAmountPaise) needs failing over
+    // exactly like an exhausted tenure ceiling, and for the same
+    // reason — every other candidate might have a higher one.
+    if (
+      candidate.adapter.maxRecurringAmountPaise !== null &&
+      opts.planPricePaise > candidate.adapter.maxRecurringAmountPaise
+    ) {
+      throw new GatewayError(
+        candidate.gateway,
+        `${candidate.gateway} cannot register a recurring UPI mandate above ` +
+          `${candidate.adapter.maxRecurringAmountPaise} paise (plan is ${opts.planPricePaise} paise)`,
+        { retryable: true, countsAgainstHealth: false },
+      );
+    }
+
     const totalCount = totalCountForTenure({
       period: opts.billingPeriod,
       years: tenureYears,
       maxEndTimeSeconds: candidate.adapter.maxEndTimeSeconds,
+      maxRelativeTenureYears: candidate.adapter.maxRelativeTenureYears,
     });
 
     // 0 = this gateway has under one cycle of headroom left before its
@@ -210,6 +232,7 @@ export async function createMandateForSubscription(
         period: opts.billingPeriod,
         totalCount,
         maxEndTimeSeconds: candidate.adapter.maxEndTimeSeconds,
+        maxRelativeTenureYears: candidate.adapter.maxRelativeTenureYears,
       })
     ) {
       throw new GatewayError(
@@ -404,6 +427,7 @@ export interface RenewalCandidate {
   mandate: MandateRow;
   subscriptionId: string;
   planId: string;
+  planPricePaise: number;
   billingPeriod: BillingPeriod;
   userId: string;
   reason: "expiring_soon" | "cycles_exhausted" | "terminal_upstream";
@@ -425,7 +449,7 @@ export async function findMandatesDueForRenewal(
   const { data, error } = await db
     .from("subscription_mandates")
     .select(
-      `${MANDATE_COLUMNS},subscriptions!inner(id,user_id,plan_id,status,plans!inner(billing_period))`,
+      `${MANDATE_COLUMNS},subscriptions!inner(id,user_id,plan_id,status,plans!inner(billing_period,price_paise))`,
     )
     .eq("is_current", true)
     .eq("subscriptions.status", "active")
@@ -438,7 +462,10 @@ export async function findMandatesDueForRenewal(
     user_id: string;
     plan_id: string;
     status: string;
-    plans: { billing_period: BillingPeriod } | { billing_period: BillingPeriod }[] | null;
+    plans:
+      | { billing_period: BillingPeriod; price_paise: number }
+      | { billing_period: BillingPeriod; price_paise: number }[]
+      | null;
   }
 
   // PostgREST embeds a to-one relation as an OBJECT at runtime, but the
@@ -475,6 +502,7 @@ export async function findMandatesDueForRenewal(
       mandate: row,
       subscriptionId: sub.id,
       planId: sub.plan_id,
+      planPricePaise: plan.price_paise,
       billingPeriod: plan.billing_period,
       userId: sub.user_id,
       reason,
@@ -504,6 +532,7 @@ export async function startMandateRenewal(
     const created = await createMandateForSubscription(db, {
       subscriptionId: candidate.subscriptionId,
       planId: candidate.planId,
+      planPricePaise: candidate.planPricePaise,
       billingPeriod: candidate.billingPeriod,
       // Dormant until the customer authorises it — see above.
       isCurrent: false,

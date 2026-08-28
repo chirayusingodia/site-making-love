@@ -217,5 +217,90 @@ check(
   expectedEndAt("monthly", 24, AUG_2026 * 1000) > expectedEndAt("monthly", 12, AUG_2026 * 1000),
 );
 
+// ── 7. The UPI relative ceiling (2026-08-28, second incident) ────
+// A 50-year policy tenure lands comfortably inside the 2120 end_time
+// wall (checked in section 1), but Razorpay's SEPARATE UPI Autopay
+// rule caps mandate validity at 30 years from CREATION. This must bind
+// even though the calendar wall has ~94 years of headroom in 2026 —
+// that is precisely what let the bug through the end_time fix.
+import { RAZORPAY_UPI_MAX_TENURE_YEARS } from "../src/lib/gateways/razorpay.ts";
+
+for (const period of ["monthly", "yearly"] as const) {
+  const totalCount = totalCountForTenure({
+    period,
+    maxEndTimeSeconds: RZP,
+    maxRelativeTenureYears: RAZORPAY_UPI_MAX_TENURE_YEARS,
+    nowSeconds: AUG_2026,
+  });
+  check(
+    `2026 ${period}: UPI's ${RAZORPAY_UPI_MAX_TENURE_YEARS}y relative cap overrides the far looser end_time wall`,
+    totalCount < MANDATE_TENURE_YEARS * (period === "monthly" ? 12 : 1),
+    `total_count=${totalCount}`,
+  );
+  check(
+    `2026 ${period}: derived tenure still satisfies the guard with the relative cap applied`,
+    tenureFitsGatewayCeiling({
+      period,
+      totalCount,
+      maxEndTimeSeconds: RZP,
+      maxRelativeTenureYears: RAZORPAY_UPI_MAX_TENURE_YEARS,
+      nowSeconds: AUG_2026,
+    }),
+  );
+}
+
+// The exact regression: the OLD 50-year request, unclamped by the
+// relative cap, must be REJECTED by the guard once the cap is passed —
+// proving this suite would have caught the incident.
+check(
+  "guard REJECTS the un-clamped 50-year tenure once the UPI relative cap is passed",
+  !tenureFitsGatewayCeiling({
+    period: "yearly",
+    totalCount: MANDATE_TENURE_YEARS,
+    maxEndTimeSeconds: RZP,
+    maxRelativeTenureYears: RAZORPAY_UPI_MAX_TENURE_YEARS,
+    nowSeconds: AUG_2026,
+  }),
+);
+
+// The relative cap must keep working as the calendar advances — it is
+// RELATIVE, so unlike the end_time wall it never needs to "catch up".
+// (2120 is deliberately excluded here: by then the ABSOLUTE end_time
+// wall itself has under a cycle of headroom left — see section 2b —
+// so it saturates to 0 for a reason unrelated to this cap.)
+for (const now of [YEAR_2100]) {
+  const totalCount = totalCountForTenure({
+    period: "yearly",
+    maxEndTimeSeconds: RZP,
+    maxRelativeTenureYears: RAZORPAY_UPI_MAX_TENURE_YEARS,
+    nowSeconds: now,
+  });
+  check(
+    `at ${new Date(now * 1000).toISOString().slice(0, 4)}: relative cap still yields a legal, non-zero tenure`,
+    totalCount >= 1 &&
+      tenureFitsGatewayCeiling({
+        period: "yearly",
+        totalCount,
+        maxEndTimeSeconds: RZP,
+        maxRelativeTenureYears: RAZORPAY_UPI_MAX_TENURE_YEARS,
+        nowSeconds: now,
+      }),
+    `total_count=${totalCount}`,
+  );
+}
+
+// null maxRelativeTenureYears (a hypothetical gateway with no such
+// rule) must leave behaviour identical to before this field existed.
+check(
+  "maxRelativeTenureYears omitted: behaves exactly like the pre-fix derivation",
+  totalCountForTenure({ period: "yearly", maxEndTimeSeconds: RZP, nowSeconds: AUG_2026 }) ===
+    totalCountForTenure({
+      period: "yearly",
+      maxEndTimeSeconds: RZP,
+      maxRelativeTenureYears: null,
+      nowSeconds: AUG_2026,
+    }),
+);
+
 console.log(`\n${failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`}`);
 if (failures > 0) process.exit(1);
