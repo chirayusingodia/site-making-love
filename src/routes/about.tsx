@@ -59,8 +59,22 @@ function AboutPage() {
           <div className="text-xs font-bold uppercase tracking-widest text-brand">पुण्यता — About Us</div>
           <h1 className="text-4xl font-bold text-brand leading-tight">भारत का पुण्य बैंक</h1>
           <p className="text-lg font-semibold text-foreground/80">भारत का पुण्य साथी</p>
+          <div className="inline-flex items-center gap-1.5 bg-brand-soft text-brand text-xs font-bold px-3 py-1.5 rounded-full">
+            <ShieldCheck size={13} /> 11 साल का विश्वास
+          </div>
           <p className="text-2xl md:text-3xl font-bold text-[#5B1A1A] pt-3">
             अब भारत करेगा पुण्यता।
+          </p>
+        </section>
+
+        {/* 11 years of trust */}
+        <section className="card-soft p-6 text-center space-y-2 border border-brand/10 bg-gradient-to-b from-brand-soft/40 to-transparent animate-fade-up">
+          <div className="text-3xl font-bold text-brand">
+            <CountUp value={11} suffix=" साल" />
+          </div>
+          <p className="text-sm font-semibold text-[#5B1A1A]">का विश्वास</p>
+          <p className="text-sm text-foreground/75 leading-relaxed max-w-md mx-auto">
+            पिछले 11 वर्षों से पुण्यता आपकी सेवा में है — एक संगठित सेवा, जो आपके भरोसे पर बनी और आपके भरोसे से ही आगे बढ़ती है।
           </p>
         </section>
 
@@ -177,8 +191,9 @@ function AboutPage() {
         {/* Stats */}
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-center">संख्या में पुण्यता</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
+              { value: 11, suffix: "", l: "साल का विश्वास" },
               { value: 1200, suffix: "+", l: "परिवार जुड़े" },
               { value: 15000, suffix: "+", l: "सेवाएँ सम्पन्न" },
               { value: 100, suffix: "%", l: "Video Proof Delivery" },

@@ -5,7 +5,13 @@ import { usePublicPlans, getPlanById } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
-import { formatPhoneDisplay } from "@/lib/phone";
+import { normalizePhoneE164 } from "@/lib/phone";
+
+// Coupon entry is parked for now — flip this back on to restore the
+// "Coupon Code (optional)" card on /checkout without touching the
+// surrounding logic (couponApplied/applyCoupon stay wired up so this
+// is a one-line revert).
+const COUPON_UI_ENABLED = false;
 
 export const Route = createFileRoute("/checkout/$planId")({
   // §9.1: telecaller payment links arrive as /checkout/<slug>?att=<token>.
@@ -66,16 +72,12 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-// [Bug 3.6] Shared display formatter — profile.tsx used to render the
-// same stored number differently (it only handled a literal "+91…").
-const formatPhone = formatPhoneDisplay;
-
 function CheckoutPage() {
   const { planId } = Route.useParams();
   const { att: attToken } = Route.useSearch();
   const navigate = useNavigate();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
-  const { userId, profile, loading: sessionLoading } = useSessionProfile();
+  const { userId, profile, loading: sessionLoading, refresh: refreshProfile } = useSessionProfile();
 
   // Session gate — remember which plan they wanted via ?redirect
   // (and carry the attribution token through the login bounce).
@@ -94,6 +96,65 @@ function CheckoutPage() {
   const [couponBusy, setCouponBusy] = useState(false);
   const [payState, setPayState] = useState<PayState>("idle");
   const [payError, setPayError] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // Naam/mobile shown here are editable — a typo'd name or a wrong
+  // number entered at signup shouldn't force a trip to /profile
+  // before someone can pay. Seeded once from the loaded profile, then
+  // left alone (so refresh() after a save doesn't clobber more typing).
+  const [nameInput, setNameInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [identitySeeded, setIdentitySeeded] = useState(false);
+  const [identitySaving, setIdentitySaving] = useState(false);
+  const [identityError, setIdentityError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!identitySeeded && profile) {
+      setNameInput(profile.full_name ?? "");
+      setPhoneInput(profile.phone ? profile.phone.replace(/\D/g, "").slice(-10) : "");
+      setIdentitySeeded(true);
+    }
+  }, [profile, identitySeeded]);
+
+  // Persists whichever of naam/mobile actually changed. Phone is
+  // UNIQUE across profiles (same as the Google sign-in confirm step),
+  // so a collision comes back as a clear message, not a raw DB error.
+  // Returns false only when there is an edit that could NOT be saved
+  // (invalid number, or the API call failed) — callers use this to
+  // decide whether it's safe to carry on (e.g. open the Razorpay modal).
+  const saveIdentity = async (): Promise<boolean> => {
+    const trimmedName = nameInput.trim();
+    const currentName = profile?.full_name ?? "";
+    const currentPhoneDigits = profile?.phone ? profile.phone.replace(/\D/g, "").slice(-10) : "";
+    const typedPhoneDigits = phoneInput.replace(/\D/g, "");
+
+    const payload: { full_name?: string; phone?: string } = {};
+    if (trimmedName && trimmedName !== currentName) payload.full_name = trimmedName;
+    if (typedPhoneDigits && typedPhoneDigits !== currentPhoneDigits) {
+      if (!normalizePhoneE164(typedPhoneDigits)) {
+        setIdentityError("10-anki valid mobile number daalein");
+        return false;
+      }
+      payload.phone = typedPhoneDigits;
+    }
+    if (Object.keys(payload).length === 0) {
+      setIdentityError(null);
+      return true;
+    }
+
+    setIdentitySaving(true);
+    setIdentityError(null);
+    try {
+      await callUserApi("/api/profile/identity", payload);
+      refreshProfile();
+      return true;
+    } catch (err) {
+      setIdentityError(err instanceof AuthApiError ? err.message : "Details save nahi ho payi.");
+      return false;
+    } finally {
+      setIdentitySaving(false);
+    }
+  };
 
   if (isLoading || sessionLoading || !userId) {
     return (
@@ -172,6 +233,10 @@ function CheckoutPage() {
 
   const startPayment = async () => {
     setPayError(null);
+    // Make sure a just-typed name/number correction is not left
+    // sitting locally when payment opens.
+    const identityOk = await saveIdentity();
+    if (!identityOk) return;
     setPayState("creating");
     try {
       const ready = await loadRazorpayScript();
@@ -194,8 +259,8 @@ function CheckoutPage() {
         description: `${plan.name} — Sewa Hamari, Punya Aapka`,
         image: "/punyata-logo.svg",
         prefill: {
-          name: profile?.full_name ?? "",
-          contact: profile?.phone?.replace(/\D/g, "").slice(-10) ?? "",
+          name: nameInput.trim() || profile?.full_name || "",
+          contact: phoneInput.replace(/\D/g, "") || profile?.phone?.replace(/\D/g, "").slice(-10) || "",
         },
         notes: { punyata_subscription_id: res.subscriptionDbId },
         theme: { color: "#D85A30" },
@@ -279,68 +344,91 @@ function CheckoutPage() {
           <div className="text-[11px] text-muted-foreground">{plan.location}</div>
         </div>
 
-        {/* Identity — already known, never re-asked */}
-        <div className="card-soft p-4 space-y-2">
+        {/* Identity — editable: naam ya number galat ho toh yahin se
+            theek ho jaaye, bina /profile par gaye. Same trust-now
+            approach as the Google sign-in confirm step — no OTP re-
+            verification, phone's UNIQUE constraint is the backstop. */}
+        <div className="card-soft p-4 space-y-2.5">
           <div className="text-sm font-bold text-brand">Aapki Details</div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Naam</span>
-            <span className="font-semibold text-foreground">{profile?.full_name || "—"}</span>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Naam</label>
+            <input
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onBlur={saveIdentity}
+              placeholder="Aapka naam"
+              className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground"
+            />
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Mobile</span>
-            <span className="font-semibold text-foreground">
-              {formatPhone(profile?.phone ?? null)}
-            </span>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Mobile</label>
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value.replace(/[^\d]/g, "").slice(0, 10))}
+              onBlur={saveIdentity}
+              placeholder="10-anki mobile number"
+              className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground"
+            />
           </div>
+          {identitySaving && (
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <Loader2 size={11} className="animate-spin" /> Save ho raha hai…
+            </p>
+          )}
+          {identityError && <p className="text-[11px] text-destructive">{identityError}</p>}
           <p className="text-[11px] text-muted-foreground pt-1">
             Parivaar ke naam-gotra payment ke baad profile par add kiye jaate hain.
           </p>
         </div>
 
-        {/* Optional coupon */}
-        {!couponApplied ? (
-          <div className="card-soft p-4 space-y-2">
-            <label className="block text-sm font-bold text-foreground">
-              <Tag size={13} className="inline mr-1 text-brand" /> Coupon Code (optional)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="CODE"
-                value={couponInput}
-                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none uppercase text-foreground"
-              />
+        {/* Coupon entry — parked (COUPON_UI_ENABLED at top of file) */}
+        {COUPON_UI_ENABLED &&
+          (!couponApplied ? (
+            <div className="card-soft p-4 space-y-2">
+              <label className="block text-sm font-bold text-foreground">
+                <Tag size={13} className="inline mr-1 text-brand" /> Coupon Code (optional)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="CODE"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none uppercase text-foreground"
+                />
+                <button
+                  onClick={applyCoupon}
+                  disabled={!couponInput.trim() || couponBusy}
+                  className="px-4 py-2.5 rounded-xl bg-secondary text-foreground font-bold text-sm disabled:opacity-50"
+                >
+                  {couponBusy ? <Loader2 size={16} className="animate-spin" /> : "Apply"}
+                </button>
+              </div>
+              {couponMsg && <p className="text-xs text-destructive">{couponMsg}</p>}
+            </div>
+          ) : (
+            <div className="card-soft p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <Tag size={15} className="text-success" />
+                <span className="font-bold text-foreground">{couponApplied}</span>
+                <span className="text-success text-xs font-semibold">darj ✓</span>
+              </div>
               <button
-                onClick={applyCoupon}
-                disabled={!couponInput.trim() || couponBusy}
-                className="px-4 py-2.5 rounded-xl bg-secondary text-foreground font-bold text-sm disabled:opacity-50"
+                onClick={() => {
+                  setCouponApplied(null);
+                  setCouponInput("");
+                  setCouponMsg(null);
+                }}
+                aria-label="Remove coupon"
+                className="text-muted-foreground hover:text-destructive"
               >
-                {couponBusy ? <Loader2 size={16} className="animate-spin" /> : "Apply"}
+                <X size={16} />
               </button>
             </div>
-            {couponMsg && <p className="text-xs text-destructive">{couponMsg}</p>}
-          </div>
-        ) : (
-          <div className="card-soft p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <Tag size={15} className="text-success" />
-              <span className="font-bold text-foreground">{couponApplied}</span>
-              <span className="text-success text-xs font-semibold">darj ✓</span>
-            </div>
-            <button
-              onClick={() => {
-                setCouponApplied(null);
-                setCouponInput("");
-                setCouponMsg(null);
-              }}
-              aria-label="Remove coupon"
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
+          ))}
 
         {/* Amount + pay */}
         <div className="card-soft p-4 space-y-2 text-sm">
@@ -359,13 +447,46 @@ function CheckoutPage() {
 
         {payError && <p className="text-xs text-destructive text-center">{payError}</p>}
 
+        {/* Mandatory terms acknowledgment — required before payment starts */}
+        <label className="flex items-start gap-2.5 px-1 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5 w-4 h-4 shrink-0 rounded border-black/20 accent-brand"
+          />
+          <span className="text-[12.5px] text-foreground/75 leading-relaxed">
+            Main ye confirm karta/karti hoon ki maine{" "}
+            <Link
+              to="/terms-and-conditions"
+              target="_blank"
+              className="text-brand font-semibold underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Terms & Conditions
+            </Link>{" "}
+            aur{" "}
+            <Link
+              to="/refund-policy"
+              target="_blank"
+              className="text-brand font-semibold underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Refund Policy
+            </Link>{" "}
+            padh li hai aur unse sehmat hoon.
+          </span>
+        </label>
+
         <button
           onClick={startPayment}
-          disabled={paying}
+          disabled={paying || !agreedToTerms}
           className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors ${
             paying
               ? "bg-brand/70 text-white cursor-wait"
-              : "bg-brand text-white hover:bg-brand-deep"
+              : !agreedToTerms
+                ? "bg-brand/40 text-white cursor-not-allowed"
+                : "bg-brand text-white hover:bg-brand-deep"
           }`}
         >
           {paying ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
@@ -375,6 +496,9 @@ function CheckoutPage() {
         <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
           <ShieldCheck size={12} className="text-success" /> 100% Secure Payment via Razorpay · UPI
           AutoPay / Card
+        </div>
+        <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-brand">
+          <ShieldCheck size={12} /> 11 साल का विश्वास
         </div>
       </main>
       <WhatsAppFloat />
