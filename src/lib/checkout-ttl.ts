@@ -14,7 +14,7 @@
 // One number in one place on purpose — never hardcode a second copy.
 // ─────────────────────────────────────────────────────────────
 
-export const PENDING_REUSE_WINDOW_MINUTES = 20;
+export const PENDING_REUSE_WINDOW_MINUTES = 3;
 
 export function pendingCheckoutIsStale(createdAtIso: string | null | undefined): boolean {
   if (!createdAtIso) return true;
