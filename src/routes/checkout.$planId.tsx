@@ -1,11 +1,23 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, ShieldCheck, Loader2, Tag, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ShieldCheck,
+  Loader2,
+  Tag,
+  X,
+  Lock,
+  RefreshCcw,
+  CalendarX,
+  BadgeCheck,
+} from "lucide-react";
 import { usePublicPlans, getPlanById } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
 import { normalizePhoneE164 } from "@/lib/phone";
+import { useTranslation } from "@/lib/translations";
 
 // Coupon entry is parked for now — flip this back on to restore the
 // "Coupon Code (optional)" card on /checkout without touching the
@@ -76,6 +88,7 @@ function CheckoutPage() {
   const { planId } = Route.useParams();
   const { att: attToken } = Route.useSearch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
   const { userId, profile, loading: sessionLoading, refresh: refreshProfile } = useSessionProfile();
 
@@ -132,7 +145,7 @@ function CheckoutPage() {
     if (trimmedName && trimmedName !== currentName) payload.full_name = trimmedName;
     if (typedPhoneDigits && typedPhoneDigits !== currentPhoneDigits) {
       if (!normalizePhoneE164(typedPhoneDigits)) {
-        setIdentityError("10-anki valid mobile number daalein");
+        setIdentityError(t("checkout_phone_required"));
         return false;
       }
       payload.phone = typedPhoneDigits;
@@ -149,7 +162,7 @@ function CheckoutPage() {
       refreshProfile();
       return true;
     } catch (err) {
-      setIdentityError(err instanceof AuthApiError ? err.message : "Details save nahi ho payi.");
+      setIdentityError(err instanceof AuthApiError ? err.message : t("checkout_identity_save_error"));
       return false;
     } finally {
       setIdentitySaving(false);
@@ -174,16 +187,14 @@ function CheckoutPage() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="max-w-2xl mx-auto px-4 py-16 text-center space-y-3">
-          <h1 className="text-xl font-bold">Checkout load nahi ho paya</h1>
-          <p className="text-sm text-muted-foreground">
-            Live plan data fetch karne mein samasya aayi. Kripya punah prayas karein.
-          </p>
+          <h1 className="text-xl font-bold">{t("checkout_load_error_title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("checkout_load_error_desc")}</p>
           <button
             onClick={() => refetch()}
             disabled={isRefetching}
             className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
           >
-            {isRefetching ? "Retrying..." : "Retry"}
+            {isRefetching ? t("checkout_retrying") : t("checkout_retry")}
           </button>
         </main>
       </div>
@@ -196,9 +207,9 @@ function CheckoutPage() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold">Plan not found</h1>
+          <h1 className="text-2xl font-bold">{t("checkout_plan_not_found")}</h1>
           <Link to="/plans" className="mt-4 inline-block text-brand font-semibold">
-            Back to Plans
+            {t("checkout_back_to_plans")}
           </Link>
         </main>
       </div>
@@ -236,11 +247,11 @@ function CheckoutPage() {
     // Naam/mobile are mandatory before payment — required either
     // already on the profile or freshly typed here.
     if (!nameInput.trim()) {
-      setIdentityError("Naam daalein");
+      setIdentityError(t("checkout_name_required"));
       return;
     }
     if (!normalizePhoneE164(phoneInput.replace(/\D/g, ""))) {
-      setIdentityError("10-anki valid mobile number daalein");
+      setIdentityError(t("checkout_phone_required"));
       return;
     }
     // Make sure a just-typed name/number correction is not left
@@ -250,16 +261,14 @@ function CheckoutPage() {
     setPayState("creating");
     try {
       const ready = await loadRazorpayScript();
-      if (!ready || !window.Razorpay)
-        throw new Error("Payment gateway load nahi hua — internet check karke retry karein.");
+      if (!ready || !window.Razorpay) throw new Error(t("checkout_gateway_error"));
 
       const res = await callUserApi<CreateCheckoutResponse>("/api/subscriptions/create-checkout", {
         plan_id: plan.slug,
         ...(couponApplied ? { coupon_code: couponApplied } : {}),
         ...(attToken ? { att: attToken } : {}),
       });
-      if (!res.razorpayKeyId)
-        throw new Error("Payment keys configured nahi hain — thodi der baad try karein.");
+      if (!res.razorpayKeyId) throw new Error(t("checkout_keys_error"));
 
       setPayState("checkout");
       const rzp = new window.Razorpay({
@@ -285,14 +294,14 @@ function CheckoutPage() {
         modal: {
           ondismiss: () => {
             setPayState("idle");
-            setPayError("Payment cancel ho gaya — jab chahein dobara try karein.");
+            setPayError(t("checkout_cancelled_msg"));
           },
         },
       });
       rzp.open();
     } catch (err) {
       setPayState("error");
-      setPayError(err instanceof Error ? err.message : "Payment shuru nahi ho paya.");
+      setPayError(err instanceof Error ? err.message : t("checkout_generic_error"));
     }
   };
 
@@ -305,10 +314,10 @@ function CheckoutPage() {
           <div className="w-20 h-20 rounded-full bg-success/15 text-success flex items-center justify-center mx-auto">
             <Check size={40} />
           </div>
-          <h1 className="text-xl font-bold text-foreground">Payment mil gaya!</h1>
+          <h1 className="text-xl font-bold text-foreground">{t("checkout_paid_title")}</h1>
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
             <Loader2 size={14} className="animate-spin" />
-            Aapki sadasyata confirm ho rahi hai…
+            {t("checkout_paid_sub")}
           </p>
         </main>
       </div>
@@ -327,8 +336,26 @@ function CheckoutPage() {
           params={{ planId: plan.id }}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-brand mb-1"
         >
-          <ArrowLeft size={16} /> Back to Plan
+          <ArrowLeft size={16} /> {t("checkout_back")}
         </Link>
+
+        {/* Trust strip — sets a "safe & secure" tone before any form field */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { icon: RefreshCcw, title: t("checkout_trust_refund_title"), desc: t("checkout_trust_refund_desc") },
+            { icon: CalendarX, title: t("checkout_trust_cancel_title"), desc: t("checkout_trust_cancel_desc") },
+            { icon: Lock, title: t("checkout_trust_secure_title"), desc: t("checkout_trust_secure_desc") },
+          ].map(({ icon: Icon, title, desc }) => (
+            <div
+              key={title}
+              className="rounded-2xl bg-success/10 border border-success/20 px-2.5 py-3 text-center space-y-1"
+            >
+              <Icon size={18} className="text-success mx-auto" />
+              <div className="text-[11px] font-bold text-foreground leading-tight">{title}</div>
+              <div className="text-[9.5px] text-muted-foreground leading-tight">{desc}</div>
+            </div>
+          ))}
+        </div>
 
         {/* Plan summary */}
         <div className="card-soft p-5 space-y-3">
@@ -360,39 +387,39 @@ function CheckoutPage() {
             approach as the Google sign-in confirm step — no OTP re-
             verification, phone's UNIQUE constraint is the backstop. */}
         <div className="card-soft p-4 space-y-2.5">
-          <div className="text-sm font-bold text-brand">Aapki Details</div>
+          <div className="text-sm font-bold text-brand flex items-center gap-1.5">
+            <BadgeCheck size={15} /> {t("checkout_your_details")}
+          </div>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Naam</label>
+            <label className="text-xs text-muted-foreground">{t("checkout_name_label")}</label>
             <input
               type="text"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
               onBlur={saveIdentity}
-              placeholder="Aapka naam"
+              placeholder={t("checkout_name_placeholder")}
               className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Mobile</label>
+            <label className="text-xs text-muted-foreground">{t("checkout_phone_label")}</label>
             <input
               type="tel"
               inputMode="numeric"
               value={phoneInput}
               onChange={(e) => setPhoneInput(e.target.value.replace(/[^\d]/g, "").slice(0, 10))}
               onBlur={saveIdentity}
-              placeholder="10-anki mobile number"
+              placeholder={t("checkout_phone_placeholder")}
               className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground"
             />
           </div>
           {identitySaving && (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Loader2 size={11} className="animate-spin" /> Save ho raha hai…
+              <Loader2 size={11} className="animate-spin" /> {t("checkout_saving")}
             </p>
           )}
           {identityError && <p className="text-[11px] text-destructive">{identityError}</p>}
-          <p className="text-[11px] text-muted-foreground pt-1">
-            Parivaar ke naam-gotra payment ke baad profile par add kiye jaate hain.
-          </p>
+          <p className="text-[11px] text-muted-foreground pt-1">{t("checkout_family_note")}</p>
         </div>
 
         {/* Coupon entry — parked (COUPON_UI_ENABLED at top of file) */}
@@ -443,12 +470,15 @@ function CheckoutPage() {
 
         {/* Amount + pay */}
         <div className="card-soft p-4 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Plan</span>
+          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+            {t("checkout_order_summary")}
+          </div>
+          <div className="flex justify-between pt-1">
+            <span className="text-muted-foreground">{t("checkout_plan_label")}</span>
             <span className="font-bold text-foreground">{plan.name}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Amount</span>
+          <div className="flex justify-between border-t border-black/5 pt-2">
+            <span className="text-muted-foreground">{t("checkout_amount_label")}</span>
             <span className="font-bold text-brand">
               {plan.price}
               <span className="text-xs text-muted-foreground font-medium">{plan.cycle}</span>
@@ -459,7 +489,7 @@ function CheckoutPage() {
         {payError && <p className="text-xs text-destructive text-center">{payError}</p>}
 
         {/* Mandatory terms acknowledgment — required before payment starts */}
-        <label className="flex items-start gap-2.5 px-1 cursor-pointer select-none">
+        <label className="flex items-start gap-2.5 px-3.5 py-3 rounded-2xl bg-secondary/60 border border-black/5 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={agreedToTerms}
@@ -467,49 +497,48 @@ function CheckoutPage() {
             className="mt-0.5 w-4 h-4 shrink-0 rounded border-black/20 accent-brand"
           />
           <span className="text-[12.5px] text-foreground/75 leading-relaxed">
-            Main ye confirm karta/karti hoon ki maine{" "}
+            {t("checkout_terms_confirm")}{" "}
             <Link
               to="/terms-and-conditions"
               target="_blank"
               className="text-brand font-semibold underline"
               onClick={(e) => e.stopPropagation()}
             >
-              Terms & Conditions
+              {t("checkout_terms_tc")}
             </Link>{" "}
-            aur{" "}
+            {t("checkout_terms_and")}{" "}
             <Link
               to="/refund-policy"
               target="_blank"
               className="text-brand font-semibold underline"
               onClick={(e) => e.stopPropagation()}
             >
-              Refund Policy
+              {t("checkout_terms_refund")}
             </Link>{" "}
-            padh li hai aur unse sehmat hoon.
+            {t("checkout_terms_read")}
           </span>
         </label>
 
         <button
           onClick={startPayment}
           disabled={paying || !agreedToTerms || identityMissing}
-          className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors ${
+          className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors shadow-[0_8px_24px_rgba(216,90,48,0.25)] ${
             paying
-              ? "bg-brand/70 text-white cursor-wait"
+              ? "bg-brand/70 text-white cursor-wait shadow-none"
               : !agreedToTerms || identityMissing
-                ? "bg-brand/40 text-white cursor-not-allowed"
+                ? "bg-brand/40 text-white cursor-not-allowed shadow-none"
                 : "bg-brand text-white hover:bg-brand-deep"
           }`}
         >
-          {paying ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-          {paying ? "Razorpay khul raha hai…" : `Confirm & Pay ${plan.price}`}
+          {paying ? <Loader2 size={18} className="animate-spin" /> : <Lock size={16} />}
+          {paying ? t("checkout_opening_gateway") : `${t("checkout_pay_button")} ${plan.price}`}
         </button>
 
         <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
-          <ShieldCheck size={12} className="text-success" /> 100% Secure Payment via Razorpay · UPI
-          AutoPay / Card
+          <ShieldCheck size={12} className="text-success" /> {t("checkout_secure_footer")}
         </div>
         <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-brand">
-          <ShieldCheck size={12} /> 11 साल का विश्वास
+          <ShieldCheck size={12} /> {t("trust_years_badge")}
         </div>
       </main>
       <WhatsAppFloat />
