@@ -87,17 +87,23 @@ function Hero() {
   const { t, lang } = useTranslation();
   return (
     <section className="animate-fade-up">
-      <div className="inline-flex items-center gap-2 bg-success/10 text-success text-xs font-bold px-3 py-1.5 rounded-full">
-        <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-        {lang === "hindi" ? (
-          <>
-            <CountUp value={1200} /> परिवार इस सेवा से जुड़े हैं
-          </>
-        ) : (
-          <>
-            <CountUp value={1200} /> Families Connected With Us
-          </>
-        )}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex items-center gap-2 bg-success/10 text-success text-xs font-bold px-3 py-1.5 rounded-full">
+          <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+          {lang === "hindi" ? (
+            <>
+              <CountUp value={1200} /> परिवार इस सेवा से जुड़े हैं
+            </>
+          ) : (
+            <>
+              <CountUp value={1200} /> Families Connected With Us
+            </>
+          )}
+        </div>
+        <div className="inline-flex items-center gap-1.5 bg-brand-soft text-brand text-xs font-bold px-3 py-1.5 rounded-full">
+          <ShieldCheck size={13} />
+          {t("trust_years_badge")}
+        </div>
       </div>
       <p className="mt-3 text-xs font-semibold text-brand tracking-wide uppercase">
         {t("hero_sub")}
@@ -463,17 +469,23 @@ function FaqSection() {
 }
 
 function ContactFooter() {
+  const { t } = useTranslation();
   return (
     <footer className="pt-4 pb-4 text-center space-y-2 text-sm text-muted-foreground">
       <div className="flex flex-col items-center justify-center gap-1.5">
         <img src={punyataStaticLogo} alt="Punyata Logo" className="w-10 h-10" />
         <div className="font-bold text-brand text-base leading-none">पुण्यता</div>
       </div>
+      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand">
+        <ShieldCheck size={12} /> {t("trust_years_footer")}
+      </div>
       <div>तीर्थ गुरु पुष्करराज, राजस्थान — 305022</div>
-      <div className="flex justify-center gap-4 text-xs pt-2">
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs pt-2">
         <Link to="/about" className="hover:text-brand">About</Link>
         <Link to="/plans" className="hover:text-brand">Plans</Link>
         <Link to="/reviews" className="hover:text-brand">Reviews</Link>
+        <Link to="/terms-and-conditions" className="hover:text-brand">Terms & Conditions</Link>
+        <Link to="/refund-policy" className="hover:text-brand">Refund Policy</Link>
       </div>
       <div className="text-xs">© 2026 पुण्यता · सर्वाधिकार सुरक्षित</div>
     </footer>

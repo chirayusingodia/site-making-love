@@ -9,10 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as TelecallerRouteImport } from './routes/telecaller'
 import { Route as SubscriptionSuccessRouteImport } from './routes/subscription-success'
 import { Route as SevasRouteImport } from './routes/sevas'
 import { Route as ReviewsRouteImport } from './routes/reviews'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PlansRouteImport } from './routes/plans'
 import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
@@ -64,6 +66,7 @@ import { Route as ApiTelecallerCreateLeadRouteImport } from './routes/api/teleca
 import { Route as ApiTelecallerAgentsRouteImport } from './routes/api/telecaller/agents'
 import { Route as ApiSubscriptionsCreateCheckoutRouteImport } from './routes/api/subscriptions/create-checkout'
 import { Route as ApiSankalpGenerateBatchRouteImport } from './routes/api/sankalp/generate-batch'
+import { Route as ApiProfileIdentityRouteImport } from './routes/api/profile/identity'
 import { Route as ApiProfileFamilyMembersRouteImport } from './routes/api/profile/family-members'
 import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/address'
 import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
@@ -103,6 +106,11 @@ import { Route as ApiAdminHospitalsCreateRouteImport } from './routes/api/admin/
 import { Route as ApiAdminCommissionsReconcileRouteImport } from './routes/api/admin/commissions/reconcile'
 import { Route as ApiAdminCommissionsLockRouteImport } from './routes/api/admin/commissions/lock'
 
+const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
+  id: '/terms-and-conditions',
+  path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TelecallerRoute = TelecallerRouteImport.update({
   id: '/telecaller',
   path: '/telecaller',
@@ -121,6 +129,11 @@ const SevasRoute = SevasRouteImport.update({
 const ReviewsRoute = ReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -383,6 +396,11 @@ const ApiSankalpGenerateBatchRoute = ApiSankalpGenerateBatchRouteImport.update({
   path: '/api/sankalp/generate-batch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProfileIdentityRoute = ApiProfileIdentityRouteImport.update({
+  id: '/api/profile/identity',
+  path: '/api/profile/identity',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProfileFamilyMembersRoute = ApiProfileFamilyMembersRouteImport.update({
   id: '/api/profile/family-members',
   path: '/api/profile/family-members',
@@ -597,10 +615,12 @@ export interface FileRoutesByFullPath {
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/telecaller': typeof TelecallerRouteWithChildren
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -635,6 +655,7 @@ export interface FileRoutesByFullPath {
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
+  '/api/profile/identity': typeof ApiProfileIdentityRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
   '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
@@ -690,9 +711,11 @@ export interface FileRoutesByTo {
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
   '/subscription-success': typeof SubscriptionSuccessRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -727,6 +750,7 @@ export interface FileRoutesByTo {
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
+  '/api/profile/identity': typeof ApiProfileIdentityRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
   '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
@@ -785,10 +809,12 @@ export interface FileRoutesById {
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
   '/profile': typeof ProfileRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
   '/sevas': typeof SevasRoute
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/telecaller': typeof TelecallerRouteWithChildren
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -823,6 +849,7 @@ export interface FileRoutesById {
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
+  '/api/profile/identity': typeof ApiProfileIdentityRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
   '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
@@ -882,10 +909,12 @@ export interface FileRouteTypes {
     | '/my-subscription'
     | '/plans'
     | '/profile'
+    | '/refund-policy'
     | '/reviews'
     | '/sevas'
     | '/subscription-success'
     | '/telecaller'
+    | '/terms-and-conditions'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/overview'
@@ -920,6 +949,7 @@ export interface FileRouteTypes {
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
+    | '/api/profile/identity'
     | '/api/sankalp/generate-batch'
     | '/api/subscriptions/create-checkout'
     | '/api/telecaller/agents'
@@ -975,9 +1005,11 @@ export interface FileRouteTypes {
     | '/my-subscription'
     | '/plans'
     | '/profile'
+    | '/refund-policy'
     | '/reviews'
     | '/sevas'
     | '/subscription-success'
+    | '/terms-and-conditions'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/overview'
@@ -1012,6 +1044,7 @@ export interface FileRouteTypes {
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
+    | '/api/profile/identity'
     | '/api/sankalp/generate-batch'
     | '/api/subscriptions/create-checkout'
     | '/api/telecaller/agents'
@@ -1069,10 +1102,12 @@ export interface FileRouteTypes {
     | '/my-subscription'
     | '/plans'
     | '/profile'
+    | '/refund-policy'
     | '/reviews'
     | '/sevas'
     | '/subscription-success'
     | '/telecaller'
+    | '/terms-and-conditions'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/overview'
@@ -1107,6 +1142,7 @@ export interface FileRouteTypes {
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
+    | '/api/profile/identity'
     | '/api/sankalp/generate-batch'
     | '/api/subscriptions/create-checkout'
     | '/api/telecaller/agents'
@@ -1165,10 +1201,12 @@ export interface RootRouteChildren {
   MySubscriptionRoute: typeof MySubscriptionRoute
   PlansRoute: typeof PlansRoute
   ProfileRoute: typeof ProfileRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   ReviewsRoute: typeof ReviewsRoute
   SevasRoute: typeof SevasRoute
   SubscriptionSuccessRoute: typeof SubscriptionSuccessRoute
   TelecallerRoute: typeof TelecallerRouteWithChildren
+  TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
   ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
@@ -1181,6 +1219,7 @@ export interface RootRouteChildren {
   ApiPaymentsWebhookRoute: typeof ApiPaymentsWebhookRoute
   ApiProfileAddressRoute: typeof ApiProfileAddressRoute
   ApiProfileFamilyMembersRoute: typeof ApiProfileFamilyMembersRoute
+  ApiProfileIdentityRoute: typeof ApiProfileIdentityRoute
   ApiSankalpGenerateBatchRoute: typeof ApiSankalpGenerateBatchRoute
   ApiSubscriptionsCreateCheckoutRoute: typeof ApiSubscriptionsCreateCheckoutRoute
   ApiTelecallerAgentsRoute: typeof ApiTelecallerAgentsRoute
@@ -1226,6 +1265,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms-and-conditions': {
+      id: '/terms-and-conditions'
+      path: '/terms-and-conditions'
+      fullPath: '/terms-and-conditions'
+      preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/telecaller': {
       id: '/telecaller'
       path: '/telecaller'
@@ -1252,6 +1298,13 @@ declare module '@tanstack/react-router' {
       path: '/reviews'
       fullPath: '/reviews'
       preLoaderRoute: typeof ReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -1609,6 +1662,13 @@ declare module '@tanstack/react-router' {
       path: '/api/sankalp/generate-batch'
       fullPath: '/api/sankalp/generate-batch'
       preLoaderRoute: typeof ApiSankalpGenerateBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/identity': {
+      id: '/api/profile/identity'
+      path: '/api/profile/identity'
+      fullPath: '/api/profile/identity'
+      preLoaderRoute: typeof ApiProfileIdentityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/profile/family-members': {
@@ -1978,10 +2038,12 @@ const rootRouteChildren: RootRouteChildren = {
   MySubscriptionRoute: MySubscriptionRoute,
   PlansRoute: PlansRoute,
   ProfileRoute: ProfileRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   ReviewsRoute: ReviewsRoute,
   SevasRoute: SevasRoute,
   SubscriptionSuccessRoute: SubscriptionSuccessRoute,
   TelecallerRoute: TelecallerRouteWithChildren,
+  TermsAndConditionsRoute: TermsAndConditionsRoute,
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
   ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
@@ -1994,6 +2056,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPaymentsWebhookRoute: ApiPaymentsWebhookRoute,
   ApiProfileAddressRoute: ApiProfileAddressRoute,
   ApiProfileFamilyMembersRoute: ApiProfileFamilyMembersRoute,
+  ApiProfileIdentityRoute: ApiProfileIdentityRoute,
   ApiSankalpGenerateBatchRoute: ApiSankalpGenerateBatchRoute,
   ApiSubscriptionsCreateCheckoutRoute: ApiSubscriptionsCreateCheckoutRoute,
   ApiTelecallerAgentsRoute: ApiTelecallerAgentsRoute,

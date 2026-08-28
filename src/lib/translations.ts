@@ -14,6 +14,11 @@ export const translations = {
     nav_faq: "सामान्य प्रश्न",
     nav_my_subscription: "मेरी सदस्यता",
 
+    // Trust — 11 years
+    trust_years_badge: "11 साल का विश्वास",
+    trust_years_line: "पिछले 11 वर्षों से पुण्यता आपकी सेवा में है — एक संगठित सेवा, आपके भरोसे पर बनी।",
+    trust_years_footer: "11 साल का विश्वास · भारत का पुण्य बैंक",
+
     // Homepage Hero
     hero_badge: "1,200+ परिवार इस सेवा से जुड़े हैं",
     hero_sub: "जय सियाराम • तीर्थ गुरु पुष्करराज से",
@@ -104,6 +109,11 @@ export const translations = {
     nav_about: "About Us",
     nav_faq: "FAQ",
     nav_my_subscription: "My Subscription",
+
+    // Trust — 11 years
+    trust_years_badge: "11 Years of Trust",
+    trust_years_line: "For the past 11 years, Punyata has been in your service — an organized seva, built on your trust.",
+    trust_years_footer: "11 Years of Trust · Bharat Ka Punya Bank",
 
     // Homepage Hero
     hero_badge: "1,200+ Families Connected With Us",
