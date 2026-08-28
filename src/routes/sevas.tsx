@@ -13,6 +13,7 @@ export const Route = createFileRoute("/sevas")({
       { title: "Our Sevas — पुण्यता | सुंदरकांड, हवन, आरती, गौ सेवा, वानर सेवा" },
       { name: "description", content: "पुण्यता की सभी सेवाओं की विस्तृत सूची — सुंदरकांड पाठ, गृह शांति हवन, आरती, गौ माता सेवा, वानर सेवा एवं साधु संतों को भोजन।" },
     ],
+    links: [{ rel: "canonical", href: "https://www.punyata.com/sevas" }],
   }),
   component: SevasPage,
 });

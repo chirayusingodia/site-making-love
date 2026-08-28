@@ -20,6 +20,7 @@ export const Route = createFileRoute("/plans")({
       { title: "Plans — पुण्यता | ₹251/Monthly से मासिक सुंदरकांड, हवन, आरती एवं दान-पुण्य" },
       { name: "description", content: "पुण्यता के 3 पैक — मूल संकल्प, गृह शांति एवं वार्षिक महासंकल्प। Pooja + Chadava + Hawan + Aarti + Daan + Sewa एक साथ। तीर्थ गुरु पुष्करराज से।" },
     ],
+    links: [{ rel: "canonical", href: "https://www.punyata.com/plans" }],
   }),
   component: PlansPage,
 });

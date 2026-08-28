@@ -19,6 +19,7 @@ export const Route = createFileRoute("/about")({
       { title: "About Us — पुण्यता | भारत का पुण्य बैंक | अब भारत करेगा पुण्यता" },
       { name: "description", content: "पुण्यता — भारत का पुण्य साथी। तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सेवा एवं दान-पुण्य।" },
     ],
+    links: [{ rel: "canonical", href: "https://www.punyata.com/about" }],
   }),
   component: AboutPage,
 });

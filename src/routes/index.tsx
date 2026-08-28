@@ -36,6 +36,7 @@ export const Route = createFileRoute("/")({
       { title: "पुण्यता — भारत का पुण्य साथी | तीर्थ गुरु पुष्करराज से मासिक सेवा" },
       { name: "description", content: "पुण्यता — अब भारत करेगा पुण्यता। तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, आरती, गौ सेवा एवं साधु संतों को भोजन। WhatsApp पर Video Proof।" },
     ],
+    links: [{ rel: "canonical", href: "https://www.punyata.com/" }],
   }),
   component: HomePage,
 });

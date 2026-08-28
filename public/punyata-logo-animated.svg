@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="105 380 520 675" role="img" aria-labelledby="title desc">
-  <title id="title">Animated Punyata logo</title>
-  <desc id="desc">The Punyata hand-shaped sprout draws itself, then the leaf softly glows.</desc>
+  <title id="title">Punyata logo</title>
+  <desc id="desc">पुण्यता — तीर्थ गुरु पुष्करराज से मासिक सेवा</desc>
   <defs>
     <filter id="punyata-relief" x="-12%" y="-12%" width="136%" height="142%" color-interpolation-filters="sRGB">
       <feDropShadow dx="8" dy="11" stdDeviation="5" flood-color="#2d2b27" flood-opacity=".25"/>
@@ -38,7 +38,7 @@
       opacity: 0;
       animation: logoGlow 7s ease-in-out infinite;
     }
-    
+
     @keyframes logoCycle {
       0%, 78% { opacity: 1; }
       85%, 95% { opacity: 0; }

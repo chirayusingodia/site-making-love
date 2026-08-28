@@ -82,13 +82,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "पुण्यता — मासिक सेवा" },
       { property: "og:description", content: "सनातन सेवा का सामूहिक यज्ञ — पूर्ण पारदर्शिता के साथ।" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { property: "og:site_name", content: "पुण्यता" },
+      { property: "og:locale", content: "hi_IN" },
+      { property: "og:image", content: "https://www.punyata.com/og-image.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "पुण्यता — तीर्थ गुरु पुष्करराज से मासिक सेवा" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://www.punyata.com/og-image.jpg" },
     ],
     links: [
-      { rel: "icon", type: "image/svg+xml", href: "/punyata-logo.svg?v=2" },
-      { rel: "icon", type: "image/png", href: "/favicon.png?v=2" },
-      { rel: "shortcut icon", href: "/favicon.ico?v=2" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "icon", type: "image/svg+xml", href: "/punyata-logo.svg?v=3" },
+      { rel: "icon", type: "image/png", href: "/favicon.png?v=3" },
+      { rel: "shortcut icon", href: "/favicon.ico?v=3" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=3" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -104,6 +111,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const ORGANIZATION_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "पुण्यता",
+  alternateName: "Punyata",
+  url: "https://www.punyata.com/",
+  logo: "https://www.punyata.com/apple-touch-icon.png",
+  image: "https://www.punyata.com/og-image.jpg",
+  description:
+    "तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, गौ सेवा एवं साधु संतों को भोजन। WhatsApp पर Video Proof।",
+  areaServed: "IN",
+};
+
+const WEBSITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "पुण्यता",
+  url: "https://www.punyata.com/",
+};
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
@@ -111,6 +138,18 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <script
+          type="application/ld+json"
+          // Site-wide identity schema — same on every page, used by Google
+          // for the brand knowledge panel / sitelinks searchbox.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(ORGANIZATION_JSON_LD),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }}
+        />
         {children}
         <Scripts />
       </body>
