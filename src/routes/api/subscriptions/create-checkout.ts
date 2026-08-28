@@ -19,6 +19,20 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
         const auth = await requireUser(request);
         if (!auth) return json({ error: "Login required" }, 401);
 
+        // Name + phone are mandatory before a subscription can be
+        // created — /checkout's "Confirm & Pay" is disabled until both
+        // are filled, but that's a UI courtesy, not a security boundary.
+        // Enforce it here too so a direct API call can't skip identity.
+        const { data: identityProfile, error: identityErr } = await auth.db
+          .from("profiles")
+          .select("full_name,phone")
+          .eq("id", auth.userId)
+          .maybeSingle();
+        if (identityErr) return json({ error: identityErr.message }, 500);
+        if (!identityProfile?.full_name?.trim() || !identityProfile?.phone) {
+          return json({ error: "Pehle naam aur mobile number bharein." }, 400);
+        }
+
         let body: { plan_id?: unknown; coupon_code?: unknown; att?: unknown };
         try {
           body = await request.json();

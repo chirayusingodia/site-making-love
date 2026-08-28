@@ -233,6 +233,16 @@ function CheckoutPage() {
 
   const startPayment = async () => {
     setPayError(null);
+    // Naam/mobile are mandatory before payment — required either
+    // already on the profile or freshly typed here.
+    if (!nameInput.trim()) {
+      setIdentityError("Naam daalein");
+      return;
+    }
+    if (!normalizePhoneE164(phoneInput.replace(/\D/g, ""))) {
+      setIdentityError("10-anki valid mobile number daalein");
+      return;
+    }
     // Make sure a just-typed name/number correction is not left
     // sitting locally when payment opens.
     const identityOk = await saveIdentity();
@@ -306,6 +316,7 @@ function CheckoutPage() {
   }
 
   const paying = payState === "creating" || payState === "checkout";
+  const identityMissing = !nameInput.trim() || !normalizePhoneE164(phoneInput.replace(/\D/g, ""));
 
   return (
     <div className="min-h-screen bg-background">
@@ -480,11 +491,11 @@ function CheckoutPage() {
 
         <button
           onClick={startPayment}
-          disabled={paying || !agreedToTerms}
+          disabled={paying || !agreedToTerms || identityMissing}
           className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors ${
             paying
               ? "bg-brand/70 text-white cursor-wait"
-              : !agreedToTerms
+              : !agreedToTerms || identityMissing
                 ? "bg-brand/40 text-white cursor-not-allowed"
                 : "bg-brand text-white hover:bg-brand-deep"
           }`}
