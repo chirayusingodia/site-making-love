@@ -11,6 +11,7 @@ import {
   RefreshCcw,
   CalendarX,
   BadgeCheck,
+  MapPin,
 } from "lucide-react";
 import { usePublicPlans, getPlanById } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
@@ -358,28 +359,35 @@ function CheckoutPage() {
         </div>
 
         {/* Plan summary */}
-        <div className="card-soft p-5 space-y-3">
-          <div className="flex items-baseline justify-between">
-            <div className="font-bold text-lg text-foreground">{plan.name}</div>
+        <div className="card-soft overflow-hidden">
+          <div className="bg-gradient-to-r from-brand to-[#F5A742] px-5 py-4 flex items-baseline justify-between">
+            <div className="font-bold text-lg text-white">{plan.name}</div>
             <div className="text-right">
-              <span className="text-2xl font-bold text-brand">{plan.price}</span>
-              <span className="text-xs text-muted-foreground font-medium">{plan.cycle}</span>
+              <span className="text-2xl font-bold text-white">{plan.price}</span>
+              <span className="text-xs text-white/80 font-medium">{plan.cycle}</span>
             </div>
           </div>
-          {plan.strikePrice && (
-            <div className="text-xs text-muted-foreground line-through -mt-2">
-              {plan.strikePrice}
-            </div>
-          )}
-          <div className="border-t border-black/5 pt-3 space-y-1.5">
-            {plan.features.slice(0, 4).map((f) => (
-              <div key={f} className="flex items-start gap-2 text-sm">
-                <Check size={14} className="text-success shrink-0 mt-0.5" />
-                <span className="text-foreground/85">{f}</span>
+          <div className="p-5 space-y-3">
+            {plan.strikePrice && (
+              <div className="text-xs text-muted-foreground line-through -mt-1">
+                {plan.strikePrice}
               </div>
-            ))}
+            )}
+            <div className="space-y-2">
+              {plan.features.slice(0, 4).map((f) => (
+                <div key={f} className="flex items-start gap-2.5 text-sm">
+                  <div className="mt-0.5 w-4 h-4 rounded-full bg-success/15 flex items-center justify-center shrink-0">
+                    <Check size={11} className="text-success" strokeWidth={3} />
+                  </div>
+                  <span className="text-foreground/85">{f}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground border-t border-black/5 pt-3">
+              <MapPin size={12} className="text-brand shrink-0" />
+              {plan.location}
+            </div>
           </div>
-          <div className="text-[11px] text-muted-foreground">{plan.location}</div>
         </div>
 
         {/* Identity — editable: naam ya number galat ho toh yahin se
