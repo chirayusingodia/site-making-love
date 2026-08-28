@@ -1,16 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, getServiceClient, requireUser } from "@/lib/supabase-admin.server";
 import { createCheckoutForUser, CheckoutError } from "@/lib/subscriptions-checkout.server";
-import process from "node:process";
 
 // POST /api/subscriptions/create-checkout
 // Auth: Bearer <supabase access token> (end user — post-login buy step)
 // Body: { plan_id: string (slug or uuid), coupon_code?: string }
 //
-// Creates the caller's OWN `pending` subscriptions row + the matching
-// Razorpay Subscription, links the two, and returns what the frontend
-// needs to open Razorpay Checkout. status='active' is NEVER set here —
+// Creates the caller's OWN `pending` subscriptions row + a payment
+// MANDATE for it through the gateway registry, and returns what the
+// frontend needs to open that gateway's checkout (gateway id, mandate
+// id, publishable key, strategy). status='active' is NEVER set here —
 // activation is webhook-driven only.
+//
+// The response is gateway-neutral: the frontend switches on
+// `checkoutStrategy`, so failing over to another provider needs no
+// change to this route.
 
 export const Route = createFileRoute("/api/subscriptions/create-checkout")({
   server: {
@@ -75,11 +79,12 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
             ...(telecallerId ? { telecallerId } : {}),
             ...(sourcingAgentId ? { salesAgentId: sourcingAgentId } : {}),
           });
-          return json({
-            ok: true,
-            ...outcome,
-            razorpayKeyId: process.env.RAZORPAY_KEY_ID ?? null,
-          });
+          // The gateway's publishable key rides inside `outcome`
+          // (gatewayPublicKey), resolved from whichever provider
+          // actually issued the mandate — never read from a
+          // provider-specific env var here, which would hand the
+          // browser Razorpay's key for a Cashfree mandate.
+          return json({ ok: true, ...outcome });
         } catch (err) {
           if (err instanceof CheckoutError) {
             return json({ error: err.message }, err.status);

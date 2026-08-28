@@ -59,7 +59,11 @@ interface SubscriberListRow {
   halted_at: string | null;
   cancel_reason: string | null;
   acquisition_channel: string | null;
-  razorpay_sub_id: string | null;
+  // Current payment mandate (migration 022) — gateway-neutral: the
+  // subscription itself no longer carries any provider's id.
+  mandate_gateway: string | null;
+  mandate_gateway_id: string | null;
+  mandate_status: string | null;
   sub_created_at: string;
   sub_updated_at: string;
   // Plan
@@ -179,7 +183,9 @@ interface Subscription360 {
   halted_at: string | null;
   cancel_reason: string | null;
   acquisition_channel: string | null;
-  razorpay_sub_id: string | null;
+  mandate_gateway: string | null;
+  mandate_gateway_id: string | null;
+  mandate_status: string | null;
   plan_name: string | null;
   plan_price_paise: number | null;
   plan_billing_period: string | null;
@@ -616,10 +622,15 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
                   <Detail label="Start Date" value={fmtDate(sub.start_date)} />
                   <Detail label="Next Billing" value={fmtDate(sub.next_billing_date)} />
                   <Detail
-                    label="Razorpay Sub ID"
-                    value={sub.razorpay_sub_id || "Not linked"}
+                    label="Mandate ID"
+                    value={
+                      sub.mandate_gateway_id
+                        ? `${sub.mandate_gateway_id}${sub.mandate_gateway ? ` (${sub.mandate_gateway})` : ""}`
+                        : "Not linked"
+                    }
                     mono
                   />
+                  <Detail label="Mandate Status" value={sub.mandate_status || "—"} />
                   <Detail label="Channel" value={sub.acquisition_channel || "—"} />
                   {sub.status === "paused" && (
                     <Detail label="Paused At" value={fmtDate(sub.paused_at)} />
@@ -1074,7 +1085,9 @@ function AdminSubscribersPage() {
       halted_at: row.halted_at,
       cancel_reason: row.cancel_reason,
       acquisition_channel: row.acquisition_channel,
-      razorpay_sub_id: row.razorpay_sub_id,
+      mandate_gateway: row.mandate_gateway,
+      mandate_gateway_id: row.mandate_gateway_id,
+      mandate_status: row.mandate_status,
       plan_name: row.plan_name,
       plan_price_paise: row.plan_price_paise,
       plan_billing_period: row.plan_billing_period,

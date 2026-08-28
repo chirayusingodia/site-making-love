@@ -49,7 +49,6 @@ export const Route = createFileRoute("/my-subscription")({
 interface SubRow {
   id: string;
   status: string;
-  razorpay_sub_id: string | null;
   start_date: string | null;
   next_billing_date: string | null;
   created_at: string;
@@ -137,7 +136,7 @@ function MySubscriptionPage() {
       const subsRes = await supabase
         .from("subscriptions")
         .select(
-          "id,status,razorpay_sub_id,start_date,next_billing_date,created_at,plans(name,slug,billing_period,price_paise)",
+          "id,status,start_date,next_billing_date,created_at,plans(name,slug,billing_period,price_paise)",
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });

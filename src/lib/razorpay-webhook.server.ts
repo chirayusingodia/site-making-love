@@ -1,5 +1,6 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { verifyRazorpayWebhookSignature, normalizeRazorpayStatus } from "@/lib/gateways/razorpay";
+import { findMandateByGatewayId, promoteMandate, recordMandateCycle } from "@/lib/mandates.server";
 
 // ─────────────────────────────────────────────────────────────
 // PUNYATA — Session 6: Razorpay webhook logic (server-only)
@@ -7,6 +8,23 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // This module is the ONLY code path in the entire product that
 // ever sets subscriptions.status = 'active'. No client-side code
 // can do it (RLS blocks it); no other server route does it.
+//
+// GATEWAY-AGNOSTIC RESOLUTION (migration 022)
+// Events used to be resolved via subscriptions.razorpay_sub_id. That
+// column is gone: the subscription no longer knows or cares which
+// provider collects its money. Resolution is now
+//   (gateway='razorpay', gateway_mandate_id) → subscription_mandates
+//                                            → subscriptions
+// A second gateway therefore needs a parser + a route of its own and
+// NOTHING here — payload shapes are irreducibly provider-specific,
+// while the rows they converge on are shared.
+//
+// MANDATE RENEWAL (migration 022)
+// A subscription outlives any single mandate. When an event activates a
+// mandate that was raised to REPLACE another (replaces_mandate_id set),
+// this module promotes it — atomically retiring the incumbent, which is
+// then cancelled upstream so the customer is never exposed to two live
+// mandates that could both debit them.
 //
 // FINANCIAL CORRECTNESS RULES IMPLEMENTED HERE (do not deviate):
 //  - HMAC-SHA256 of the RAW request body, keyed with
@@ -79,23 +97,19 @@ export const FAILURE_DEMOTE_THRESHOLD = 3;
 // ─── Signature verification ──────────────────────────────────
 
 /**
- * Verifies Razorpay's webhook signature.
- * expected = HMAC_SHA256(rawBody, secret), hex-encoded.
- * Returns false (never throws) on missing signature, length
- * mismatch, or digest mismatch.
+ * Verifies Razorpay's webhook signature:
+ * expected = HMAC_SHA256(rawBody, secret), hex-encoded, compared with
+ * timingSafeEqual. Returns false (never throws).
+ *
+ * Re-exported from the Razorpay adapter, which owns the single
+ * implementation — this alias keeps existing callers and
+ * scratch/verify_webhook.ts working without a second copy of crypto
+ * code that could drift.
  */
-export function verifyWebhookSignature(
-  rawBody: string,
-  signature: string | null,
-  secret: string,
-): boolean {
-  if (!signature || !secret) return false;
-  const expected = createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
-  const a = Buffer.from(expected, "utf8");
-  const b = Buffer.from(signature, "utf8");
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
+export const verifyWebhookSignature = verifyRazorpayWebhookSignature;
+
+/** The gateway whose payload shape this module parses. */
+export const GATEWAY_ID = "razorpay";
 
 // ─── Payload normalisation ───────────────────────────────────
 
@@ -199,6 +213,29 @@ export function toIstDateString(unixSeconds: number): string {
 /** Unix seconds → full ISO timestamptz string. */
 export function unixToIso(unixSeconds: number): string {
   return new Date(unixSeconds * 1000).toISOString();
+}
+
+/**
+ * How long we keep asking Razorpay to redeliver an event whose mandate
+ * we cannot find yet. Sized to cover the milliseconds-wide gap between
+ * "mandate created at the gateway" and "mandate row inserted", plus a
+ * very generous margin for a slow or retried insert — while still
+ * giving up long before Razorpay's own ~24h retry budget is spent on
+ * an event that was never ours.
+ */
+export const UNKNOWN_MANDATE_RETRY_WINDOW_MS = 15 * 60_000;
+
+/**
+ * Age of a webhook delivery, from the event's own created_at (unix
+ * seconds, top level of the payload). null when absent/unparseable —
+ * callers treat null as "don't ask for redelivery", because an event
+ * we cannot age could otherwise be retried indefinitely.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function eventAgeMsFrom(body: any): number | null {
+  const createdAt = body?.created_at;
+  if (typeof createdAt !== "number" || !(createdAt > 0)) return null;
+  return Math.max(0, Date.now() - createdAt * 1000);
 }
 
 /**
@@ -312,6 +349,9 @@ export function capturedPaymentRow(
   if (!pay?.id || typeof pay.amount !== "number") return null;
   return {
     subscription_id: subscriptionId,
+    // Stamped so a refund is later routed back through the provider
+    // that actually took this money (migration 022).
+    gateway: GATEWAY_ID,
     razorpay_payment_id: pay.id,
     amount_paise: pay.amount,
     status: "captured",
@@ -385,6 +425,7 @@ export function failedPaymentRow(
   const reason = pay.error_description || pay.error_reason || pay.error_code || null;
   return {
     subscription_id: subscriptionId,
+    gateway: GATEWAY_ID,
     razorpay_payment_id: pay.id,
     amount_paise: typeof pay.amount === "number" ? pay.amount : 0,
     status: "failed",
@@ -548,21 +589,68 @@ export async function processWebhookEvent(
     return { handled: false, action: "ignored_missing_sub_id", detail: ctx.event };
   }
 
-  // Resolve our subscription row from Razorpay's sub id.
-  const { data: sub, error: subErr } = await db
-    .from("subscriptions")
-    .select("id,status")
-    .eq("razorpay_sub_id", ctx.razorpaySubId)
-    .maybeSingle();
-  if (subErr) throw new Error(`subscriptions lookup failed: ${subErr.message}`);
-  if (!sub) {
-    // Never 5xx here — Razorpay would retry forever. Log and ack.
+  // Resolve mandate → subscription. The mandate table is the only
+  // place a gateway identifier lives now (migration 022).
+  const mandate = await findMandateByGatewayId(db, GATEWAY_ID, ctx.razorpaySubId);
+  if (!mandate) {
+    // [race window] A mandate is created at the gateway a few
+    // milliseconds BEFORE its row is inserted, so a very fast webhook
+    // can legitimately arrive before we can resolve it. The old code
+    // ACKed unconditionally, which permanently DROPPED such an event —
+    // and with it, possibly a real payment.
+    //
+    // So: retry for a bounded window, then give up. Recent event → 500
+    // so Razorpay redelivers (it retries ~24h) and the next attempt
+    // finds the row. Old event → 200, because by then the mandate
+    // genuinely is not ours and retrying forever is pointless noise.
+    const eventAgeMs = eventAgeMsFrom(body);
+    const worthRetrying = eventAgeMs !== null && eventAgeMs < UNKNOWN_MANDATE_RETRY_WINDOW_MS;
+
     await db.from("audit_logs").insert({
       admin_id: null,
       action: `razorpay.${ctx.event}`,
-      entity: "subscriptions",
+      entity: "subscription_mandates",
       entity_id: null,
-      meta: { razorpay_sub_id: ctx.razorpaySubId, warning: "no matching subscription row" },
+      meta: {
+        gateway: GATEWAY_ID,
+        gateway_mandate_id: ctx.razorpaySubId,
+        warning: "no matching mandate row",
+        event_age_ms: eventAgeMs,
+        asked_for_redelivery: worthRetrying,
+      },
+    });
+
+    if (worthRetrying) {
+      throw new Error(
+        `mandate ${ctx.razorpaySubId} not yet recorded (event ${eventAgeMs}ms old) — asking for redelivery`,
+      );
+    }
+    return {
+      handled: false,
+      action: "ignored_unknown_subscription",
+      detail: ctx.razorpaySubId,
+    };
+  }
+
+  const { data: sub, error: subErr } = await db
+    .from("subscriptions")
+    .select("id,status")
+    .eq("id", mandate.subscription_id)
+    .maybeSingle();
+  if (subErr) throw new Error(`subscriptions lookup failed: ${subErr.message}`);
+  if (!sub) {
+    // Mandate row survived its subscription — only reachable if a
+    // delete raced the cascade. Nothing to act on; ack and record.
+    await db.from("audit_logs").insert({
+      admin_id: null,
+      action: `razorpay.${ctx.event}`,
+      entity: "subscription_mandates",
+      entity_id: mandate.id,
+      meta: {
+        gateway: GATEWAY_ID,
+        gateway_mandate_id: ctx.razorpaySubId,
+        warning: "mandate has no subscription row",
+      },
     });
     return {
       handled: false,
@@ -673,17 +761,57 @@ export async function processWebhookEvent(
     }
   }
 
+  // ── Mandate bookkeeping ──
+  // Kept separate from subscription status on purpose: the mandate's
+  // health and the subscriber's entitlement are different facts, and
+  // that separation is exactly what lets an instrument be replaced
+  // without interrupting the subscription.
+  await recordMandateCycle(
+    db,
+    mandate.id,
+    ctx.subscription?.paid_count ?? null,
+    ctx.subscription?.status ? normalizeRazorpayStatus(ctx.subscription.status) : null,
+  );
+
+  // ── Renewal hand-over ──
+  // A mandate raised to replace another is dormant until the customer
+  // authorises it. We promote on ACTIVATED/CHARGED — i.e. money has
+  // actually moved through the new instrument — and deliberately NOT on
+  // mere authentication: retiring a working mandate before its
+  // replacement has demonstrably collected anything would risk a gap in
+  // billing that nobody notices until a cycle is missed.
+  let promotedMandate = false;
+  if (
+    mandate.replaces_mandate_id &&
+    !mandate.is_current &&
+    (ctx.event === "subscription.activated" || ctx.event === "subscription.charged")
+  ) {
+    try {
+      await promoteMandate(db, mandate.id);
+      promotedMandate = true;
+    } catch (err) {
+      // Never fail the webhook over a promotion: the payment is already
+      // recorded above, and the sweep/next event can retry the swap.
+      console.error("mandate promotion failed:", err instanceof Error ? err.message : err);
+    }
+  }
+
   await db.from("audit_logs").insert({
     admin_id: null, // system actor — webhook, not a human admin
     action: `razorpay.${ctx.event}`,
     entity: "subscriptions",
     entity_id: sub.id,
     meta: {
-      razorpay_sub_id: ctx.razorpaySubId,
+      gateway: GATEWAY_ID,
+      gateway_mandate_id: ctx.razorpaySubId,
+      mandate_id: mandate.id,
       razorpay_payment_id: ctx.payment?.id ?? null,
       result: action,
       consecutive_failures: consecutiveFailures ?? null,
       previous_status: sub.status,
+      ...(promotedMandate
+        ? { promoted_mandate: true, replaced_mandate_id: mandate.replaces_mandate_id }
+        : {}),
     },
   });
 

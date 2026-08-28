@@ -51,14 +51,22 @@ export const Route = createFileRoute("/checkout/$planId")({
 
 type PayState = "idle" | "creating" | "checkout" | "paid" | "error";
 
+// Gateway-neutral checkout contract (migration 022). The server picks
+// the provider — including failing over when the preferred one is
+// unwell — and tells us how to open it via `checkoutStrategy`. Nothing
+// here assumes Razorpay beyond the branch that handles its SDK.
 interface CreateCheckoutResponse {
   ok: true;
   subscriptionDbId: string;
-  razorpaySubscriptionId: string;
+  mandateId: string;
+  gateway: string;
+  gatewayMandateId: string;
+  gatewayPublicKey: string | null;
+  checkoutStrategy: "razorpay_sdk" | "hosted_redirect" | string;
+  hostedCheckoutUrl: string | null;
   planName: string;
   planPricePaise: number;
   couponCode: string | null;
-  razorpayKeyId: string | null;
 }
 
 interface CouponValidateResponse {
@@ -163,7 +171,9 @@ function CheckoutPage() {
       refreshProfile();
       return true;
     } catch (err) {
-      setIdentityError(err instanceof AuthApiError ? err.message : t("checkout_identity_save_error"));
+      setIdentityError(
+        err instanceof AuthApiError ? err.message : t("checkout_identity_save_error"),
+      );
       return false;
     } finally {
       setIdentitySaving(false);
@@ -261,26 +271,46 @@ function CheckoutPage() {
     if (!identityOk) return;
     setPayState("creating");
     try {
-      const ready = await loadRazorpayScript();
-      if (!ready || !window.Razorpay) throw new Error(t("checkout_gateway_error"));
-
+      // Create the mandate FIRST, then load the SDK the chosen gateway
+      // actually needs. Loading Razorpay's script before knowing the
+      // gateway would both waste a request and hard-wire this flow to
+      // one provider again.
       const res = await callUserApi<CreateCheckoutResponse>("/api/subscriptions/create-checkout", {
         plan_id: plan.slug,
         ...(couponApplied ? { coupon_code: couponApplied } : {}),
         ...(attToken ? { att: attToken } : {}),
       });
-      if (!res.razorpayKeyId) throw new Error(t("checkout_keys_error"));
+
+      // Redirect-style gateways: hand the customer straight to the
+      // provider-hosted page. No SDK involved.
+      if (res.checkoutStrategy === "hosted_redirect") {
+        if (!res.hostedCheckoutUrl) throw new Error(t("checkout_gateway_error"));
+        setPayState("checkout");
+        window.location.href = res.hostedCheckoutUrl;
+        return;
+      }
+
+      if (res.checkoutStrategy !== "razorpay_sdk") {
+        // A gateway this build has no frontend branch for. Fail loudly
+        // rather than silently opening the wrong SDK with the wrong key.
+        throw new Error(t("checkout_gateway_error"));
+      }
+
+      const ready = await loadRazorpayScript();
+      if (!ready || !window.Razorpay) throw new Error(t("checkout_gateway_error"));
+      if (!res.gatewayPublicKey) throw new Error(t("checkout_keys_error"));
 
       setPayState("checkout");
       const rzp = new window.Razorpay({
-        key: res.razorpayKeyId,
-        subscription_id: res.razorpaySubscriptionId,
+        key: res.gatewayPublicKey,
+        subscription_id: res.gatewayMandateId,
         name: "Punyata",
         description: `${plan.name} — Sewa Hamari, Punya Aapka`,
         image: "/punyata-logo.svg",
         prefill: {
           name: nameInput.trim() || profile?.full_name || "",
-          contact: phoneInput.replace(/\D/g, "") || profile?.phone?.replace(/\D/g, "").slice(-10) || "",
+          contact:
+            phoneInput.replace(/\D/g, "") || profile?.phone?.replace(/\D/g, "").slice(-10) || "",
         },
         notes: { punyata_subscription_id: res.subscriptionDbId },
         theme: { color: "#D85A30" },
@@ -343,9 +373,21 @@ function CheckoutPage() {
         {/* Trust strip — sets a "safe & secure" tone before any form field */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { icon: RefreshCcw, title: t("checkout_trust_refund_title"), desc: t("checkout_trust_refund_desc") },
-            { icon: CalendarX, title: t("checkout_trust_cancel_title"), desc: t("checkout_trust_cancel_desc") },
-            { icon: Lock, title: t("checkout_trust_secure_title"), desc: t("checkout_trust_secure_desc") },
+            {
+              icon: RefreshCcw,
+              title: t("checkout_trust_refund_title"),
+              desc: t("checkout_trust_refund_desc"),
+            },
+            {
+              icon: CalendarX,
+              title: t("checkout_trust_cancel_title"),
+              desc: t("checkout_trust_cancel_desc"),
+            },
+            {
+              icon: Lock,
+              title: t("checkout_trust_secure_title"),
+              desc: t("checkout_trust_secure_desc"),
+            },
           ].map(({ icon: Icon, title, desc }) => (
             <div
               key={title}

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireOwner, writeTelecallerAudit } from "@/lib/supabase-admin.server";
-import { createRazorpayRefund } from "@/lib/razorpay.server";
+import { getAdapter } from "@/lib/gateways/registry";
 
 // POST /api/admin/payments/refund
 //
@@ -19,12 +19,20 @@ import { createRazorpayRefund } from "@/lib/razorpay.server";
 // considers refundable on that payment.
 //
 // Refund discipline mirrors activation discipline: this route asks
-// Razorpay to refund and audits the attempt, but NEVER writes
+// the gateway to refund and audits the attempt, but NEVER writes
 // payments.status/refund_status/refunded_at itself — only the webhook's
 // 'refund.processed' handler (razorpay-webhook.server.ts) does that,
-// once Razorpay confirms the money actually moved. A failed call here
+// once the gateway confirms the money actually moved. A failed call here
 // (e.g. already fully refunded, or amount exceeds what's left) is
 // passed back to the caller verbatim.
+//
+// GATEWAY ROUTING (migration 022): the refund goes back through the
+// gateway that TOOK the money — payments.gateway — never through
+// whichever gateway happens to be primary today. Once a subscription
+// has charged on two providers over its life, "the current one" is
+// simply the wrong provider to ask, and it would reject an id it has
+// never seen. NO FAILOVER HERE, deliberately: a refund has exactly one
+// correct destination.
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -61,7 +69,7 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
         const { data: pay, error: payErr } = await auth.db
           .from("payments")
           .select(
-            "id,subscription_id,razorpay_payment_id,amount_paise,status,refund_status,refund_amount_paise",
+            "id,subscription_id,gateway,razorpay_payment_id,amount_paise,status,refund_status,refund_amount_paise",
           )
           .eq("id", paymentId)
           .maybeSingle();
@@ -69,7 +77,20 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
         if (!pay) return json({ error: "Payment not found" }, 404);
 
         if (!pay.razorpay_payment_id) {
-          return json({ error: "Payment Razorpay se linked nahi hai" }, 400);
+          return json({ error: "Payment gateway se linked nahi hai" }, 400);
+        }
+        // Resolve the ORIGINATING gateway's adapter. An unknown gateway
+        // here means a payment was taken by a provider this build can
+        // no longer speak to — surfaced loudly rather than refunded
+        // through the wrong one.
+        let adapter;
+        try {
+          adapter = getAdapter(pay.gateway);
+        } catch {
+          return json(
+            { error: `Is payment ka gateway (${pay.gateway}) is build mein supported nahi hai` },
+            501,
+          );
         }
         if (pay.status !== "captured") {
           return json(
@@ -124,8 +145,8 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
         }
 
         try {
-          const rzp = await createRazorpayRefund({
-            razorpayPaymentId: pay.razorpay_payment_id,
+          const refund = await adapter.createRefund({
+            gatewayPaymentId: pay.razorpay_payment_id,
             ...(amountPaise !== undefined ? { amountPaise } : {}),
             notes: {
               punyata_payment_id: pay.id,
@@ -141,22 +162,25 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
             pay.id,
             {
               subscription_id: pay.subscription_id,
-              razorpay_payment_id: pay.razorpay_payment_id,
+              gateway: pay.gateway,
+              gateway_payment_id: pay.razorpay_payment_id,
               requested_amount_paise: amountPaise ?? pay.amount_paise,
               reason,
               result: "ok",
-              razorpay_refund_id: rzp.id,
-              razorpay_status: rzp.status ?? null,
+              gateway_refund_id: refund.gatewayRefundId,
+              gateway_status: refund.status,
             },
           );
 
           // payments.status/refund_status stay untouched here — the
-          // webhook flips them once Razorpay confirms via refund.processed.
+          // webhook flips them once the gateway confirms via
+          // refund.processed.
           return json({
             ok: true,
-            razorpayRefundId: rzp.id,
-            razorpayStatus: rzp.status ?? null,
-            message: "Refund requested — payment record updates once Razorpay confirms",
+            gateway: pay.gateway,
+            gatewayRefundId: refund.gatewayRefundId,
+            gatewayStatus: refund.status,
+            message: "Refund requested — payment record updates once gateway confirms",
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : "Refund call failed";
@@ -175,7 +199,8 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
             pay.id,
             {
               subscription_id: pay.subscription_id,
-              razorpay_payment_id: pay.razorpay_payment_id,
+              gateway: pay.gateway,
+              gateway_payment_id: pay.razorpay_payment_id,
               requested_amount_paise: amountPaise ?? pay.amount_paise,
               reason,
               result: "failed",

@@ -70,6 +70,7 @@ import { Route as ApiProfileIdentityRouteImport } from './routes/api/profile/ide
 import { Route as ApiProfileFamilyMembersRouteImport } from './routes/api/profile/family-members'
 import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/address'
 import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
+import { Route as ApiCronRenewMandatesRouteImport } from './routes/api/cron/renew-mandates'
 import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
 import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
@@ -416,6 +417,11 @@ const ApiPaymentsWebhookRoute = ApiPaymentsWebhookRouteImport.update({
   path: '/api/payments/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronRenewMandatesRoute = ApiCronRenewMandatesRouteImport.update({
+  id: '/api/cron/renew-mandates',
+  path: '/api/cron/renew-mandates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCouponsValidateRoute = ApiCouponsValidateRouteImport.update({
   id: '/api/coupons/validate',
   path: '/api/coupons/validate',
@@ -652,6 +658,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
@@ -747,6 +754,7 @@ export interface FileRoutesByTo {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
@@ -846,6 +854,7 @@ export interface FileRoutesById {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
@@ -946,6 +955,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/renew-mandates'
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
@@ -1041,6 +1051,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/renew-mandates'
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
@@ -1139,6 +1150,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/renew-mandates'
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
@@ -1216,6 +1228,7 @@ export interface RootRouteChildren {
   ApiAuthRequestOtpRoute: typeof ApiAuthRequestOtpRoute
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
   ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
+  ApiCronRenewMandatesRoute: typeof ApiCronRenewMandatesRoute
   ApiPaymentsWebhookRoute: typeof ApiPaymentsWebhookRoute
   ApiProfileAddressRoute: typeof ApiProfileAddressRoute
   ApiProfileFamilyMembersRoute: typeof ApiProfileFamilyMembersRoute
@@ -1692,6 +1705,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/renew-mandates': {
+      id: '/api/cron/renew-mandates'
+      path: '/api/cron/renew-mandates'
+      fullPath: '/api/cron/renew-mandates'
+      preLoaderRoute: typeof ApiCronRenewMandatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/coupons/validate': {
       id: '/api/coupons/validate'
       path: '/api/coupons/validate'
@@ -2053,6 +2073,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthRequestOtpRoute: ApiAuthRequestOtpRoute,
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
   ApiCouponsValidateRoute: ApiCouponsValidateRoute,
+  ApiCronRenewMandatesRoute: ApiCronRenewMandatesRoute,
   ApiPaymentsWebhookRoute: ApiPaymentsWebhookRoute,
   ApiProfileAddressRoute: ApiProfileAddressRoute,
   ApiProfileFamilyMembersRoute: ApiProfileFamilyMembersRoute,
