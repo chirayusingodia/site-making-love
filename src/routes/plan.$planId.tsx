@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, ScrollText, ListChecks, Quote } from "lucide-react";
 import { usePublicPlans, getPlanById, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
@@ -147,21 +147,52 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
           </div>
         </div>
 
-        {/* Description */}
-        <section className="mt-6 space-y-3">
-          <h2 className="text-lg font-bold">इस संकल्प के बारे में</h2>
-          {plan.detail.description.map((p, i) => (
-            <p key={i} className="text-[15px] text-foreground/85 leading-relaxed">{p}</p>
-          ))}
+        {/* Description — the lead section, so its card surfaces the key
+            benefits up front before the reader even gets to the prose. */}
+        <section className="mt-7">
+          <div className="card-soft p-5 space-y-4 border border-brand/10">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
+                <ScrollText size={16} className="text-brand" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground">इस संकल्प के बारे में</h2>
+            </div>
+
+            {plan.detail.benefits.length > 0 && (
+              <div className="rounded-2xl bg-brand-soft/60 p-4 space-y-2">
+                {plan.detail.benefits.map((b) => (
+                  <div key={b} className="flex items-start gap-2.5 text-sm">
+                    <Check size={15} className="text-brand shrink-0 mt-0.5" strokeWidth={3} />
+                    <span className="text-foreground/90 font-medium leading-snug">{b}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-3 pt-3 border-t border-black/5">
+              {plan.detail.description.map((p, i) => (
+                <p key={i} className="text-[15px] text-foreground/85 leading-relaxed">
+                  {p}
+                </p>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* Included Sevas */}
-        <section className="mt-6 space-y-3">
-          <h2 className="text-lg font-bold">इस पैक में शामिल सेवाएँ</h2>
+        <section className="mt-7 space-y-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
+              <ListChecks size={16} className="text-brand" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">इस पैक में शामिल सेवाएँ</h2>
+          </div>
           <div className="card-soft divide-y divide-black/5">
             {plan.detail.sevas.map((s) => (
-              <div key={s.title} className="p-4 flex gap-3">
-                <Check size={18} className="text-success shrink-0 mt-0.5" />
+              <div key={s.title} className="p-4 flex gap-3 items-start">
+                <div className="w-7 h-7 rounded-full bg-success/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={14} className="text-success" strokeWidth={3} />
+                </div>
                 <div>
                   <div className="font-bold text-foreground">{s.title}</div>
                   <div className="text-sm text-muted-foreground mt-0.5">{s.note}</div>
@@ -239,12 +270,23 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
         </section>
 
         {/* Benefits */}
-        <section className="mt-6 space-y-3">
-          <h2 className="text-lg font-bold">इस संकल्प के फायदे</h2>
-          <div className="card-soft p-5 space-y-2.5">
+        <section className="mt-7 space-y-3.5">
+          <div className="flex items-center gap-2.5">
+            <LottieIcon
+              animationData={diya}
+              size={30}
+              loop
+              autoplay
+              fallback={<div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0"><Check size={16} className="text-brand" /></div>}
+            />
+            <h2 className="text-lg font-bold text-foreground">इस संकल्प के फायदे</h2>
+          </div>
+          <div className="card-soft p-5 space-y-3">
             {plan.detail.benefits.map((b) => (
-              <div key={b} className="flex items-start gap-2 text-[15px]">
-                <span className="text-brand mt-1">•</span>
+              <div key={b} className="flex items-start gap-3 text-[15px]">
+                <div className="w-5 h-5 rounded-full bg-[#FFF1E6] flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand" />
+                </div>
                 <span className="text-foreground/85 leading-relaxed">{b}</span>
               </div>
             ))}
@@ -252,11 +294,16 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
         </section>
 
         {/* Reviews */}
-        <section className="mt-6 space-y-3">
-          <h2 className="text-lg font-bold">इस पैक के भक्तों की राय</h2>
+        <section className="mt-7 space-y-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
+              <Quote size={16} className="text-brand" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">इस पैक के भक्तों की राय</h2>
+          </div>
           <div className="space-y-3">
             {plan.detail.reviews.map((r, i) => (
-              <div key={i} className="card-soft p-4">
+              <div key={i} className="card-soft card-lift p-4">
                 <div className="flex items-center gap-1 text-amber-accent">
                   {Array.from({ length: r.stars }).map((_, k) => (
                     <Star key={k} size={14} fill="#F5A742" className="text-amber-accent" />
@@ -274,7 +321,12 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
 
         {/* Related plans */}
         <section className="mt-8">
-          <h2 className="text-lg font-bold mb-3">अन्य पैक देखें</h2>
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
+              <ArrowRight size={16} className="text-brand" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">अन्य पैक देखें</h2>
+          </div>
           <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2">
             {allPlans.filter((p) => p.id !== plan.id && p.isVisible !== false).map((p) => (
               <Link key={p.id} to="/plan/$planId" params={{ planId: p.id }} className="card-soft p-3 w-[260px] min-w-[260px] shrink-0 flex flex-col justify-between border border-black/5 hover:border-brand/20 transition-all">

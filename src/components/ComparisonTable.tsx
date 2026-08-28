@@ -1,5 +1,6 @@
 import React from "react";
-import { Check, X, AlertTriangle, RefreshCw } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Check, X, AlertTriangle, RefreshCw, ArrowRight } from "lucide-react";
 import { usePublicPlans, type ComparisonValue } from "@/lib/plans";
 
 // Non-seva platform rows (universal facts, not tier composition).
@@ -101,6 +102,23 @@ function LiveTable({
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr className="border-t border-[#F0DFC8] bg-[#FDF3EB]">
+            <td className="px-2 sm:px-3 md:px-4 py-3" />
+            {visiblePlans.map((p) => (
+              <td key={p.id} className="px-1 sm:px-1.5 md:px-2 py-3 text-center align-top">
+                <Link
+                  to="/plan/$planId"
+                  params={{ planId: p.id }}
+                  className="inline-flex flex-col items-center justify-center gap-0.5 w-full bg-brand text-white text-[9px] sm:text-[11px] md:text-xs font-bold px-1.5 sm:px-2 py-2 rounded-full hover:bg-brand-deep transition-colors shadow-[0_4px_12px_rgba(216,90,48,0.3)] leading-tight"
+                >
+                  <span>Go to Pack</span>
+                  <ArrowRight size={11} className="shrink-0" />
+                </Link>
+              </td>
+            ))}
+          </tr>
+        </tfoot>
       </table>
       {yearlyPlan && (
         <div className="bg-[#3FAE55] text-white text-center px-3 py-2.5 md:py-3 text-[10px] sm:text-xs md:text-sm font-bold leading-snug">

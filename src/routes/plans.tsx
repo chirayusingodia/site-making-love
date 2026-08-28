@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Sun as SunIcon, AlertTriangle, RefreshCw } from "lucide-react";
+import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Sun as SunIcon, AlertTriangle, RefreshCw, CalendarDays } from "lucide-react";
 import { ComparisonTable } from "@/components/ComparisonTable";
 import { usePublicPlans, acharyas, type Plan } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
@@ -224,8 +224,24 @@ function PlanCard({ plan }: { plan: Plan }) {
     step: slide.step,
   }));
 
+  // Cadence sticker — the plan's busiest seva tells the story ("2× a
+  // month" on Premium's hawans/sundarkand vs "1×" on Basic).
+  const maxOccurrences = Math.max(0, ...plan.includedSevas.map((s) => s.days.length));
+  const cadenceLabel =
+    maxOccurrences >= 2
+      ? lang === "hindi" ? "महीने में 2 बार" : "2x a Month"
+      : maxOccurrences === 1
+        ? lang === "hindi" ? "महीने में 1 बार" : "1x a Month"
+        : null;
+
   return (
-    <article className="card-soft card-lift overflow-hidden relative animate-fade-up flex flex-col">
+    <article className="card-soft card-lift overflow-hidden relative animate-fade-up flex flex-col pt-3.5">
+      {cadenceLabel && (
+        <div className="absolute -top-0 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-white text-brand text-[11px] font-bold pl-2.5 pr-3.5 py-1.5 rounded-full shadow-[0_6px_16px_rgba(139,79,40,0.25)] border border-brand/20 whitespace-nowrap">
+          <CalendarDays size={13} className="text-[#F5A742]" />
+          {cadenceLabel}
+        </div>
+      )}
       <div className="relative">
         {plan.ribbon && <PlanRibbon text={plan.ribbon} />}
         {plan.badge && (
