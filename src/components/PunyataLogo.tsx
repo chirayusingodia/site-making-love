@@ -13,10 +13,8 @@ export function PunyataLogo({ className = "w-12 h-12" }: PunyataLogoProps) {
       aria-labelledby="logo-title logo-desc"
       className={`${className} overflow-visible`}
     >
-      <title id="logo-title">Animated Punyata logo</title>
-      <desc id="logo-desc">
-        The Punyata hand-shaped sprout draws itself, then the leaf softly glows.
-      </desc>
+      <title id="logo-title">Punyata logo</title>
+      <desc id="logo-desc">पुण्यता — तीर्थ गुरु पुष्करराज से मासिक सेवा</desc>
       <defs>
         <filter
           id="punyata-relief"

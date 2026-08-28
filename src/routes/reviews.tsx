@@ -10,6 +10,7 @@ export const Route = createFileRoute("/reviews")({
       { title: "Reviews — पुण्यता | भक्तों की राय" },
       { name: "description", content: "पुण्यता के 1,200+ सदस्यों की सच्ची राय — WhatsApp Video Proof के बाद उनके अनुभव।" },
     ],
+    links: [{ rel: "canonical", href: "https://www.punyata.com/reviews" }],
   }),
   component: ReviewsPage,
 });

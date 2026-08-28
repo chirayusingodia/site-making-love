@@ -1,2 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /agent
+Disallow: /telecaller
+Disallow: /checkout
+Disallow: /login
+Disallow: /profile
+Disallow: /complete-profile
+Disallow: /my-subscription
+Disallow: /subscription-success
+Disallow: /api/
+
+Sitemap: https://www.punyata.com/sitemap.xml

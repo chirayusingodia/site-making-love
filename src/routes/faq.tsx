@@ -10,14 +10,29 @@ export const Route = createFileRoute("/faq")({
       { title: "FAQ — पुण्यता | अक्सर पूछे जाने वाले प्रश्न" },
       { name: "description", content: "पुण्यता की सेवाओं के बारे में अक्सर पूछे जाने वाले प्रश्न — refund, cancel, proof, gotra एवं अन्य।" },
     ],
+    links: [{ rel: "canonical", href: "https://www.punyata.com/faq" }],
   }),
   component: FaqPage,
 });
 
 function FaqPage() {
   const [open, setOpen] = useState<number | null>(0);
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
   return (
     <SiteChrome>
+      {/* FAQ rich-result eligibility — mirrors the visible Q&A below */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-6">
         <header className="text-center">
           <div className="text-xs font-bold uppercase tracking-widest text-brand">FAQ</div>
