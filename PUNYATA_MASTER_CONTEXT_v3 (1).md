@@ -1111,6 +1111,12 @@ diverging from a tested helper that already did it correctly.
   see §13. Spec written, not built.
 - Razorpay subscription `total_count` tenure fix is specced but not confirmed applied — see §13/§20.
 
+### From 2026-08-27 session — "New Lead" bug
+| ID | Finding | Status |
+|---|---|---|
+| L1 | `/telecaller/new` ("New Lead") called an endpoint that created an **auth user + profile** for the phone number instead of a pipeline lead. This (a) made the customer look signed-up before they ever were, (b) polluted Queue #5 "Signed Up, Never Bought", and (c) the "open" link routed to the broken bare person-card instead of a lead call-card. | **Confirmed fixed** — `create-lead.ts` now inserts into `leads` (status `assigned`, `assigned_to`/`created_by` = caller), never touches `profiles`/auth; idempotent on an existing open lead for the same phone; rate-limited via `LEAD_CREATE_DAILY_LIMIT`/day (IST). `telecaller.new.tsx` links to `/telecaller/lead/$leadId` (the real lead call-card). `my-day.ts` counts `leadsCreatedToday` from `leads`, not profiles. Verified by reading all four live files directly. |
+| L2 | Legacy telecaller-created profiles (from before the L1 fix) still show up in Queue #5 | **Confirmed fixed** — `loadTelecallerDataset` in `telecaller-data.server.ts` (line ~271) excludes any `profiles` row with `created_by_staff` set from Queue #5; migration `20260827_021_backfill_telecaller_profile_leads.sql` backfills those legacy rows into `leads` (idempotent `NOT EXISTS` guard). **Migration still needs to be applied to Supabase** — same pending-migration caveat as §8/migration 018. |
+
 ---
 
 ## 22. What v3 Described But Was Never Built

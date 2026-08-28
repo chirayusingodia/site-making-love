@@ -78,6 +78,7 @@ export interface ProfileLite {
   do_not_call: boolean;
   last_called_at: string | null;
   created_at: string;
+  created_by_staff?: string | null;
 }
 
 interface PaymentLite {
@@ -252,16 +253,22 @@ export async function loadTelecallerDataset(db: SupabaseClient): Promise<{
   }
 
   // Queue #5 — signed up, never bought: bare user-role profiles with
-  // zero subscription rows. Staff/agent accounts are excluded by the
-  // role='user' filter; DNC'd leads are excluded by their flag.
+  // zero subscription rows. Staff-created profiles are legacy leads,
+  // not actual sign-ups, and are deliberately excluded (migration 021
+  // backfills them into leads). Staff/agent accounts are excluded by
+  // the role='user' filter; DNC'd leads are excluded by their flag.
   const leadRes = await fetchAllRows<ProfileLite>((from, to) =>
     asRows<ProfileLite>(
-      db.from("profiles").select(`${TC_PROFILE_COLS}, role`).eq("role", "user").range(from, to),
+      db
+        .from("profiles")
+        .select(`${TC_PROFILE_COLS},role,created_by_staff`)
+        .eq("role", "user")
+        .range(from, to),
     ),
   );
   if (leadRes.error) throw new Error(`telecaller dataset: ${leadRes.error}`);
   for (const profile of leadRes.data) {
-    if (usersWithSubs.has(profile.id)) continue;
+    if (usersWithSubs.has(profile.id) || profile.created_by_staff) continue;
     rows.push(buildRow(null, profile, [], null, prasadPlanIds));
   }
 
