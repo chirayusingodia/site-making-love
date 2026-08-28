@@ -41,7 +41,11 @@ export const Route = createFileRoute("/api/telecaller/queue/list")({
 
         try {
           if (body.queue === "aaj_ke_leads") {
-            const { leads } = await loadTodaysLeads(auth.db, auth.callerId);
+            const { leads } = await loadTodaysLeads(
+              auth.db,
+              auth.callerId,
+              auth.role !== "telecaller",
+            );
             const page = paginateByIdentity<TelecallerLeadRow>(
               leads,
               typeof body.cursor === "string" && body.cursor ? body.cursor : null,

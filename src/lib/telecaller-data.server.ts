@@ -279,10 +279,11 @@ export async function loadTelecallerDataset(db: SupabaseClient): Promise<{
 export async function computeQueuesResponse(
   db: SupabaseClient,
   callerId: string,
+  includeAllAssigned = false,
 ): Promise<QueuesResponse> {
   const [dataset, leadBundle] = await Promise.all([
     loadTelecallerDataset(db),
-    loadTodaysLeads(db, callerId),
+    loadTodaysLeads(db, callerId, includeAllAssigned),
   ]);
   const assignment: QueueAssignment = assignQueues({
     rows: dataset.rows,
@@ -398,17 +399,17 @@ export async function isInCallersTray(
   return false;
 }
 
-function istDayStartIso(): { ymd: string; dayStartIso: string } {
-  const istDay = new Date(Date.now() + IST_OFFSET_MS);
-  const ymd = istDay.toISOString().slice(0, 10);
-  return {
-    ymd,
-    dayStartIso: new Date(Date.parse(`${ymd}T00:00:00Z`) - IST_OFFSET_MS).toISOString(),
-  };
-}
-
 /**
- * Leads assigned to HER today (§3 queue 0), unworked first.
+ * Open leads assigned to the caller's work tray, unworked first.
+ *
+ * `assigned_on` is useful audit metadata, but it must not decide whether
+ * a lead is visible. A caller can create a lead late in the day, return
+ * after midnight, and still needs to call it until it is closed. The old
+ * "assigned today" predicate silently stranded every open lead from a
+ * previous day, making the queue look empty despite rows existing.
+ *
+ * Admin/owner seats may inspect the shared assigned tray; a telecaller
+ * remains restricted to her own assignments.
  *
  * GRACEFUL DEGRADATION: Part A ships before migration 013 creates
  * the `leads` table. Until it exists this returns [] instead of
@@ -419,9 +420,8 @@ function istDayStartIso(): { ymd: string; dayStartIso: string } {
 export async function loadTodaysLeads(
   db: SupabaseClient,
   callerId: string,
+  includeAllAssigned = false,
 ): Promise<{ leads: TelecallerLeadRow[]; workedLeadIds: Set<string> }> {
-  const { dayStartIso } = istDayStartIso();
-
   interface LeadDbRow {
     id: string;
     full_name: string | null;
@@ -439,19 +439,23 @@ export async function loadTodaysLeads(
 
   let leadRows: LeadDbRow[];
   try {
+    const selectLeads = (withFamilyNames: boolean, from: number, to: number) => {
+      let query = db
+        .from("leads")
+        .select(
+          "id,full_name,phone,city,notes," +
+            (withFamilyNames ? "family_names," : "") +
+            "status,profile_id,attribution_token,assigned_on,created_at,plans(name)",
+        )
+        .in("status", ["new", "assigned", "in_progress", "link_sent"])
+        .not("assigned_to", "is", null)
+        .order("created_at", { ascending: true })
+        .range(from, to);
+      return includeAllAssigned ? query : query.eq("assigned_to", callerId);
+    };
+
     const res = await fetchAllRows<LeadDbRow>((from, to) =>
-      asRows<LeadDbRow>(
-        db
-          .from("leads")
-          .select(
-            "id,full_name,phone,city,notes,family_names,status,profile_id,attribution_token," +
-              "assigned_on,created_at,plans(name)",
-          )
-          .eq("assigned_to", callerId)
-          .gte("assigned_on", dayStartIso.slice(0, 10))
-          .order("created_at", { ascending: true })
-          .range(from, to),
-      ),
+      asRows<LeadDbRow>(selectLeads(true, from, to)),
     );
     if (res.error) {
       // Migration 020 lagging behind the deploy: without the column the
@@ -459,18 +463,7 @@ export async function loadTodaysLeads(
       // to null instead of taking Aaj Ke Leads down.
       if (!/family_names/i.test(res.error)) throw new Error(res.error);
       const retry = await fetchAllRows<LeadDbRow>((from, to) =>
-        asRows<LeadDbRow>(
-          db
-            .from("leads")
-            .select(
-              "id,full_name,phone,city,notes,status,profile_id,attribution_token," +
-                "assigned_on,created_at,plans(name)",
-            )
-            .eq("assigned_to", callerId)
-            .gte("assigned_on", dayStartIso.slice(0, 10))
-            .order("created_at", { ascending: true })
-            .range(from, to),
-        ),
+        asRows<LeadDbRow>(selectLeads(false, from, to)),
       );
       if (retry.error) throw new Error(retry.error);
       leadRows = retry.data.map((r) => ({ ...r, family_names: null }));
@@ -491,8 +484,7 @@ export async function loadTodaysLeads(
     const { data: logs, error } = await db
       .from("call_logs")
       .select("lead_id")
-      .in("lead_id", ids)
-      .gte("created_at", dayStartIso);
+      .in("lead_id", ids);
     if (!error && logs) {
       for (const l of logs as { lead_id: string | null }[]) {
         if (l.lead_id) worked.add(l.lead_id);

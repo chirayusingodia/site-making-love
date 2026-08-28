@@ -35,19 +35,29 @@ export function useSessionProfile(): SessionState & { refresh: () => void } {
 
     (async () => {
       setLoading(true);
-      const {
-        data: { user: u },
-      } = await supabase.auth.getUser();
+      // `getUser()` validates against Supabase Auth over the network. If
+      // that request is kept pending by a browser/proxy, it never resolves
+      // and every consumer of this hook remains on its skeleton forever.
+      // The persisted session is enough to render the app; RLS still
+      // verifies every subsequent data request. Bound the local read too,
+      // so a broken storage/auth adapter can never trap the UI in loading.
+      const sessionResult = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 8_000)),
+      ]);
       if (cancelled) return;
+      const u = sessionResult?.data.session?.user ?? null;
       setUser(u ?? null);
       setUserId(u?.id ?? null);
+      // Profile enrichment must not block the page shell. It may fail or
+      // arrive later, while the authenticated UI stays usable.
+      setLoading(false);
       if (u) {
         const p = await fetchMyProfile().catch(() => null);
         if (!cancelled) setProfile(p);
       } else if (!cancelled) {
         setProfile(null);
       }
-      if (!cancelled) setLoading(false);
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {

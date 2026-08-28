@@ -104,11 +104,10 @@ function NewLeadPage() {
           {result.lead && (
             <Button asChild size="sm" className="bg-indigo-700 hover:bg-indigo-800 gap-1.5">
               <Link
-                to="/telecaller/lead/$leadId"
-                params={{ leadId: result.lead.id }}
-                search={{ queue: "aaj_ke_leads" }}
+                to="/telecaller/queue/$queueKey"
+                params={{ queueKey: "aaj_ke_leads" }}
               >
-                Lead kholein <ArrowRight className="w-3.5 h-3.5" />
+                Aaj Ke Leads mein dekhein <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </Button>
           )}
