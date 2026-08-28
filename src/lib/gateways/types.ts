@@ -165,6 +165,29 @@ export interface PaymentGatewayAdapter {
    */
   readonly maxEndTimeSeconds: number | null;
 
+  /**
+   * The tightest "years from mandate creation" ceiling across every
+   * payment method this provider can present at checkout — or null for
+   * none. Distinct from maxEndTimeSeconds: this moves with "now" rather
+   * than pinning a fixed calendar date, and it is typically tighter
+   * (Razorpay: UPI Autopay caps mandate validity at 30 years, vs. the
+   * 2120 end_time wall). See tenure.ts's TenureInput.maxRelativeTenureYears
+   * for the incident this prevents.
+   */
+  readonly maxRelativeTenureYears: number | null;
+
+  /**
+   * The largest per-cycle amount, in paise, this provider can collect
+   * on a recurring UPI mandate — or null for no such ceiling. An NPCI
+   * rule, not a Razorpay one: it caps what CAN be registered on a UPI
+   * Autopay mandate at all (unlike the AFA threshold, which just adds
+   * a PIN-entry step above a lower amount — see
+   * RAZORPAY_UPI_AFA_FREE_AMOUNT_PAISE in razorpay.ts). Exceeding this
+   * one gets the mandate rejected outright, the same failure class as
+   * maxRelativeTenureYears.
+   */
+  readonly maxRecurringAmountPaise: number | null;
+
   /** False when this deployment lacks the provider's credentials. A
    *  gateway that cannot be called must never be selected. */
   isConfigured(): boolean;
