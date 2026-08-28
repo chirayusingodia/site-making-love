@@ -49,9 +49,9 @@ export const Route = createFileRoute("/api/telecaller/my-day")({
                 .range(from, to),
             ),
             auth.db
-              .from("profiles")
+              .from("leads")
               .select("id", { count: "exact", head: true })
-              .eq("created_by_staff", auth.callerId)
+              .eq("created_by", auth.callerId)
               .gte("created_at", dayStartIso),
           ]);
           if (logsRes.error) return json({ error: logsRes.error }, 500);

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/telecaller/new")({
 
 interface CreateLeadResponse {
   existed: boolean;
-  person: { id: string; full_name: string | null; phone: string | null } | null;
+  lead: { id: string; full_name: string | null; phone: string; status: string } | null;
 }
 
 function NewLeadPage() {
@@ -96,20 +96,19 @@ function NewLeadPage() {
       ) : (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 shadow-2xs p-5 space-y-3">
           <div className="font-semibold text-emerald-900">
-            {result.existed ? "Yeh number pehle se hai — unka card kholein:" : "Lead ban gayi ✅"}
+            {result.existed ? "Yeh number ki open lead pehle se hai:" : "Lead ban gayi ✅"}
           </div>
           <div className="text-sm text-emerald-900">
-            {result.person?.full_name ?? "(naam nahi)"} · {result.person?.phone}
+            {result.lead?.full_name ?? "(naam nahi)"} · {result.lead?.phone}
           </div>
-          {result.person && (
+          {result.lead && (
             <Button asChild size="sm" className="bg-indigo-700 hover:bg-indigo-800 gap-1.5">
-              {/* A brand-new lead has no subscription yet — her card is
-                  addressed by profile id via the lead- prefix. */}
               <Link
-                to="/telecaller/person/$subscriptionId"
-                params={{ subscriptionId: `lead-${result.person.id}` }}
+                to="/telecaller/lead/$leadId"
+                params={{ leadId: result.lead.id }}
+                search={{ queue: "aaj_ke_leads" }}
               >
-                Card kholein <ArrowRight className="w-3.5 h-3.5" />
+                Lead kholein <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </Button>
           )}

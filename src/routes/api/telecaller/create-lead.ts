@@ -6,11 +6,12 @@ import { LEAD_CREATE_DAILY_LIMIT, stripMaskedFieldsDeep } from "@/lib/telecaller
 // POST /api/telecaller/create-lead
 // Gate: requireTelecaller. Body: { full_name, phone }
 //
-// Creates a brand-new customer (§5.4): auth user + profiles row
-// stamped created_by_staff = <telecaller uuid>.
+// Creates a brand-new pipeline lead (§5.4), assigned to the caller
+// for today. A lead is deliberately NOT an auth user or a profile:
+// entering a phone number must never make it look like the customer
+// signed up or give the number a customer card.
 //  • Reuses normalizePhoneE164() — never a second phone parser.
-//  • Existing phone → returns the EXISTING person, name untouched.
-//    A lookup must never rename an existing account.
+//  • Existing open lead → returns that lead; no duplicate work item.
 //  • Sends NO OTP — creating a lead is a database row, not a login.
 //    There is no OTP field anywhere in this panel, by design: if a
 //    caller could log in as the customer every audit trail here
@@ -48,9 +49,9 @@ export const Route = createFileRoute("/api/telecaller/create-lead")({
             Date.parse(`${istDay.toISOString().slice(0, 10)}T00:00:00Z`) - IST_OFFSET_MS,
           ).toISOString();
           const { count: createdToday, error: cntErr } = await auth.db
-            .from("profiles")
+            .from("leads")
             .select("id", { count: "exact", head: true })
-            .eq("created_by_staff", auth.callerId)
+            .eq("created_by", auth.callerId)
             .gte("created_at", dayStartIso);
           if (cntErr) return json({ error: cntErr.message }, 500);
           if ((createdToday ?? 0) >= LEAD_CREATE_DAILY_LIMIT) {
@@ -62,82 +63,58 @@ export const Route = createFileRoute("/api/telecaller/create-lead")({
             );
           }
 
-          // Idempotency: known number wins, exactly like the login flow.
+          // Idempotency: an open lead for this number wins. This is a
+          // pipeline lookup only — profiles/auth are intentionally untouched.
           const { data: existing, error: lookupErr } = await auth.db
-            .from("profiles")
-            .select("id,full_name,phone")
+            .from("leads")
+            .select("id,full_name,phone,status,assigned_to,created_by")
             .eq("phone", phone)
+            .in("status", ["new", "assigned", "in_progress", "link_sent"])
+            .order("created_at", { ascending: false })
+            .limit(1)
             .maybeSingle();
           if (lookupErr) return json({ error: lookupErr.message }, 500);
           if (existing) {
+            if (existing.assigned_to !== auth.callerId && existing.created_by !== auth.callerId) {
+              return json({ error: "Is number ki lead kisi aur caller ke paas hai" }, 409);
+            }
             await writeTelecallerAudit(
               auth.db,
               auth.callerId,
               "telecaller.lead.lookup_existing",
-              "profiles",
+              "leads",
               existing.id,
               { phone },
             );
-            return json(stripMaskedFieldsDeep({ existed: true, person: existing }));
+            return json(stripMaskedFieldsDeep({ existed: true, lead: existing }));
           }
 
-          // Auth user first (phone unconfirmed — confirmation happens
-          // when the CUSTOMER later logs in with their own OTP), then
-          // its profile row with the staff-attribution stamp.
-          const { data: created, error: createErr } = await auth.db.auth.admin.createUser({
-            phone,
-            phone_confirm: false,
-            user_metadata: { full_name: rawName },
-          });
-          if (createErr || !created?.user) {
-            const msg = createErr?.message ?? "";
-            // Auth user exists without a profile row (partial legacy
-            // state): we cannot resolve their uuid by phone, and we
-            // must NOT send an OTP to recover it — escalate instead.
-            if (/already|registered|exists/i.test(msg)) {
-              return json(
-                {
-                  error: "Number registered hai par profile nahi mila — owner ko bataayein",
-                },
-                409,
-              );
-            }
-            return json({ error: `user create failed: ${msg}` }, 500);
-          }
-
-          const { data: person, error: profErr } = await auth.db
-            .from("profiles")
+          const { data: lead, error: leadErr } = await auth.db
+            .from("leads")
             .insert({
-              id: created.user.id,
               full_name: rawName.slice(0, 120),
               phone,
-              created_by_staff: auth.callerId,
+              assigned_to: auth.callerId,
+              assigned_on: istDay.toISOString().slice(0, 10),
+              status: "assigned",
+              created_by: auth.callerId,
             })
-            .select("id,full_name,phone")
+            .select("id,full_name,phone,status")
             .single();
-          if (profErr) {
-            // Unique-phone race → someone else won; surface as existing.
-            if (/duplicate key|unique/i.test(profErr.message)) {
-              const { data: winner } = await auth.db
-                .from("profiles")
-                .select("id,full_name,phone")
-                .eq("phone", phone)
-                .maybeSingle();
-              return json(stripMaskedFieldsDeep({ existed: true, person: winner }));
-            }
-            return json({ error: profErr.message }, 500);
+          if (leadErr) {
+            return json({ error: leadErr.message }, 500);
           }
 
           await writeTelecallerAudit(
             auth.db,
             auth.callerId,
             "telecaller.lead.create",
-            "profiles",
-            person.id,
-            { full_name: person.full_name, phone },
+            "leads",
+            lead.id,
+            { full_name: lead.full_name, phone },
           );
 
-          return json(stripMaskedFieldsDeep({ existed: false, person }));
+          return json(stripMaskedFieldsDeep({ existed: false, lead }));
         } catch (err) {
           console.error("telecaller/create-lead error:", err);
           return json({ error: err instanceof Error ? err.message : "Query failed" }, 500);
