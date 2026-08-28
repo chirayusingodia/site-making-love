@@ -1,12 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import process from "node:process";
 import { json, getServiceClient } from "@/lib/supabase-admin.server";
-import { processWebhookEvent, verifyWebhookSignature } from "@/lib/razorpay-webhook.server";
+import { processWebhookEvent } from "@/lib/razorpay-webhook.server";
+import { razorpayAdapter } from "@/lib/gateways/razorpay";
 
 // POST /api/payments/webhook
 //
 // Razorpay → Punyata subscription lifecycle endpoint. THE ONLY code
 // path in the product that ever sets subscriptions.status='active'.
+//
+// ONE ROUTE PER GATEWAY, on purpose. Webhook payload shapes and
+// signature schemes are irreducibly provider-specific; a second
+// gateway gets its own sibling route + parser, and both converge on
+// the same normalised rows (subscription_mandates / payments). This
+// route is Razorpay's — hence the Razorpay adapter below owning
+// verification, so there is one implementation of that HMAC.
 //
 // Security: HMAC-SHA256 over the RAW request body, verified against
 // RAZORPAY_WEBHOOK_SECRET before anything is parsed or written.
@@ -36,9 +44,8 @@ export const Route = createFileRoute("/api/payments/webhook")({
         // Raw body FIRST — parsing before verification would both
         // break the HMAC and process untrusted input.
         const rawBody = await request.text();
-        const signature = request.headers.get("x-razorpay-signature");
 
-        if (!verifyWebhookSignature(rawBody, signature, secret)) {
+        if (!razorpayAdapter.verifyWebhookSignature(rawBody, request.headers)) {
           return json({ error: "Invalid signature" }, 401);
         }
 

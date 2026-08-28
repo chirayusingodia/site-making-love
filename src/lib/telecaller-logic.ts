@@ -626,8 +626,14 @@ export interface QueuesResponse {
  * "zero ₹" framing): plans.price_paise — prices are public on
  * /plans and she is selling them — and coupon codes, which she may
  * quote. What stays dark: payment AMOUNTS on other people's money,
- * Razorpay IDs, discount values/types, anyone else's commission,
+ * gateway IDs, discount values/types, anyone else's commission,
  * and every company aggregate.
+ *
+ * The mandate_* entries cover the gateway-neutral columns introduced
+ * by migration 022 (subscriber_list_view now surfaces the CURRENT
+ * mandate's gateway + id there). The legacy razorpay_* names are kept
+ * alongside them on purpose: this list is defence-in-depth, and a
+ * stale-but-harmless entry costs nothing while a missing one leaks.
  */
 export const TELECALLER_MASKED_FIELDS = [
   "amount_paise",
@@ -635,6 +641,9 @@ export const TELECALLER_MASKED_FIELDS = [
   "razorpay_payment_id",
   "razorpay_order_id",
   "razorpay_customer_id",
+  "gateway_mandate_id",
+  "gateway_customer_id",
+  "mandate_gateway_id",
   "discount_value",
   "discount_type",
   "commission_percent",

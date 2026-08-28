@@ -1,11 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  cancelRazorpaySubscription,
-  createRazorpaySubscription,
-  fetchRazorpaySubscription,
-} from "@/lib/razorpay.server";
 import { validateCouponForPlan, type CouponDecision } from "@/lib/coupons.server";
 import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
+import {
+  createMandateForSubscription,
+  getCurrentMandate,
+  retireMandate,
+  syncMandateFromGateway,
+  MandateError,
+  type MandateRow,
+} from "@/lib/mandates.server";
+import { candidatesForPlan, getAdapter } from "@/lib/gateways/registry";
+import { isTerminalMandateStatus, type GatewayId, type MandateStatus } from "@/lib/gateways/types";
+import type { BillingPeriod } from "@/lib/gateways/tenure";
 
 // ─────────────────────────────────────────────────────────────
 // PUNYATA — Signup-first checkout: create-checkout (server-only)
@@ -15,54 +21,32 @@ import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 //
 // Flow:
 //   1. resolve plan (slug or uuid) — must be active
-//   2. optional coupon → validated; recorded as attribution
-//   3. INSERT subscriptions row status='pending' (RLS-compatible)
-//   4. create Razorpay Subscription for the plan's razorpay_plan_id
-//   5. persist razorpay_sub_id BEFORE any webhook can arrive
-//      (webhook resolves our row by razorpay_sub_id — the row must
-//      be linkable the moment Checkout charges the customer)
-//   6. return what the frontend needs to open Razorpay Checkout
+//   2. confirm SOME gateway can currently sell it
+//   3. optional coupon → validated; recorded as attribution
+//   4. INSERT subscriptions row status='pending' (RLS-compatible)
+//   5. raise a MANDATE for it through the gateway registry — which
+//      picks the provider, derives the tenure, and fails over if the
+//      preferred provider is unwell
+//   6. return what the frontend needs to open that gateway's checkout
+//
+// GATEWAY NEUTRALITY (migration 022): this module names no provider.
+// Gateway identifiers live on subscription_mandates, never on the
+// subscription — so a blocked Razorpay account is a rotation change,
+// not an outage, and a subscription can outlive any single provider.
+//
+// TENURE: never a literal cycle count. See gateways/tenure.ts for the
+// 2026-08-28 incident that rule exists to prevent.
 //
 // ACTIVATION DISCIPLINE: this module never sets status='active'.
-// Only /api/payments/webhook does.
+// Only the gateway webhook does.
 // ─────────────────────────────────────────────────────────────
-
-// ─── Subscription tenure: "runs until cancelled" ──────────────
-// Razorpay has no literal "forever" flag — total_count is MANDATORY
-// at creation and capped at 100 YEARS (their documented maximum). A
-// live subscription can be cancelled at any moment regardless of how
-// much total_count remains, so we model "no fixed term, renews until
-// the subscriber (or admin) cancels" as simply the maximum legal
-// tenure — like a no-fixed-term gym membership on a platform that
-// demands some number.
-//
-// ⚠️ Subscriptions created BEFORE 2026-08-23 carry the old short
-// tenures (12 monthly / 5 yearly cycles). Razorpay does NOT
-// retroactively extend a live mandate's total_count — those keep
-// their original end date (see session log for the census).
-export const SUBSCRIPTION_MAX_YEARS = 100;
-
-/** Billable cycles per year per billing_period. Declared as an
- *  exhaustive Record: adding a third period (weekly/daily) to the
- *  PlanRow union FAILS TO COMPILE until it gets a row here, so its
- *  total_count always derives as 100 years of that cadence — never
- *  left unhandled. */
-const CYCLES_PER_YEAR: Record<PlanRow["billing_period"], number> = {
-  monthly: 12,
-  yearly: 1,
-};
-
-export function totalCountForBillingPeriod(period: PlanRow["billing_period"]): number {
-  return SUBSCRIPTION_MAX_YEARS * CYCLES_PER_YEAR[period];
-}
 
 interface PlanRow {
   id: string;
   name: string;
   slug: string;
   price_paise: number;
-  billing_period: "monthly" | "yearly";
-  razorpay_plan_id: string | null;
+  billing_period: BillingPeriod;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -74,7 +58,7 @@ export async function resolveActivePlan(
   // Slug first (public URLs use slug aliases like "grah"); fall back to
   // uuid only when the input IS one — .eq('id', 'grah') would make
   // Postgres throw an invalid-uuid cast error.
-  const cols = "id,name,slug,price_paise,billing_period,razorpay_plan_id";
+  const cols = "id,name,slug,price_paise,billing_period";
   const bySlug = await db
     .from("plans")
     .select(cols)
@@ -95,8 +79,17 @@ export async function resolveActivePlan(
 
 export interface CreateCheckoutOutcome {
   subscriptionDbId: string;
-  razorpaySubscriptionId: string;
-  razorpayCustomerId: string | null;
+  /** subscription_mandates.id — our own handle on the instrument. */
+  mandateId: string;
+  gateway: GatewayId;
+  gatewayMandateId: string;
+  gatewayCustomerId: string | null;
+  /** Publishable key for the gateway's browser SDK, when it uses one. */
+  gatewayPublicKey: string | null;
+  /** Tells the frontend which checkout to drive. */
+  checkoutStrategy: string;
+  /** Provider-hosted payment page, for redirect-style gateways. */
+  hostedCheckoutUrl: string | null;
   planName: string;
   planPricePaise: number;
   couponCode: string | null;
@@ -109,6 +102,60 @@ export class CheckoutError extends Error {
     super(message);
     this.status = status;
   }
+}
+
+/**
+ * Confirms at least one gateway can sell this plan right now, and
+ * distinguishes the two very different reasons it might not:
+ *   • no gateway plan ids configured → the plan is not sellable yet
+ *     (a setup task for the owner, not a transient fault)
+ *   • ids configured but every gateway unhealthy/disabled → a
+ *     temporary outage, worth retrying shortly
+ * Collapsing these into one message is how a config gap gets
+ * misdiagnosed as an outage for a week.
+ */
+async function assertPlanIsSellable(db: SupabaseClient, planId: string): Promise<void> {
+  const candidates = await candidatesForPlan(db, planId);
+  if (candidates.length > 0) return;
+
+  const { count } = await db
+    .from("plan_gateway_refs")
+    .select("id", { count: "exact", head: true })
+    .eq("plan_id", planId)
+    .eq("is_active", true);
+
+  if (!count) {
+    throw new CheckoutError("Yeh plan abhi payment ke liye configure nahi hua hai.", 503);
+  }
+  throw new CheckoutError(
+    "Payment gateway abhi temporarily unavailable hai. Kripya thodi der baad try karein.",
+    503,
+  );
+}
+
+/** Reuse payload for a pending checkout whose mandate is still fresh. */
+function outcomeFromExistingMandate(input: {
+  subscriptionDbId: string;
+  mandate: MandateRow;
+  plan: PlanRow;
+  couponCode: string | null;
+  coupon: CouponDecision["coupon"] | null;
+}): CreateCheckoutOutcome {
+  const adapter = getAdapter(input.mandate.gateway);
+  return {
+    subscriptionDbId: input.subscriptionDbId,
+    mandateId: input.mandate.id,
+    gateway: input.mandate.gateway,
+    gatewayMandateId: input.mandate.gateway_mandate_id,
+    gatewayCustomerId: input.mandate.gateway_customer_id,
+    gatewayPublicKey: adapter.publicKey(),
+    checkoutStrategy: adapter.checkoutStrategy,
+    hostedCheckoutUrl: null,
+    planName: input.plan.name,
+    planPricePaise: input.plan.price_paise,
+    couponCode: input.couponCode,
+    coupon: input.coupon,
+  };
 }
 
 export async function createCheckoutForUser(input: {
@@ -131,16 +178,15 @@ export async function createCheckoutForUser(input: {
 
   const plan = await resolveActivePlan(adminDb, planIdOrSlug);
   if (!plan) throw new CheckoutError("Plan not found or inactive", 404);
-  if (!plan.razorpay_plan_id) {
-    // Not a code bug to silently route around — the plan simply is not
-    // sellable yet until its Razorpay Plan id is set in the admin manager.
-    throw new CheckoutError("Yeh plan abhi payment ke liye configure nahi hua hai.", 503);
-  }
+
+  // Fail before touching the database — an unsellable plan must not
+  // leave a pending subscription row behind.
+  await assertPlanIsSellable(adminDb, plan.id);
 
   // [Bug 1.9 / Pass-2 P5] Double-click / retried requests used to spawn
-  // unbounded pending Razorpay subscriptions for the same user+plan —
-  // including every telecaller link-send, which always carries
-  // attribution. The pending-row reuse below now applies to ALL flows.
+  // unbounded pending mandates for the same user+plan — including every
+  // telecaller link-send, which always carries attribution. The
+  // pending-row reuse below applies to ALL flows.
   //
   // Coupon must be validated BEFORE the reuse decision — reuse legality
   // depends on whether the live pending row already carries this coupon
@@ -163,9 +209,7 @@ export async function createCheckoutForUser(input: {
 
   const { data: existingPendingRow } = await adminDb
     .from("subscriptions")
-    .select(
-      "id,razorpay_sub_id,razorpay_customer_id,coupon_id,acquisition_channel,sales_agent_id,telecaller_id,created_at",
-    )
+    .select("id,coupon_id,acquisition_channel,sales_agent_id,telecaller_id,created_at")
     .eq("user_id", userId)
     .eq("plan_id", plan.id)
     .eq("status", "pending")
@@ -175,8 +219,6 @@ export async function createCheckoutForUser(input: {
 
   const existingPending = existingPendingRow as {
     id: string;
-    razorpay_sub_id: string | null;
-    razorpay_customer_id: string | null;
     coupon_id: string | null;
     acquisition_channel: string | null;
     sales_agent_id: string | null;
@@ -184,24 +226,31 @@ export async function createCheckoutForUser(input: {
     created_at: string;
   } | null;
 
+  // The gateway identifiers now live on the mandate, not the
+  // subscription — one extra read, and the whole flow stops caring
+  // which provider issued it.
+  const existingMandate = existingPending
+    ? await getCurrentMandate(adminDb, existingPending.id)
+    : null;
+
   // ── [SESSION_STUCK_PENDING_CHECKOUT — Bug A fix] ────────────────
-  // An abandoned Razorpay Checkout sheet stays `created` on THEIR side
+  // An abandoned checkout sheet stays `created` on the GATEWAY'S side
   // forever and fires ZERO webhooks. The old unconditional reuse handed
   // the same dead id back on every retry — Chirayu's own Premium
   // checkout bounced twice against two stuck `Created` subscriptions.
-  // Policy now:
+  // Policy:
   //   • ≤ PENDING_REUSE_WINDOW_MINUTES old → reuse (the genuine
   //     double-click fast path [Bug 1.9] stays untouched).
   //   • older than the window → NEVER trust the cached id blind; ask
-  //     Razorpay what it actually is:
+  //     the gateway what it actually is:
   //       'created'                        → abandoned sheet: cancel
-  //                                          (best-effort), delete the
-  //                                          local row, audit, fresh
-  //                                          creation below.
+  //                                          upstream, delete the local
+  //                                          row (mandate cascades),
+  //                                          audit, fresh creation.
   //       'cancelled'/'expired'/'completed'→ already terminal there:
   //                                          delete locally, audit,
   //                                          fresh creation.
-  //       'authenticated'/'active'/'pending'/'halted'
+  //       live (authenticated/active/pending/halted)
   //                                        → a mandate may genuinely be
   //                                          ALIVE that our webhook never
   //                                          heard about. Never cancel a
@@ -215,9 +264,9 @@ export async function createCheckoutForUser(input: {
   //                                          the new one.
   //       fetch itself failed              → fail safe: keep row AND
   //                                          object, still create fresh
-  //                                          (a Razorpay hiccup must not
+  //                                          (a gateway hiccup must not
   //                                          become a 500 or a trap).
-  if (existingPending?.razorpay_sub_id) {
+  if (existingPending && existingMandate) {
     const sameCoupon =
       !couponCode ||
       existingPending.coupon_id === (couponDecision?.ok ? couponDecision.coupon!.id : null);
@@ -240,25 +289,22 @@ export async function createCheckoutForUser(input: {
       if (Object.keys(backfill).length > 1) {
         await adminDb.from("subscriptions").update(backfill).eq("id", existingPending.id);
       }
-      return {
+      return outcomeFromExistingMandate({
         subscriptionDbId: existingPending.id,
-        razorpaySubscriptionId: existingPending.razorpay_sub_id,
-        razorpayCustomerId: existingPending.razorpay_customer_id ?? null,
-        planName: plan.name,
-        planPricePaise: plan.price_paise,
+        mandate: existingMandate,
+        plan,
         couponCode: existingPending.coupon_id ? couponCode : null,
         coupon: existingPending.coupon_id && couponDecision?.ok ? couponDecision.coupon : null,
-      };
+      });
     }
 
     const ageMinutes = Math.max(
       0,
       Math.round((Date.now() - Date.parse(existingPending.created_at)) / 60_000),
     );
-    let rzpStatus: string | null = null;
+    let remoteStatus: MandateStatus | null = null;
     try {
-      const rzp = await fetchRazorpaySubscription(existingPending.razorpay_sub_id);
-      rzpStatus = typeof rzp.status === "string" ? rzp.status : null;
+      remoteStatus = await syncMandateFromGateway(adminDb, existingMandate);
     } catch (err) {
       console.error(
         "stale-pending recheck failed (failing safe to fresh creation):",
@@ -271,7 +317,8 @@ export async function createCheckoutForUser(input: {
           entity: "subscriptions",
           entity_id: existingPending.id,
           meta: {
-            razorpay_sub_id: existingPending.razorpay_sub_id,
+            gateway: existingMandate.gateway,
+            gateway_mandate_id: existingMandate.gateway_mandate_id,
             age_minutes: ageMinutes,
           },
         });
@@ -281,53 +328,47 @@ export async function createCheckoutForUser(input: {
       // fall through — keep row AND object, create fresh below
     }
 
-    if (rzpStatus === "created") {
+    const auditDiscard = async () => {
+      try {
+        await adminDb.from("audit_logs").insert({
+          admin_id: null,
+          action: "checkout.stale_pending_discarded",
+          entity: "subscriptions",
+          entity_id: existingPending.id,
+          meta: {
+            gateway: existingMandate.gateway,
+            gateway_mandate_id: existingMandate.gateway_mandate_id,
+            gateway_status: remoteStatus,
+            age_minutes: ageMinutes,
+          },
+        });
+      } catch {
+        /* audit is best-effort */
+      }
+    };
+
+    if (remoteStatus === "created") {
       // The exact live-incident shape: an unauthenticated sheet whose
       // retries could never complete. Retire BOTH sides, then recreate.
-      await cancelRazorpaySubscription(existingPending.razorpay_sub_id).catch(() => {});
+      await retireMandate(adminDb, existingMandate, "abandoned_checkout", {
+        cancelAtGateway: true,
+      });
       await adminDb
         .from("subscriptions")
         .delete()
         .eq("id", existingPending.id)
         .eq("user_id", userId);
-      try {
-        await adminDb.from("audit_logs").insert({
-          admin_id: null,
-          action: "checkout.stale_pending_discarded",
-          entity: "subscriptions",
-          entity_id: existingPending.id,
-          meta: {
-            razorpay_sub_id: existingPending.razorpay_sub_id,
-            razorpay_status: rzpStatus,
-            age_minutes: ageMinutes,
-          },
-        });
-      } catch {
-        /* audit is best-effort */
-      }
-    } else if (rzpStatus === "cancelled" || rzpStatus === "expired" || rzpStatus === "completed") {
-      // Terminal on Razorpay's side already — nothing to cancel there.
+      await auditDiscard();
+    } else if (remoteStatus && isTerminalMandateStatus(remoteStatus)) {
+      // Terminal upstream already — nothing to cancel there. Deleting
+      // the subscription cascades the mandate row away.
       await adminDb
         .from("subscriptions")
         .delete()
         .eq("id", existingPending.id)
         .eq("user_id", userId);
-      try {
-        await adminDb.from("audit_logs").insert({
-          admin_id: null,
-          action: "checkout.stale_pending_discarded",
-          entity: "subscriptions",
-          entity_id: existingPending.id,
-          meta: {
-            razorpay_sub_id: existingPending.razorpay_sub_id,
-            razorpay_status: rzpStatus,
-            age_minutes: ageMinutes,
-          },
-        });
-      } catch {
-        /* audit is best-effort */
-      }
-    } else if (rzpStatus !== null) {
+      await auditDiscard();
+    } else if (remoteStatus !== null) {
       // Mandate possibly alive (authenticated/active/pending/halted):
       // preserve it for webhook reconciliation, fresh checkout alongside.
       try {
@@ -337,8 +378,9 @@ export async function createCheckoutForUser(input: {
           entity: "subscriptions",
           entity_id: existingPending.id,
           meta: {
-            razorpay_sub_id: existingPending.razorpay_sub_id,
-            razorpay_status: rzpStatus,
+            gateway: existingMandate.gateway,
+            gateway_mandate_id: existingMandate.gateway_mandate_id,
+            gateway_status: remoteStatus,
             age_minutes: ageMinutes,
           },
         });
@@ -348,14 +390,14 @@ export async function createCheckoutForUser(input: {
     }
     // In every non-reuse branch control falls through to the normal
     // fresh-creation path below exactly as if this row hadn't existed.
-  } else if (existingPending && !existingPending.razorpay_sub_id) {
+  } else if (existingPending && !existingMandate) {
     // Unusable orphan from a crashed creation — the error path below
     // deletes these; remove it so the fresh insert is the only row.
     await adminDb.from("subscriptions").delete().eq("id", existingPending.id).eq("user_id", userId);
   }
 
-  // Pending row FIRST so it exists before money moves; razorpay_sub_id
-  // is attached immediately after creation, before checkout opens.
+  // Pending row FIRST so it exists before money moves; the mandate is
+  // attached immediately after, before checkout opens.
   const { data: subRow, error: insErr } = await adminDb
     .from("subscriptions")
     .insert({
@@ -383,33 +425,40 @@ export async function createCheckoutForUser(input: {
     throw new CheckoutError(`subscription create failed: ${insErr?.message ?? "no row"}`, 500);
   }
 
-  // [Pass-2 P3] Track the Razorpay object so ANY failure after its
-  // creation can cancel it — otherwise every error path leaks a live
-  // Razorpay subscription whose webhooks resolve to a deleted row.
-  let createdRazorpaySubId: string | null = null;
+  // [Pass-2 P3] Track the mandate so ANY failure after its creation
+  // can retire it — otherwise every error path leaks a live
+  // money-collecting object whose webhooks resolve to a deleted row.
+  let createdMandate: Awaited<ReturnType<typeof createMandateForSubscription>> | null = null;
 
   try {
-    const rzpSub = await createRazorpaySubscription({
-      razorpayPlanId: plan.razorpay_plan_id!,
-      subscriptionDbId: subRow.id,
+    createdMandate = await createMandateForSubscription(adminDb, {
+      subscriptionId: subRow.id,
+      planId: plan.id,
+      billingPeriod: plan.billing_period,
       couponCode,
-      totalCount: totalCountForBillingPeriod(plan.billing_period),
+      // First mandate on a brand-new pending subscription: nothing to
+      // displace, so it charges as soon as the customer authorises it.
+      isCurrent: true,
     });
-    createdRazorpaySubId = rzpSub.id;
 
-    const { error: updErr } = await adminDb
-      .from("subscriptions")
-      .update({
-        razorpay_sub_id: rzpSub.id,
-        ...(rzpSub.customer_id ? { razorpay_customer_id: rzpSub.customer_id } : {}),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", subRow.id)
-      .eq("user_id", userId); // never widen beyond the caller's own row
-    if (updErr) {
-      // Row exists but is not linked to Razorpay yet — the webhook would
-      // land on an unknown subscription. Fail loudly; retry creates fresh.
-      throw new CheckoutError(`linking razorpay id failed: ${updErr.message}`, 500);
+    // A failover that succeeded is still an incident worth seeing —
+    // record which gateways refused before this one accepted.
+    if (createdMandate.failedAttempts.length > 0) {
+      try {
+        await adminDb.from("audit_logs").insert({
+          admin_id: null,
+          action: "checkout.gateway_failover",
+          entity: "subscription_mandates",
+          entity_id: createdMandate.mandateId,
+          meta: {
+            subscription_id: subRow.id,
+            used_gateway: createdMandate.gateway,
+            failed_attempts: createdMandate.failedAttempts,
+          },
+        });
+      } catch {
+        /* audit is best-effort */
+      }
     }
 
     // [Bug 1.2] The coupon cap was only ever PREVIEWED — nothing
@@ -435,22 +484,40 @@ export async function createCheckoutForUser(input: {
 
     return {
       subscriptionDbId: subRow.id,
-      razorpaySubscriptionId: rzpSub.id,
-      razorpayCustomerId: rzpSub.customer_id ?? null,
+      mandateId: createdMandate.mandateId,
+      gateway: createdMandate.gateway,
+      gatewayMandateId: createdMandate.gatewayMandateId,
+      gatewayCustomerId: createdMandate.gatewayCustomerId,
+      gatewayPublicKey: createdMandate.publicKey,
+      checkoutStrategy: createdMandate.checkoutStrategy,
+      hostedCheckoutUrl: createdMandate.shortUrl,
       planName: plan.name,
       planPricePaise: plan.price_paise,
       couponCode,
       coupon: couponDecision && couponDecision.ok ? couponDecision.coupon : null,
     };
   } catch (err) {
-    // No orphaned pending rows from failed Razorpay calls — and no
-    // orphaned RAZORPAY objects either (Pass-2 P3): the mandate we
-    // just created is cancelled best-effort so its webhooks never land
-    // on a row that no longer exists.
-    if (createdRazorpaySubId) {
-      await cancelRazorpaySubscription(createdRazorpaySubId).catch(() => {});
+    // No orphaned pending rows from failed gateway calls — and no
+    // orphaned GATEWAY objects either (Pass-2 P3): the mandate we just
+    // raised is cancelled best-effort so its webhooks never land on a
+    // row that no longer exists.
+    if (createdMandate) {
+      await retireMandate(
+        adminDb,
+        {
+          id: createdMandate.mandateId,
+          gateway: createdMandate.gateway,
+          gateway_mandate_id: createdMandate.gatewayMandateId,
+        },
+        "checkout_failed",
+        { cancelAtGateway: true },
+      ).catch(() => {});
     }
     await adminDb.from("subscriptions").delete().eq("id", subRow.id).eq("user_id", userId);
+    // A gateway/mandate fault reaching here is an operational failure,
+    // not a code bug — translate it to the checkout vocabulary the
+    // route already knows how to serialise.
+    if (err instanceof MandateError) throw new CheckoutError(err.message, err.status);
     throw err;
   }
 }

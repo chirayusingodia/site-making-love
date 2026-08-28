@@ -329,6 +329,84 @@ backbone — Google only changes how identity is proven.
 
 ---
 
+## Session — Gateway-Agnostic Renewable Mandates (2026-08-28) ✅
+
+**Trigger:** a LIVE incident. Every checkout died on the Razorpay sheet with
+`end_time must be between 946684800 and 4765046400`.
+
+**Root cause:** tenure was the hardcoded constant `SUBSCRIPTION_MAX_YEARS = 100`, but the gateway's limit
+is a **fixed calendar date** (4765046400 = 2120-12-31), not a window relative to when the subscription
+starts. "now + 100 years" already overshoots that wall in 2026 — only ~94 years of headroom remained, and
+it shrinks by a year every year. **A constant can never be correct against a moving deadline**, so any
+other flat number would have failed too, just later.
+
+**Two structural problems behind it, one fix:** the subscription and the payment mandate were the same
+object, and that object was Razorpay's.
+
+**A. Tenure is now DERIVED, never declared** — `src/lib/gateways/tenure.ts`
+- `MANDATE_TENURE_YEARS = 50`, but the requested `total_count` is `min(policy, headroom to that gateway's
+  ceiling)`, computed **per gateway** (the ceiling is a per-provider fact), minus a 30-day buffer.
+- Returns **0** = "this gateway can offer no legal tenure", which fails over. An earlier draft clamped to a
+  floor of 1; the test suite proved that wrong — below one cycle of headroom even a 1-cycle mandate
+  overshoots, so the "graceful" fallback was a request *guaranteed* to be rejected.
+- `tenureFitsGatewayCeiling()` re-validates before anything is sent, so a hand-rolled count (admin override,
+  migration script) cannot resurrect this bug class.
+
+**B. Mandates are renewable, and gateway-tagged** — migration `20260828_022`
+- `subscription_mandates` — many per subscription over its life, exactly one `is_current` (partial unique
+  index; swapped only by the atomic `promote_mandate()` RPC).
+- `plan_gateway_refs` — each plan's id at each gateway. *This* is what makes fallback real: a backup gateway
+  with no plan id is not a fallback, it is a 500 waiting to happen.
+- `payment_gateways` — priority, a manual kill switch (`is_enabled`, for the day an account is frozen — no
+  deploy needed), and a **DB-backed circuit breaker**. In Postgres deliberately: on serverless every
+  invocation starts cold, so an in-memory breaker forgets every prior failure and never trips.
+- `payments.gateway` added so a refund routes back through the provider that actually took the money.
+- **Dropped:** `subscriptions.razorpay_sub_id`, `subscriptions.razorpay_customer_id`,
+  `plans.razorpay_plan_id`. Clean cut-over (pre-launch, empty DB) rather than a compat shim. Webhooks now
+  resolve `(gateway, gateway_mandate_id) → mandate → subscription`.
+
+**C. Gateway abstraction + conditional failover** — `src/lib/gateways/`
+- `PaymentGatewayAdapter` interface; `razorpay.ts` is now the **only** Razorpay client (old
+  `src/lib/razorpay.server.ts` deleted — two clients for one provider is how retry/timeout policy drifts).
+- Failover on 5xx / 429 / timeout **and 401/403** (a frozen account is exactly what a second gateway is
+  for), but it **stops dead on a 400**: our payload is wrong, every provider would reject it identically,
+  and failing over would bury OUR bug behind a fallback. The `end_time` rejection was a 400.
+- `GatewayError.countsAgainstHealth` separates "provider is unwell" from "provider is fine but cannot serve
+  this request", so the latter never trips a healthy gateway's breaker.
+- Adding a gateway = one adapter + one registry entry + one `payment_gateways` row + plan refs. No change to
+  checkout, schema, or the frontend contract (which switches on `checkoutStrategy`).
+
+**D. Renewal** — `src/lib/mandates.server.ts` + `/api/cron/renew-mandates`
+- Raises a replacement 90 days out, **dormant**, and promotes it only when its own webhook confirms money
+  moved. It is *not* a silent swap: a card-network subscription can be migrated server-side (Stripe's
+  account updater — why Spotify never asks), but **NPCI requires the payer's consent for a new UPI Autopay
+  mandate**. So the old mandate keeps charging while the customer is asked to approve the new one.
+- ⏰ **Scheduler not wired yet** — see "Cross-cutting items still open".
+
+**E. Verification**
+- `scratch/verify_tenure.ts` — 25 pure checks, incl. a sweep proving **no year from 2026→2125 yields an
+  out-of-range tenure**. Replaces `verify_checkout_tenure.ts`, which asserted the very constants
+  (monthly→1200, yearly→100) that caused the outage — pinning any absolute count re-creates the trap.
+- `scratch/verify_otp_abuse.ts` **rebuilt** (50 checks). It had been reporting 11 failures against
+  *correct* code: [Bug 1.7] moved the limiter into the atomic `otp_check_and_log` RPC, but the mock still
+  modelled the old count-then-insert design (returned a number where a verdict string is now read; asserted
+  on a client-side insert that now happens in SQL; injected ledger errors on the wrong call). Worse,
+  "migration-not-applied degrades OPEN" was passing for the *wrong reason* — a false green asserting
+  nothing. Now adds a **TS↔SQL threshold drift guard** (parses migration 018, since
+  `otp_check_and_log`'s own comment says "tune BOTH together" and nothing enforced it) and a `from()` trap
+  that throws if the gate ever regresses to client-side counting. Mutation-tested: making
+  `isLedgerNotDeployed()` match `XX000` (turning a broken limiter into an unlimited SMS tap) fails 3 checks.
+  `src/lib/auth.server.ts` was **not** modified — verified byte-identical to HEAD.
+- `tsc --noEmit` clean; eslint clean on all touched files. (Repo-wide eslint still reports pre-existing CRLF
+  errors in untouched files — e.g. `src/lib/plans.ts` alone has 665.)
+
+**⚠️ Migration 022 has NOT been applied** — no DB access from the session that wrote it. Checkout stays
+broken until it runs. Note §0 drops `subscriber_list_view` *first*: Postgres refuses to drop
+`razorpay_sub_id` while a view references it, and `CREATE OR REPLACE VIEW` cannot remove a column from the
+middle of a select list. After applying, confirm `plan_gateway_refs` has a row per sellable plan.
+
+---
+
 ## ⏳ NOT DONE YET — Remaining Scope
 
 ### Session 5 — Sales Agents & Coupons Manager ⚠️
@@ -344,6 +422,8 @@ backbone — Google only changes how identity is proven.
 - Prasad Box Tracking UI (module 8 — table exists, no UI)
 
 ### Cross-cutting items still open
+- **⏰ Mandate-renewal cron scheduling (DEFERRED — deliberate):** `/api/cron/renew-mandates` is built, authorised and idempotent, but **nothing is calling it yet**. Needs (a) a `CRON_SECRET` env var and (b) a scheduler hitting it daily — Cloudflare Cron Trigger (deploy target is Cloudflare via Lovable's nitro config; there is no `wrangler.toml` in-repo yet), a GitHub Action, or an external pinger like cron-job.org. Accepts GET **or** POST with either `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret`.
+  **Why it is safe to defer:** mandates are raised with a 50-year tenure and the sweep looks only 90 days ahead, so on a pre-launch DB it would find **zero** rows for decades. It is a safety net, not a hot path. Wire it before that becomes untrue — i.e. before any mandate is created with a short tenure (admin override / test-mode data), or before importing legacy subscriptions whose real `total_count` is small. The 2026-08-28 backfill block in migration 022 `RAISE NOTICE`s a placeholder `total_count=12` precisely so such rows announce themselves.
 - **Razorpay plan-upgrade flow (UNRESOLVED):** UPI-authorized subscriptions can't be updated via API once mandated — needs cancel + re-mandate decision before upgrade UX is built
 - **Meta WhatsApp Business API:** pending Meta approval; `wa.me` manual fallback active; `whatsapp_msg_id` columns ready for when API lands
 - **Birthday pooja add-on:** `family_members.dob` captured; needs cron (2–3 days ahead) + one-time Razorpay Payment Links/Orders charge
@@ -359,14 +439,15 @@ backbone — Google only changes how identity is proven.
 
 | Area | Path |
 |---|---|
-| Migrations | `supabase/migrations/20260725_000` … `20260822_011` (12 files) |
+| Migrations | `supabase/migrations/20260725_000` … `20260828_022` (23 files) |
 | Admin pages | `src/routes/admin.{overview,subscribers,plans-sevas,sankalp-lists,proof-upload,pandit.$batchId,payments,reports}.tsx` |
 | User pages | `src/routes/{login,complete-profile,checkout.$planId,subscription-success,profile,my-subscription}.tsx` |
 | Server APIs | `src/routes/api/payments/webhook.ts`, `api/auth/request-otp.ts`, `api/auth/complete-google-profile.ts`, `api/subscriptions/create-checkout.ts`, `api/coupons/validate.ts`, `api/profile/{family-members,address}.ts`, `api/admin/{payments,reports,sales-agents}/...`, `api/sankalp/generate-batch.ts`, `api/cloudinary/sign-upload.ts` |
 | Business logic | `src/lib/{sankalp-logic,plans,payments-logic,reports-logic,financials-logic,sales-agents-logic,coupons.server}.ts` |
-| Server-only | `src/lib/{razorpay-webhook.server,razorpay.server,auth.server,subscriptions-checkout.server,reports-data.server,supabase-admin.server,turnstile.server,config.server}.ts` |
+| Payment gateways | `src/lib/gateways/{types,tenure,razorpay,registry}.ts` — adapter contract, derived tenure, the only Razorpay client, selection + circuit breaker + failover |
+| Server-only | `src/lib/{razorpay-webhook.server,auth.server,subscriptions-checkout.server,mandates.server,reports-data.server,supabase-admin.server,turnstile.server,config.server}.ts` (`razorpay.server.ts` REMOVED 2026-08-28 → `gateways/razorpay.ts`) |
 | Client auth | `src/lib/auth-api.ts`, `src/lib/turnstile.ts`, `src/hooks/use-session.ts`, `src/components/profile-completion.tsx`, `src/components/GoogleAuthButton.tsx` |
-| Verification scripts | `scratch/verify_{session4,webhook,owner_roles,sankalp_lists,otp_abuse,checkout_tenure,google_profile}.ts`, `scratch/report_subscription_tenure.ts`, `scratch/report_phone_unique.ts` (+ `scratch/ts-aliases.mjs` loader hook for plain-node runs) |
+| Verification scripts | `scratch/verify_{session4,webhook,owner_roles,sankalp_lists,otp_abuse,tenure,google_profile}.ts`, `scratch/report_subscription_tenure.ts`, `scratch/report_phone_unique.ts` (+ `scratch/ts-aliases.mjs` loader hook for plain-node runs). `verify_checkout_tenure.ts` REMOVED 2026-08-28 → `verify_tenure.ts` (pure, no live Razorpay call) |
 | Master context doc | `PUNYATA_MASTER_CONTEXT_v3 (1).md` (single source of truth — read before any new session) |
 | Session briefs | `SESSION_SIGNUP_FIRST_CHECKOUT_PROMPT.md`, `SESSION_TENURE_AND_OTP_ABUSE_PROMPT.md` |
 

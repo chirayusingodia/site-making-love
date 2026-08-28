@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireAdmin, writeTelecallerAudit } from "@/lib/supabase-admin.server";
-import { resumeRazorpaySubscription } from "@/lib/razorpay.server";
+import { getAdapter } from "@/lib/gateways/registry";
+import { getCurrentMandate } from "@/lib/mandates.server";
 
 // POST /api/admin/subscriptions/resume
 // Gate: requireAdmin (owner or admin). NEVER exposed to telecallers —
@@ -8,14 +9,19 @@ import { resumeRazorpaySubscription } from "@/lib/razorpay.server";
 // subscriber is the fresh payment link (Part C), not this.
 // Body: { subscription_id }
 //
-// Asks Razorpay to try charging again on an existing mandate
-// (POST /v1/subscriptions/:id/resume {"resume_at":"now"}, docs
-// verified 2026-08-23). This route does NOT touch subscriptions.status:
-// the webhook ('subscription.resumed'/'subscription.charged') is the
-// only producer of 'active', per razorpay-webhook.server.ts's header
-// discipline. A failed resume (dead mandate → Razorpay 400) is
-// returned to the caller verbatim so the admin falls back to the
-// reissue-link flow.
+// Asks the gateway to try charging the subscription's CURRENT mandate
+// again. This route does NOT touch subscriptions.status: the webhook
+// ('subscription.resumed'/'subscription.charged') is the only producer
+// of 'active', per razorpay-webhook.server.ts's header discipline. A
+// failed resume (dead mandate → gateway 4xx) is returned to the caller
+// verbatim so the admin falls back to the reissue-link flow.
+//
+// GATEWAY NEUTRALITY (migration 022): the mandate carries its own
+// gateway, so resume dispatches to whichever provider actually issued
+// it — not to whichever is primary today. No failover: resuming is an
+// operation on ONE existing mandate at ONE provider; if that mandate is
+// dead, the answer is a fresh checkout (reissue-link), not another
+// provider poking an id it has never seen.
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -41,7 +47,7 @@ export const Route = createFileRoute("/api/admin/subscriptions/resume")({
 
         const { data: sub, error: subErr } = await auth.db
           .from("subscriptions")
-          .select("id,status,razorpay_sub_id,user_id")
+          .select("id,status,user_id")
           .eq("id", subscriptionId)
           .maybeSingle();
         if (subErr) return json({ error: subErr.message }, 500);
@@ -55,12 +61,25 @@ export const Route = createFileRoute("/api/admin/subscriptions/resume")({
             409,
           );
         }
-        if (!sub.razorpay_sub_id) {
-          return json({ error: "Subscription Razorpay se linked nahi hai" }, 400);
+        const mandate = await getCurrentMandate(auth.db, sub.id);
+        if (!mandate) {
+          return json({ error: "Subscription kisi payment mandate se linked nahi hai" }, 400);
+        }
+
+        let adapter;
+        try {
+          adapter = getAdapter(mandate.gateway);
+        } catch {
+          return json(
+            {
+              error: `Is mandate ka gateway (${mandate.gateway}) is build mein supported nahi hai`,
+            },
+            501,
+          );
         }
 
         try {
-          const rzp = await resumeRazorpaySubscription(sub.razorpay_sub_id);
+          const resumed = await adapter.resumeMandate(mandate.gateway_mandate_id);
 
           await writeTelecallerAudit(
             auth.db,
@@ -70,22 +89,24 @@ export const Route = createFileRoute("/api/admin/subscriptions/resume")({
             sub.id,
             {
               user_id: sub.user_id,
-              razorpay_sub_id: sub.razorpay_sub_id,
+              gateway: mandate.gateway,
+              gateway_mandate_id: mandate.gateway_mandate_id,
               result: "ok",
-              razorpay_status: rzp.status ?? null,
+              gateway_status: resumed.status,
               previous_status: sub.status,
             },
           );
 
           // Status stays untouched here — the webhook flips it to
-          // 'active' when Razorpay confirms.
+          // 'active' when the gateway confirms.
           return json({
             ok: true,
-            razorpayStatus: rzp.status ?? null,
-            message: "Resume requested — status updates once Razorpay confirms",
+            gateway: mandate.gateway,
+            gatewayStatus: resumed.status,
+            message: "Resume requested — status updates once gateway confirms",
           });
         } catch (err) {
-          // Pass Razorpay's rejection through verbatim (e.g. dead
+          // Pass the gateway's rejection through verbatim (e.g. dead
           // mandate 400) so the admin knows to fall back to Part C.
           const message = err instanceof Error ? err.message : "Resume call failed";
           await writeTelecallerAudit(
@@ -96,7 +117,8 @@ export const Route = createFileRoute("/api/admin/subscriptions/resume")({
             sub.id,
             {
               user_id: sub.user_id,
-              razorpay_sub_id: sub.razorpay_sub_id,
+              gateway: mandate.gateway,
+              gateway_mandate_id: mandate.gateway_mandate_id,
               result: "failed",
               error: message,
               previous_status: sub.status,

@@ -162,8 +162,9 @@ export async function loadTelecallerDataset(db: SupabaseClient): Promise<{
         db
           .from("subscriber_list_view")
           // Allowlist discipline starts at the view too — plan_price_
-          // paise / coupon_* / razorpay_sub_id exist on this view and
-          // are deliberately NOT selected.
+          // paise / coupon_* / mandate_* (the gateway + mandate id, per
+          // migration 022) exist on this view and are deliberately NOT
+          // selected.
           .select(
             "subscription_id,user_id,status,start_date,next_billing_date,paused_at," +
               "cancelled_at,cancel_reason,sub_created_at,plan_id,plan_name,plan_billing_period",
@@ -481,10 +482,7 @@ export async function loadTodaysLeads(
   const ids = leadRows.map((l) => l.id);
   const worked = new Set<string>();
   if (ids.length > 0) {
-    const { data: logs, error } = await db
-      .from("call_logs")
-      .select("lead_id")
-      .in("lead_id", ids);
+    const { data: logs, error } = await db.from("call_logs").select("lead_id").in("lead_id", ids);
     if (!error && logs) {
       for (const l of logs as { lead_id: string | null }[]) {
         if (l.lead_id) worked.add(l.lead_id);
