@@ -18,7 +18,11 @@ export const Route = createFileRoute("/api/telecaller/queues")({
         if (!auth) return json({ error: "Auth required" }, 401);
 
         try {
-          const payload = await computeQueuesResponse(auth.db, auth.callerId);
+          const payload = await computeQueuesResponse(
+            auth.db,
+            auth.callerId,
+            auth.role !== "telecaller",
+          );
           return json(stripMaskedFieldsDeep(payload));
         } catch (err) {
           console.error("telecaller/queues error:", err);

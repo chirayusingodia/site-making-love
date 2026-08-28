@@ -282,7 +282,19 @@ function orderForFilters(filters: FilterState) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyFilters(query: any, filters: FilterState): any {
-  if (filters.status !== "all") query = query.eq("status", filters.status);
+  // A checkout creates a provisional `pending` subscription before any
+  // payment succeeds. It is not a subscriber and must not appear in the
+  // default subscriber list (or its CSV). Pending rows remain explicitly
+  // accessible through the Pending status filter and Stale Pending ops
+  // queue below.
+  if (filters.stalePending) {
+    const cutoff = new Date(Date.now() - STALE_PENDING_OPS_MINUTES * 60_000).toISOString();
+    query = query.eq("status", "pending").lt("sub_created_at", cutoff);
+  } else if (filters.status !== "all") {
+    query = query.eq("status", filters.status);
+  } else {
+    query = query.neq("status", "pending");
+  }
   if (filters.planId !== "all") query = query.eq("plan_id", filters.planId);
   if (filters.agentId !== "all") query = query.eq("agent_id", filters.agentId);
   if (filters.dateFrom) query = query.gte("start_date", filters.dateFrom);
@@ -291,16 +303,6 @@ function applyFilters(query: any, filters: FilterState): any {
     // Sankalp Pending call queue — derived, never a stored flag:
     // zero family_members rows on the subscription.
     query = query.eq("family_member_count", 0);
-  }
-  if (filters.stalePending) {
-    // Stale Pending queue [Part C] — pending rows past the ops window.
-    // Abandoned checkouts fire NO Razorpay webhook by design, so this
-    // derived filter (never a stored flag) is the only way "customer
-    // silently stuck" becomes a follow-up queue. Cutoff is computed at
-    // query time so long-open tabs stay correct; list, count, and CSV
-    // export all inherit it via this shared builder.
-    const cutoff = new Date(Date.now() - STALE_PENDING_OPS_MINUTES * 60_000).toISOString();
-    query = query.eq("status", "pending").lt("sub_created_at", cutoff);
   }
   if (filters.search.trim()) {
     // PostgREST ilike on primary_member_name for name search;
