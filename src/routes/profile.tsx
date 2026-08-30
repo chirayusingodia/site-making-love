@@ -109,7 +109,7 @@ function LoggedOutView() {
         onClick={() => navigate({ to: "/login", search: { redirect: "/profile" } })}
         className="w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-3.5 rounded-full hover:bg-brand-deep transition-colors"
       >
-        <LogIn size={18} /> Mobile OTP se Login karein
+        <LogIn size={18} /> Login / Sign Up karein
       </button>
 
       <div className="card-soft mt-8 divide-y divide-black/5">

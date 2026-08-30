@@ -215,7 +215,7 @@ function CompleteProfilePage() {
                 }}
                 className="mt-0.5 w-4 h-4 accent-brand"
               />
-              <span>Kya aapka WhatsApp number aur calling number same hai?</span>
+              <span>Mera WhatsApp number hi calling number hai</span>
             </label>
 
             {!sameAsWhatsapp && (

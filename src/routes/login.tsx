@@ -1,6 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+  Loader2,
+  User,
+  Users,
+  FileText,
+  Bell,
+  HelpCircle,
+} from "lucide-react";
 import { Header } from "@/components/site-chrome";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 import {
@@ -224,9 +234,20 @@ function LoginPage() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="max-w-md mx-auto px-4 pb-24 pt-8">
-        <h1 className="text-2xl font-bold text-foreground">
-          {step === "form" ? "Login / Sign Up" : "OTP Daalein"}
-        </h1>
+        {step === "form" && (
+          <div className="text-center animate-fade-in">
+            <div className="w-20 h-20 rounded-full bg-brand-soft flex items-center justify-center mx-auto">
+              <User size={36} className="text-brand" />
+            </div>
+            <h1 className="mt-4 text-2xl font-bold text-foreground">Login / Sign Up</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Login करें और अपनी सभी सेवाएँ एवं Proof एक ही जगह देखें।
+            </p>
+          </div>
+        )}
+        {step !== "form" && (
+          <h1 className="text-2xl font-bold text-foreground">OTP Daalein</h1>
+        )}
 
         {step === "form" && (
           <div className="mt-5 space-y-4 animate-fade-in">
@@ -302,6 +323,58 @@ function LoginPage() {
             <div className="flex items-center gap-1.5 justify-center text-[11px] text-muted-foreground pt-2">
               <ShieldCheck size={13} className="text-success" /> Aapka number safe hai — sirf seva
               updates ke liye.
+            </div>
+
+            <div className="card-soft mt-8 divide-y divide-black/5">
+              {[
+                {
+                  icon: ShieldCheck,
+                  title: "Seva Proof",
+                  desc: "Har seva ka photo/video proof yahin aur WhatsApp par",
+                },
+                {
+                  icon: Users,
+                  title: "Parivaar Sankalp",
+                  desc: "Apne parivaar ke sabhi sadasyon ka naam-gotra ek jagah",
+                },
+                {
+                  icon: FileText,
+                  title: "Subscription & Billing",
+                  desc: "Apni membership aur agli billing date kabhi bhi dekhein",
+                },
+                {
+                  icon: Bell,
+                  title: "Seva Updates",
+                  desc: "Aane wali sevaon ki jaankari sabse pehle paayein",
+                },
+              ].map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="flex items-start gap-3 px-4 py-4">
+                  <div className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center shrink-0">
+                    <Icon size={16} className="text-brand" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-foreground text-sm">{title}</div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="card-soft mt-4 divide-y divide-black/5">
+              {[
+                { icon: HelpCircle, label: "Help / Support", href: "#" },
+                { icon: FileText, label: "Terms & Privacy", href: "/terms-and-conditions" },
+              ].map(({ icon: Icon, label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  className="flex items-center gap-3 px-4 py-4 hover:bg-secondary/50 transition-colors"
+                >
+                  <Icon size={20} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground flex-1">{label}</span>
+                  <ArrowRight size={16} className="text-muted-foreground" />
+                </a>
+              ))}
             </div>
           </div>
         )}
