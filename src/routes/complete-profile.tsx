@@ -47,6 +47,11 @@ function CompleteProfilePage() {
   const [phase, setPhase] = useState<Phase>("resolving");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  // Same-number checkbox: default TRUE (the common case) — unticking
+  // reveals a second field for the actual calling number, since
+  // `phone` above stays the WhatsApp number (seva proofs ride on it).
+  const [sameAsWhatsapp, setSameAsWhatsapp] = useState(true);
+  const [altPhone, setAltPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [phoneTaken, setPhoneTaken] = useState(false);
   const decided = useRef(false);
@@ -111,13 +116,19 @@ function CompleteProfilePage() {
 
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneValid = /^[6-9]\d{9}$/.test(phoneDigits);
+  const altPhoneDigits = altPhone.replace(/\D/g, "");
+  const altPhoneValid = sameAsWhatsapp || /^[6-9]\d{9}$/.test(altPhoneDigits);
 
   const submit = async () => {
     setError(null);
     setPhoneTaken(false);
     setPhase("submitting");
     try {
-      await completeGoogleProfile(fullName.trim(), phoneDigits);
+      await completeGoogleProfile(
+        fullName.trim(),
+        phoneDigits,
+        sameAsWhatsapp ? undefined : altPhoneDigits,
+      );
       navigate({ to: target, replace: true });
     } catch (err) {
       setPhase("form");
@@ -193,6 +204,46 @@ function CompleteProfilePage() {
                 number par aayega.
               </p>
             </div>
+
+            <label className="flex items-start gap-2.5 text-sm text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sameAsWhatsapp}
+                onChange={(e) => {
+                  setSameAsWhatsapp(e.target.checked);
+                  if (e.target.checked) setAltPhone("");
+                }}
+                className="mt-0.5 w-4 h-4 accent-brand"
+              />
+              <span>Kya aapka WhatsApp number aur calling number same hai?</span>
+            </label>
+
+            {!sameAsWhatsapp && (
+              <div className="animate-fade-in">
+                <label className="block text-sm font-bold text-foreground mb-1">
+                  Calling Number
+                </label>
+                <div className="flex items-center gap-0">
+                  <span className="px-4 py-3 rounded-l-xl border border-r-0 border-black/10 bg-secondary font-semibold text-foreground">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="9876543210"
+                    value={altPhoneDigits}
+                    autoComplete="tel-national"
+                    maxLength={10}
+                    onChange={(e) => setAltPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    className="w-full px-4 py-3 rounded-r-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Team isi number par call karegi — WhatsApp update upar wale number par hi aayenge.
+                </p>
+              </div>
+            )}
+
             {error && <p className="text-xs text-destructive">{error}</p>}
             {phoneTaken && (
               <div className="space-y-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
@@ -224,10 +275,10 @@ function CompleteProfilePage() {
             )}
             {!phoneTaken && (
               <button
-                disabled={!phoneValid || phase === "submitting"}
+                disabled={!phoneValid || !altPhoneValid || phase === "submitting"}
                 onClick={submit}
                 className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors ${
-                  phoneValid && phase !== "submitting"
+                  phoneValid && altPhoneValid && phase !== "submitting"
                     ? "bg-brand text-white hover:bg-brand-deep"
                     : "bg-secondary text-muted-foreground cursor-not-allowed"
                 }`}

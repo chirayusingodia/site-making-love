@@ -272,6 +272,12 @@ create table profiles (
   role text default 'user',    -- 'user' | 'admin' | 'owner' | 'agent' | 'telecaller'
   address_line1 text, address_line2 text, state text, pincode text,   -- added migration 011
   do_not_call boolean,          -- telecaller-mutable flag added migration 012
+  alt_phone text,               -- added migration 024: separate CALLING number, only set
+                                 -- when different from `phone` (which stays the WhatsApp
+                                 -- number). Collected via a checkbox on /complete-profile
+                                 -- ("kya WhatsApp aur calling number same hai?"). NULL =
+                                 -- same as phone. Telecaller panel + admin.subscribers both
+                                 -- prefer alt_phone over phone for dialing/display when set.
   created_at timestamptz default now(), updated_at timestamptz default now()
 );
 
@@ -965,6 +971,13 @@ PizzaComparison, ComparisonTable, SevaFlow, ProofGallery, CldImage (Cloudinary),
 4. Cloudinary Signed Uploads → prevent direct/unsigned abuse
 ```
 
+⚠️ **Temporarily OFF (2026-08-30):** `/login`'s phone+OTP path is hidden behind
+`PHONE_OTP_LOGIN_ENABLED = false` in `src/routes/login.tsx` — Google login is the only
+customer-facing signup/login path right now. The OTP request/verify code is untouched underneath
+the flag; flip it back to `true` to restore phone+OTP as an alternate path, no other change
+needed. Google users still go through `/complete-profile` (name + phone, deliberately **not**
+OTP-verified — §1b) exactly as before.
+
 ### Row Level Security (RLS) — the layered gating pattern
 - Enabled on all tables.
 - Users read only their own `profiles`, `subscriptions`, `family_members`, `payments`, `notifications`.
@@ -1194,6 +1207,14 @@ as in-progress or shippable without a fresh scoping session:
 - Commission ledger is append-only; refunds are negative reversal entries; payout periods are lockable.
 - Every `SECURITY DEFINER` function must carry an explicit `REVOKE EXECUTE FROM public, anon,
   authenticated` — this is now a permanent migration-checklist item after C1 (§21).
+- Before writing a migration that does `CREATE OR REPLACE VIEW` (or otherwise redefines an existing
+  view/function) on an object that has been touched more than once, `grep` **all** of
+  `supabase/migrations/*.sql` for that object's name first and diff against the *most recent* definition
+  — not the one in this doc, and not the object's original `CREATE` migration. `subscriber_list_view` in
+  particular has been redefined at least twice (`003` → `015` → `022`, each dropping/renaming columns
+  like `razorpay_sub_id` → `mandate_gateway_id`); building a new migration off an older copy silently
+  reverts those changes and breaks on the dropped columns. (Found 2026-08-30, `023`.) This is now a
+  permanent migration-checklist item.
 - If a pure/tested logic module exists (commission math, seva scheduling, performance metrics), the
   calling route must call it — never re-implement it inline next to the tested version.
 - Always the lowest-maintenance viable architecture for a solo-founder operation.

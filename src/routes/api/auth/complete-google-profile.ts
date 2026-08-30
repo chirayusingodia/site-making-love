@@ -5,7 +5,12 @@ import { normalizePhoneE164 } from "@/lib/auth.server";
 // POST /api/auth/complete-google-profile
 // Auth: Bearer <supabase access token> (the Google-OAuth session that
 //       just landed in the browser — NOT re-authenticated, §4)
-// Body: { full_name?, phone }
+// Body: { full_name?, phone, alt_phone? }
+//
+// alt_phone: only sent when the "WhatsApp number aur calling number
+// same hai?" checkbox is unticked — `phone` stays the WhatsApp number
+// (seva proofs ride on it), alt_phone is the separate number to
+// actually dial. Omitted/empty means "same as phone".
 //
 // First-ever-Google-sign-in confirm step. The Google identity is
 // already authenticated; this only attaches a real, usable Indian
@@ -30,7 +35,7 @@ export const Route = createFileRoute("/api/auth/complete-google-profile")({
         const auth = await requireUser(request);
         if (!auth) return json({ error: "Login required" }, 401);
 
-        let body: { full_name?: unknown; phone?: unknown };
+        let body: { full_name?: unknown; phone?: unknown; alt_phone?: unknown };
         try {
           body = await request.json();
         } catch {
@@ -46,6 +51,16 @@ export const Route = createFileRoute("/api/auth/complete-google-profile")({
         }
         const fullName =
           typeof body?.full_name === "string" ? body.full_name.trim().slice(0, 120) : "";
+
+        // Separate calling number — only when it differs from the
+        // WhatsApp number above. Same format rules apply.
+        let altPhone: string | null = null;
+        if (typeof body?.alt_phone === "string" && body.alt_phone.trim()) {
+          altPhone = normalizePhoneE164(body.alt_phone);
+          if (!altPhone) {
+            return json({ error: "Calling number bhi valid 10-anki hona chahiye" }, 400);
+          }
+        }
 
         const service = getServiceClient();
 
@@ -84,6 +99,7 @@ export const Route = createFileRoute("/api/auth/complete-google-profile")({
           id: auth.userId,
           ...(fullName ? { full_name: fullName } : {}),
           phone,
+          ...(altPhone ? { alt_phone: altPhone } : {}),
           ...(verifiedEmail ? { email: verifiedEmail } : {}),
         });
 
