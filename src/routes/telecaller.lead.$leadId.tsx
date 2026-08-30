@@ -50,6 +50,8 @@ interface LeadPayload {
     attributionToken: string | null;
     interestedPlanName: string | null;
     interestedPlanBillingPeriod: string | null;
+    freeSewaConfirmedAt: string | null;
+    batchCutoff: string | null;
   };
   callHistory: {
     id: string;
@@ -81,9 +83,19 @@ const STATUS_CLS: Record<string, string> = {
   wrong_number: "bg-red-50 text-red-700 border-red-200",
 };
 
+/** Connected outcomes that imply an actual conversation happened — these
+ *  must not be logged for a Free Sewa Pending lead without confirming
+ *  (or explicitly not confirming) the free-sewa promise first. */
+const CONNECTED_OUTCOMES: CallOutcome[] = [
+  "connected_interested",
+  "connected_completed",
+  "connected_partial",
+];
+
 function LeadCallCardPage() {
   const { leadId } = Route.useParams();
   const search = Route.useSearch();
+  const isFreeSewaQueue = search.queue === "free_sewa_pending";
 
   const [data, setData] = useState<LeadPayload | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -179,6 +191,15 @@ function LeadCallCardPage() {
       setLogErr("Outcome chunein");
       return;
     }
+    if (
+      isFreeSewaQueue &&
+      !data?.lead.freeSewaConfirmedAt &&
+      !freePoojaGiven &&
+      CONNECTED_OUTCOMES.includes(outcome as CallOutcome)
+    ) {
+      setLogErr("Pehle 'Free sewa ho gayi' confirm karein — ya batayein ki nahi hui");
+      return;
+    }
     // [Pass-2 F6] validate before request construction (see person page).
     if (outcome === "callback_requested") {
       const parsed = new Date(callbackAt);
@@ -223,9 +244,10 @@ function LeadCallCardPage() {
   }
 
   function navigateNext() {
-    // Queue 0 auto-advance happens through the queue list; the next
-    // unworked lead is the top item she hasn't touched.
-    window.location.href = "/telecaller/queue/aaj_ke_leads";
+    // Auto-advance happens through the queue list; the next unworked
+    // lead is the top item she hasn't touched. Return to whichever
+    // queue this call card was opened from.
+    window.location.href = `/telecaller/queue/${search.queue ?? "aaj_ke_leads"}`;
   }
 
   if (loading) {
@@ -268,6 +290,17 @@ function LeadCallCardPage() {
                   {lead.interestedPlanName}
                 </span>
               )}
+              {lead.freeSewaConfirmedAt ? (
+                <span className="text-[11px] px-2 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-800 font-semibold">
+                  🪔 Free Sewa ✓ {lead.freeSewaConfirmedAt.slice(0, 10)}
+                </span>
+              ) : (
+                isFreeSewaQueue && (
+                  <span className="text-[11px] px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-800 font-semibold">
+                    🪔 Free Sewa Pending
+                  </span>
+                )
+              )}
             </div>
             <div className="text-sm text-slate-600 mt-1 flex flex-wrap gap-x-3 gap-y-1">
               <span>{lead.phone}</span>
@@ -300,12 +333,24 @@ function LeadCallCardPage() {
         </div>
 
         <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/60 text-indigo-900 text-sm px-4 py-3">
-          <span className="font-semibold">Kyun call:</span> Field agent ne yeh number diya hai —
-          plan samjhayein, interested hue to payment link bhejein.
+          {isFreeSewaQueue ? (
+            <>
+              <span className="font-semibold">🪔 Free Sewa call:</span> Field agent ka wada pura
+              karna hai — naam/family confirm karein. Abhi plan ki baat NAHI karni — subscription
+              ka call free sewa ke baad, "Aaj Ke Leads" mein aayega.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold">Kyun call:</span> Field agent ne yeh number diya
+              hai — plan samjhayein, interested hue to payment link bhejein.
+            </>
+          )}
         </div>
       </div>
 
-      {/* Identity gate */}
+      {/* Identity gate — precursor to the payment link, so it has no
+          purpose in the Free Sewa queue (no selling happens here). */}
+      {!isFreeSewaQueue && (
       <div className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">
         <label className="flex items-start gap-3 cursor-pointer">
           <Checkbox
@@ -324,8 +369,11 @@ function LeadCallCardPage() {
           </span>
         </label>
       </div>
+      )}
 
-      {/* Payment link */}
+      {/* Payment link — hidden in the Free Sewa queue; selling happens
+          only after the free-sewa promise is confirmed. */}
+      {!isFreeSewaQueue && (
       <div className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">
         <h2 className="text-base font-bold text-slate-900">Payment link bhejein</h2>
         <p className="text-xs text-slate-500 mt-0.5">
@@ -412,6 +460,7 @@ function LeadCallCardPage() {
           </>
         )}
       </div>
+      )}
 
       {/* History */}
       <div className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">

@@ -3,6 +3,7 @@ import { json, requireAdmin, writeTelecallerAudit } from "@/lib/supabase-admin.s
 import { normalizePhoneE164 } from "@/lib/auth.server";
 import { fetchAllRows } from "@/lib/supabase";
 import { routingStamp } from "@/lib/agent-portal-logic";
+import { nextBatchCutoff } from "@/lib/telecaller-logic";
 
 // [Pass-2 P11] shape-check ids as real UUIDs — length===36 let any
 // 36-char string through to a Postgres uuid-cast 500.
@@ -250,6 +251,12 @@ export const Route = createFileRoute("/api/admin/leads/upload")({
               // The duplicate branch already stamps this; omitting it here
               // silently broke hospital reporting for every fresh lead.
               hospital_id: hospitalId,
+              // § Free Sewa gate: only agent-sourced leads are gated — a
+              // pure admin upload with no agent stays exempt (label only,
+              // does not delay visibility — see loadFreeSewaPendingLeads()).
+              ...(sourceAgentId
+                ? { free_service_batch_cutoff: nextBatchCutoff(new Date()).isoDate }
+                : {}),
               created_by: auth.staffId,
               ...(stamp ?? {}),
             });

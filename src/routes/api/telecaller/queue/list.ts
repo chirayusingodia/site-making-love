@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireTelecaller } from "@/lib/supabase-admin.server";
-import { loadTelecallerDataset, loadTodaysLeads } from "@/lib/telecaller-data.server";
+import {
+  loadFreeSewaPendingLeads,
+  loadTelecallerDataset,
+  loadTodaysLeads,
+} from "@/lib/telecaller-data.server";
 import {
   assignQueues,
   isTelecallerQueueKey,
@@ -40,12 +44,11 @@ export const Route = createFileRoute("/api/telecaller/queue/list")({
         }
 
         try {
-          if (body.queue === "aaj_ke_leads") {
-            const { leads } = await loadTodaysLeads(
-              auth.db,
-              auth.callerId,
-              auth.role !== "telecaller",
-            );
+          if (body.queue === "aaj_ke_leads" || body.queue === "free_sewa_pending") {
+            const { leads } =
+              body.queue === "free_sewa_pending"
+                ? await loadFreeSewaPendingLeads(auth.db, auth.callerId, auth.role !== "telecaller")
+                : await loadTodaysLeads(auth.db, auth.callerId, auth.role !== "telecaller");
             const page = paginateByIdentity<TelecallerLeadRow>(
               leads,
               typeof body.cursor === "string" && body.cursor ? body.cursor : null,
@@ -54,7 +57,7 @@ export const Route = createFileRoute("/api/telecaller/queue/list")({
             );
             return json(
               stripMaskedFieldsDeep({
-                queue: "aaj_ke_leads",
+                queue: body.queue,
                 total: leads.length,
                 items: page.items,
                 nextCursor: page.nextCursor,

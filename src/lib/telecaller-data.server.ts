@@ -285,9 +285,10 @@ export async function computeQueuesResponse(
   callerId: string,
   includeAllAssigned = false,
 ): Promise<QueuesResponse> {
-  const [dataset, leadBundle] = await Promise.all([
+  const [dataset, leadBundle, freeSewaBundle] = await Promise.all([
     loadTelecallerDataset(db),
     loadTodaysLeads(db, callerId, includeAllAssigned),
+    loadFreeSewaPendingLeads(db, callerId, includeAllAssigned),
   ]);
   const assignment: QueueAssignment = assignQueues({
     rows: dataset.rows,
@@ -299,6 +300,7 @@ export async function computeQueuesResponse(
     Object.entries(assignment).map(([k, v]) => [k, v.length]),
   ) as Record<TelecallerQueueKey, number>;
   counts.aaj_ke_leads = leadBundle.leads.length;
+  counts.free_sewa_pending = freeSewaBundle.leads.length;
 
   return {
     queues: TELECALLER_QUEUE_KEYS.map((key) => ({
@@ -421,40 +423,60 @@ export async function isInCallersTray(
  * subscriber-derived and must keep working. Any error that is NOT
  * a missing-table error is rethrown (a real bug should be loud).
  */
-export async function loadTodaysLeads(
+interface LeadDbRow {
+  id: string;
+  full_name: string | null;
+  phone: string;
+  city: string | null;
+  notes: string | null;
+  family_names: string[] | null;
+  status: string;
+  profile_id: string | null;
+  attribution_token: string | null;
+  assigned_on: string | null;
+  created_at: string;
+  free_pooja_at: string | null;
+  free_service_batch_cutoff: string | null;
+  plans: { name: string } | null;
+}
+
+/**
+ * Shared lead loader for both Queue 0 (Aaj Ke Leads) and the Free Sewa
+ * Pending queue — same tray/status rules, opposite free-sewa gate.
+ *
+ * `gate`:
+ *   'confirmed_or_exempt' — source_agent_id IS NULL (self/admin-created,
+ *      never gated) OR free_pooja_at IS NOT NULL (promise kept). This is
+ *      Aaj Ke Leads: the paid-conversion tray.
+ *   'awaiting_free_sewa'  — the complement: source_agent_id IS NOT NULL
+ *      AND free_pooja_at IS NULL. This is the Free Sewa Pending tray —
+ *      call-only confirmation, no selling yet.
+ */
+async function loadGatedLeads(
   db: SupabaseClient,
   callerId: string,
-  includeAllAssigned = false,
+  includeAllAssigned: boolean,
+  gate: "confirmed_or_exempt" | "awaiting_free_sewa",
 ): Promise<{ leads: TelecallerLeadRow[]; workedLeadIds: Set<string> }> {
-  interface LeadDbRow {
-    id: string;
-    full_name: string | null;
-    phone: string;
-    city: string | null;
-    notes: string | null;
-    family_names: string[] | null;
-    status: string;
-    profile_id: string | null;
-    attribution_token: string | null;
-    assigned_on: string | null;
-    created_at: string;
-    plans: { name: string } | null;
-  }
-
   let leadRows: LeadDbRow[];
   try {
     const selectLeads = (withFamilyNames: boolean, from: number, to: number) => {
-      let query = db
+      let query: AnyBuilder = db
         .from("leads")
         .select(
           "id,full_name,phone,city,notes," +
             (withFamilyNames ? "family_names," : "") +
-            "status,profile_id,attribution_token,assigned_on,created_at,plans(name)",
+            "status,profile_id,attribution_token,assigned_on,created_at," +
+            "free_pooja_at,free_service_batch_cutoff,plans(name)",
         )
         .in("status", ["new", "assigned", "in_progress", "link_sent"])
         .not("assigned_to", "is", null)
         .order("created_at", { ascending: true })
         .range(from, to);
+      query =
+        gate === "confirmed_or_exempt"
+          ? query.or("source_agent_id.is.null,free_pooja_at.not.is.null")
+          : query.not("source_agent_id", "is", null).is("free_pooja_at", null);
       return includeAllAssigned ? query : query.eq("assigned_to", callerId);
     };
 
@@ -507,10 +529,46 @@ export async function loadTodaysLeads(
     attributionToken: l.attribution_token,
     assignedOn: l.assigned_on,
     createdAt: l.created_at,
+    freeSewaConfirmedAt: l.free_pooja_at,
+    batchCutoff: l.free_service_batch_cutoff,
   }));
   leads.sort((a, b) => Number(worked.has(a.leadId)) - Number(worked.has(b.leadId)));
 
   return { leads, workedLeadIds: worked };
+}
+
+export async function loadTodaysLeads(
+  db: SupabaseClient,
+  callerId: string,
+  includeAllAssigned = false,
+): Promise<{ leads: TelecallerLeadRow[]; workedLeadIds: Set<string> }> {
+  return loadGatedLeads(db, callerId, includeAllAssigned, "confirmed_or_exempt");
+}
+
+/**
+ * Free Sewa Pending (§ Free Sewa gate) — agent-sourced leads whose free
+ * sewa hasn't been confirmed yet. These must NOT be pitched a
+ * subscription; the only job here is calling to confirm the field
+ * agent's free-sewa promise. Once confirmed (free_pooja_at stamped via
+ * /api/telecaller/log-call), the same lead flips into loadTodaysLeads.
+ */
+export async function loadFreeSewaPendingLeads(
+  db: SupabaseClient,
+  callerId: string,
+  includeAllAssigned = false,
+): Promise<{ leads: TelecallerLeadRow[]; workedLeadIds: Set<string> }> {
+  const result = await loadGatedLeads(db, callerId, includeAllAssigned, "awaiting_free_sewa");
+  // Unworked-first (from loadGatedLeads) stays primary; batch cutoff is the
+  // secondary sort so oldest-batch names surface first within each group.
+  const worked = result.workedLeadIds;
+  result.leads.sort((a, b) => {
+    const workedCmp = Number(worked.has(a.leadId)) - Number(worked.has(b.leadId));
+    if (workedCmp !== 0) return workedCmp;
+    const cutoffCmp = (a.batchCutoff ?? "").localeCompare(b.batchCutoff ?? "");
+    if (cutoffCmp !== 0) return cutoffCmp;
+    return a.createdAt.localeCompare(b.createdAt);
+  });
+  return result;
 }
 
 // ─── Person card (§6.4 — the screen she lives on) ────────────

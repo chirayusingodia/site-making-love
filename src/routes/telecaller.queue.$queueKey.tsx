@@ -58,7 +58,8 @@ function fmtDate(iso: string | null): string {
 function QueueWorkListPage() {
   const { queueKey } = Route.useParams();
   const meta = QUEUE_META[queueKey as keyof typeof QUEUE_META];
-  const leadQueue = queueKey === "aaj_ke_leads";
+  const leadQueue = queueKey === "aaj_ke_leads" || queueKey === "free_sewa_pending";
+  const targetQueue = queueKey === "aaj_ke_leads"; // daily quota applies to conversion calls only
 
   const [items, setItems] = useState<(TelecallerQueueRow | TelecallerLeadRow)[]>([]);
   const [total, setTotal] = useState(0);
@@ -107,7 +108,7 @@ function QueueWorkListPage() {
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
             {meta?.why} · <span className="font-semibold text-slate-700">{total}</span> log
-            {leadQueue && total > 0 && (
+            {targetQueue && total > 0 && (
               <>
                 {" · "}
                 <Target className="inline w-3.5 h-3.5 text-indigo-600 -mt-0.5" /> target:{" "}
@@ -227,6 +228,14 @@ function LeadListItem({ lead, queueKey }: { lead: TelecallerLeadRow; queueKey: s
             {lead.interestedPlanName && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
                 {lead.interestedPlanName}
+              </Badge>
+            )}
+            {queueKey === "aaj_ke_leads" && lead.freeSewaConfirmedAt && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-1.5 py-0 h-4 border-emerald-200 bg-emerald-50 text-emerald-800"
+              >
+                Free Sewa ✓
               </Badge>
             )}
           </div>

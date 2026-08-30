@@ -23,6 +23,7 @@ function fmtHours(h: number | null): string {
 }
 
 const QUEUE_ACCENTS: Record<string, string> = {
+  free_sewa_pending: "border-l-amber-600 hover:bg-amber-50/40",
   sankalp_pending: "border-l-red-500 hover:bg-red-50/40",
   cutoff_risk: "border-l-orange-500 hover:bg-orange-50/40",
   payment_failed: "border-l-amber-500 hover:bg-amber-50/40",

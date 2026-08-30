@@ -90,6 +90,7 @@ const IST_OFFSET_MS = 5.5 * HOUR_MS;
 // ─── Work queues (§3 — this is the product) ──────────────────
 
 export const TELECALLER_QUEUE_KEYS = [
+  "free_sewa_pending",
   "aaj_ke_leads",
   "sankalp_pending",
   "cutoff_risk",
@@ -109,6 +110,10 @@ export type TelecallerQueueKey = (typeof TELECALLER_QUEUE_KEYS)[number];
 
 /** Sidebar copy + the "why you're calling" rationale, one line each. */
 export const QUEUE_META: Record<TelecallerQueueKey, { title: string; why: string }> = {
+  free_sewa_pending: {
+    title: "Free Sewa Pending",
+    why: "Field agent ka wada — pehle free sewa confirm karein, tabhi subscription ki baat karein",
+  },
   aaj_ke_leads: {
     title: "Aaj Ke Leads",
     why: "Field agent ne aaj aapko jo numbers diye hain — yahi aapka asli kaam hai",
@@ -299,6 +304,10 @@ export interface TelecallerLeadRow {
   attributionToken: string | null;
   assignedOn: string | null;
   createdAt: string;
+  /** Set once a telecaller confirms the field agent's free-sewa promise (§ Free Sewa gate). */
+  freeSewaConfirmedAt: string | null;
+  /** Which Second-Tuesday/Last-Saturday cutoff batch this lead's free sewa belongs to — label only. */
+  batchCutoff: string | null;
 }
 
 function ms(iso: string | null): number | null {
@@ -750,6 +759,8 @@ export function paginateByIdentity<T>(
 
 export function bannerForQueue(key: TelecallerQueueKey, row: TelecallerQueueRow): string {
   switch (key) {
+    case "free_sewa_pending":
+      return `Free sewa ka wada pura karna hai — ${row.fullName ?? "naam nahi"} se confirm karein`;
     case "aaj_ke_leads":
       return `Aaj ka lead — ${row.fullName ?? "naam nahi"} ko call karke plan samjhaein`;
     case "sankalp_pending":
