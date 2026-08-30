@@ -272,6 +272,7 @@ export async function loadTelecallerDataset(db: SupabaseClient): Promise<{
   if (leadRes.error) throw new Error(`telecaller dataset: ${leadRes.error}`);
   for (const profile of leadRes.data) {
     if (usersWithSubs.has(profile.id) || profile.created_by_staff) continue;
+    if (profile.do_not_call === true) continue; // DND, e.g. merged duplicate accounts
     rows.push(buildRow(null, profile, [], null, prasadPlanIds));
   }
 
