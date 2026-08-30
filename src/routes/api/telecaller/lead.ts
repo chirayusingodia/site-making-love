@@ -27,6 +27,8 @@ interface LeadRow {
   assigned_to: string | null;
   created_by: string | null;
   interested_plan_id: string | null;
+  free_pooja_at: string | null;
+  free_service_batch_cutoff: string | null;
   plans: { name: string; billing_period: string; price_paise: number } | null;
 }
 
@@ -53,7 +55,7 @@ export const Route = createFileRoute("/api/telecaller/lead")({
             .select(
               `id,full_name,phone,city,notes,family_names,status,profile_id,subscription_id,
                attribution_token,source_agent_id,assigned_to,created_by,
-               interested_plan_id,plans(${TC_PLAN_COLS})`,
+               interested_plan_id,free_pooja_at,free_service_batch_cutoff,plans(${TC_PLAN_COLS})`,
             )
             .eq("id", leadId)
             .maybeSingle();
@@ -91,6 +93,8 @@ export const Route = createFileRoute("/api/telecaller/lead")({
                 attributionToken: row.attribution_token,
                 interestedPlanName: row.plans?.name ?? null,
                 interestedPlanBillingPeriod: row.plans?.billing_period ?? null,
+                freeSewaConfirmedAt: row.free_pooja_at,
+                batchCutoff: row.free_service_batch_cutoff,
               },
               callHistory: historyRes.data ?? [],
             }),

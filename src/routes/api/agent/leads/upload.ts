@@ -7,6 +7,7 @@ import {
   routingStamp,
   type SanitizedLeadRow,
 } from "@/lib/agent-portal-logic";
+import { nextBatchCutoff } from "@/lib/telecaller-logic";
 
 // POST /api/agent/leads/upload
 // Gate: requireAgent (profiles.role='agent' + sales_agent_id link).
@@ -180,6 +181,11 @@ export const Route = createFileRoute("/api/agent/leads/upload")({
               notes: clean.notes,
               family_names: clean.family_names,
               source_agent_id: auth.salesAgentId,
+              // § Free Sewa gate: agent-sourced leads must confirm free
+              // sewa before entering the paid-conversion queue. This is a
+              // grouping LABEL only (which cutoff cycle they belong to),
+              // not a visibility delay — see loadFreeSewaPendingLeads().
+              free_service_batch_cutoff: nextBatchCutoff(new Date()).isoDate,
               created_by: auth.userId,
               ...(stamp ?? {}),
             });
