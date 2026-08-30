@@ -54,6 +54,7 @@ export const Route = createFileRoute("/api/admin/leads/assign")({
           const { data: claimed, error: rpcErr } = await auth.db.rpc("assign_leads", {
             p_telecaller: telecallerId,
             p_count: count,
+            p_assigned_by: auth.staffId,
           });
           if (rpcErr) return json({ error: rpcErr.message }, 500);
 

@@ -27,6 +27,12 @@ interface LeadRow {
   city: string | null;
   status: string;
   assigned_on: string | null;
+  assigned_at: string | null;
+  assigned_by: string | null;
+  created_at: string;
+  hospital_id: string | null;
+  source_agent_id: string | null;
+  assigned_to: string | null;
 }
 
 // §4.4 (Hospitals session)
@@ -43,6 +49,12 @@ function AdminLeadsPage() {
   const [agentId, setAgentId] = useState("");
   const [pasteText, setPasteText] = useState("");
   const [telecallers, setTelecallers] = useState<{ id: string; full_name: string | null }[]>([]);
+  // Everyone who can appear as assigned_to (telecaller/admin/owner seats)
+  // or as assigned_by (the admin who ran the assignment) — see assign.ts,
+  // which allows admin/owner as an assignment target too.
+  const [staffDirectory, setStaffDirectory] = useState<
+    { id: string; full_name: string | null }[]
+  >([]);
   const [telecallerId, setTelecallerId] = useState("");
   const [assignCount, setAssignCount] = useState(DAILY_LEAD_TARGET);
   const [busy, setBusy] = useState<string | null>(null);
@@ -60,15 +72,19 @@ function AdminLeadsPage() {
   const loadCatalogues = useCallback(async () => {
     // Direct RLS-scoped reads — this is an ADMIN surface; both tables
     // carry is_admin() policies. (The telecaller panel never does this.)
-    const [{ data: agentRows }, { data: tcRows }, { data: leadRows }] = await Promise.all([
-      supabase.from("sales_agents").select("id,full_name").eq("is_active", true),
-      supabase.from("profiles").select("id,full_name").eq("role", "telecaller"),
-      supabase
-        .from("leads")
-        .select("id,full_name,phone,city,status,assigned_on")
-        .order("created_at", { ascending: false })
-        .limit(50),
-    ]);
+    const [{ data: agentRows }, { data: tcRows }, { data: staffRows }, { data: leadRows }] =
+      await Promise.all([
+        supabase.from("sales_agents").select("id,full_name").eq("is_active", true),
+        supabase.from("profiles").select("id,full_name").eq("role", "telecaller"),
+        supabase.from("profiles").select("id,full_name").in("role", ["telecaller", "admin", "owner"]),
+        supabase
+          .from("leads")
+          .select(
+            "id,full_name,phone,city,status,assigned_on,assigned_at,assigned_by,created_at,hospital_id,source_agent_id,assigned_to",
+          )
+          .order("created_at", { ascending: false })
+          .limit(50),
+      ]);
     // [Pass-2 F14] functional updates read the CURRENT state, not the
     // first-render closure. The stale-closure version re-snapped the
     // hospital/telecaller select back to the first option on every
@@ -80,6 +96,7 @@ function AdminLeadsPage() {
     if (tcRows && tcRows.length > 0) {
       setTelecallerId((prev) => prev || tcRows[0].id);
     }
+    setStaffDirectory((staffRows as { id: string; full_name: string | null }[]) ?? []);
     setLeads((leadRows as LeadRow[]) ?? []);
     try {
       const h = await callAdminApi<{ hospitals: HospitalRow[] }>("/api/admin/hospitals/list");
@@ -169,6 +186,42 @@ function AdminLeadsPage() {
     } finally {
       setBusy(null);
     }
+  }
+
+  function agentName(id: string | null): string {
+    if (!id) return "—";
+    return agents.find((a) => a.id === id)?.full_name ?? id.slice(0, 8);
+  }
+
+  function telecallerName(id: string | null): string {
+    if (!id) return "—";
+    return staffDirectory.find((t) => t.id === id)?.full_name ?? id.slice(0, 8);
+  }
+
+  function assignedByName(id: string | null): string {
+    if (!id) return "—";
+    return staffDirectory.find((t) => t.id === id)?.full_name ?? id.slice(0, 8);
+  }
+
+  function formatAssignedWhen(l: LeadRow): string {
+    if (l.assigned_at) {
+      return new Date(l.assigned_at).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    return l.assigned_on ?? "—";
+  }
+
+  function hospitalName(id: string | null): string {
+    if (!id) return "—";
+    return hospitals.find((h) => h.id === id)?.name ?? id.slice(0, 8);
+  }
+
+  function daysSince(iso: string): number {
+    return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
   }
 
   return (
@@ -461,20 +514,43 @@ function AdminLeadsPage() {
                 <th className="pb-2">Name</th>
                 <th className="pb-2">Phone</th>
                 <th className="pb-2">City</th>
+                <th className="pb-2">Hospital</th>
+                <th className="pb-2">Source agent</th>
+                <th className="pb-2">Telecaller</th>
                 <th className="pb-2">Status</th>
-                <th className="pb-2">Assigned</th>
+                <th className="pb-2">Age (days)</th>
+                <th className="pb-2">Assigned on</th>
+                <th className="pb-2">Assigned by</th>
               </tr>
             </thead>
             <tbody>
-              {leads.map((l) => (
-                <tr key={l.id} className="border-t border-slate-100">
-                  <td className="py-1.5">{l.full_name ?? "—"}</td>
-                  <td className="py-1.5 font-mono text-xs">{l.phone}</td>
-                  <td className="py-1.5">{l.city ?? "—"}</td>
-                  <td className="py-1.5 text-xs">{l.status}</td>
-                  <td className="py-1.5 text-xs">{l.assigned_on ?? "—"}</td>
-                </tr>
-              ))}
+              {leads.map((l) => {
+                const age = daysSince(l.created_at);
+                return (
+                  <tr key={l.id} className="border-t border-slate-100">
+                    <td className="py-1.5">{l.full_name ?? "—"}</td>
+                    <td className="py-1.5 font-mono text-xs">{l.phone}</td>
+                    <td className="py-1.5">{l.city ?? "—"}</td>
+                    <td className="py-1.5">{hospitalName(l.hospital_id)}</td>
+                    <td className="py-1.5">{agentName(l.source_agent_id)}</td>
+                    <td className="py-1.5">
+                      {l.assigned_to ? (
+                        telecallerName(l.assigned_to)
+                      ) : (
+                        <span className="text-slate-400 italic">unassigned</span>
+                      )}
+                    </td>
+                    <td className="py-1.5 text-xs">{l.status}</td>
+                    <td
+                      className={`py-1.5 text-xs ${age >= 3 && l.status !== "converted" ? "text-red-600 font-semibold" : ""}`}
+                    >
+                      {age}
+                    </td>
+                    <td className="py-1.5 text-xs">{formatAssignedWhen(l)}</td>
+                    <td className="py-1.5 text-xs">{assignedByName(l.assigned_by)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
