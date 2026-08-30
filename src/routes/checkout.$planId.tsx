@@ -311,6 +311,7 @@ function CheckoutPage() {
           name: nameInput.trim() || profile?.full_name || "",
           contact:
             phoneInput.replace(/\D/g, "") || profile?.phone?.replace(/\D/g, "").slice(-10) || "",
+          email: profile?.email || "",
         },
         notes: { punyata_subscription_id: res.subscriptionDbId },
         theme: { color: "#D85A30" },
