@@ -481,7 +481,15 @@ function PersonCard({
               )}
             </div>
             <div className="text-sm text-slate-600 mt-1 flex flex-wrap gap-x-3 gap-y-1">
-              {row.phone && <span>{row.phone}</span>}
+              {row.altPhone && (
+                <span className="font-semibold text-emerald-700">{row.altPhone} (Call)</span>
+              )}
+              {row.phone && (
+                <span>
+                  {row.phone}
+                  {row.altPhone && " (WhatsApp)"}
+                </span>
+              )}
               {row.planName && (
                 <span>
                   {row.planName}
@@ -505,9 +513,9 @@ function PersonCard({
               )}
             </div>
           </div>
-          {row.phone ? (
+          {row.altPhone || row.phone ? (
             <a
-              href={`tel:${row.phone}`}
+              href={`tel:${row.altPhone || row.phone}`}
               className="inline-flex items-center gap-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-semibold px-6 py-3.5 shadow-sm transition-colors"
             >
               <Phone className="w-5 h-5" /> Call karein

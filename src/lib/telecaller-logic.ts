@@ -231,6 +231,9 @@ export interface TelecallerQueueRow {
   profileId: string;
   fullName: string | null;
   phone: string | null;
+  /** Separate calling number, only set when different from `phone`
+   *  (which stays the WhatsApp number) — call this one first. */
+  altPhone: string | null;
   city: string | null;
   state: string | null;
   preferredLanguage: string | null;
@@ -676,7 +679,7 @@ export const maskForTelecaller = stripMaskedFieldsDeep;
 
 /** Person columns the panel may ever read — the .select() source. */
 export const TC_PROFILE_COLS =
-  "id,full_name,phone,city,state,address_line1,address_line2,pincode," +
+  "id,full_name,phone,alt_phone,city,state,address_line1,address_line2,pincode," +
   "preferred_language,do_not_call,last_called_at,created_at";
 
 /** Subscription columns — status words and dates only. */

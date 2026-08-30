@@ -90,6 +90,14 @@ interface SubscriberListRow {
   primary_member_dob: string | null;
   // Count
   family_member_count: number;
+  // Account profile — contact fallback for pending subs (no
+  // family_members row yet, but name+phone were required at checkout).
+  profile_full_name: string | null;
+  profile_phone: string | null;
+  profile_email: string | null;
+  // Separate calling number (only set when different from
+  // profile_phone, which stays the WhatsApp number).
+  profile_alt_phone: string | null;
 }
 
 /** Filters that are applied server-side before pagination. */
@@ -194,6 +202,10 @@ interface Subscription360 {
   coupon_code: string | null;
   coupon_discount_type: string | null;
   coupon_discount_value: number | null;
+  profile_full_name: string | null;
+  profile_phone: string | null;
+  profile_email: string | null;
+  profile_alt_phone: string | null;
   family_members: FamilyMember[];
   payments?: Payment[];
   seva_proofs?: SevaProof[];
@@ -311,11 +323,17 @@ function applyFilters(query: any, filters: FilterState): any {
     query = query.eq("family_member_count", 0);
   }
   if (filters.search.trim()) {
-    // PostgREST ilike on primary_member_name for name search;
-    // OR subscription_id text match handled client-side post-fetch
-    // (subscription_id UUIDs aren't searchable via ilike efficiently
-    // without a generated column — acceptable for admin use).
-    query = query.ilike("primary_member_name", `%${filters.search.trim()}%`);
+    // Match primary_member_name OR the profile fallback (name/phone) —
+    // pending subs have no family_members row yet, so name-only search
+    // would never find them even though the subscriber has a real name
+    // and phone number on file from checkout.
+    // PostgREST .or() uses "," to separate conditions and "()" for
+    // grouping, so strip those from the search term before interpolating.
+    const term = filters.search.trim().replace(/[(),]/g, "");
+    query = query.or(
+      `primary_member_name.ilike.%${term}%,profile_full_name.ilike.%${term}%,` +
+        `profile_phone.ilike.%${term}%,profile_alt_phone.ilike.%${term}%`,
+    );
   }
   return query;
 }
@@ -360,6 +378,9 @@ async function exportCSVServerSide(filters: FilterState, setExporting: (v: boole
       "subscription_id",
       "primary_name",
       "primary_gotra",
+      "whatsapp_phone",
+      "calling_phone",
+      "contact_email",
       "plan_name",
       "billing_period",
       "price_inr",
@@ -376,8 +397,11 @@ async function exportCSVServerSide(filters: FilterState, setExporting: (v: boole
     const csvRows = allRows.map((r) =>
       [
         r.subscription_id,
-        r.primary_member_name || "",
+        r.primary_member_name || r.profile_full_name || "",
         r.primary_member_gotra || "",
+        r.profile_phone || "",
+        r.profile_alt_phone || "",
+        r.profile_email || "",
         r.plan_name || "",
         r.plan_billing_period || "",
         r.plan_price_paise != null ? (r.plan_price_paise / 100).toFixed(2) : "",
@@ -557,13 +581,16 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-slate-900">
-                {primary?.full_name || "Unknown Subscriber"}
+                {primary?.full_name || sub.profile_full_name || "Unknown Subscriber"}
               </h2>
               <StatusBadge status={sub.status} />
             </div>
             <p className="text-xs text-amber-900/60 mt-0.5 font-mono">
               {sub.subscription_id.slice(0, 8)}… • {sub.plan_name || "Unknown Plan"} • Started{" "}
               {fmtDate(sub.start_date)}
+              {(sub.profile_alt_phone || sub.profile_phone) && (
+                <> • {sub.profile_alt_phone || sub.profile_phone}</>
+              )}
             </p>
           </div>
           <button
@@ -646,6 +673,22 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
                   )}
                 </Grid2>
               </Section>
+
+              {(sub.profile_phone || sub.profile_email || sub.profile_alt_phone) && (
+                <Section title="Contact" icon={User}>
+                  <Grid2>
+                    <Detail
+                      label={sub.profile_alt_phone ? "WhatsApp" : "Phone"}
+                      value={sub.profile_phone || "—"}
+                      mono
+                    />
+                    <Detail label="Email" value={sub.profile_email || "—"} />
+                    {sub.profile_alt_phone && (
+                      <Detail label="Calling Number" value={sub.profile_alt_phone} mono />
+                    )}
+                  </Grid2>
+                </Section>
+              )}
 
               {/* Halted recovery — Razorpay exhausted its own retries
                   (~3 days). Resume pokes the mandate; if the mandate
@@ -1096,6 +1139,10 @@ function AdminSubscribersPage() {
       coupon_code: row.coupon_code,
       coupon_discount_type: row.coupon_discount_type,
       coupon_discount_value: row.coupon_discount_value,
+      profile_full_name: row.profile_full_name,
+      profile_phone: row.profile_phone,
+      profile_email: row.profile_email,
+      profile_alt_phone: row.profile_alt_phone,
       family_members: (fm || []) as FamilyMember[],
     });
     setLoad360Open(false);
@@ -1186,7 +1233,7 @@ function AdminSubscribersPage() {
               <input
                 id="sub-search"
                 type="text"
-                placeholder="Primary subscriber name…"
+                placeholder="Name or phone…"
                 value={pendingFilters.search}
                 onChange={(e) => setPending((p) => ({ ...p, search: e.target.value }))}
                 onKeyDown={(e) => e.key === "Enter" && applyPendingFilters()}
@@ -1380,13 +1427,26 @@ function AdminSubscribersPage() {
                         {/* Subscriber */}
                         <td className="py-3 px-4">
                           <div className="font-semibold text-slate-900">
-                            {row.primary_member_name || (
-                              <span className="text-slate-400 italic">No members</span>
+                            {row.primary_member_name || row.profile_full_name || (
+                              <span className="text-slate-400 italic">No name on file</span>
                             )}
                           </div>
                           {row.primary_member_gotra && (
                             <div className="text-[11px] text-amber-900/60">
                               Gotra: {row.primary_member_gotra}
+                            </div>
+                          )}
+                          {row.profile_phone && (
+                            <div className="text-[11px] text-slate-500 font-mono">
+                              {row.profile_phone}
+                              {row.profile_alt_phone && (
+                                <span className="text-amber-700"> (WhatsApp)</span>
+                              )}
+                            </div>
+                          )}
+                          {row.profile_alt_phone && (
+                            <div className="text-[11px] text-emerald-700 font-mono font-semibold">
+                              {row.profile_alt_phone} (Call)
                             </div>
                           )}
                         </td>

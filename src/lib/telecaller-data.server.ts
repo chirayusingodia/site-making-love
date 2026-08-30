@@ -69,6 +69,7 @@ export interface ProfileLite {
   id: string;
   full_name: string | null;
   phone: string | null;
+  alt_phone: string | null;
   city: string | null;
   state: string | null;
   address_line1: string | null;
@@ -109,6 +110,7 @@ function buildRow(
     profileId: profile.id,
     fullName: profile.full_name,
     phone: profile.phone,
+    altPhone: profile.alt_phone,
     city: profile.city,
     state: profile.state,
     preferredLanguage: profile.preferred_language,

@@ -45,6 +45,12 @@ export const Route = createFileRoute("/login")({
 
 type Step = "form" | "otp" | "verifying";
 
+// Temporarily off: Google login + the OTP-less /complete-profile step
+// is the only signup/login path for now. Flip back to `true` to
+// restore phone+OTP as an alternate path — nothing else needs to
+// change, the OTP request/verify code below stays intact.
+const PHONE_OTP_LOGIN_ENABLED = false;
+
 /** Keeps only a plausible 10-digit Indian mobile from ?prefill=. */
 function sanitizePrefill(raw: string | undefined): string {
   const digits = (raw ?? "").replace(/\D/g, "");
@@ -225,66 +231,74 @@ function LoginPage() {
         {step === "form" && (
           <div className="mt-5 space-y-4 animate-fade-in">
             <GoogleAuthButton redirect={target} onError={(msg) => setError(msg)} />
-            <div className="flex items-center gap-3 py-1" aria-hidden="true">
-              <span className="h-px flex-1 bg-black/10" />
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                ya phone number se
-              </span>
-              <span className="h-px flex-1 bg-black/10" />
-            </div>
-            <p className="text-sm text-muted-foreground -mt-1">
-              नया नंबर हो तो account बन जाएगा, पुराना हो तो सीधे login — दोनों इसी form से।
-            </p>
-            <div>
-              <label className="block text-sm font-bold text-foreground mb-1">पूरा नाम</label>
-              <input
-                type="text"
-                placeholder="जैसे — राधा शर्मा"
-                value={name}
-                autoComplete="name"
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-foreground mb-1">मोबाइल नंबर</label>
-              <div className="flex items-center gap-0">
-                <span className="px-4 py-3 rounded-l-xl border border-r-0 border-black/10 bg-secondary font-semibold text-foreground">
-                  +91
-                </span>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="9876543210"
-                  value={phoneDigits}
-                  autoComplete="tel-national"
-                  maxLength={10}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  className="w-full px-4 py-3 rounded-r-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                OTP isi number par aayega. Seva ka proof bhi yahin WhatsApp hoga.
-              </p>
-            </div>
             {error && <p className="text-xs text-destructive">{error}</p>}
-            {!captchaReady && (
-              <p className="text-xs text-muted-foreground text-center">
-                Security check chal raha hai…
-              </p>
+
+            {PHONE_OTP_LOGIN_ENABLED && (
+              <>
+                <div className="flex items-center gap-3 py-1" aria-hidden="true">
+                  <span className="h-px flex-1 bg-black/10" />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    ya phone number se
+                  </span>
+                  <span className="h-px flex-1 bg-black/10" />
+                </div>
+                <p className="text-sm text-muted-foreground -mt-1">
+                  नया नंबर हो तो account बन जाएगा, पुराना हो तो सीधे login — दोनों इसी form से।
+                </p>
+                <div>
+                  <label className="block text-sm font-bold text-foreground mb-1">पूरा नाम</label>
+                  <input
+                    type="text"
+                    placeholder="जैसे — राधा शर्मा"
+                    value={name}
+                    autoComplete="name"
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-foreground mb-1">
+                    मोबाइल नंबर
+                  </label>
+                  <div className="flex items-center gap-0">
+                    <span className="px-4 py-3 rounded-l-xl border border-r-0 border-black/10 bg-secondary font-semibold text-foreground">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="9876543210"
+                      value={phoneDigits}
+                      autoComplete="tel-national"
+                      maxLength={10}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      className="w-full px-4 py-3 rounded-r-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    OTP isi number par aayega. Seva ka proof bhi yahin WhatsApp hoga.
+                  </p>
+                </div>
+                {!captchaReady && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Security check chal raha hai…
+                  </p>
+                )}
+                <button
+                  disabled={sendBlocked}
+                  onClick={sendOtp}
+                  className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors ${
+                    !sendBlocked
+                      ? "bg-brand text-white hover:bg-brand-deep"
+                      : "bg-secondary text-muted-foreground cursor-not-allowed"
+                  }`}
+                >
+                  {busy ? <Loader2 size={18} className="animate-spin" /> : null}
+                  OTP Bhejein <ArrowRight size={18} />
+                </button>
+              </>
             )}
-            <button
-              disabled={sendBlocked}
-              onClick={sendOtp}
-              className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors ${
-                !sendBlocked
-                  ? "bg-brand text-white hover:bg-brand-deep"
-                  : "bg-secondary text-muted-foreground cursor-not-allowed"
-              }`}
-            >
-              {busy ? <Loader2 size={18} className="animate-spin" /> : null}
-              OTP Bhejein <ArrowRight size={18} />
-            </button>
+
             <div className="flex items-center gap-1.5 justify-center text-[11px] text-muted-foreground pt-2">
               <ShieldCheck size={13} className="text-success" /> Aapka number safe hai — sirf seva
               updates ke liye.

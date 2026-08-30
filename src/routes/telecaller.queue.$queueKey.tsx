@@ -296,7 +296,9 @@ function SubscriberListItem({ row, queueKey }: { row: TelecallerQueueRow; queueK
             )}
           </div>
           <div className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
-            <span>{row.phone ?? "—"}</span>
+            <span className={row.altPhone ? "font-semibold text-emerald-700" : undefined}>
+              {row.altPhone ?? row.phone ?? "—"}
+            </span>
             {row.planName && (
               <>
                 <span className="text-slate-300">·</span>

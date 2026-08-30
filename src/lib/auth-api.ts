@@ -93,10 +93,15 @@ export async function fetchMyProfile(): Promise<MyProfile | null> {
  * Runs under this browser's own session (callUserApi → Bearer token),
  * so the insert lands through the caller's own RLS grant.
  */
-export async function completeGoogleProfile(fullName: string, phoneRaw: string): Promise<void> {
+export async function completeGoogleProfile(
+  fullName: string,
+  phoneRaw: string,
+  altPhoneRaw?: string,
+): Promise<void> {
   await callUserApi<{ ok: boolean }>("/api/auth/complete-google-profile", {
     full_name: fullName,
     phone: phoneRaw,
+    ...(altPhoneRaw ? { alt_phone: altPhoneRaw } : {}),
   });
 }
 
