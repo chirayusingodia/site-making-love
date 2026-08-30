@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireTelecaller, writeTelecallerAudit } from "@/lib/supabase-admin.server";
 import { isInCallersTray } from "@/lib/telecaller-data.server";
-import { CheckoutError, createCheckoutForUser } from "@/lib/subscriptions-checkout.server";
+import {
+  CheckoutError,
+  createCheckoutForUser,
+  resolveActivePlan,
+} from "@/lib/subscriptions-checkout.server";
 import { buildWaLink } from "@/lib/sankalp-logic";
 import { stripMaskedFieldsDeep } from "@/lib/telecaller-logic";
 
@@ -45,6 +49,7 @@ interface LeadRow {
   source_agent_id: string | null;
   profile_id: string | null;
   status: string;
+  phone: string;
 }
 
 export const Route = createFileRoute("/api/telecaller/send-payment-link")({
@@ -98,6 +103,88 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
           // never left sitting beside the fresh pending one).
           // [Pass-2 P6] declaration hoisted above the try for catch access.
 
+          // ── §4.1: resolve THE LEAD (explicit → token → open-by-phone)
+          const requestedToken =
+            typeof body.attribution_token === "string" && body.attribution_token.trim()
+              ? body.attribution_token.trim()
+              : null;
+          const requestedLeadId =
+            typeof body.lead_id === "string" && UUID_RE.test(body.lead_id) ? body.lead_id : null;
+
+          let lead: LeadRow | null = null;
+          if (requestedLeadId) {
+            const { data } = await auth.db
+              .from("leads")
+              .select("id,attribution_token,source_agent_id,profile_id,status,phone")
+              .eq("id", requestedLeadId)
+              .maybeSingle();
+            lead = (data as unknown as LeadRow | null) ?? null;
+          }
+          if (!lead && requestedToken) {
+            const { data } = await auth.db
+              .from("leads")
+              .select("id,attribution_token,source_agent_id,profile_id,status,phone")
+              .eq("attribution_token", requestedToken)
+              .maybeSingle();
+            lead = (data as unknown as LeadRow | null) ?? null;
+          }
+
+          // A brand-new lead (field-agent sourced, never visited the
+          // site) has NO profiles row yet — there is no userId to create
+          // a pending subscription against. createCheckoutForUser
+          // requires a real profiles.id (subscriptions.user_id is a
+          // NOT NULL FK), so pre-creating a mandate for her is simply
+          // impossible before she has an account.
+          //
+          // Fail-open into GUEST MODE instead of erroring: hand back the
+          // same public /checkout/:plan?att=<token> link the ordinary
+          // website funnel uses. The customer logs in there herself
+          // (creating her profile in the process) and
+          // /api/subscriptions/create-checkout resolves the SAME
+          // attribution token back to this lead (§9.1 path 1) — no
+          // subscription/mandate is created by this route in that case.
+          if (!targetProfileId && !targetSubscriptionId && lead && !lead.profile_id) {
+            const inTray = await isInCallersTray(
+              auth.db,
+              auth.callerId,
+              auth.role !== "telecaller",
+              { leadId: lead.id, profileId: null, subscriptionId: null },
+            );
+            if (!inTray) {
+              return json({ error: "Yeh lead/person aapki tray mein nahi hai" }, 403);
+            }
+
+            const plan = await resolveActivePlan(auth.db, planIdOrSlug);
+            if (!plan) return json({ error: "Plan not found or inactive" }, 404);
+
+            const effectiveToken = lead.attribution_token ?? requestedToken;
+            const origin = new URL(request.url).origin;
+            const shareLink =
+              `${origin}/checkout/${encodeURIComponent(planIdOrSlug)}` +
+              (effectiveToken ? `?att=${encodeURIComponent(effectiveToken)}` : "");
+            const message =
+              `Namaste 🙏 Punyata se judein — aapka plan: ${plan.name}. ` +
+              `Yahan se login karke payment poora karein: ${shareLink}`;
+            const waLink = buildWaLink(lead.phone, message);
+
+            await writeTelecallerAudit(
+              auth.db,
+              auth.callerId,
+              "telecaller.payment_link.sent_guest",
+              "leads",
+              lead.id,
+              {
+                plan: plan.name,
+                sourcing_agent_credited: lead.source_agent_id,
+                attribution_token: effectiveToken ? `${effectiveToken.slice(0, 8)}…` : null,
+              },
+            );
+
+            return json(
+              stripMaskedFieldsDeep({ ok: true, planName: plan.name, shareLink, waLink }),
+            );
+          }
+
           if (targetProfileId) {
             userId = targetProfileId; // profiles.id mirrors auth.users id
           } else if (targetSubscriptionId) {
@@ -144,35 +231,14 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
               }
               retiredHaltedSubId = sub.id;
             }
+          } else if (lead?.profile_id) {
+            // Lead resolved to an existing profile — adopt it as target.
+            targetProfileId = lead.profile_id;
+            userId = lead.profile_id;
           } else {
             return json({ error: "profile_id ya subscription_id zaroori hai" }, 400);
           }
 
-          // ── §4.1: resolve THE LEAD (explicit → token → open-by-phone)
-          const requestedToken =
-            typeof body.attribution_token === "string" && body.attribution_token.trim()
-              ? body.attribution_token.trim()
-              : null;
-          const requestedLeadId =
-            typeof body.lead_id === "string" && UUID_RE.test(body.lead_id) ? body.lead_id : null;
-
-          let lead: LeadRow | null = null;
-          if (requestedLeadId) {
-            const { data } = await auth.db
-              .from("leads")
-              .select("id,attribution_token,source_agent_id,profile_id,status")
-              .eq("id", requestedLeadId)
-              .maybeSingle();
-            lead = (data as unknown as LeadRow | null) ?? null;
-          }
-          if (!lead && requestedToken) {
-            const { data } = await auth.db
-              .from("leads")
-              .select("id,attribution_token,source_agent_id,profile_id,status")
-              .eq("attribution_token", requestedToken)
-              .maybeSingle();
-            lead = (data as unknown as LeadRow | null) ?? null;
-          }
           if (!lead && targetProfileId) {
             // Most recent still-open lead for this person's phone.
             const { data: prof } = await auth.db
@@ -183,7 +249,7 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
             if (prof?.phone) {
               const { data } = await auth.db
                 .from("leads")
-                .select("id,attribution_token,source_agent_id,profile_id,status")
+                .select("id,attribution_token,source_agent_id,profile_id,status,phone")
                 .eq("phone", prof.phone)
                 .in("status", ["new", "assigned", "in_progress", "link_sent"])
                 .order("created_at", { ascending: false })
