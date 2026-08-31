@@ -803,7 +803,7 @@ function PersonCard({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs border-amber-300 text-amber-800 hover:bg-amber-50"
+                    className="h-9 md:h-7 text-xs border-amber-300 text-amber-800 hover:bg-amber-50"
                     disabled={proofReqBusy}
                     onClick={async () => {
                       setProofReqBusy(true);
@@ -885,7 +885,7 @@ function PersonCard({
                 variant="outline"
                 size="sm"
                 onClick={() => navigator.clipboard.writeText(linkResult.shareLink)}
-                className="gap-1 h-7 text-xs"
+                className="gap-1 h-9 md:h-7 text-xs"
               >
                 <Copy className="w-3 h-3" /> Copy
               </Button>
@@ -893,7 +893,7 @@ function PersonCard({
                 <a href={linkResult.waLink} target="_blank" rel="noreferrer">
                   <Button
                     size="sm"
-                    className="gap-1.5 h-7 text-xs bg-emerald-700 hover:bg-emerald-800"
+                    className="gap-1.5 h-9 md:h-7 text-xs bg-emerald-700 hover:bg-emerald-800"
                   >
                     <MessageCircle className="w-3 h-3" /> WhatsApp par bhejein
                   </Button>
@@ -931,7 +931,7 @@ function PersonCard({
       </div>
 
       {/* ── Sticky bottom bar: log this call ──────────────────── */}
-      <div className="sticky bottom-0 z-30 -mx-4 lg:-mx-8 mt-6 border-t border-indigo-900/10 bg-white/95 backdrop-blur px-4 lg:px-8 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+      <div className="sticky bottom-0 z-30 -mx-4 lg:-mx-8 mt-6 max-h-[70vh] overflow-y-auto border-t border-indigo-900/10 bg-white/95 backdrop-blur px-4 lg:px-8 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <div className="grid grid-cols-1 md:grid-cols-[14rem_10rem_1fr_auto] gap-2 items-end">
           <div>
             <Label className="text-[10px] uppercase tracking-wide text-slate-400">Outcome</Label>

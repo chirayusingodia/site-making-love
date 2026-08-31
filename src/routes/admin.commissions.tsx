@@ -175,7 +175,8 @@ function AdminCommissionsPage() {
         ) : byPeriod.length === 0 && !periods?.length ? (
           <p className="text-xs text-slate-400">Abhi koi commission entry nahi bani.</p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-5 px-5">
+          <table className="w-full text-sm min-w-[560px]">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
                 <th className="pb-2">Period</th>
@@ -207,7 +208,7 @@ function AdminCommissionsPage() {
                       <Button
                         size="sm"
                         variant={locked ? "outline" : "default"}
-                        className={`h-7 text-xs gap-1 ${locked ? "" : "bg-amber-700 hover:bg-amber-800"}`}
+                        className={`h-9 md:h-7 text-xs gap-1 ${locked ? "" : "bg-amber-700 hover:bg-amber-800"}`}
                         disabled={busy !== null}
                         onClick={() => toggleLock(p.period, !locked)}
                       >
@@ -238,7 +239,7 @@ function AdminCommissionsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs gap-1"
+                        className="h-9 md:h-7 text-xs gap-1"
                         disabled={busy !== null}
                         onClick={() => toggleLock(pr.period, !pr.locked_at)}
                       >
@@ -254,6 +255,7 @@ function AdminCommissionsPage() {
                 ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
     </div>

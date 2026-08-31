@@ -202,7 +202,8 @@ function EarningsPage() {
         {!loading && (!data || data.payoutHistory.length === 0) ? (
           <p className="text-xs text-slate-400 mt-2">Abhi koi entry nahi — pehla close karein!</p>
         ) : (
-          <table className="mt-3 w-full text-sm">
+          <div className="overflow-x-auto -mx-5 px-5">
+          <table className="mt-3 w-full text-sm min-w-[520px]">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
                 <th className="pb-2">Period</th>
@@ -234,6 +235,7 @@ function EarningsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

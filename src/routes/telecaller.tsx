@@ -1,5 +1,14 @@
 import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
-import { PhoneCall, UserPlus, CalendarCheck2, ScrollText, BadgeIndianRupee } from "lucide-react";
+import {
+  PhoneCall,
+  UserPlus,
+  CalendarCheck2,
+  ScrollText,
+  BadgeIndianRupee,
+  Menu,
+  ChevronDown,
+  type LucideIcon,
+} from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { fetchMyRole } from "@/lib/admin-api";
 
@@ -60,7 +69,7 @@ function TelecallerLayout() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-indigo-900/60 bg-indigo-50 px-3 py-1.5 rounded-md border border-indigo-900/5">
+          <div className="hidden md:flex items-center gap-1.5 text-[11px] text-indigo-900/60 bg-indigo-50 px-3 py-1.5 rounded-md border border-indigo-900/5">
             ₹ nahi dikhega — status aur dates hi kaafi hain
           </div>
           <Link
@@ -73,37 +82,24 @@ function TelecallerLayout() {
       </header>
 
       <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 gap-6">
-        <aside className="w-full md:w-60 flex-none space-y-1 print:hidden">
-          <div className="px-3 py-2 text-xs font-bold text-indigo-900/50 uppercase tracking-wider">
-            Call Work
+        {/* Collapsed accordion below md so the nav list doesn't push the
+            queue/call content off-screen on a phone; always-open at md+. */}
+        <aside className="w-full md:w-60 flex-none print:hidden">
+          <details className="md:hidden group rounded-lg border border-indigo-900/10 bg-white/70 mb-3">
+            <summary className="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-indigo-900 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+              <span className="flex items-center gap-2">
+                <Menu className="w-4 h-4 text-indigo-700" />
+                Menu
+              </span>
+              <ChevronDown className="w-4 h-4 text-indigo-700 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="px-2 pb-2">
+              <TelecallerNavList navItems={navItems} pathname={pathname} />
+            </div>
+          </details>
+          <div className="hidden md:block space-y-1">
+            <TelecallerNavList navItems={navItems} pathname={pathname} />
           </div>
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive =
-                pathname === item.href ||
-                (item.href === "/telecaller/queues" &&
-                  (pathname === "/telecaller" ||
-                    pathname.startsWith("/telecaller/queue") ||
-                    pathname.startsWith("/telecaller/person")));
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-indigo-700 text-white shadow-sm shadow-indigo-900/20"
-                      : "text-slate-700 hover:bg-indigo-900/5 hover:text-indigo-950"
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 ${isActive ? "text-indigo-100" : "text-indigo-700/70"}`}
-                  />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
         </aside>
 
         <main className="flex-1 min-w-0">
@@ -111,5 +107,46 @@ function TelecallerLayout() {
         </main>
       </div>
     </div>
+  );
+}
+
+function TelecallerNavList({
+  navItems,
+  pathname,
+}: {
+  navItems: { label: string; href: string; icon: LucideIcon }[];
+  pathname: string;
+}) {
+  return (
+    <>
+      <div className="px-3 py-2 text-xs font-bold text-indigo-900/50 uppercase tracking-wider">
+        Call Work
+      </div>
+      <nav className="space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            (item.href === "/telecaller/queues" &&
+              (pathname === "/telecaller" ||
+                pathname.startsWith("/telecaller/queue") ||
+                pathname.startsWith("/telecaller/person")));
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all min-h-11 ${
+                isActive
+                  ? "bg-indigo-700 text-white shadow-sm shadow-indigo-900/20"
+                  : "text-slate-700 hover:bg-indigo-900/5 hover:text-indigo-950"
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? "text-indigo-100" : "text-indigo-700/70"}`} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </>
   );
 }

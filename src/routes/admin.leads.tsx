@@ -422,7 +422,8 @@ function AdminLeadsPage() {
         {!hospitals.length ? (
           <p className="text-xs text-slate-400">Abhi koi hospital nahi.</p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-5 px-5">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
                 <th className="pb-2">Hospital</th>
@@ -452,7 +453,7 @@ function AdminLeadsPage() {
                     <select
                       value={reallotAgent}
                       onChange={(e) => setReallotAgent(e.target.value)}
-                      className="h-7 rounded border border-slate-300 px-1.5 text-xs"
+                      className="h-9 md:h-7 rounded border border-slate-300 px-1.5 text-xs"
                     >
                       {agents.map((a) => (
                         <option key={a.id} value={a.id}>
@@ -465,7 +466,7 @@ function AdminLeadsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 text-xs"
+                      className="h-9 md:h-7 text-xs"
                       disabled={
                         busy !== null || !reallotAgent || h.currentAgent?.agentId === reallotAgent
                       }
@@ -495,6 +496,7 @@ function AdminLeadsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
@@ -508,7 +510,8 @@ function AdminLeadsPage() {
         ) : leads.length === 0 ? (
           <p className="text-xs text-slate-400">Abhi koi lead nahi.</p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-5 px-5">
+          <table className="w-full text-sm min-w-[860px]">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
                 <th className="pb-2">Name</th>
@@ -553,6 +556,7 @@ function AdminLeadsPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </section>
     </div>
