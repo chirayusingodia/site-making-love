@@ -426,7 +426,7 @@ function LeadCallCardPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => navigator.clipboard.writeText(linkResult.shareLink)}
-                    className="gap-1 h-7 text-xs"
+                    className="gap-1 h-9 md:h-7 text-xs"
                   >
                     <Copy className="w-3 h-3" /> Copy
                   </Button>
@@ -434,7 +434,7 @@ function LeadCallCardPage() {
                     <a href={linkResult.waLink} target="_blank" rel="noreferrer">
                       <Button
                         size="sm"
-                        className="gap-1.5 h-7 text-xs bg-emerald-700 hover:bg-emerald-800"
+                        className="gap-1.5 h-9 md:h-7 text-xs bg-emerald-700 hover:bg-emerald-800"
                       >
                         <MessageCircle className="w-3 h-3" /> WhatsApp par bhejein
                       </Button>
@@ -450,7 +450,7 @@ function LeadCallCardPage() {
                   key={s}
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-9 md:h-7 text-xs"
                   onClick={() => setStatus(s)}
                 >
                   Mark: {s.replace(/_/g, " ")}
@@ -487,8 +487,10 @@ function LeadCallCardPage() {
         )}
       </div>
 
-      {/* Sticky log bar */}
-      <div className="sticky bottom-0 z-30 -mx-4 lg:-mx-8 mt-6 border-t border-indigo-900/10 bg-white/95 backdrop-blur px-4 lg:px-8 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+      {/* Sticky log bar — capped + internally scrollable on mobile so it
+          can't swallow the whole viewport (esp. with the keyboard open
+          while stacked full-width below md) and hide the call history above it. */}
+      <div className="sticky bottom-0 z-30 -mx-4 lg:-mx-8 mt-6 max-h-[70vh] overflow-y-auto border-t border-indigo-900/10 bg-white/95 backdrop-blur px-4 lg:px-8 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         {/* §5 funnel events — verbal agent answer + free pooja toggle */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-end mb-2">
           <div>

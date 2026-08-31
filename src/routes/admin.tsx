@@ -17,6 +17,9 @@ import {
   BadgeIndianRupee,
   TrendingUp,
   Split,
+  Menu,
+  ChevronDown,
+  type LucideIcon,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { Badge } from "@/components/ui/badge";
@@ -135,48 +138,25 @@ function AdminLayout() {
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 gap-6">
-        {/* Navigation Sidebar */}
-        <aside className="w-full md:w-60 flex-none space-y-1 print:hidden">
-          <div className="px-3 py-2 text-xs font-bold text-amber-900/50 uppercase tracking-wider">
-            Management
+        {/* Navigation Sidebar — collapsed accordion below md so the full
+            nav list doesn't push page content off-screen on a phone;
+            plain always-open list at md+ where it sits beside content. */}
+        <aside className="w-full md:w-60 flex-none print:hidden">
+          <details className="md:hidden group rounded-lg border border-amber-900/10 bg-white/70 mb-3">
+            <summary className="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-amber-900 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+              <span className="flex items-center gap-2">
+                <Menu className="w-4 h-4 text-amber-700" />
+                Menu
+              </span>
+              <ChevronDown className="w-4 h-4 text-amber-700 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="px-2 pb-2">
+              <AdminNavList navItems={navItems} pathname={pathname} />
+            </div>
+          </details>
+          <div className="hidden md:block space-y-1">
+            <AdminNavList navItems={navItems} pathname={pathname} />
           </div>
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive =
-                pathname === item.href ||
-                (item.href === "/admin/overview" && pathname === "/admin");
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-amber-700 text-white shadow-sm shadow-amber-900/20"
-                      : "text-amber-900/80 hover:bg-amber-900/5 hover:text-amber-950"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon
-                      className={`w-4 h-4 ${isActive ? "text-amber-200" : "text-amber-700/70"}`}
-                    />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                        isActive
-                          ? "bg-amber-800 text-amber-100"
-                          : "bg-amber-100 text-amber-800 border border-amber-200"
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
         </aside>
 
         {/* Content Area */}
@@ -185,5 +165,61 @@ function AdminLayout() {
         </main>
       </div>
     </div>
+  );
+}
+
+function AdminNavList({
+  navItems,
+  pathname,
+}: {
+  navItems: {
+    label: string;
+    href: string;
+    icon: LucideIcon;
+    badge?: string;
+  }[];
+  pathname: string;
+}) {
+  return (
+    <>
+      <div className="px-3 py-2 text-xs font-bold text-amber-900/50 uppercase tracking-wider">
+        Management
+      </div>
+      <nav className="space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            (item.href === "/admin/overview" && pathname === "/admin");
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all min-h-11 ${
+                isActive
+                  ? "bg-amber-700 text-white shadow-sm shadow-amber-900/20"
+                  : "text-amber-900/80 hover:bg-amber-900/5 hover:text-amber-950"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Icon className={`w-4 h-4 ${isActive ? "text-amber-200" : "text-amber-700/70"}`} />
+                <span>{item.label}</span>
+              </div>
+              {item.badge && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                    isActive
+                      ? "bg-amber-800 text-amber-100"
+                      : "bg-amber-100 text-amber-800 border border-amber-200"
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+    </>
   );
 }
