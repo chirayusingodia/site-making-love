@@ -205,7 +205,11 @@ function AdminAuditLogPage() {
           </select>
         </div>
         <div>
-          <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Admin</label>
+          {/* admin_logs.admin_id holds ANY actor's id, not just staff —
+              e.g. agent.leads.uploaded is logged with the sales agent's
+              own id (agent/leads/upload.ts) so uploads stay attributable.
+              "Admin" as a label reads as staff-only and is misleading. */}
+          <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Performed By</label>
           <select
             value={adminId}
             onChange={(e) => setAdminId(e.target.value)}
