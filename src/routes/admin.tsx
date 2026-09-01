@@ -19,6 +19,8 @@ import {
   Split,
   Menu,
   ChevronDown,
+  Search,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
@@ -69,6 +71,10 @@ function AdminLayout() {
     // proofs surface, so both labels now point there.
     { label: "Seva Proofs", href: "/admin/proof-upload", icon: Video },
     { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 6" },
+    // Admin/owner tier (not owner-only) — content editing is
+    // lower-sensitivity than financial reports, so it sits in the
+    // base list alongside Payments/Plans & Sevas.
+    { label: "SEO & Content", href: "/admin/seo", icon: Search, badge: "New" },
     // Reports is OWNER-ONLY (financial data). Hidden until the role
     // resolves and confirmed 'owner' — the route itself is also
     // guarded in beforeLoad, and the API rejects non-owners with 403.
@@ -100,6 +106,9 @@ function AdminLayout() {
           // Migration 020 — "kis agent ki lead kis telecaller ke paas":
           // per-agent → telecaller routing, applied at upload time.
           { label: "Lead Routing", href: "/admin/routing", icon: Split, badge: "Owner" },
+          // Read-only audit trail — sensitive operational data, same
+          // owner-only tier as Reports/Commissions, not admin-tier.
+          { label: "Audit Log", href: "/admin/audit-log", icon: ClipboardList, badge: "Owner" },
         ]
       : []),
   ];

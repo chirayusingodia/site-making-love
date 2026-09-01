@@ -6,15 +6,20 @@ import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 
 import { IMAGE_SIZES } from "@/components/CldImage";
 import { SITE_IMAGES, type SiteImage } from "@/lib/site-images";
+import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
 
 export const Route = createFileRoute("/sevas")({
-  head: () => ({
-    meta: [
-      { title: "Our Sevas — पुण्यता | सुंदरकांड, हवन, आरती, गौ सेवा, वानर सेवा" },
-      { name: "description", content: "पुण्यता की सभी सेवाओं की विस्तृत सूची — सुंदरकांड पाठ, गृह शांति हवन, आरती, गौ माता सेवा, वानर सेवा एवं साधु संतों को भोजन।" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.punyata.com/sevas" }],
-  }),
+  head: async () => {
+    const seo = await fetchPageSeo("/sevas");
+    return {
+      meta: pageSeoMeta(seo, {
+        title: "Our Sevas — पुण्यता | सुंदरकांड, हवन, आरती, गौ सेवा, वानर सेवा",
+        description:
+          "पुण्यता की सभी सेवाओं की विस्तृत सूची — सुंदरकांड पाठ, गृह शांति हवन, आरती, गौ माता सेवा, वानर सेवा एवं साधु संतों को भोजन।",
+      }),
+      links: [{ rel: "canonical", href: "https://www.punyata.com/sevas" }],
+    };
+  },
   component: SevasPage,
 });
 

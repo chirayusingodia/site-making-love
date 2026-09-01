@@ -3,15 +3,19 @@ import { Star } from "lucide-react";
 import { testimonials } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { ProofGallery } from "@/components/ProofGallery";
+import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
 
 export const Route = createFileRoute("/reviews")({
-  head: () => ({
-    meta: [
-      { title: "Reviews — पुण्यता | भक्तों की राय" },
-      { name: "description", content: "पुण्यता के 1,200+ सदस्यों की सच्ची राय — WhatsApp Video Proof के बाद उनके अनुभव।" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.punyata.com/reviews" }],
-  }),
+  head: async () => {
+    const seo = await fetchPageSeo("/reviews");
+    return {
+      meta: pageSeoMeta(seo, {
+        title: "Reviews — पुण्यता | भक्तों की राय",
+        description: "पुण्यता के 1,200+ सदस्यों की सच्ची राय — WhatsApp Video Proof के बाद उनके अनुभव।",
+      }),
+      links: [{ rel: "canonical", href: "https://www.punyata.com/reviews" }],
+    };
+  },
   component: ReviewsPage,
 });
 

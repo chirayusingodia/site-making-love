@@ -5,6 +5,7 @@ import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { CountUp } from "@/components/CountUp";
 import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
 import { SITE_IMAGES } from "@/lib/site-images";
+import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
 
 const storySlides: Slide[] = [
   { image: SITE_IMAGES.aboutStory1, title: "Tirth Guru Pushkarraj", subtitle: "Jahan har sankalp shuru hota hai" },
@@ -14,13 +15,17 @@ const storySlides: Slide[] = [
 ];
 
 export const Route = createFileRoute("/about")({
-  head: () => ({
-    meta: [
-      { title: "About Us — पुण्यता | भारत का पुण्य बैंक | अब भारत करेगा पुण्यता" },
-      { name: "description", content: "पुण्यता — भारत का पुण्य साथी। तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सेवा एवं दान-पुण्य।" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.punyata.com/about" }],
-  }),
+  head: async () => {
+    const seo = await fetchPageSeo("/about");
+    return {
+      meta: pageSeoMeta(seo, {
+        title: "About Us — पुण्यता | भारत का पुण्य बैंक | अब भारत करेगा पुण्यता",
+        description:
+          "पुण्यता — भारत का पुण्य साथी। तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सेवा एवं दान-पुण्य।",
+      }),
+      links: [{ rel: "canonical", href: "https://www.punyata.com/about" }],
+    };
+  },
   component: AboutPage,
 });
 

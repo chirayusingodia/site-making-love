@@ -29,15 +29,46 @@ import lockSecure from "@/assets/lottie/lock-secure.json";
 import { SITE_IMAGES } from "@/lib/site-images";
 import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
 import punyataStaticLogo from "@/assets/punyata-logo.svg";
+import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
+
+// Homepage-scoped LocalBusiness schema — richer location/contact detail
+// than the site-wide Organization/WebSite blocks already injected on
+// every page by __root.tsx's RootShell. sameAs left empty for Chirayu
+// to fill in with real social profile URLs.
+const LOCAL_BUSINESS_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Punyata",
+  alternateName: "पुण्यता",
+  url: "https://www.punyata.com/",
+  description:
+    "तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, गौ सेवा एवं साधु संतों को भोजन। WhatsApp पर Video Proof।",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Pushkar",
+    addressRegion: "Rajasthan",
+    addressCountry: "IN",
+  },
+  telephone: "+917014098548",
+  sameAs: [] as string[],
+};
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "पुण्यता — भारत का पुण्य साथी | तीर्थ गुरु पुष्करराज से मासिक सेवा" },
-      { name: "description", content: "पुण्यता — अब भारत करेगा पुण्यता। तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, आरती, गौ सेवा एवं साधु संतों को भोजन। WhatsApp पर Video Proof।" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.punyata.com/" }],
-  }),
+  head: async () => {
+    const seo = await fetchPageSeo("/");
+    const meta: Array<Record<string, unknown>> = [
+      ...pageSeoMeta(seo, {
+        title: "पुण्यता — भारत का पुण्य साथी | तीर्थ गुरु पुष्करराज से मासिक सेवा",
+        description:
+          "पुण्यता — अब भारत करेगा पुण्यता। तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सुंदरकांड, हवन, आरती, गौ सेवा एवं साधु संतों को भोजन। WhatsApp पर Video Proof।",
+      }),
+      { "script:ld+json": LOCAL_BUSINESS_JSON_LD },
+    ];
+    return {
+      meta,
+      links: [{ rel: "canonical", href: "https://www.punyata.com/" }],
+    };
+  },
   component: HomePage,
 });
 
