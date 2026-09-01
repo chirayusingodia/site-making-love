@@ -172,9 +172,29 @@ export async function createCheckoutForUser(input: {
   /** §9.1 path 1: closing telecaller resolved from a lead's
    *  attribution token at checkout creation — stamped write-once. */
   telecallerId?: string | null;
+  /** §ATTRIBUTION: first-touch marketing channel captured client-side
+   *  (src/lib/attribution.ts). Purely descriptive — never affects
+   *  commission logic, which is driven only by salesAgentId/telecallerId
+   *  above. `channel` feeds the existing acquisition_channel column
+   *  (same precedence as telecall/coupon); the rest are raw signal kept
+   *  for reporting and future ad-platform conversion matching. */
+  marketing?: {
+    channel?: string;
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
+    utmContent?: string | null;
+    utmTerm?: string | null;
+    gclid?: string | null;
+    fbclid?: string | null;
+    landingPath?: string | null;
+  } | null;
 }): Promise<CreateCheckoutOutcome> {
   const { adminDb, userId, planIdOrSlug } = input;
   const couponCode = input.couponCode?.trim() ? input.couponCode.trim().toUpperCase() : null;
+  // Staff-stamped channel (telecall) always wins when present; otherwise
+  // fall back to the marketing-captured channel for self-serve checkouts.
+  const resolvedChannel = input.acquisitionChannel ?? input.marketing?.channel ?? null;
 
   const plan = await resolveActivePlan(adminDb, planIdOrSlug);
   if (!plan) throw new CheckoutError("Plan not found or inactive", 404);
@@ -275,8 +295,18 @@ export async function createCheckoutForUser(input: {
     if (sameCoupon && !stale) {
       // [Bug 1.9 / Pass-2 P5] Fast-path reuse + attribution back-fill.
       const backfill: Record<string, unknown> = { updated_at: new Date().toISOString() };
-      if (input.acquisitionChannel && !existingPending.acquisition_channel) {
-        backfill.acquisition_channel = input.acquisitionChannel;
+      if (resolvedChannel && !existingPending.acquisition_channel) {
+        backfill.acquisition_channel = resolvedChannel;
+        if (input.marketing) {
+          backfill.utm_source = input.marketing.utmSource ?? null;
+          backfill.utm_medium = input.marketing.utmMedium ?? null;
+          backfill.utm_campaign = input.marketing.utmCampaign ?? null;
+          backfill.utm_content = input.marketing.utmContent ?? null;
+          backfill.utm_term = input.marketing.utmTerm ?? null;
+          backfill.gclid = input.marketing.gclid ?? null;
+          backfill.fbclid = input.marketing.fbclid ?? null;
+          backfill.landing_path = input.marketing.landingPath ?? null;
+        }
       }
       if (input.salesAgentId && !existingPending.sales_agent_id) {
         backfill.sales_agent_id = input.salesAgentId;
@@ -396,31 +426,59 @@ export async function createCheckoutForUser(input: {
     await adminDb.from("subscriptions").delete().eq("id", existingPending.id).eq("user_id", userId);
   }
 
+  const marketingColumns = input.marketing
+    ? {
+        utm_source: input.marketing.utmSource ?? null,
+        utm_medium: input.marketing.utmMedium ?? null,
+        utm_campaign: input.marketing.utmCampaign ?? null,
+        utm_content: input.marketing.utmContent ?? null,
+        utm_term: input.marketing.utmTerm ?? null,
+        gclid: input.marketing.gclid ?? null,
+        fbclid: input.marketing.fbclid ?? null,
+        landing_path: input.marketing.landingPath ?? null,
+      }
+    : {};
+  const newSubRowCore = {
+    user_id: userId,
+    plan_id: plan.id,
+    ...(couponDecision?.ok ? { coupon_id: couponDecision.coupon!.id } : {}),
+    status: "pending",
+    ...(resolvedChannel
+      ? { acquisition_channel: resolvedChannel }
+      : couponDecision?.ok
+        ? { acquisition_channel: `coupon:${couponDecision.coupon!.code}` }
+        : {}),
+    ...(input.salesAgentId ? { sales_agent_id: input.salesAgentId } : {}),
+    ...(input.telecallerId
+      ? {
+          telecaller_id: input.telecallerId,
+          attribution_source: "token",
+          attributed_at: new Date().toISOString(),
+        }
+      : {}),
+  };
+
   // Pending row FIRST so it exists before money moves; the mandate is
   // attached immediately after, before checkout opens.
-  const { data: subRow, error: insErr } = await adminDb
+  let { data: subRow, error: insErr } = await adminDb
     .from("subscriptions")
-    .insert({
-      user_id: userId,
-      plan_id: plan.id,
-      ...(couponDecision?.ok ? { coupon_id: couponDecision.coupon!.id } : {}),
-      status: "pending",
-      ...(input.acquisitionChannel
-        ? { acquisition_channel: input.acquisitionChannel }
-        : couponDecision?.ok
-          ? { acquisition_channel: `coupon:${couponDecision.coupon!.code}` }
-          : {}),
-      ...(input.salesAgentId ? { sales_agent_id: input.salesAgentId } : {}),
-      ...(input.telecallerId
-        ? {
-            telecaller_id: input.telecallerId,
-            attribution_source: "token",
-            attributed_at: new Date().toISOString(),
-          }
-        : {}),
-    })
+    .insert({ ...newSubRowCore, ...marketingColumns })
     .select("id")
     .single();
+  if (
+    insErr &&
+    Object.keys(marketingColumns).length > 0 &&
+    /column .* does not exist/i.test(insErr.message)
+  ) {
+    // Migration 029 lagging behind the deploy — never let checkout 500
+    // over columns that only feed marketing reporting. Retry without
+    // them; acquisition_channel/telecaller/agent attribution still lands.
+    ({ data: subRow, error: insErr } = await adminDb
+      .from("subscriptions")
+      .insert(newSubRowCore)
+      .select("id")
+      .single());
+  }
   if (insErr || !subRow) {
     throw new CheckoutError(`subscription create failed: ${insErr?.message ?? "no row"}`, 500);
   }

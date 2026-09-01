@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, LogIn, PartyPopper, AlertCircle } from "lucide-react";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/components/profile-completion";
 import { supabase } from "@/lib/supabase";
 import { useSessionProfile } from "@/hooks/use-session";
+import { fireSubscribeConversion } from "@/lib/ad-conversions";
 
 export const Route = createFileRoute("/subscription-success")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -43,6 +44,9 @@ function SubscriptionSuccessPage() {
   // lazy initializer and ignores later prop changes, so a premature
   // mount meant saved members were invisible AND prunable on save).
   const [dataReady, setDataReady] = useState(false);
+  // StrictMode/dev re-mounts this effect twice; a conversion pixel must
+  // fire exactly once per real success, never per render.
+  const conversionFired = useRef(false);
 
   useEffect(() => {
     if (!ref || !userId) {
@@ -56,12 +60,24 @@ function SubscriptionSuccessPage() {
       // — only RLS stood between any logged-in user and another
       // subscriber's names/gotra. Verify the subscription is OURS
       // first (RLS scopes this read AND the .eq below double-gates).
+      // Also carries plan price — needed for the conversion event value,
+      // nowhere else on this page.
       const { data: owned } = await supabase
         .from("subscriptions")
-        .select("id")
+        .select("id,plans(name,price_paise)")
         .eq("id", ref)
         .eq("user_id", userId)
         .maybeSingle();
+
+      if (owned && !conversionFired.current) {
+        conversionFired.current = true;
+        const plan = (owned as unknown as { plans: { name: string; price_paise: number } | null })
+          .plans;
+        fireSubscribeConversion({
+          valuePaise: plan?.price_paise ?? 0,
+          planName: plan?.name,
+        });
+      }
 
       if (!owned) {
         if (active) {

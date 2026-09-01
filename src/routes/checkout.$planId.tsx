@@ -19,6 +19,7 @@ import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
 import { normalizePhoneE164 } from "@/lib/phone";
 import { useTranslation } from "@/lib/translations";
+import { captureAttributionOnce, getStoredAttribution } from "@/lib/attribution";
 
 // Coupon entry is parked for now — flip this back on to restore the
 // "Coupon Code (optional)" card on /checkout without touching the
@@ -100,6 +101,14 @@ function CheckoutPage() {
   const { t } = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
   const { userId, profile, loading: sessionLoading, refresh: refreshProfile } = useSessionProfile();
+
+  // This route doesn't wrap in <SiteChrome> (renders <Header> directly),
+  // so it needs its own capture call — an ad can link straight to
+  // /checkout/<plan>?utm_source=... without the visitor ever hitting a
+  // SiteChrome-wrapped page first.
+  useEffect(() => {
+    captureAttributionOnce();
+  }, []);
 
   // Session gate — remember which plan they wanted via ?redirect
   // (and carry the attribution token through the login bounce).
@@ -275,10 +284,12 @@ function CheckoutPage() {
       // actually needs. Loading Razorpay's script before knowing the
       // gateway would both waste a request and hard-wire this flow to
       // one provider again.
+      const attribution = getStoredAttribution();
       const res = await callUserApi<CreateCheckoutResponse>("/api/subscriptions/create-checkout", {
         plan_id: plan.slug,
         ...(couponApplied ? { coupon_code: couponApplied } : {}),
         ...(attToken ? { att: attToken } : {}),
+        ...(attribution ? { marketing: attribution } : {}),
       });
 
       // Redirect-style gateways: hand the customer straight to the

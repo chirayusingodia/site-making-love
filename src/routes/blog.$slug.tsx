@@ -26,9 +26,16 @@ export const Route = createFileRoute("/blog/$slug")({
           "@context": "https://schema.org",
           "@type": "BlogPosting",
           headline: post.title,
+          description: fallbackDescription,
           datePublished: post.published_at ?? post.created_at,
           image: post.cover_image_url || undefined,
           mainEntityOfPage: `https://www.punyata.com/blog/${params.slug}`,
+          author: { "@type": "Organization", name: "Punyata", url: "https://www.punyata.com/" },
+          publisher: {
+            "@type": "Organization",
+            name: "Punyata",
+            url: "https://www.punyata.com/",
+          },
         },
       });
     }
