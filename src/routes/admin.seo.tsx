@@ -547,6 +547,7 @@ function BlogEditor({
             path,
             title: `${title.trim()} — पुण्यता Blog`,
             meta_description: stripMarkdown(bodyMd).slice(0, 155),
+            og_image_url: coverUrl.trim() || null,
           });
           if (!seoErr) {
             await logAdminAudit("page_seo.upsert", "page_seo", null, {

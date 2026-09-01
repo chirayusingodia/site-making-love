@@ -95,6 +95,7 @@ import { Route as ApiAdminStaffListRouteImport } from './routes/api/admin/staff/
 import { Route as ApiAdminStaffCreateStaffRouteImport } from './routes/api/admin/staff/create-staff'
 import { Route as ApiAdminSalesAgentsListRouteImport } from './routes/api/admin/sales-agents/list'
 import { Route as ApiAdminSalesAgentsCreateRouteImport } from './routes/api/admin/sales-agents/create'
+import { Route as ApiAdminReportsSubscribersByChannelRouteImport } from './routes/api/admin/reports/subscribers-by-channel'
 import { Route as ApiAdminReportsPendingSevasRouteImport } from './routes/api/admin/reports/pending-sevas'
 import { Route as ApiAdminReportsMonthlyRouteImport } from './routes/api/admin/reports/monthly'
 import { Route as ApiAdminReportsExportRouteImport } from './routes/api/admin/reports/export'
@@ -106,6 +107,7 @@ import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/pay
 import { Route as ApiAdminLeadsUploadRouteImport } from './routes/api/admin/leads/upload'
 import { Route as ApiAdminLeadsSweepRouteImport } from './routes/api/admin/leads/sweep'
 import { Route as ApiAdminLeadsRoutingRouteImport } from './routes/api/admin/leads/routing'
+import { Route as ApiAdminLeadsFreeSewaPendingCountRouteImport } from './routes/api/admin/leads/free-sewa-pending-count'
 import { Route as ApiAdminLeadsAssignRouteImport } from './routes/api/admin/leads/assign'
 import { Route as ApiAdminHospitalsReallotRouteImport } from './routes/api/admin/hospitals/reallot'
 import { Route as ApiAdminHospitalsListRouteImport } from './routes/api/admin/hospitals/list'
@@ -556,6 +558,12 @@ const ApiAdminSalesAgentsCreateRoute =
     path: '/api/admin/sales-agents/create',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminReportsSubscribersByChannelRoute =
+  ApiAdminReportsSubscribersByChannelRouteImport.update({
+    id: '/api/admin/reports/subscribers-by-channel',
+    path: '/api/admin/reports/subscribers-by-channel',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminReportsPendingSevasRoute =
   ApiAdminReportsPendingSevasRouteImport.update({
     id: '/api/admin/reports/pending-sevas',
@@ -615,6 +623,12 @@ const ApiAdminLeadsRoutingRoute = ApiAdminLeadsRoutingRouteImport.update({
   path: '/api/admin/leads/routing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminLeadsFreeSewaPendingCountRoute =
+  ApiAdminLeadsFreeSewaPendingCountRouteImport.update({
+    id: '/api/admin/leads/free-sewa-pending-count',
+    path: '/api/admin/leads/free-sewa-pending-count',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminLeadsAssignRoute = ApiAdminLeadsAssignRouteImport.update({
   id: '/api/admin/leads/assign',
   path: '/api/admin/leads/assign',
@@ -743,6 +757,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
   '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/free-sewa-pending-count': typeof ApiAdminLeadsFreeSewaPendingCountRoute
   '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
@@ -754,6 +769,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/reports/subscribers-by-channel': typeof ApiAdminReportsSubscribersByChannelRoute
   '/api/admin/sales-agents/create': typeof ApiAdminSalesAgentsCreateRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
   '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
@@ -847,6 +863,7 @@ export interface FileRoutesByTo {
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
   '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/free-sewa-pending-count': typeof ApiAdminLeadsFreeSewaPendingCountRoute
   '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
@@ -858,6 +875,7 @@ export interface FileRoutesByTo {
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/reports/subscribers-by-channel': typeof ApiAdminReportsSubscribersByChannelRoute
   '/api/admin/sales-agents/create': typeof ApiAdminSalesAgentsCreateRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
   '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
@@ -955,6 +973,7 @@ export interface FileRoutesById {
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
   '/api/admin/leads/assign': typeof ApiAdminLeadsAssignRoute
+  '/api/admin/leads/free-sewa-pending-count': typeof ApiAdminLeadsFreeSewaPendingCountRoute
   '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
@@ -966,6 +985,7 @@ export interface FileRoutesById {
   '/api/admin/reports/export': typeof ApiAdminReportsExportRoute
   '/api/admin/reports/monthly': typeof ApiAdminReportsMonthlyRoute
   '/api/admin/reports/pending-sevas': typeof ApiAdminReportsPendingSevasRoute
+  '/api/admin/reports/subscribers-by-channel': typeof ApiAdminReportsSubscribersByChannelRoute
   '/api/admin/sales-agents/create': typeof ApiAdminSalesAgentsCreateRoute
   '/api/admin/sales-agents/list': typeof ApiAdminSalesAgentsListRoute
   '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
@@ -1064,6 +1084,7 @@ export interface FileRouteTypes {
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
     | '/api/admin/leads/assign'
+    | '/api/admin/leads/free-sewa-pending-count'
     | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
@@ -1075,6 +1096,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
+    | '/api/admin/reports/subscribers-by-channel'
     | '/api/admin/sales-agents/create'
     | '/api/admin/sales-agents/list'
     | '/api/admin/staff/create-staff'
@@ -1168,6 +1190,7 @@ export interface FileRouteTypes {
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
     | '/api/admin/leads/assign'
+    | '/api/admin/leads/free-sewa-pending-count'
     | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
@@ -1179,6 +1202,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
+    | '/api/admin/reports/subscribers-by-channel'
     | '/api/admin/sales-agents/create'
     | '/api/admin/sales-agents/list'
     | '/api/admin/staff/create-staff'
@@ -1275,6 +1299,7 @@ export interface FileRouteTypes {
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
     | '/api/admin/leads/assign'
+    | '/api/admin/leads/free-sewa-pending-count'
     | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
@@ -1286,6 +1311,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports/export'
     | '/api/admin/reports/monthly'
     | '/api/admin/reports/pending-sevas'
+    | '/api/admin/reports/subscribers-by-channel'
     | '/api/admin/sales-agents/create'
     | '/api/admin/sales-agents/list'
     | '/api/admin/staff/create-staff'
@@ -1355,6 +1381,7 @@ export interface RootRouteChildren {
   ApiAdminHospitalsListRoute: typeof ApiAdminHospitalsListRoute
   ApiAdminHospitalsReallotRoute: typeof ApiAdminHospitalsReallotRoute
   ApiAdminLeadsAssignRoute: typeof ApiAdminLeadsAssignRoute
+  ApiAdminLeadsFreeSewaPendingCountRoute: typeof ApiAdminLeadsFreeSewaPendingCountRoute
   ApiAdminLeadsRoutingRoute: typeof ApiAdminLeadsRoutingRoute
   ApiAdminLeadsSweepRoute: typeof ApiAdminLeadsSweepRoute
   ApiAdminLeadsUploadRoute: typeof ApiAdminLeadsUploadRoute
@@ -1366,6 +1393,7 @@ export interface RootRouteChildren {
   ApiAdminReportsExportRoute: typeof ApiAdminReportsExportRoute
   ApiAdminReportsMonthlyRoute: typeof ApiAdminReportsMonthlyRoute
   ApiAdminReportsPendingSevasRoute: typeof ApiAdminReportsPendingSevasRoute
+  ApiAdminReportsSubscribersByChannelRoute: typeof ApiAdminReportsSubscribersByChannelRoute
   ApiAdminSalesAgentsCreateRoute: typeof ApiAdminSalesAgentsCreateRoute
   ApiAdminSalesAgentsListRoute: typeof ApiAdminSalesAgentsListRoute
   ApiAdminStaffCreateStaffRoute: typeof ApiAdminStaffCreateStaffRoute
@@ -1981,6 +2009,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminSalesAgentsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/reports/subscribers-by-channel': {
+      id: '/api/admin/reports/subscribers-by-channel'
+      path: '/api/admin/reports/subscribers-by-channel'
+      fullPath: '/api/admin/reports/subscribers-by-channel'
+      preLoaderRoute: typeof ApiAdminReportsSubscribersByChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/reports/pending-sevas': {
       id: '/api/admin/reports/pending-sevas'
       path: '/api/admin/reports/pending-sevas'
@@ -2056,6 +2091,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/leads/routing'
       fullPath: '/api/admin/leads/routing'
       preLoaderRoute: typeof ApiAdminLeadsRoutingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads/free-sewa-pending-count': {
+      id: '/api/admin/leads/free-sewa-pending-count'
+      path: '/api/admin/leads/free-sewa-pending-count'
+      fullPath: '/api/admin/leads/free-sewa-pending-count'
+      preLoaderRoute: typeof ApiAdminLeadsFreeSewaPendingCountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/leads/assign': {
@@ -2275,6 +2317,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminHospitalsListRoute: ApiAdminHospitalsListRoute,
   ApiAdminHospitalsReallotRoute: ApiAdminHospitalsReallotRoute,
   ApiAdminLeadsAssignRoute: ApiAdminLeadsAssignRoute,
+  ApiAdminLeadsFreeSewaPendingCountRoute:
+    ApiAdminLeadsFreeSewaPendingCountRoute,
   ApiAdminLeadsRoutingRoute: ApiAdminLeadsRoutingRoute,
   ApiAdminLeadsSweepRoute: ApiAdminLeadsSweepRoute,
   ApiAdminLeadsUploadRoute: ApiAdminLeadsUploadRoute,
@@ -2286,6 +2330,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminReportsExportRoute: ApiAdminReportsExportRoute,
   ApiAdminReportsMonthlyRoute: ApiAdminReportsMonthlyRoute,
   ApiAdminReportsPendingSevasRoute: ApiAdminReportsPendingSevasRoute,
+  ApiAdminReportsSubscribersByChannelRoute:
+    ApiAdminReportsSubscribersByChannelRoute,
   ApiAdminSalesAgentsCreateRoute: ApiAdminSalesAgentsCreateRoute,
   ApiAdminSalesAgentsListRoute: ApiAdminSalesAgentsListRoute,
   ApiAdminStaffCreateStaffRoute: ApiAdminStaffCreateStaffRoute,

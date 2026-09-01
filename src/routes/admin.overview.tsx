@@ -19,6 +19,7 @@ import {
   Zap,
   Info,
   Lock,
+  PhoneCall,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,28 @@ interface OwnerFinancials {
   yearlyPlansActiveCount: number;
   capturedRevenuePaise: number;
   capturedPaymentsCount: number;
+}
+
+// Maps raw acquisition_channel values (see src/lib/attribution.ts and
+// send-payment-link.ts) to a readable label for the breakdown card.
+function channelLabel(channel: string): string {
+  const known: Record<string, string> = {
+    telecall: "Telecaller (staff)",
+    instagram: "Instagram",
+    facebook: "Facebook",
+    facebook_ads: "Facebook Ads",
+    whatsapp: "WhatsApp",
+    google_ads: "Google Ads",
+    google_organic: "Google (organic)",
+    youtube: "YouTube",
+    organic: "Organic",
+    direct: "Direct",
+    "organic/direct": "Organic / Direct",
+  };
+  if (known[channel]) return known[channel];
+  if (channel.startsWith("coupon:")) return `Coupon (${channel.slice(7)})`;
+  if (channel.startsWith("referral:")) return `Referral (${channel.slice(9)})`;
+  return channel;
 }
 
 interface MetricCardProps {
@@ -158,6 +181,10 @@ function AdminOverviewPage() {
 
   const [metrics, setMetrics] = useState<OverviewMetrics | null>(null);
   const [financials, setFinancials] = useState<OwnerFinancials | null>(null);
+  const [freeSewaPendingCount, setFreeSewaPendingCount] = useState<number | null>(null);
+  const [channelBreakdown, setChannelBreakdown] = useState<
+    { channel: string; count: number }[] | null
+  >(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -259,6 +286,20 @@ function AdminOverviewPage() {
         console.warn("Supabase pending batches fetch warning:", pendingErr.message);
       }
 
+      // 4b. Free Sewa Pending — agent-sourced leads awaiting the
+      // telecaller's free-sewa confirmation call (§ Free Sewa gate).
+      // `leads` is staff-only via RLS, so this goes through the
+      // service-role admin endpoint rather than the anon client.
+      try {
+        const freeSewa = await callAdminApi<{ count: number }>(
+          "/api/admin/leads/free-sewa-pending-count",
+        );
+        setFreeSewaPendingCount(freeSewa.count);
+      } catch (freeSewaErr) {
+        console.error("free-sewa-pending-count fetch failed:", freeSewaErr);
+        setFreeSewaPendingCount(null);
+      }
+
       setMetrics({
         activeSubscriptionsCount: activeSubsData ? activeSubsData.length : 0,
         pausedSubscriptionsCount: pausedCount || 0,
@@ -297,8 +338,19 @@ function AdminOverviewPage() {
           setErrorMsg("Could not load owner financials — counts shown, ₹ figures unavailable.");
           setFinancials(null);
         }
+
+        try {
+          const attr = await callAdminApi<{ channels: { channel: string; count: number }[] }>(
+            "/api/admin/reports/subscribers-by-channel",
+          );
+          setChannelBreakdown(attr.channels);
+        } catch (attrErr) {
+          console.error("subscribers-by-channel fetch failed:", attrErr);
+          setChannelBreakdown(null);
+        }
       } else {
         setFinancials(null);
+        setChannelBreakdown(null);
       }
     } catch (err) {
       console.error("Failed to load admin metrics:", err);
@@ -417,7 +469,7 @@ function AdminOverviewPage() {
         </div>
       )}
 
-      {/* Metric Cards Grid — 6 Prompt Metrics */}
+      {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* 1. Active Subscriptions Count */}
         <MetricCard
@@ -475,6 +527,23 @@ function AdminOverviewPage() {
           icon={Clock}
           iconBg="bg-amber-100"
           iconColor="text-amber-700"
+          loading={loading}
+        />
+
+        {/* 4b. Free Sewa Pending — agent leads awaiting telecaller's
+            free-sewa confirmation call, blocked from the paid-conversion
+            queue until confirmed (§ Free Sewa gate). */}
+        <MetricCard
+          title="Free Sewa Pending"
+          value={freeSewaPendingCount ?? 0}
+          subtitle="Agent leads awaiting free-sewa confirmation call"
+          badge={{
+            text: freeSewaPendingCount ? "Needs Calling" : "Up to Date",
+            variant: freeSewaPendingCount ? "destructive" : "outline",
+          }}
+          icon={PhoneCall}
+          iconBg="bg-violet-100"
+          iconColor="text-violet-700"
           loading={loading}
         />
 
@@ -610,6 +679,59 @@ function AdminOverviewPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Subscribers by Acquisition Channel — OWNER-ONLY (marketing-spend-adjacent) */}
+      {isOwner ? (
+        <Card className="border border-amber-900/10 bg-white">
+          <CardHeader>
+            <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Users className="w-4 h-4 text-violet-700" />
+              Subscribers by Channel
+            </CardTitle>
+            <CardDescription className="text-xs text-amber-900/60">
+              Every subscription that ever left "pending", bucketed by how it was acquired —
+              Instagram/Facebook/Google Ads links carry this once tagged with a{" "}
+              <code className="font-mono">?utm_source=</code> parameter.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!channelBreakdown ? (
+              <div className="text-xs text-amber-900/50 py-4 text-center">
+                {loading ? "Loading…" : "No data yet."}
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {(() => {
+                  const max = Math.max(...channelBreakdown.map((c) => c.count), 1);
+                  return channelBreakdown.map((c) => (
+                    <div key={c.channel} className="flex items-center gap-3 text-xs">
+                      <div className="w-32 shrink-0 truncate font-medium text-slate-700">
+                        {channelLabel(c.channel)}
+                      </div>
+                      <div className="flex-1 h-2.5 rounded-full bg-amber-50 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-violet-500"
+                          style={{ width: `${Math.max((c.count / max) * 100, 4)}%` }}
+                        />
+                      </div>
+                      <div className="w-8 shrink-0 text-right font-mono font-semibold text-slate-900">
+                        {c.count}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border border-dashed border-amber-900/25 bg-amber-50/40">
+          <CardContent className="h-32 flex flex-col items-center justify-center text-amber-900/40 gap-2">
+            <Lock className="w-6 h-6" />
+            <p className="text-xs font-semibold">Owner only — Subscribers by Channel</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Operational Highlights & Logic Compliance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

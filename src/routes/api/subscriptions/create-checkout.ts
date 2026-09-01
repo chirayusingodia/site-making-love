@@ -37,7 +37,12 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
           return json({ error: "Pehle naam aur mobile number bharein." }, 400);
         }
 
-        let body: { plan_id?: unknown; coupon_code?: unknown; att?: unknown };
+        let body: {
+          plan_id?: unknown;
+          coupon_code?: unknown;
+          att?: unknown;
+          marketing?: unknown;
+        };
         try {
           body = await request.json();
         } catch {
@@ -70,6 +75,37 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
           sourcingAgentId = lead?.source_agent_id ?? null;
         }
 
+        // Marketing-channel attribution (§ Attribution) — first-touch data
+        // the browser captured on landing (src/lib/attribution.ts). Purely
+        // descriptive: never touches commission/staff attribution above.
+        // A malformed/missing object just means no channel gets stamped —
+        // never blocks the purchase.
+        let marketing: {
+          channel?: string;
+          utmSource?: string | null;
+          utmMedium?: string | null;
+          utmCampaign?: string | null;
+          utmContent?: string | null;
+          utmTerm?: string | null;
+          gclid?: string | null;
+          fbclid?: string | null;
+          landingPath?: string | null;
+        } | null = null;
+        if (body?.marketing && typeof body.marketing === "object") {
+          const m = body.marketing as Record<string, unknown>;
+          marketing = {
+            channel: typeof m.channel === "string" ? m.channel.slice(0, 100) : undefined,
+            utmSource: typeof m.utmSource === "string" ? m.utmSource.slice(0, 200) : null,
+            utmMedium: typeof m.utmMedium === "string" ? m.utmMedium.slice(0, 200) : null,
+            utmCampaign: typeof m.utmCampaign === "string" ? m.utmCampaign.slice(0, 200) : null,
+            utmContent: typeof m.utmContent === "string" ? m.utmContent.slice(0, 200) : null,
+            utmTerm: typeof m.utmTerm === "string" ? m.utmTerm.slice(0, 200) : null,
+            gclid: typeof m.gclid === "string" ? m.gclid.slice(0, 200) : null,
+            fbclid: typeof m.fbclid === "string" ? m.fbclid.slice(0, 200) : null,
+            landingPath: typeof m.landingPath === "string" ? m.landingPath.slice(0, 300) : null,
+          };
+        }
+
         try {
           const outcome = await createCheckoutForUser({
             adminDb: getServiceClient(),
@@ -78,6 +114,7 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
             couponCode,
             ...(telecallerId ? { telecallerId } : {}),
             ...(sourcingAgentId ? { salesAgentId: sourcingAgentId } : {}),
+            ...(marketing ? { marketing } : {}),
           });
           // The gateway's publishable key rides inside `outcome`
           // (gatewayPublicKey), resolved from whichever provider

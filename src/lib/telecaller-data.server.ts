@@ -571,6 +571,29 @@ export async function loadFreeSewaPendingLeads(
   return result;
 }
 
+/**
+ * Owner/admin dashboard tile — total count of leads stuck awaiting free-sewa
+ * confirmation, across all telecallers. Mirrors the `awaiting_free_sewa` gate
+ * in loadGatedLeads but as a head-count query: no row/column fetch, no
+ * call_logs join, since the dashboard only needs the total.
+ */
+export async function loadFreeSewaPendingCount(db: SupabaseClient): Promise<number> {
+  const { count, error } = await db
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["new", "assigned", "in_progress", "link_sent"])
+    .not("assigned_to", "is", null)
+    .not("source_agent_id", "is", null)
+    .is("free_pooja_at", null);
+  if (error) {
+    if (/relation|schema cache|could not find the table|does not exist/i.test(error.message)) {
+      return 0; // pre-migration-013/028 reality
+    }
+    throw new Error(error.message);
+  }
+  return count ?? 0;
+}
+
 // ─── Person card (§6.4 — the screen she lives on) ────────────
 
 export interface FamilyMemberFull {

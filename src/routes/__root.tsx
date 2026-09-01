@@ -131,11 +131,41 @@ const WEBSITE_JSON_LD = {
   url: "https://www.punyata.com/",
 };
 
+// Ad-platform tags — OFF unless the corresponding env var is set, so a
+// dev/preview build never fires pixels. Get these from your own accounts:
+//   VITE_META_PIXEL_ID       — Meta Events Manager → Data Sources → your Pixel
+//   VITE_GA4_MEASUREMENT_ID  — Google Analytics → Admin → Data Streams (G-XXXXXXX)
+// Neither requires an ad campaign to exist first; both are free to create.
+// Firing a subscribe/conversion event on activation is wired in
+// subscription-success.tsx.
+const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
+const GA4_MEASUREMENT_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        {GA4_MEASUREMENT_ID && (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`}
+            />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_MEASUREMENT_ID}');`,
+              }}
+            />
+          </>
+        )}
+        {META_PIXEL_ID && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`,
+            }}
+          />
+        )}
       </head>
       <body>
         <script

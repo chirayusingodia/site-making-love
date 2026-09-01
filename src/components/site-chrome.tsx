@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { User, Home, Sparkles, MessageSquareText, Info } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { useLanguage, useTranslation, LANG_KEY, type Lang } from "@/lib/translations";
+import { captureAttributionOnce } from "@/lib/attribution";
 
 const WHATSAPP_RAW = "918005828548";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(
@@ -162,6 +163,13 @@ export function WhatsAppFloat() {
 }
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
+  // First-touch marketing attribution (§ Attribution) — capture once per
+  // visitor, read back at checkout so a subscriber days later still
+  // credits whichever ad/link actually brought them in.
+  useEffect(() => {
+    captureAttributionOnce();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
