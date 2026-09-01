@@ -527,7 +527,7 @@ export type PublicPlansData = {
   sevaList: SevaListItem[];
 };
 
-async function fetchPublicPlansData(): Promise<PublicPlansData> {
+export async function fetchPublicPlansData(): Promise<PublicPlansData> {
   const [plansRes, sevasRes, planSevasRes, rulesRes, addonsRes] = await Promise.all([
     supabase.from("plans").select("*").eq("is_active", true).order("sort_order"),
     supabase.from("sevas").select("*").eq("is_active", true).order("sort_order"),

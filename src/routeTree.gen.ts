@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as TelecallerRouteImport } from './routes/telecaller'
 import { Route as SubscriptionSuccessRouteImport } from './routes/subscription-success'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SevasRouteImport } from './routes/sevas'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -21,6 +23,7 @@ import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CompleteProfileRouteImport } from './routes/complete-profile'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
@@ -35,9 +38,11 @@ import { Route as TelecallerMyDayRouteImport } from './routes/telecaller.my-day'
 import { Route as TelecallerEarningsRouteImport } from './routes/telecaller.earnings'
 import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
 import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AgentMyLeadsRouteImport } from './routes/agent.my-leads'
 import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
 import { Route as AdminStaffRouteImport } from './routes/admin.staff'
+import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-lists'
 import { Route as AdminRoutingRouteImport } from './routes/admin.routing'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -48,6 +53,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
+import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller.queue.$queueKey'
 import { Route as TelecallerPersonSubscriptionIdRouteImport } from './routes/telecaller.person.$subscriptionId'
 import { Route as TelecallerLeadLeadIdRouteImport } from './routes/telecaller.lead.$leadId'
@@ -106,6 +112,8 @@ import { Route as ApiAdminHospitalsListRouteImport } from './routes/api/admin/ho
 import { Route as ApiAdminHospitalsCreateRouteImport } from './routes/api/admin/hospitals/create'
 import { Route as ApiAdminCommissionsReconcileRouteImport } from './routes/api/admin/commissions/reconcile'
 import { Route as ApiAdminCommissionsLockRouteImport } from './routes/api/admin/commissions/lock'
+import { Route as ApiAdminAuditLogListRouteImport } from './routes/api/admin/audit-log/list'
+import { Route as ApiAdminAuditLogFiltersRouteImport } from './routes/api/admin/audit-log/filters'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
@@ -122,9 +130,19 @@ const SubscriptionSuccessRoute = SubscriptionSuccessRouteImport.update({
   path: '/subscription-success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SevasRoute = SevasRouteImport.update({
   id: '/sevas',
   path: '/sevas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewsRoute = ReviewsRouteImport.update({
@@ -165,6 +183,11 @@ const FaqRoute = FaqRouteImport.update({
 const CompleteProfileRoute = CompleteProfileRouteImport.update({
   id: '/complete-profile',
   path: '/complete-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentRoute = AgentRouteImport.update({
@@ -237,6 +260,11 @@ const CheckoutPlanIdRoute = CheckoutPlanIdRouteImport.update({
   path: '/checkout/$planId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
+} as any)
 const AgentMyLeadsRoute = AgentMyLeadsRouteImport.update({
   id: '/my-leads',
   path: '/my-leads',
@@ -250,6 +278,11 @@ const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
 const AdminStaffRoute = AdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSeoRoute = AdminSeoRouteImport.update({
+  id: '/seo',
+  path: '/seo',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSankalpListsRoute = AdminSankalpListsRouteImport.update({
@@ -300,6 +333,11 @@ const AdminLeadsRoute = AdminLeadsRouteImport.update({
 const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
   id: '/commissions',
   path: '/commissions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
+  id: '/audit-log',
+  path: '/audit-log',
   getParentRoute: () => AdminRoute,
 } as any)
 const TelecallerQueueQueueKeyRoute = TelecallerQueueQueueKeyRouteImport.update({
@@ -609,12 +647,23 @@ const ApiAdminCommissionsLockRoute = ApiAdminCommissionsLockRouteImport.update({
   path: '/api/admin/commissions/lock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAuditLogListRoute = ApiAdminAuditLogListRouteImport.update({
+  id: '/api/admin/audit-log/list',
+  path: '/api/admin/audit-log/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAuditLogFiltersRoute = ApiAdminAuditLogFiltersRouteImport.update({
+  id: '/api/admin/audit-log/filters',
+  path: '/api/admin/audit-log/filters',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/agent': typeof AgentRouteWithChildren
+  '/blog': typeof BlogRouteWithChildren
   '/complete-profile': typeof CompleteProfileRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
@@ -623,10 +672,13 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sevas': typeof SevasRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -637,9 +689,11 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/telecaller/earnings': typeof TelecallerEarningsRoute
@@ -681,6 +735,8 @@ export interface FileRoutesByFullPath {
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
   '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
+  '/api/admin/audit-log/filters': typeof ApiAdminAuditLogFiltersRoute
+  '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
@@ -712,6 +768,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/blog': typeof BlogRouteWithChildren
   '/complete-profile': typeof CompleteProfileRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
@@ -720,9 +777,12 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sevas': typeof SevasRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -733,9 +793,11 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/telecaller/earnings': typeof TelecallerEarningsRoute
@@ -777,6 +839,8 @@ export interface FileRoutesByTo {
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
   '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
+  '/api/admin/audit-log/filters': typeof ApiAdminAuditLogFiltersRoute
+  '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
@@ -811,6 +875,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/agent': typeof AgentRouteWithChildren
+  '/blog': typeof BlogRouteWithChildren
   '/complete-profile': typeof CompleteProfileRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
@@ -819,10 +884,13 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sevas': typeof SevasRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -833,9 +901,11 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
   '/plan/$planId': typeof PlanPlanIdRoute
   '/telecaller/earnings': typeof TelecallerEarningsRoute
@@ -877,6 +947,8 @@ export interface FileRoutesById {
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
   '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
+  '/api/admin/audit-log/filters': typeof ApiAdminAuditLogFiltersRoute
+  '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
@@ -912,6 +984,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/agent'
+    | '/blog'
     | '/complete-profile'
     | '/faq'
     | '/login'
@@ -920,10 +993,13 @@ export interface FileRouteTypes {
     | '/profile'
     | '/refund-policy'
     | '/reviews'
+    | '/robots.txt'
     | '/sevas'
+    | '/sitemap.xml'
     | '/subscription-success'
     | '/telecaller'
     | '/terms-and-conditions'
+    | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/overview'
@@ -934,9 +1010,11 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/routing'
     | '/admin/sankalp-lists'
+    | '/admin/seo'
     | '/admin/staff'
     | '/admin/subscribers'
     | '/agent/my-leads'
+    | '/blog/$slug'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/telecaller/earnings'
@@ -978,6 +1056,8 @@ export interface FileRouteTypes {
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
     | '/telecaller/queue/$queueKey'
+    | '/api/admin/audit-log/filters'
+    | '/api/admin/audit-log/list'
     | '/api/admin/commissions/lock'
     | '/api/admin/commissions/reconcile'
     | '/api/admin/hospitals/create'
@@ -1009,6 +1089,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/blog'
     | '/complete-profile'
     | '/faq'
     | '/login'
@@ -1017,9 +1098,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/refund-policy'
     | '/reviews'
+    | '/robots.txt'
     | '/sevas'
+    | '/sitemap.xml'
     | '/subscription-success'
     | '/terms-and-conditions'
+    | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/overview'
@@ -1030,9 +1114,11 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/routing'
     | '/admin/sankalp-lists'
+    | '/admin/seo'
     | '/admin/staff'
     | '/admin/subscribers'
     | '/agent/my-leads'
+    | '/blog/$slug'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/telecaller/earnings'
@@ -1074,6 +1160,8 @@ export interface FileRouteTypes {
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
     | '/telecaller/queue/$queueKey'
+    | '/api/admin/audit-log/filters'
+    | '/api/admin/audit-log/list'
     | '/api/admin/commissions/lock'
     | '/api/admin/commissions/reconcile'
     | '/api/admin/hospitals/create'
@@ -1107,6 +1195,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/agent'
+    | '/blog'
     | '/complete-profile'
     | '/faq'
     | '/login'
@@ -1115,10 +1204,13 @@ export interface FileRouteTypes {
     | '/profile'
     | '/refund-policy'
     | '/reviews'
+    | '/robots.txt'
     | '/sevas'
+    | '/sitemap.xml'
     | '/subscription-success'
     | '/telecaller'
     | '/terms-and-conditions'
+    | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/overview'
@@ -1129,9 +1221,11 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/routing'
     | '/admin/sankalp-lists'
+    | '/admin/seo'
     | '/admin/staff'
     | '/admin/subscribers'
     | '/agent/my-leads'
+    | '/blog/$slug'
     | '/checkout/$planId'
     | '/plan/$planId'
     | '/telecaller/earnings'
@@ -1173,6 +1267,8 @@ export interface FileRouteTypes {
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
     | '/telecaller/queue/$queueKey'
+    | '/api/admin/audit-log/filters'
+    | '/api/admin/audit-log/list'
     | '/api/admin/commissions/lock'
     | '/api/admin/commissions/reconcile'
     | '/api/admin/hospitals/create'
@@ -1207,6 +1303,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   AgentRoute: typeof AgentRouteWithChildren
+  BlogRoute: typeof BlogRouteWithChildren
   CompleteProfileRoute: typeof CompleteProfileRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
@@ -1215,7 +1312,9 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
   ReviewsRoute: typeof ReviewsRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SevasRoute: typeof SevasRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubscriptionSuccessRoute: typeof SubscriptionSuccessRoute
   TelecallerRoute: typeof TelecallerRouteWithChildren
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
@@ -1248,6 +1347,8 @@ export interface RootRouteChildren {
   ApiTelecallerProofResendRoute: typeof ApiTelecallerProofResendRoute
   ApiTelecallerQueuesRoute: typeof ApiTelecallerQueuesRoute
   ApiTelecallerSendPaymentLinkRoute: typeof ApiTelecallerSendPaymentLinkRoute
+  ApiAdminAuditLogFiltersRoute: typeof ApiAdminAuditLogFiltersRoute
+  ApiAdminAuditLogListRoute: typeof ApiAdminAuditLogListRoute
   ApiAdminCommissionsLockRoute: typeof ApiAdminCommissionsLockRoute
   ApiAdminCommissionsReconcileRoute: typeof ApiAdminCommissionsReconcileRoute
   ApiAdminHospitalsCreateRoute: typeof ApiAdminHospitalsCreateRoute
@@ -1299,11 +1400,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SubscriptionSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sevas': {
       id: '/sevas'
       path: '/sevas'
       fullPath: '/sevas'
       preLoaderRoute: typeof SevasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reviews': {
@@ -1360,6 +1475,13 @@ declare module '@tanstack/react-router' {
       path: '/complete-profile'
       fullPath: '/complete-profile'
       preLoaderRoute: typeof CompleteProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent': {
@@ -1460,6 +1582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutPlanIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/agent/my-leads': {
       id: '/agent/my-leads'
       path: '/my-leads'
@@ -1479,6 +1608,13 @@ declare module '@tanstack/react-router' {
       path: '/staff'
       fullPath: '/admin/staff'
       preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/seo': {
+      id: '/admin/seo'
+      path: '/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AdminSeoRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/sankalp-lists': {
@@ -1549,6 +1685,13 @@ declare module '@tanstack/react-router' {
       path: '/commissions'
       fullPath: '/admin/commissions'
       preLoaderRoute: typeof AdminCommissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit-log': {
+      id: '/admin/audit-log'
+      path: '/audit-log'
+      fullPath: '/admin/audit-log'
+      preLoaderRoute: typeof AdminAuditLogRouteImport
       parentRoute: typeof AdminRoute
     }
     '/telecaller/queue/$queueKey': {
@@ -1957,10 +2100,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCommissionsLockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/audit-log/list': {
+      id: '/api/admin/audit-log/list'
+      path: '/api/admin/audit-log/list'
+      fullPath: '/api/admin/audit-log/list'
+      preLoaderRoute: typeof ApiAdminAuditLogListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/audit-log/filters': {
+      id: '/api/admin/audit-log/filters'
+      path: '/api/admin/audit-log/filters'
+      fullPath: '/api/admin/audit-log/filters'
+      preLoaderRoute: typeof ApiAdminAuditLogFiltersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminOverviewRoute: typeof AdminOverviewRoute
@@ -1971,6 +2129,7 @@ interface AdminRouteChildren {
   AdminReportsRoute: typeof AdminReportsRoute
   AdminRoutingRoute: typeof AdminRoutingRoute
   AdminSankalpListsRoute: typeof AdminSankalpListsRoute
+  AdminSeoRoute: typeof AdminSeoRoute
   AdminStaffRoute: typeof AdminStaffRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1978,6 +2137,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditLogRoute: AdminAuditLogRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminOverviewRoute: AdminOverviewRoute,
@@ -1988,6 +2148,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminRoutingRoute: AdminRoutingRoute,
   AdminSankalpListsRoute: AdminSankalpListsRoute,
+  AdminSeoRoute: AdminSeoRoute,
   AdminStaffRoute: AdminStaffRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -2007,6 +2168,16 @@ const AgentRouteChildren: AgentRouteChildren = {
 }
 
 const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
+
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface TelecallerRouteChildren {
   TelecallerEarningsRoute: typeof TelecallerEarningsRoute
@@ -2052,6 +2223,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   AgentRoute: AgentRouteWithChildren,
+  BlogRoute: BlogRouteWithChildren,
   CompleteProfileRoute: CompleteProfileRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
@@ -2060,7 +2232,9 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   RefundPolicyRoute: RefundPolicyRoute,
   ReviewsRoute: ReviewsRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SevasRoute: SevasRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubscriptionSuccessRoute: SubscriptionSuccessRoute,
   TelecallerRoute: TelecallerRouteWithChildren,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
@@ -2093,6 +2267,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTelecallerProofResendRoute: ApiTelecallerProofResendRoute,
   ApiTelecallerQueuesRoute: ApiTelecallerQueuesRoute,
   ApiTelecallerSendPaymentLinkRoute: ApiTelecallerSendPaymentLinkRoute,
+  ApiAdminAuditLogFiltersRoute: ApiAdminAuditLogFiltersRoute,
+  ApiAdminAuditLogListRoute: ApiAdminAuditLogListRoute,
   ApiAdminCommissionsLockRoute: ApiAdminCommissionsLockRoute,
   ApiAdminCommissionsReconcileRoute: ApiAdminCommissionsReconcileRoute,
   ApiAdminHospitalsCreateRoute: ApiAdminHospitalsCreateRoute,

@@ -1070,6 +1070,7 @@ itself.
 | Telecaller Panel (Part A + B) | `/telecaller`, leads, commission engine | ✅ Complete, reviewed — several findings still open (§21) |
 | Hospitals/Attribution/Performance | Hospitals, allotments, sourcing-agent fix, free-pooja capture, owner leaderboard | ✅ Complete, reviewed — mojibake bug confirmed fixed; a couple of findings still open (§21) |
 | Halted-subscription recovery | Migration 015, resume/reissue UI | 📝 **Specced 2026-08-23, not yet built** |
+| Admin/Telecaller mobile responsive fixes | Collapsible mobile nav, table scroll wrappers, touch-target sizing, sticky call-log bar cap (§21 M1–M5) | ✅ Shipped (commit `e64a3f1`, `Staging`) — typecheck-clean, not yet visually verified against a logged-in session |
 | 7 | SEO + Audit Log + Subscriber 360 polish | ⏳ Pending |
 
 ### ⚠️ Go-live config items (code done, infra/config not confirmed)
@@ -1129,6 +1130,23 @@ diverging from a tested helper that already did it correctly.
 |---|---|---|
 | L1 | `/telecaller/new` ("New Lead") called an endpoint that created an **auth user + profile** for the phone number instead of a pipeline lead. This (a) made the customer look signed-up before they ever were, (b) polluted Queue #5 "Signed Up, Never Bought", and (c) the "open" link routed to the broken bare person-card instead of a lead call-card. | **Confirmed fixed** — `create-lead.ts` now inserts into `leads` (status `assigned`, `assigned_to`/`created_by` = caller), never touches `profiles`/auth; idempotent on an existing open lead for the same phone; rate-limited via `LEAD_CREATE_DAILY_LIMIT`/day (IST). `telecaller.new.tsx` links to `/telecaller/lead/$leadId` (the real lead call-card). `my-day.ts` counts `leadsCreatedToday` from `leads`, not profiles. Verified by reading all four live files directly. |
 | L2 | Legacy telecaller-created profiles (from before the L1 fix) still show up in Queue #5 | **Confirmed fixed** — `loadTelecallerDataset` in `telecaller-data.server.ts` (line ~271) excludes any `profiles` row with `created_by_staff` set from Queue #5; migration `20260827_021_backfill_telecaller_profile_leads.sql` backfills those legacy rows into `leads` (idempotent `NOT EXISTS` guard). **Migration still needs to be applied to Supabase** — same pending-migration caveat as §8/migration 018. |
+
+### From 2026-08-31 session — Admin/Telecaller mobile responsive audit
+The `/admin` and `/telecaller` shells share one layout pattern (`flex flex-col md:flex-row` sidebar +
+content), but mobile treatment had drifted per-page — some pages got fixed, others never did.
+
+| ID | Finding | Status |
+|---|---|---|
+| M1 | Full sidebar nav (up to 11 items in admin) rendered as a full-width block **above** page content on mobile, with no collapse — every page required scrolling past the whole nav first | **Confirmed fixed** — `admin.tsx`/`telecaller.tsx` sidebar is now a tap-to-expand `<details>` accordion below `md`, unchanged (always-visible) at `md`+ |
+| M2 | 4 tables had no `overflow-x-auto` wrapper (Hospitals & Allotments + Recent Leads in `admin.leads.tsx`, payout-periods in `admin.commissions.tsx`, payout-history in `telecaller.earnings.tsx`), forcing horizontal page overflow on mobile — other admin list pages (`admin.performance.tsx`, `admin.staff.tsx`, `admin.routing.tsx`, `admin.payments.tsx`, `admin.plans-sevas.tsx`, `admin.reports.tsx`, `admin.subscribers.tsx`) already had this wrap | **Confirmed fixed** — all 4 now scroll horizontally in their own container |
+| M3 | Inline row-action buttons/selects (allot/re-allot, lead status buttons, lock & pay, proof-resend) were `h-7` (~28px) on every breakpoint, below the ~44px touch-target minimum | **Confirmed fixed** — bumped to `h-9` (36px) on mobile, `md:h-7` restores the compact desktop size |
+| M4 | Sticky call-log bar (`telecaller.lead.$leadId.tsx`, `telecaller.person.$subscriptionId.tsx`) had no height cap; on mobile every field (outcome/callback/notes/buttons) stacks full-width, and with the on-screen keyboard open it could consume most of the viewport and hide the call-history context above it | **Confirmed fixed** — capped at `max-h-[70vh] overflow-y-auto` |
+| M5 | Telecaller header's "₹ nahi dikhega" compliance note was `hidden sm:flex` — dropped below ~640px, i.e. the phones telecallers most likely use | **Confirmed fixed** — changed to `hidden md:flex`, consistent with the "Staging Environment" badge treatment on the admin header |
+
+Not itself a data/money-integrity bug like §21's other findings — pure layout/UX. Verified via
+`tsc --noEmit` (clean); **not yet visually verified against a logged-in session** — both shells are
+auth-gated (`beforeLoad` redirects an unauthenticated session to `/`), so a real admin/telecaller login
+is needed for an in-browser pass. Shipped in commit `e64a3f1` on `Staging`.
 
 ---
 

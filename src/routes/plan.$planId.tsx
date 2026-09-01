@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, ScrollText, ListChecks, Quote } from "lucide-react";
-import { usePublicPlans, getPlanById, type Plan } from "@/lib/plans";
+import { usePublicPlans, getPlanById, fetchPublicPlansData, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
@@ -12,8 +12,53 @@ import { ComparisonTable } from "@/components/ComparisonTable";
 import diya from "@/assets/lottie/diya.json";
 import { motion } from "framer-motion";
 import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
+import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
 
 export const Route = createFileRoute("/plan/$planId")({
+  head: async ({ params }) => {
+    const [seo, planData] = await Promise.all([
+      fetchPageSeo(`/plan/${params.planId}`),
+      fetchPublicPlansData().catch(() => null),
+    ]);
+    const plan = planData ? getPlanById(planData.plans, params.planId) : undefined;
+
+    const fallbackTitle = plan
+      ? `${plan.name} — पुण्यता | ${plan.price}${plan.cycle}`
+      : "Plan — पुण्यता";
+    const fallbackDescription = plan
+      ? (plan.tagline || plan.subheading || plan.heading).slice(0, 155)
+      : "पुण्यता की मासिक सेवा योजना।";
+
+    const meta: Array<Record<string, unknown>> = pageSeoMeta(seo, {
+      title: fallbackTitle,
+      description: fallbackDescription,
+    });
+
+    // Product schema — always live from the `plans` table (no
+    // description column there; tagline/highlight_text stand in).
+    if (plan) {
+      meta.push({
+        "script:ld+json": {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: plan.name,
+          description: plan.tagline || plan.subheading || plan.heading,
+          offers: {
+            "@type": "Offer",
+            price: plan.priceNumeric,
+            priceCurrency: "INR",
+            availability: "https://schema.org/InStock",
+            url: `https://www.punyata.com/plan/${params.planId}`,
+          },
+        },
+      });
+    }
+
+    return {
+      meta,
+      links: [{ rel: "canonical", href: `https://www.punyata.com/plan/${params.planId}` }],
+    };
+  },
   component: PlanDetailPage,
 });
 

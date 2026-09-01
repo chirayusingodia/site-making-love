@@ -3,15 +3,20 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { faqs } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
+import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
 
 export const Route = createFileRoute("/faq")({
-  head: () => ({
-    meta: [
-      { title: "FAQ — पुण्यता | अक्सर पूछे जाने वाले प्रश्न" },
-      { name: "description", content: "पुण्यता की सेवाओं के बारे में अक्सर पूछे जाने वाले प्रश्न — refund, cancel, proof, gotra एवं अन्य।" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.punyata.com/faq" }],
-  }),
+  head: async () => {
+    const seo = await fetchPageSeo("/faq");
+    return {
+      meta: pageSeoMeta(seo, {
+        title: "FAQ — पुण्यता | अक्सर पूछे जाने वाले प्रश्न",
+        description:
+          "पुण्यता की सेवाओं के बारे में अक्सर पूछे जाने वाले प्रश्न — refund, cancel, proof, gotra एवं अन्य।",
+      }),
+      links: [{ rel: "canonical", href: "https://www.punyata.com/faq" }],
+    };
+  },
   component: FaqPage,
 });
 
