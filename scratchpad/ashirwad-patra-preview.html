@@ -101,19 +101,20 @@
 
   .eyebrow { font-family: "Poppins", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 3.5px; text-transform: uppercase; color: var(--saffron); }
 
-  .name-block { margin-top: 22px; }
-  .name-block .eyebrow { margin-bottom: 11px; }
-  .names { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .fname { font-weight: 700; font-size: 23px; line-height: 1.25; color: var(--ink); }
-  .fname.primary { font-size: 31px; font-weight: 800; }
-  .gotra { margin-top: 10px; font-size: 14px; color: var(--ink-soft); }
-  .gotra b { font-weight: 600; color: #5a4632; }
-
   .blessing-lead {
     margin-top: 22px; max-width: 540px; font-size: 18px; font-weight: 700;
     line-height: 1.6; color: var(--saffron-deep);
   }
   .blessing { margin-top: 11px; max-width: 528px; font-size: 15px; line-height: 1.85; color: #4a3826; }
+
+  .name-block { margin-top: 26px; }
+  .name-block .eyebrow { margin-bottom: 14px; }
+  /* Names run in two columns, side by side with a gap between them. */
+  .names { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 56px; justify-items: center; max-width: 600px; margin: 0 auto; }
+  .names.single { grid-template-columns: 1fr; }
+  .fname { font-weight: 700; font-size: 24px; line-height: 1.32; color: var(--ink); }
+  .gotra { margin-top: 12px; font-size: 24px; font-weight: 400; color: #4a3826; }
+  .gotra b { font-weight: 400; color: #4a3826; }
 
   .sevas { margin-top: 24px; width: 100%; max-width: 560px; }
   .sevas .head { display: flex; align-items: center; gap: 14px; justify-content: center; margin-bottom: 13px; }
@@ -174,14 +175,14 @@
       <h1 class="title">आशीर्वाद पत्र</h1>
       <div class="subtitle">Ashirwad Patra</div>
 
+      <p class="blessing-lead" id="blessingLead"></p>
+      <p class="blessing" id="blessing"></p>
+
       <div class="name-block">
         <div class="eyebrow">इस पावन पत्र के आशीर्वाद के पात्र</div>
         <div class="names" id="names"></div>
         <div class="gotra" id="gotra"></div>
       </div>
-
-      <p class="blessing-lead" id="blessingLead"></p>
-      <p class="blessing" id="blessing"></p>
 
       <div class="sevas">
         <div class="head"><span class="eyebrow">आपके निमित्त सम्पन्न सेवाएँ</span></div>
@@ -233,10 +234,10 @@
 
   function render(i) {
     const s = SAMPLES[i];
-    document.getElementById("names").innerHTML = s.names
-      .map((n, idx) => '<div class="fname' + (idx === 0 && s.names.length > 1 ? " primary" : (s.names.length === 1 ? " primary" : "")) + '">' + n + "</div>")
-      .join("");
-    document.getElementById("gotra").innerHTML = "गोत्र &mdash; <b>" + s.gotra + "</b>";
+    const namesEl = document.getElementById("names");
+    namesEl.innerHTML = s.names.map((n) => '<div class="fname">' + n + "</div>").join("");
+    namesEl.classList.toggle("single", s.names.length === 1);
+    document.getElementById("gotra").innerHTML = "गोत्र &mdash; " + s.gotra;
     document.getElementById("blessingLead").textContent = LEAD;
     document.getElementById("blessing").textContent = BODY;
     document.getElementById("sevas").innerHTML = s.sevas
