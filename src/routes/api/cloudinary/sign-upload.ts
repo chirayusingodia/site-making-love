@@ -37,9 +37,10 @@ export const Route = createFileRoute("/api/cloudinary/sign-upload")({
           return json({ error: "Invalid JSON body" }, 400);
         }
         // Constrain folders to our own namespaces — no arbitrary paths.
-        // `punyata-proofs/*` = per-subscriber seva proofs (video).
-        // `punyata-site/*`   = marketing site photography (image).
-        if (!folder || !/^punyata-(proofs|site)\/[\w\-/]+$/.test(folder)) {
+        // `punyata-proofs/*`   = per-subscriber seva proofs (video).
+        // `punyata-site/*`     = marketing site photography (image).
+        // `punyata-ashirwad/*` = rendered Ashirwad Patra images.
+        if (!folder || !/^punyata-(proofs|site|ashirwad)\/[\w\-/]+$/.test(folder)) {
           return json({ error: "Invalid folder" }, 400);
         }
 

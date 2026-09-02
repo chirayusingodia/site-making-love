@@ -17,6 +17,7 @@ import {
   type SevaLite,
 } from "@/lib/sankalp-logic";
 import { callAdminApi, uploadToCloudinary } from "@/lib/cloudinary-upload";
+import { generateAshirwadPatrasForBatch } from "@/lib/ashirwad-patra";
 import {
   CalendarPlus,
   CheckCircle2,
@@ -880,6 +881,15 @@ function MarkCompletedButton({
       if (error) throw new Error(error.message);
       await onDone();
       succeeded = true;
+      // Auto-issue the Ashirwad Patra rows for this completed batch —
+      // one per family unit (all family names). Best-effort: a failure
+      // here never blocks completion; the admin can retry from the
+      // Ashirwad Patra page (generation is idempotent).
+      try {
+        await generateAshirwadPatrasForBatch(batchId);
+      } catch (genErr) {
+        console.warn("Ashirwad Patra auto-generate failed:", genErr);
+      }
     } catch (err) {
       // [Pass-2 F11] the empty catch hid failures completely — not even
       // the parent refresh ran (onDone was skipped), so the batch sat

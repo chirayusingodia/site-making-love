@@ -12,6 +12,9 @@ import {
   XCircle,
   CircleStop,
   RotateCcw,
+  ScrollText,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 import { SiteChrome } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
@@ -60,6 +63,20 @@ interface MemberRow {
   slot_number: number;
   full_name: string;
   gotra: string | null;
+}
+
+interface PatraRow {
+  id: string;
+  patra_no: string;
+  names: string[];
+  occasion_label: string;
+  batch_date: string;
+  image_url: string | null;
+}
+
+// Cloudinary: force a download (Content-Disposition: attachment).
+function patraDownloadUrl(u: string): string {
+  return u.includes("/upload/") ? u.replace("/upload/", "/upload/fl_attachment/") : u;
 }
 
 function fmtDate(d: string | null): string {
@@ -123,6 +140,7 @@ function MySubscriptionPage() {
   const { userId, loading: sessionLoading } = useSessionProfile();
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [membersBySub, setMembersBySub] = useState<Record<string, MemberRow[]>>({});
+  const [patras, setPatras] = useState<PatraRow[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -155,6 +173,21 @@ function MySubscriptionPage() {
         }),
       );
       setMembersBySub(map);
+
+      // Ashirwad Patra — issued per family unit after each completed
+      // pooja. RLS lets the devotee read only their own subscriptions'
+      // patras. Newest first; only rendered images are shown.
+      const subIds = rows.map((r) => r.id);
+      if (subIds.length > 0) {
+        const pRes = await supabase
+          .from("ashirwad_patras")
+          .select("id,patra_no,names,occasion_label,batch_date,image_url")
+          .in("subscription_id", subIds)
+          .order("batch_date", { ascending: false });
+        setPatras((pRes.data as PatraRow[]) ?? []);
+      } else {
+        setPatras([]);
+      }
       setLoadingData(false);
     })();
   }, [userId]);
@@ -342,6 +375,73 @@ function MySubscriptionPage() {
             </ul>
           )}
         </div>
+
+        {/* Ashirwad Patra — blessing certificates */}
+        {patras.length > 0 && (
+          <div className="card-soft p-5">
+            <div className="flex items-center gap-2 text-sm font-bold">
+              <ScrollText size={16} className="text-brand" />
+              आशीर्वाद पत्र
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              हर पूजा के बाद आपके परिवार के नाम से जारी आशीर्वाद पत्र।
+            </p>
+            <ul className="mt-3 space-y-3">
+              {patras.map((p) => (
+                <li
+                  key={p.id}
+                  className="flex gap-3 border-b border-black/5 pb-3 last:border-0 last:pb-0"
+                >
+                  <div className="w-16 shrink-0">
+                    {p.image_url ? (
+                      <a href={p.image_url} target="_blank" rel="noreferrer">
+                        <img
+                          src={p.image_url}
+                          alt={`आशीर्वाद पत्र ${p.patra_no}`}
+                          className="w-16 h-auto rounded-md border border-black/10"
+                        />
+                      </a>
+                    ) : (
+                      <div className="w-16 h-[88px] rounded-md border border-dashed border-brand/30 bg-brand-soft/20 flex items-center justify-center text-[9px] text-muted-foreground text-center px-1">
+                        जल्द ही
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-foreground leading-snug">
+                      {p.occasion_label}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {fmtDate(p.batch_date)}
+                    </div>
+                    {p.image_url ? (
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <a
+                          href={p.image_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] font-bold text-brand flex items-center gap-1"
+                        >
+                          <ExternalLink size={12} /> देखें
+                        </a>
+                        <a
+                          href={patraDownloadUrl(p.image_url)}
+                          className="text-[11px] font-bold text-foreground/70 flex items-center gap-1"
+                        >
+                          <Download size={12} /> Download
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-muted-foreground mt-1.5">
+                        पत्र तैयार हो रहा है।
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Address on file */}
         <AddressCard />

@@ -67,6 +67,7 @@ function AdminLayout() {
     { label: "Plans & Sevas", href: "/admin/plans-sevas", icon: Layers },
     { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText, badge: "New" },
     { label: "Proof Upload", href: "/admin/proof-upload", icon: Flame, badge: "Session 4" },
+    { label: "Ashirwad Patra", href: "/admin/ashirwad-patra", icon: Sparkles, badge: "New" },
     // [Pass-2 F2] was "/admin/proofs" — a route that never existed;
     // every click landed on the 404 page. Proof upload IS the seva
     // proofs surface, so both labels now point there.

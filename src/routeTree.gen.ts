@@ -55,6 +55,7 @@ import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminImagesRouteImport } from './routes/admin.images'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
+import { Route as AdminAshirwadPatraRouteImport } from './routes/admin.ashirwad-patra'
 import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller.queue.$queueKey'
 import { Route as TelecallerPersonSubscriptionIdRouteImport } from './routes/telecaller.person.$subscriptionId'
 import { Route as TelecallerLeadLeadIdRouteImport } from './routes/telecaller.lead.$leadId'
@@ -346,6 +347,11 @@ const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
 const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
   id: '/audit-log',
   path: '/audit-log',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAshirwadPatraRoute = AdminAshirwadPatraRouteImport.update({
+  id: '/ashirwad-patra',
+  path: '/ashirwad-patra',
   getParentRoute: () => AdminRoute,
 } as any)
 const TelecallerQueueQueueKeyRoute = TelecallerQueueQueueKeyRouteImport.update({
@@ -698,6 +704,7 @@ export interface FileRoutesByFullPath {
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/images': typeof AdminImagesRoute
@@ -805,6 +812,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/images': typeof AdminImagesRoute
@@ -916,6 +924,7 @@ export interface FileRoutesById {
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/images': typeof AdminImagesRoute
@@ -1028,6 +1037,7 @@ export interface FileRouteTypes {
     | '/subscription-success'
     | '/telecaller'
     | '/terms-and-conditions'
+    | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/images'
@@ -1135,6 +1145,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/subscription-success'
     | '/terms-and-conditions'
+    | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/images'
@@ -1245,6 +1256,7 @@ export interface FileRouteTypes {
     | '/subscription-success'
     | '/telecaller'
     | '/terms-and-conditions'
+    | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/images'
@@ -1741,6 +1753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditLogRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ashirwad-patra': {
+      id: '/admin/ashirwad-patra'
+      path: '/ashirwad-patra'
+      fullPath: '/admin/ashirwad-patra'
+      preLoaderRoute: typeof AdminAshirwadPatraRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/telecaller/queue/$queueKey': {
       id: '/telecaller/queue/$queueKey'
       path: '/queue/$queueKey'
@@ -2179,6 +2198,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAshirwadPatraRoute: typeof AdminAshirwadPatraRoute
   AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminImagesRoute: typeof AdminImagesRoute
@@ -2199,6 +2219,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAshirwadPatraRoute: AdminAshirwadPatraRoute,
   AdminAuditLogRoute: AdminAuditLogRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminImagesRoute: AdminImagesRoute,
