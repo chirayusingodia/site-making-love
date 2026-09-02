@@ -317,7 +317,7 @@ function CheckoutPage() {
         subscription_id: res.gatewayMandateId,
         name: "Punyata",
         description: `${plan.name} — Sewa Hamari, Punya Aapka`,
-        image: "/punyata-logo.svg",
+        image: "/punyata-logo.svg?v=3",
         prefill: {
           name: nameInput.trim() || profile?.full_name || "",
           contact:

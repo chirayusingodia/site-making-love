@@ -27,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CloudinaryImageButton } from "@/components/admin/CloudinaryImageButton";
 import {
   Select,
   SelectContent,
@@ -763,14 +764,28 @@ function PlansCrud({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Card Image URL</Label>
-                <Input
-                  id="edit-plan-image"
-                  value={editing.card_image_url ?? ""}
-                  onChange={(e) => setEditing({ ...editing, card_image_url: e.target.value })}
-                  className="text-sm font-mono"
-                  placeholder="https://..."
-                />
+                <Label className="text-xs font-semibold text-slate-700">Card Image</Label>
+                <div className="flex items-center gap-3">
+                  {editing.card_image_url && (
+                    <img
+                      src={editing.card_image_url}
+                      alt="Card preview"
+                      className="w-14 h-14 object-cover rounded-lg border border-slate-200"
+                    />
+                  )}
+                  <CloudinaryImageButton
+                    folder="punyata-site/plans"
+                    label="Upload image"
+                    onUploaded={(url) => setEditing({ ...editing, card_image_url: url })}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Yeh photo isi jagah se edit ho sakti hai, ya sabhi plan photos ek saath —{" "}
+                  <a href="/admin/images" className="text-amber-700 hover:underline">
+                    Admin → Photos
+                  </a>{" "}
+                  par.
+                </p>
               </div>
               <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                 <Switch

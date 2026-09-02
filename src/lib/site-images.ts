@@ -28,6 +28,11 @@
 // NOTE: several fallbacks below are byte-identical placeholder renders. They are
 // kept as SEPARATE keys on purpose — they are distinct semantic slots that will
 // each receive a different real photograph.
+//
+// An admin/owner can also set a `publicId` for any key below at runtime, from
+// /admin/images, without touching this file — see setSiteImageOverride() and
+// src/lib/site-image-overrides.ts. That path is for day-to-day photo swaps;
+// this file stays the source of truth for which slots EXIST.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Home / hero
@@ -307,7 +312,7 @@ export const SITE_IMAGES = {
     w: 1024,
     h: 1024,
   },
-} as const satisfies Record<string, SiteImage>;
+} satisfies Record<string, SiteImage>;
 
 export type SiteImageKey = keyof typeof SITE_IMAGES;
 
@@ -318,4 +323,19 @@ export type SiteImageKey = keyof typeof SITE_IMAGES;
  */
 export function externalImage(url: string, alt: string, w = 1024, h = 1024): SiteImage {
   return { publicId: "", fallback: url, alt, w, h };
+}
+
+/**
+ * Applies (or clears) a single admin-uploaded override in place. Every
+ * consumer (SlidingImageCard, ProofGallery, index.tsx, plans.tsx,
+ * plan.$planId.tsx) reads `.publicId` fresh off this same shared object at
+ * render time, so mutating it here is enough to update every one of them —
+ * no consumer file needs to know overrides exist. `key` comes
+ * from a DB row (site_image_overrides.slot_key), so it may not match a real
+ * slot any more (e.g. after a manifest key was renamed) — silently ignored
+ * rather than throwing, since a stale row should never break the page.
+ */
+export function setSiteImageOverride(key: string, cloudinaryPublicId: string): void {
+  if (!(key in SITE_IMAGES)) return;
+  SITE_IMAGES[key as SiteImageKey].publicId = cloudinaryPublicId;
 }

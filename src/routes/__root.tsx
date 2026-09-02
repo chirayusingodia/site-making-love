@@ -11,6 +11,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { loadAndApplySiteImageOverrides } from "../lib/site-image-overrides";
 
 function NotFoundComponent() {
   return (
@@ -84,12 +85,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "पुण्यता" },
       { property: "og:locale", content: "hi_IN" },
-      { property: "og:image", content: "https://www.punyata.com/og-image.jpg" },
+      { property: "og:image", content: "https://www.punyata.com/og-image.jpg?v=3" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: "पुण्यता — तीर्थ गुरु पुष्करराज से मासिक सेवा" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "https://www.punyata.com/og-image.jpg" },
+      { name: "twitter:image", content: "https://www.punyata.com/og-image.jpg?v=3" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/punyata-logo.svg?v=3" },
@@ -190,6 +191,14 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [loading, setLoading] = useState(true);
+  // Bumped once admin-uploaded photo overrides (site_image_overrides) are
+  // fetched and applied, so components already mounted re-render and pick
+  // up the mutated SITE_IMAGES/testimonials values — see
+  // src/lib/site-image-overrides.ts. Non-blocking: never delays first
+  // paint, so this never affects SEO/LCP. On a hard reload with an active
+  // override this can cause one brief default->custom photo swap; none on
+  // later client-side navigation since the mutation persists for the tab.
+  const [, setImageOverridesVersion] = useState(0);
 
   // [Bug 3.5] Dismiss on actual readiness (first painted frame) —
   // the fixed 1500ms timer blocked the whole app, including 404 and
@@ -202,6 +211,16 @@ function RootComponent() {
     return () => {
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAndApplySiteImageOverrides().then(() => {
+      if (!cancelled) setImageOverridesVersion((v) => v + 1);
+    });
+    return () => {
+      cancelled = true;
     };
   }, []);
 
