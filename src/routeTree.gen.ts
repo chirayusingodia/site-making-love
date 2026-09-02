@@ -52,6 +52,7 @@ import { Route as AdminPerformanceRouteImport } from './routes/admin.performance
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminImagesRouteImport } from './routes/admin.images'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller.queue.$queueKey'
@@ -330,6 +331,11 @@ const AdminOverviewRoute = AdminOverviewRouteImport.update({
 const AdminLeadsRoute = AdminLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminImagesRoute = AdminImagesRouteImport.update({
+  id: '/images',
+  path: '/images',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
@@ -694,6 +700,7 @@ export interface FileRoutesByFullPath {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -800,6 +807,7 @@ export interface FileRoutesByTo {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -910,6 +918,7 @@ export interface FileRoutesById {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -1021,6 +1030,7 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/admin/audit-log'
     | '/admin/commissions'
+    | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
     | '/admin/payments'
@@ -1127,6 +1137,7 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/admin/audit-log'
     | '/admin/commissions'
+    | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
     | '/admin/payments'
@@ -1236,6 +1247,7 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/admin/audit-log'
     | '/admin/commissions'
+    | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
     | '/admin/payments'
@@ -1708,6 +1720,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLeadsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/images': {
+      id: '/admin/images'
+      path: '/images'
+      fullPath: '/admin/images'
+      preLoaderRoute: typeof AdminImagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/commissions': {
       id: '/admin/commissions'
       path: '/commissions'
@@ -2162,6 +2181,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
+  AdminImagesRoute: typeof AdminImagesRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminOverviewRoute: typeof AdminOverviewRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
@@ -2181,6 +2201,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditLogRoute: AdminAuditLogRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
+  AdminImagesRoute: AdminImagesRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminOverviewRoute: AdminOverviewRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { callAdminApi, uploadToCloudinary } from "@/lib/cloudinary-upload";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { stripMarkdown } from "@/lib/markdown-lite";
 import {
@@ -10,7 +9,6 @@ import {
   ChevronRight,
   Loader2,
   Save,
-  Upload,
   Plus,
   Pencil,
   Trash2,
@@ -22,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CloudinaryImageButton } from "@/components/admin/CloudinaryImageButton";
 
 // Admin/owner tier — no extra beforeLoad needed here, the parent
 // /admin shell (admin.tsx) already redirects non-staff. Same pattern
@@ -55,70 +54,6 @@ function AdminSeoPage() {
           <BlogTab />
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-// ─── Shared: signed Cloudinary image upload button ─────────────────
-function CloudinaryImageButton({
-  folder,
-  label,
-  onUploaded,
-}: {
-  folder: string;
-  label: string;
-  onUploaded: (url: string) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-
-  async function handleFile(file: File) {
-    setErr(null);
-    setProgress(0);
-    try {
-      const sign = await callAdminApi<import("@/lib/cloudinary-upload").SignResponse>(
-        "/api/cloudinary/sign-upload",
-        { folder, resourceType: "image" },
-      );
-      const { secure_url } = await uploadToCloudinary(sign, file, setProgress);
-      onUploaded(secure_url);
-      setProgress(null);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Upload failed");
-      setProgress(null);
-    }
-  }
-
-  return (
-    <div className="space-y-1.5">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) void handleFile(f);
-          e.target.value = "";
-        }}
-      />
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={() => inputRef.current?.click()}
-        disabled={progress != null}
-        className="gap-1.5 text-xs"
-      >
-        {progress != null ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <Upload className="w-3.5 h-3.5" />
-        )}
-        {progress != null ? `Uploading ${progress}%` : label}
-      </Button>
-      {err && <div className="text-[11px] text-rose-600">{err}</div>}
     </div>
   );
 }

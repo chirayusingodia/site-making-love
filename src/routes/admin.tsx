@@ -21,6 +21,7 @@ import {
   ChevronDown,
   Search,
   ClipboardList,
+  Image as ImageIcon,
   type LucideIcon,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
@@ -75,6 +76,7 @@ function AdminLayout() {
     // lower-sensitivity than financial reports, so it sits in the
     // base list alongside Payments/Plans & Sevas.
     { label: "SEO & Content", href: "/admin/seo", icon: Search, badge: "New" },
+    { label: "Photos", href: "/admin/images", icon: ImageIcon, badge: "New" },
     // Reports is OWNER-ONLY (financial data). Hidden until the role
     // resolves and confirmed 'owner' — the route itself is also
     // guarded in beforeLoad, and the API rejects non-owners with 403.

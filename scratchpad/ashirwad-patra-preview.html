@@ -1,0 +1,267 @@
+<title>आशीर्वाद पत्र</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martel:wght@400;600;700;800;900&family=Poppins:wght@400;500;600&display=swap" />
+<style>
+  :root {
+    --page: #efe7d6;
+    --chrome-ink: #4a3826;
+    --chrome-soft: #8a7454;
+    --btn-bg: #fffaf0;
+    --btn-border: #d9c69c;
+    --btn-active: #c05a17;
+
+    --paper: #fbf6ea;
+    --paper-2: #f6eedc;
+    --ink: #3a2a1c;
+    --ink-soft: #7a6552;
+    --saffron: #c05a17;
+    --saffron-deep: #9c4410;
+    --gold: #b48a32;
+    --gold-line: #c9a54e;
+    --gold-pale: #e3ce9c;
+    --wm: #ecdfc0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #211a12; --chrome-ink: #f0e6d3; --chrome-soft: #b39d78;
+      --btn-bg: #2c2318; --btn-border: #4c3d28;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #211a12; --chrome-ink: #f0e6d3; --chrome-soft: #b39d78;
+    --btn-bg: #2c2318; --btn-border: #4c3d28;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--page); color: var(--chrome-ink);
+    font-family: "Poppins", system-ui, sans-serif; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 28px 16px 56px;
+  }
+
+  .lead { text-align: center; max-width: 640px; }
+  .lead .k { font-family: "Martel", Georgia, serif; font-weight: 800; font-size: 22px; letter-spacing: .3px; }
+  .lead p { font-size: 13.5px; color: var(--chrome-soft); margin-top: 6px; line-height: 1.6; }
+
+  .switch { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0 22px; }
+  .switch button {
+    font-family: "Poppins", sans-serif; font-size: 12.5px; font-weight: 500; color: var(--chrome-ink);
+    background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: 999px;
+    padding: 7px 15px; cursor: pointer; transition: all .18s ease;
+  }
+  .switch button:hover { border-color: var(--btn-active); }
+  .switch button[aria-pressed="true"] { background: var(--btn-active); border-color: var(--btn-active); color: #fff; }
+  .switch button:focus-visible { outline: 2px solid var(--btn-active); outline-offset: 2px; }
+
+  .stage { width: 100%; display: flex; justify-content: center; }
+
+  .cert {
+    position: relative; width: 720px; height: 1018px; flex: none;
+    background: radial-gradient(120% 80% at 50% 0%, var(--paper) 60%, var(--paper-2) 100%);
+    color: var(--ink); font-family: "Martel", Georgia, serif; overflow: hidden;
+    box-shadow: 0 24px 60px -28px rgba(58,42,28,.55), 0 4px 14px -6px rgba(58,42,28,.25);
+    transform-origin: top center;
+  }
+
+  .wm {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 430px; line-height: 1; color: var(--wm); font-weight: 700;
+    pointer-events: none; user-select: none; z-index: 0;
+  }
+
+  .frame-outer { position: absolute; inset: 26px; border: 2px solid var(--gold-line); border-radius: 4px; z-index: 1; }
+  .frame-inner { position: absolute; inset: 34px; border: 1px solid var(--gold-pale); border-radius: 2px; z-index: 1; }
+
+  .corner { position: absolute; width: 44px; height: 44px; color: var(--gold); z-index: 2; }
+  .corner svg { width: 100%; height: 100%; display: block; }
+  .corner.tl { top: 40px; left: 40px; }
+  .corner.tr { top: 40px; right: 40px; transform: scaleX(-1); }
+  .corner.bl { bottom: 40px; left: 40px; transform: scaleY(-1); }
+  .corner.br { bottom: 40px; right: 40px; transform: scale(-1,-1); }
+
+  .content {
+    position: relative; z-index: 3; height: 100%; display: flex; flex-direction: column;
+    align-items: center; padding: 48px 72px 56px; text-align: center;
+  }
+
+  .crest { line-height: 0; }
+  .crest svg { height: 74px; width: auto; display: block; }
+  .mangal { margin-top: 12px; font-family: "Poppins", sans-serif; font-size: 11.5px; font-weight: 500; letter-spacing: 3px; color: var(--saffron-deep); }
+
+  .title { margin-top: 12px; font-weight: 900; font-size: 46px; letter-spacing: 1px; color: var(--ink); }
+  .subtitle {
+    display: flex; align-items: center; gap: 14px; margin-top: 8px;
+    font-family: "Poppins", sans-serif; font-size: 11.5px; font-weight: 500;
+    letter-spacing: 6px; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .subtitle::before, .subtitle::after { content: ""; width: 44px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold-line)); }
+  .subtitle::after { background: linear-gradient(90deg, var(--gold-line), transparent); }
+
+  .eyebrow { font-family: "Poppins", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 3.5px; text-transform: uppercase; color: var(--saffron); }
+
+  .name-block { margin-top: 22px; }
+  .name-block .eyebrow { margin-bottom: 11px; }
+  .names { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .fname { font-weight: 700; font-size: 23px; line-height: 1.25; color: var(--ink); }
+  .fname.primary { font-size: 31px; font-weight: 800; }
+  .gotra { margin-top: 10px; font-size: 14px; color: var(--ink-soft); }
+  .gotra b { font-weight: 600; color: #5a4632; }
+
+  .blessing-lead {
+    margin-top: 22px; max-width: 540px; font-size: 18px; font-weight: 700;
+    line-height: 1.6; color: var(--saffron-deep);
+  }
+  .blessing { margin-top: 11px; max-width: 528px; font-size: 15px; line-height: 1.85; color: #4a3826; }
+
+  .sevas { margin-top: 24px; width: 100%; max-width: 560px; }
+  .sevas .head { display: flex; align-items: center; gap: 14px; justify-content: center; margin-bottom: 13px; }
+  .sevas .head::before, .sevas .head::after { content: ""; flex: 1; height: 1px; background: var(--gold-pale); }
+  .seva-list { display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: center; justify-content: center; }
+  .seva-item { display: inline-flex; align-items: center; gap: 10px; font-size: 16px; color: #3f2e1e; font-weight: 600; }
+  .seva-item .di { color: var(--saffron); font-size: 11px; transform: translateY(-1px); }
+
+  .spacer { flex: 1; min-height: 14px; }
+
+  .occasion { margin-top: 18px; font-family: "Poppins", sans-serif; font-size: 12.5px; color: var(--ink-soft); letter-spacing: .3px; }
+  .occasion b { font-family: "Martel", serif; font-weight: 700; color: #4a3826; }
+
+  .footer { margin-top: 18px; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; }
+  .foot-cell { flex: 1; }
+  .foot-cell.mid { flex: 0 0 auto; text-align: center; padding: 0 18px; }
+  .serial { font-family: "Poppins", sans-serif; font-size: 10px; letter-spacing: 1.3px; color: var(--ink-soft); text-transform: uppercase; text-align: left; }
+  .brand { font-weight: 800; font-size: 25px; color: var(--saffron-deep); letter-spacing: .5px; }
+  .brand-tag { font-family: "Poppins", sans-serif; font-size: 10.5px; font-weight: 500; letter-spacing: 2px; color: var(--ink-soft); margin-top: 3px; }
+  .seal { margin-left: auto; width: 60px; }
+</style>
+
+<div class="lead">
+  <div class="k">आशीर्वाद पत्र — design preview</div>
+  <p>Issued after each pooja for the whole family — every family name together on one patra. This is the exact fixed layout the in-app canvas renderer will reproduce as a downloadable / WhatsApp-shareable image. Switch samples to see 4, 2, and 1 names.</p>
+</div>
+
+<div class="switch" role="group" aria-label="Sample family">
+  <button data-i="0" aria-pressed="true">Family of 4 · full package</button>
+  <button data-i="1" aria-pressed="false">2 names · basic</button>
+  <button data-i="2" aria-pressed="false">Single long name</button>
+</div>
+
+<div class="stage">
+  <div class="cert" id="cert">
+    <div class="wm" aria-hidden="true">ॐ</div>
+    <div class="frame-outer" aria-hidden="true"></div>
+    <div class="frame-inner" aria-hidden="true"></div>
+
+    <div class="corner tl" aria-hidden="true"><svg viewBox="0 0 46 46" fill="none"><path d="M2 44V16C2 8 8 2 16 2H44" stroke="currentColor" stroke-width="1.4"/><path d="M10 44V20C10 14 14 10 20 10H44" stroke="currentColor" stroke-width="1"/><path d="M16 16c6 0 10-4 10-10-6 0-10 4-10 10Z" fill="currentColor" opacity=".5"/><path d="M16 16c-6 0-10 4-10 10 6 0 10-4 10-10Z" fill="currentColor" opacity=".5"/><circle cx="16" cy="16" r="2.4" fill="currentColor"/></svg></div>
+    <div class="corner tr" aria-hidden="true"><svg viewBox="0 0 46 46" fill="none"><path d="M2 44V16C2 8 8 2 16 2H44" stroke="currentColor" stroke-width="1.4"/><path d="M10 44V20C10 14 14 10 20 10H44" stroke="currentColor" stroke-width="1"/><path d="M16 16c6 0 10-4 10-10-6 0-10 4-10 10Z" fill="currentColor" opacity=".5"/><path d="M16 16c-6 0-10 4-10 10 6 0 10-4 10-10Z" fill="currentColor" opacity=".5"/><circle cx="16" cy="16" r="2.4" fill="currentColor"/></svg></div>
+    <div class="corner bl" aria-hidden="true"><svg viewBox="0 0 46 46" fill="none"><path d="M2 44V16C2 8 8 2 16 2H44" stroke="currentColor" stroke-width="1.4"/><path d="M10 44V20C10 14 14 10 20 10H44" stroke="currentColor" stroke-width="1"/><path d="M16 16c6 0 10-4 10-10-6 0-10 4-10 10Z" fill="currentColor" opacity=".5"/><path d="M16 16c-6 0-10 4-10 10 6 0 10-4 10-10Z" fill="currentColor" opacity=".5"/><circle cx="16" cy="16" r="2.4" fill="currentColor"/></svg></div>
+    <div class="corner br" aria-hidden="true"><svg viewBox="0 0 46 46" fill="none"><path d="M2 44V16C2 8 8 2 16 2H44" stroke="currentColor" stroke-width="1.4"/><path d="M10 44V20C10 14 14 10 20 10H44" stroke="currentColor" stroke-width="1"/><path d="M16 16c6 0 10-4 10-10-6 0-10 4-10 10Z" fill="currentColor" opacity=".5"/><path d="M16 16c-6 0-10 4-10 10 6 0 10-4 10-10Z" fill="currentColor" opacity=".5"/><circle cx="16" cy="16" r="2.4" fill="currentColor"/></svg></div>
+
+    <div class="content">
+      <div class="crest" aria-hidden="true">
+        <svg viewBox="105 380 520 675" xmlns="http://www.w3.org/2000/svg">
+          <g fill="none" stroke="#c05a17" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke-width="26" d="M142 1020C270 929 447 929 607 1020"/>
+            <path stroke-width="26" d="M357 954V687C364 630 398 552 460 492"/>
+            <path fill="#c05a17" d="M357 687C340 649 309 620 274 606C244 594 211 581 190 560C169 539 155 508 148 479C147 475 151 474 154 477C174 493 179 522 198 541C213 556 229 567 245 572C250 574 253 570 250 565C240 550 231 535 229 521C229 516 233 515 236 518C254 531 270 536 288 547C332 573 355 620 357 687Z"/>
+          </g>
+          <path fill="#e0a326" stroke="#e0a326" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" d="M370 566C369 487 408 422 514 402C510 484 468 551 370 566Z"/>
+        </svg>
+      </div>
+      <div class="mangal">॥ श्री गणेशाय नमः ॥</div>
+
+      <h1 class="title">आशीर्वाद पत्र</h1>
+      <div class="subtitle">Ashirwad Patra</div>
+
+      <div class="name-block">
+        <div class="eyebrow">इस पावन पत्र के आशीर्वाद के पात्र</div>
+        <div class="names" id="names"></div>
+        <div class="gotra" id="gotra"></div>
+      </div>
+
+      <p class="blessing-lead" id="blessingLead"></p>
+      <p class="blessing" id="blessing"></p>
+
+      <div class="sevas">
+        <div class="head"><span class="eyebrow">आपके निमित्त सम्पन्न सेवाएँ</span></div>
+        <div class="seva-list" id="sevas"></div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="occasion" id="occasion"></div>
+
+      <div class="footer">
+        <div class="foot-cell"><div class="serial" id="serial"></div></div>
+        <div class="foot-cell mid">
+          <div class="brand">पुण्यता</div>
+          <div class="brand-tag">सेवा हमारी · पुण्य आपका</div>
+        </div>
+        <div class="foot-cell">
+          <div class="seal" aria-hidden="true">
+            <svg width="60" height="60" viewBox="0 0 62 62" fill="none">
+              <circle cx="31" cy="31" r="29" stroke="var(--gold-line)" stroke-width="1.4"/>
+              <circle cx="31" cy="31" r="23" stroke="var(--gold-pale)" stroke-width="1" stroke-dasharray="2 3"/>
+              <text x="31" y="40" text-anchor="middle" font-family="Martel, serif" font-size="26" font-weight="800" fill="var(--saffron)">ॐ</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LEAD = "ईश्वर आपके एवं आपके सम्पूर्ण परिवार पर सदैव अपनी कृपादृष्टि बनाए रखें।";
+  const BODY = "इस पुण्य अवसर पर आपके परिवार के सुख, आरोग्य एवं समृद्धि हेतु ये सेवाएँ पूर्ण श्रद्धा एवं भक्ति भाव से सम्पन्न की गईं। हमारी हार्दिक प्रार्थना है — आपके जीवन में सुख-शांति का वास हो, हर पग मंगलमय हो, घर-आँगन में लक्ष्मी का निवास और आनंद की वृद्धि होती रहे। आप स्वस्थ रहें, प्रसन्न रहें, दीर्घायु हों एवं यशस्वी हों — यही ईश्वर से हमारी विनम्र कामना है।";
+
+  const SAMPLES = [
+    { names: ["श्री राहुल शर्मा", "श्रीमती प्रिया शर्मा", "आर्यन शर्मा", "अनन्या शर्मा"],
+      gotra: "कश्यप",
+      sevas: ["सुन्दरकाण्ड पाठ", "गौ सेवा", "वानर सेवा", "साधु-संतों को भोजन", "सर्व रोग निवारण हवन"],
+      occasion: "अंतिम शनिवार संकल्प", date: "27 सितम्बर 2026", serial: "AP-2026-000512" },
+    { names: ["श्रीमती अनिता देवी", "श्री सुरेश कुमार"],
+      gotra: "भारद्वाज",
+      sevas: ["सुन्दरकाण्ड पाठ", "गौ सेवा", "साधु-संतों को भोजन"],
+      occasion: "द्वितीय मंगलवार संकल्प", date: "8 सितम्बर 2026", serial: "AP-2026-000318" },
+    { names: ["श्री कृष्णकुमार बलदेवप्रसाद अग्रवाल"],
+      gotra: "गर्ग",
+      sevas: ["सुन्दरकाण्ड पाठ", "गौ सेवा", "साधु-संतों को भोजन"],
+      occasion: "अंतिम शनिवार संकल्प · कैच-अप", date: "27 सितम्बर 2026", serial: "AP-2026-000544" },
+  ];
+
+  function render(i) {
+    const s = SAMPLES[i];
+    document.getElementById("names").innerHTML = s.names
+      .map((n, idx) => '<div class="fname' + (idx === 0 && s.names.length > 1 ? " primary" : (s.names.length === 1 ? " primary" : "")) + '">' + n + "</div>")
+      .join("");
+    document.getElementById("gotra").innerHTML = "गोत्र &mdash; <b>" + s.gotra + "</b>";
+    document.getElementById("blessingLead").textContent = LEAD;
+    document.getElementById("blessing").textContent = BODY;
+    document.getElementById("sevas").innerHTML = s.sevas
+      .map((n) => '<span class="seva-item"><span class="di">◆</span>' + n + "</span>")
+      .join("");
+    document.getElementById("occasion").innerHTML = "अवसर &nbsp;<b>" + s.occasion + "</b>&nbsp; · &nbsp;<b>" + s.date + "</b>";
+    document.getElementById("serial").textContent = "पत्र क्रमांक · " + s.serial;
+  }
+
+  const btns = Array.from(document.querySelectorAll(".switch button"));
+  btns.forEach((b) => b.addEventListener("click", () => {
+    btns.forEach((x) => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true");
+    render(Number(b.dataset.i));
+  }));
+
+  function fit() {
+    const cert = document.getElementById("cert");
+    const avail = cert.parentElement.clientWidth;
+    const scale = Math.min(1, avail / 720);
+    cert.style.transform = "scale(" + scale + ")";
+    cert.style.marginBottom = (scale < 1 ? -(1018 * (1 - scale)) : 0) + "px";
+  }
+  window.addEventListener("resize", fit);
+  render(0);
+  fit();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+</script>

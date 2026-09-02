@@ -47,9 +47,17 @@ function ReviewsPage() {
                 </div>
                 <p className="text-foreground/80 leading-relaxed text-[15px]">"{t.q}"</p>
                 <div className="mt-4 pt-3 border-t border-black/5 flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand to-[#F5A742] text-white flex items-center justify-center font-bold">
-                    {initials}
-                  </div>
+                  {t.avatarUrl ? (
+                    <img
+                      src={t.avatarUrl}
+                      alt={t.n}
+                      className="w-11 h-11 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand to-[#F5A742] text-white flex items-center justify-center font-bold">
+                      {initials}
+                    </div>
+                  )}
                   <div>
                     <div className="font-bold text-foreground">{t.n}</div>
                     <div className="text-sm text-muted-foreground">{t.city}</div>

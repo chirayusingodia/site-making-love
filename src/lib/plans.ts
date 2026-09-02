@@ -600,33 +600,58 @@ export const acharyas = [
   },
 ];
 
+// `key` is the stable slot id an admin-uploaded avatar attaches to (see
+// site_image_overrides "review-N" rows, matched by 1-based position here) —
+// keep it even if a testimonial's text/name changes, only reorder/insert
+// carefully since the DB rows are matched by position, not by this key.
 export const testimonials = [
   {
+    key: "rajesh-sharma",
     q: "हर सप्ताह WhatsApp पर video देखकर मन को असीम शांति मिलती है। माँ के नाम से हवन करवाना अब संभव हो सका।",
     n: "Rajesh Sharma",
     city: "Delhi",
+    avatarUrl: undefined as string | undefined,
   },
   {
+    key: "sunita-verma",
     q: "व्यस्तता के कारण मैं स्वयं तीर्थ गुरु पुष्करराज नहीं जा सकती थी। पुण्यता ने यह सम्भव कर दिया।",
     n: "Sunita Verma",
     city: "Mumbai",
+    avatarUrl: undefined as string | undefined,
   },
   {
+    key: "amit-khandelwal",
     q: "गौ-सेवा का सीधा पुण्य अब हर महीने। यह business नहीं, सच्ची सेवा है। जय बजरंगबली।",
     n: "Amit Khandelwal",
     city: "Jaipur",
+    avatarUrl: undefined as string | undefined,
   },
   {
+    key: "meena-patel",
     q: "पिताजी की स्मृति में हर माह सुंदरकांड — और video में उनका नाम सुनकर आँखें भर आती हैं।",
     n: "Meena Patel",
     city: "Ahmedabad",
+    avatarUrl: undefined as string | undefined,
   },
   {
+    key: "vikas-tiwari",
     q: "₹251 में इतनी सेवाएँ — पहले विश्वास नहीं हुआ, लेकिन हर माह video देखकर श्रद्धा और गहरी हो गई।",
     n: "Vikas Tiwari",
     city: "Lucknow",
+    avatarUrl: undefined as string | undefined,
   },
 ];
+
+/**
+ * Applies an admin-uploaded review-avatar override in place (1-based
+ * "review-N" slot -> testimonials[N-1]). Out-of-range indexes (a stale DB
+ * row after a testimonial was removed) are silently ignored.
+ */
+export function setTestimonialAvatarOverride(index: number, imageUrl: string | undefined): void {
+  const t = testimonials[index];
+  if (!t) return;
+  t.avatarUrl = imageUrl;
+}
 
 export const faqs = [
   {
