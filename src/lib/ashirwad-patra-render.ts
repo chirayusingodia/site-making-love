@@ -259,43 +259,67 @@ export async function renderPatraToCanvas(canvas: HTMLCanvasElement, d: PatraRen
   ctx.stroke();
   y += stSize * 1.3 + px(22);
 
-  // Eyebrow
-  text(ctx, "इस पावन पत्र के आशीर्वाद के पात्र", CX, y, martel(700, px(12)), C.saffron, {
-    ls: px(1.5),
-    baseline: "top",
-  });
-  y += px(12) * 1.4 + px(11);
-
-  // Family names (primary larger; long names auto-fit to width)
-  const nameMaxW = W - 2 * side;
-  d.names.forEach((nm, i) => {
-    const base = (i === 0 && d.names.length > 1) || d.names.length === 1 ? px(31) : px(23);
-    const sz = fitSize(ctx, nm, 700, base, nameMaxW);
-    text(ctx, nm, CX, y, martel(700, sz), C.ink, { baseline: "top" });
-    y += sz * 1.22 + px(4);
-  });
-  y += px(6);
-
-  // Gotra
-  if (d.gotra) {
-    text(ctx, `गोत्र — ${d.gotra}`, CX, y, martel(400, px(14)), C.inkSoft, { baseline: "top" });
-    y += px(14) * 1.4;
-  }
-  y += px(20);
-
-  // Blessing — lead line
+  // Blessing (ashirwad) comes FIRST — lead line …
   for (const l of wrap(ctx, ASHIRWAD_BLESSING_LEAD, px(540), martel(700, px(18)))) {
     text(ctx, l, CX, y, martel(700, px(18)), C.saffronDeep, { baseline: "top" });
     y += px(18) * 1.55;
   }
   y += px(8);
 
-  // Blessing — body
+  // … then the body.
   for (const l of wrap(ctx, ASHIRWAD_BLESSING_BODY, px(528), martel(400, px(15)))) {
     text(ctx, l, CX, y, martel(400, px(15)), C.body, { baseline: "top" });
     y += px(15) * 1.85;
   }
-  y += px(20);
+  y += px(24);
+
+  // Recipients — every name the SAME size; gotra as large as the names.
+  text(ctx, "इस पावन पत्र के आशीर्वाद के पात्र", CX, y, martel(700, px(12)), C.saffron, {
+    ls: px(1.5),
+    baseline: "top",
+  });
+  y += px(12) * 1.4 + px(12);
+
+  // Names run in TWO columns, side by side with a gap between them
+  // (odd last name centred). Every name the same size.
+  const blockW = px(600);
+  const colGap = px(56);
+  const colW = (blockW - colGap) / 2;
+  const leftCx = CX - colGap / 2 - colW / 2;
+  const rightCx = CX + colGap / 2 + colW / 2;
+  const nameSize = d.names.length <= 2 ? px(28) : px(24);
+  const nameStep = nameSize * 1.34;
+  if (d.names.length === 1) {
+    const sz = fitSize(ctx, d.names[0], 700, nameSize, blockW);
+    text(ctx, d.names[0], CX, y, martel(700, sz), C.ink, { baseline: "top" });
+    y += nameStep;
+  } else {
+    for (let i = 0; i < d.names.length; i += 2) {
+      const a = d.names[i];
+      const b = d.names[i + 1];
+      if (b === undefined) {
+        text(ctx, a, CX, y, martel(700, fitSize(ctx, a, 700, nameSize, colW)), C.ink, {
+          baseline: "top",
+        });
+      } else {
+        text(ctx, a, leftCx, y, martel(700, fitSize(ctx, a, 700, nameSize, colW)), C.ink, {
+          baseline: "top",
+        });
+        text(ctx, b, rightCx, y, martel(700, fitSize(ctx, b, 700, nameSize, colW)), C.ink, {
+          baseline: "top",
+        });
+      }
+      y += nameStep;
+    }
+  }
+  if (d.gotra) {
+    y += px(10);
+    const gtext = `गोत्र — ${d.gotra}`;
+    const gsz = fitSize(ctx, gtext, 400, nameSize, blockW);
+    text(ctx, gtext, CX, y, martel(400, gsz), C.body, { baseline: "top" });
+    y += nameStep;
+  }
+  y += px(22);
 
   // Sevas — heading with side rules
   const shSize = px(11.5);

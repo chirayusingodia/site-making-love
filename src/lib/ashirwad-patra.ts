@@ -60,6 +60,38 @@ export function occasionLabel(kind: BatchKind, isCatchup: boolean): string {
   return isCatchup ? `${base} · कैच-अप` : base;
 }
 
+// ─── Pandit-list Excel parsing (bulk patra generation) ─────────
+// Sheet layout ("Gotra Batches"): repeating blocks of a "Batch N"
+// header row, a "Gotra | Naam 1..Naam 6" header row, then up to 5
+// gotra rows: [gotra, naam1, naam2, …]. One gotra row = one patra
+// (that gotra's whole family named together).
+export interface ExcelPatraEntry {
+  batch: string;
+  gotra: string;
+  names: string[];
+}
+
+export function parseGotraBatchRows(rows: string[][]): ExcelPatraEntry[] {
+  const out: ExcelPatraEntry[] = [];
+  let batch = "";
+  for (const r of rows) {
+    const c0 = (r[0] ?? "").trim();
+    if (!c0) continue;
+    if (/^batch\b/i.test(c0)) {
+      batch = c0;
+      continue;
+    }
+    if (/^gotra$/i.test(c0)) continue; // column-header row
+    const names = r
+      .slice(1)
+      .map((s) => (s ?? "").trim())
+      .filter(Boolean);
+    if (names.length === 0) continue; // title row / stray cell
+    out.push({ batch, gotra: c0, names });
+  }
+  return out;
+}
+
 // ─── DB row shape (what the admin + devotee pages read) ─────────
 export interface AshirwadPatraRow {
   id: string;
