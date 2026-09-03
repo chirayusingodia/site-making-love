@@ -7,7 +7,7 @@ export const translations = {
   hindi: {
     // Navigation / Header
     nav_home: "मुख्य पृष्ठ",
-    nav_plans: "योजनाएं",
+    nav_plans: "सदस्यता",
     nav_sevas: "हमारी सेवाएं",
     nav_reviews: "समीक्षाएं",
     nav_about: "हमारे बारे में",
@@ -26,7 +26,7 @@ export const translations = {
     hero_title_2: "सेवा हमारी।",
     hero_desc:
       "व्यस्तता के कारण खुद दान-पुण्य, हवन, पूजा नहीं कर पाते? पुण्यता आपके नाम एवं गोत्र से तीर्थ गुरु पुष्करराज में यह ज़िम्मेदारी निभाता है — हर सेवा का प्रमाण सीधे आपके WhatsApp पर.",
-    hero_cta: "See Plans — ₹251/Monthly से शुरू",
+    hero_cta: "See Sadasyata — ₹251/Monthly से शुरू",
 
     // Homepage Mission
     mission_relief: "The Relief",
@@ -65,7 +65,7 @@ export const translations = {
     // Plans preview
     plans_sub: "₹251/Monthly से शुरू • 4 सदस्यों तक",
     plans_view_details: "विवरण देखें",
-    plans_see_full: "See Full Plans",
+    plans_see_full: "See Full Sadasyata",
     plans_footer: "कोई Hidden Charges नहीं · कभी भी Cancel · 100% Secure via Razorpay",
 
     // Punya Meter
@@ -101,11 +101,11 @@ export const translations = {
     pm_benefit_8: "Pratyaksh daan-punya ka satat pravaah",
 
     // Checkout
-    checkout_back: "वापस Plan पर",
-    checkout_plan_not_found: "Plan नहीं मिला",
-    checkout_back_to_plans: "योजनाओं पर वापस जाएं",
+    checkout_back: "वापस Sadasyata पर",
+    checkout_plan_not_found: "Sadasyata नहीं मिला",
+    checkout_back_to_plans: "सदस्यता पर वापस जाएं",
     checkout_load_error_title: "Checkout load नहीं हो पाया",
-    checkout_load_error_desc: "Live plan data fetch करने में समस्या आई। कृपया पुनः प्रयास करें।",
+    checkout_load_error_desc: "Live Sadasyata data fetch करने में समस्या आई। कृपया पुनः प्रयास करें।",
     checkout_retry: "पुनः प्रयास करें",
     checkout_retrying: "प्रयास जारी है…",
     checkout_your_details: "आपकी जानकारी",
@@ -116,7 +116,7 @@ export const translations = {
     checkout_saving: "Save हो रहा है…",
     checkout_family_note: "परिवार के नाम-गोत्र भुगतान के बाद profile पर जोड़े जाते हैं।",
     checkout_order_summary: "Order Summary",
-    checkout_plan_label: "Plan",
+    checkout_plan_label: "Sadasyata",
     checkout_amount_label: "राशि",
     checkout_trust_refund_title: "100% Refund",
     checkout_trust_refund_desc: "पात्र होने पर पूरी राशि वापस",
@@ -145,7 +145,7 @@ export const translations = {
   english: {
     // Navigation / Header
     nav_home: "Home",
-    nav_plans: "Plans",
+    nav_plans: "Sadasyata",
     nav_sevas: "Our Sevas",
     nav_reviews: "Reviews",
     nav_about: "About Us",
@@ -164,7 +164,7 @@ export const translations = {
     hero_title_2: "Service Ours.",
     hero_desc:
       "Too busy to perform daan-punya, hawan, or pooja yourself? Punyata fulfills this sacred responsibility in your name & gotra at Holy Pushkarraj — with video proof sent directly to your WhatsApp.",
-    hero_cta: "See Plans — Starting from ₹251/Month",
+    hero_cta: "See Sadasyata — Starting from ₹251/Month",
 
     // Homepage Mission
     mission_relief: "The Relief",
@@ -203,7 +203,7 @@ export const translations = {
     // Plans preview
     plans_sub: "Starting at ₹251/Month • Up to 4 family members",
     plans_view_details: "View Details",
-    plans_see_full: "See Full Plans",
+    plans_see_full: "See Full Sadasyata",
     plans_footer: "No Hidden Charges · Cancel Anytime · 100% Secure via Razorpay",
 
     // Punya Meter
@@ -239,11 +239,11 @@ export const translations = {
     pm_benefit_8: "Continuous flow of direct daan-punya",
 
     // Checkout
-    checkout_back: "Back to Plan",
-    checkout_plan_not_found: "Plan not found",
-    checkout_back_to_plans: "Back to Plans",
+    checkout_back: "Back to Sadasyata",
+    checkout_plan_not_found: "Sadasyata not found",
+    checkout_back_to_plans: "Back to Sadasyata",
     checkout_load_error_title: "Checkout couldn't load",
-    checkout_load_error_desc: "We ran into a problem fetching live plan data. Please try again.",
+    checkout_load_error_desc: "We ran into a problem fetching live Sadasyata data. Please try again.",
     checkout_retry: "Retry",
     checkout_retrying: "Retrying…",
     checkout_your_details: "Your Details",
@@ -254,7 +254,7 @@ export const translations = {
     checkout_saving: "Saving…",
     checkout_family_note: "Family members' names & gotras are added to your profile after payment.",
     checkout_order_summary: "Order Summary",
-    checkout_plan_label: "Plan",
+    checkout_plan_label: "Sadasyata",
     checkout_amount_label: "Amount",
     checkout_trust_refund_title: "100% Refund",
     checkout_trust_refund_desc: "Full amount back, if eligible",

@@ -66,7 +66,7 @@ function FaqPage() {
         </div>
         <div className="text-center">
           <Link to="/plans" className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-full">
-            See Plans
+            See Sadasyata
           </Link>
         </div>
       </main>

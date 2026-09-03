@@ -12,7 +12,7 @@ export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURICompo
 
 const NAV_LINKS = [
   { to: "/", label: "Home" },
-  { to: "/plans", label: "Plans" },
+  { to: "/plans", label: "Sadasyata" },
   { to: "/sevas", label: "Our Sevas" },
   { to: "/reviews", label: "Reviews" },
   { to: "/about", label: "About Us" },
