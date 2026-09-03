@@ -20,7 +20,7 @@ export const Route = createFileRoute("/plans")({
     const seo = await fetchPageSeo("/plans");
     return {
       meta: pageSeoMeta(seo, {
-        title: "Plans — पुण्यता | ₹251/Monthly से मासिक सुंदरकांड, हवन, आरती एवं दान-पुण्य",
+        title: "Sadasyata — पुण्यता | ₹251/Monthly से मासिक सुंदरकांड, हवन, आरती एवं दान-पुण्य",
         description:
           "पुण्यता के 3 पैक — मूल संकल्प, गृह शांति एवं वार्षिक महासंकल्प। Pooja + Chadava + Hawan + Aarti + Daan + Sewa एक साथ। तीर्थ गुरु पुष्करराज से।",
       }),
@@ -46,7 +46,7 @@ function PlansPage() {
       <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-4 space-y-12">
         <header className="text-center animate-fade-up">
           <div className="text-xs font-bold uppercase tracking-widest text-brand">Choose Your Sankalp</div>
-          <h1 className="mt-2 text-3xl font-bold">Punyata Plans</h1>
+          <h1 className="mt-2 text-3xl font-bold">Punyata Sadasyata</h1>
           <p className="mt-2 text-[15px] text-muted-foreground max-w-xl mx-auto">
             हर पैक में — Pooja + Chadava + Daan + Sewa + Aarti। एक ही सदस्यता में 4 परिवारजनों तक का संकल्प।
           </p>
@@ -70,9 +70,9 @@ function PlansPage() {
         ) : isError ? (
           <section className="card-soft border border-destructive/30 p-8 text-center space-y-3">
             <AlertTriangle size={32} className="text-destructive mx-auto" />
-            <p className="text-sm font-semibold text-foreground">Plans abhi load nahi ho paye.</p>
+            <p className="text-sm font-semibold text-foreground">Sadasyata abhi load nahi ho paye.</p>
             <p className="text-xs text-muted-foreground">
-              Live plan data fetch karne mein samasya aayi. Kripya punah prayas karein.
+              Live Sadasyata data fetch karne mein samasya aayi. Kripya punah prayas karein.
             </p>
             <button
               onClick={() => refetch()}

@@ -217,7 +217,7 @@ function AboutPage() {
         <section className="text-center card-soft p-8 border border-brand/15 bg-gradient-to-b from-brand-soft/40 to-transparent space-y-4">
           <div className="text-2xl md:text-3xl font-bold text-[#5B1A1A]">अब भारत करेगा पुण्यता।</div>
           <Link to="/plans" className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full hover:bg-brand-deep transition-colors">
-            See Plans <ArrowRight size={18} />
+            See Sadasyata <ArrowRight size={18} />
           </Link>
         </section>
       </main>

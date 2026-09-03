@@ -25,7 +25,7 @@ export const Route = createFileRoute("/plan/$planId")({
 
     const fallbackTitle = plan
       ? `${plan.name} — पुण्यता | ${plan.price}${plan.cycle}`
-      : "Plan — पुण्यता";
+      : "Sadasyata — पुण्यता";
     const fallbackDescription = plan
       ? (plan.tagline || plan.subheading || plan.heading).slice(0, 155)
       : "पुण्यता की मासिक सेवा योजना।";
@@ -93,9 +93,9 @@ function PlanDetailPage() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="max-w-2xl mx-auto px-4 py-16 text-center space-y-3">
-          <h1 className="text-xl font-bold">Plan load nahi ho paya</h1>
+          <h1 className="text-xl font-bold">Sadasyata load nahi ho paya</h1>
           <p className="text-sm text-muted-foreground">
-            Live plan data fetch karne mein samasya aayi. Kripya punah prayas karein.
+            Live Sadasyata data fetch karne mein samasya aayi. Kripya punah prayas karein.
           </p>
           <button
             onClick={() => refetch()}
@@ -115,8 +115,8 @@ function PlanDetailPage() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold">Plan not found</h1>
-          <Link to="/" className="mt-4 inline-block text-brand font-semibold">Back to Plans</Link>
+          <h1 className="text-2xl font-bold">Sadasyata not found</h1>
+          <Link to="/" className="mt-4 inline-block text-brand font-semibold">Back to Sadasyata</Link>
         </main>
       </div>
     );
@@ -143,7 +143,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
       <Header />
       <main className="max-w-2xl mx-auto px-4 pb-32 pt-4">
         <Link to="/plans" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-brand mb-3">
-          <ArrowLeft size={16} /> Back to Plans
+          <ArrowLeft size={16} /> Back to Sadasyata
         </Link>
 
         {/* Hero Carousel */}

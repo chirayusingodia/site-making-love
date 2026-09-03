@@ -244,14 +244,14 @@ function MySubscriptionPage() {
             <div>
               <h1 className="text-2xl font-bold">कोई Active Subscription नहीं</h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                अपनी पहली सेवा शुरू करने के लिए एक Plan चुनें।
+                अपनी पहली सेवा शुरू करने के लिए एक Sadasyata चुनें।
               </p>
             </div>
             <Link
               to="/plans"
               className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full hover:bg-brand-deep transition-colors"
             >
-              See Plans <ArrowRight size={18} />
+              See Sadasyata <ArrowRight size={18} />
             </Link>
           </div>
         </main>
@@ -276,7 +276,7 @@ function MySubscriptionPage() {
       : current.status === "cancelled"
         ? "Yeh sadasyata cancel ho gayi hai."
         : current.status === "expired"
-          ? "Yeh sadasyata expire ho gayi hai — naya plan chunein."
+          ? "Yeh sadasyata expire ho gayi hai — naya Sadasyata chunein."
           : current.status === "halted"
             ? "Payment ki samasya ki wajah se seva ruki hai — hamari team aapse sampark karegi."
             : null;
@@ -287,7 +287,7 @@ function MySubscriptionPage() {
         {/* Status card */}
         <div className="card-soft p-5 space-y-1">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-bold text-brand">Current Plan</div>
+            <div className="text-xs font-bold text-brand">Current Sadasyata</div>
             <span
               className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${pill.cls}`}
             >

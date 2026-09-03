@@ -163,7 +163,7 @@ function ComparisonError({ onRetry, retrying }: { onRetry: () => void; retrying:
     <div className="card-soft border border-destructive/30 p-6 text-center space-y-3">
       <AlertTriangle size={28} className="text-destructive mx-auto" />
       <p className="text-sm font-semibold text-foreground">
-        Plan comparison abhi load nahi ho paya.
+        Sadasyata comparison abhi load nahi ho paya.
       </p>
       <p className="text-xs text-muted-foreground">
         Live seva data fetch karne mein samasya aayi. Kripya punah prayas karein.

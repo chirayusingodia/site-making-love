@@ -359,9 +359,9 @@ function PlansPreview() {
         </div>
       ) : isError ? (
         <div className="card-soft border border-destructive/30 p-8 text-center space-y-3">
-          <p className="text-sm font-semibold text-foreground">Plans abhi load nahi ho paye.</p>
+          <p className="text-sm font-semibold text-foreground">Sadasyata abhi load nahi ho paye.</p>
           <p className="text-xs text-muted-foreground">
-            Live plan data fetch karne mein samasya aayi. Kripya punah prayas karein.
+            Live Sadasyata data fetch karne mein samasya aayi. Kripya punah prayas karein.
           </p>
           <button
             onClick={() => refetch()}
@@ -451,7 +451,7 @@ function PlansPreview() {
       )}
       <div className="text-center">
         <Link to="/plans" className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-full hover:bg-brand-deep transition-colors primary-btn-glow">
-          See Full Plans <ArrowRight size={16} />
+          See Full Sadasyata <ArrowRight size={16} />
         </Link>
       </div>
       <div className="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1.5">
@@ -513,7 +513,7 @@ function ContactFooter() {
       <div>तीर्थ गुरु पुष्करराज, राजस्थान — 305022</div>
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs pt-2">
         <Link to="/about" className="hover:text-brand">About</Link>
-        <Link to="/plans" className="hover:text-brand">Plans</Link>
+        <Link to="/plans" className="hover:text-brand">Sadasyata</Link>
         <Link to="/reviews" className="hover:text-brand">Reviews</Link>
         <Link to="/terms-and-conditions" className="hover:text-brand">Terms & Conditions</Link>
         <Link to="/refund-policy" className="hover:text-brand">Refund Policy</Link>
