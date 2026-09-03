@@ -205,11 +205,14 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
             </div>
 
             {plan.detail.benefits.length > 0 && (
-              <div className="rounded-2xl bg-brand-soft/60 p-4 space-y-2">
+              <div className="relative rounded-2xl bg-gradient-to-b from-[#FFF6EE] to-[#FDECDC] border border-brand/15 p-4 space-y-2.5">
+                <Sparkles size={18} className="absolute top-4 right-4 text-[#F5A742]" />
                 {plan.detail.benefits.map((b) => (
-                  <div key={b} className="flex items-start gap-2.5 text-sm">
-                    <Check size={15} className="text-brand shrink-0 mt-0.5" strokeWidth={3} />
-                    <span className="text-foreground/90 font-medium leading-snug">{b}</span>
+                  <div key={b} className="flex items-start gap-2.5 text-sm pr-6">
+                    <div className="w-[22px] h-[22px] rounded-full bg-success flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={12} strokeWidth={3.5} className="text-white" />
+                    </div>
+                    <span className="text-foreground/90 font-semibold leading-snug">{b}</span>
                   </div>
                 ))}
               </div>
