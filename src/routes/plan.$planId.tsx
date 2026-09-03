@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, ScrollText, ListChecks, Quote } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, ScrollText, ListChecks, Quote, Sparkles } from "lucide-react";
+import { ChadhavaHeartBadge, AuthenticityTrust } from "@/components/TrustAuthenticity";
 import { usePublicPlans, getPlanById, fetchPublicPlansData, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
@@ -314,7 +315,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
           <PizzaComparison planId={plan.id} price={plan.price} cycle={plan.cycle} size="lg" />
         </section>
 
-        {/* Benefits */}
+        {/* Blessings & Benefits */}
         <section className="mt-7 space-y-3.5">
           <div className="flex items-center gap-2.5">
             <LottieIcon
@@ -326,16 +327,28 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
             />
             <h2 className="text-lg font-bold text-foreground">इस संकल्प के फायदे</h2>
           </div>
-          <div className="card-soft p-5 space-y-3">
+          <div className="relative rounded-2xl bg-gradient-to-b from-[#FFF6EE] to-[#FDECDC] border border-brand/15 p-5 space-y-3">
+            <Sparkles size={18} className="absolute top-4 right-4 text-[#F5A742]" />
+            {plan.tagline && (
+              <div className="text-[14.5px] font-bold text-[#B8460F] pr-6 leading-snug">
+                {plan.tagline}
+              </div>
+            )}
             {plan.detail.benefits.map((b) => (
-              <div key={b} className="flex items-start gap-3 text-[15px]">
-                <div className="w-5 h-5 rounded-full bg-[#FFF1E6] flex items-center justify-center shrink-0 mt-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand" />
+              <div key={b} className="flex items-start gap-2.5 text-[15px]">
+                <div className="w-[22px] h-[22px] rounded-full bg-success flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={12} strokeWidth={3.5} className="text-white" />
                 </div>
-                <span className="text-foreground/85 leading-relaxed">{b}</span>
+                <span className="text-foreground/90 font-semibold leading-snug">{b}</span>
               </div>
             ))}
           </div>
+          <ChadhavaHeartBadge />
+        </section>
+
+        {/* Authenticity / Trust */}
+        <section className="mt-7">
+          <AuthenticityTrust />
         </section>
 
         {/* Reviews */}
