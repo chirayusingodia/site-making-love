@@ -1,0 +1,204 @@
+{
+  "_comment": "PUNYATA — WhatsApp signup Flow (§7.2 of SESSION_WHATSAPP_FUNNEL_PROMPT.md). STATIC ONLY — no data_api_version / data_channel_uri, no dynamic screen content. Component `name`s below are the exact keys whatsapp-flow.server.ts reads out of the nfm_reply response_json — keep the two files in sync. Publish via the Gupshup console once GUPSHUP app config is live; put the resulting id in WHATSAPP_FLOW_ID.",
+  "version": "7.0",
+  "screens": [
+    {
+      "id": "SIGNUP",
+      "title": "Punyata — Vivran Bharein",
+      "terminal": true,
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "signup_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Aapki jaankari"
+              },
+              {
+                "type": "TextInput",
+                "name": "full_name",
+                "label": "Poora naam",
+                "input-type": "text",
+                "required": true
+              },
+              {
+                "type": "TextHeading",
+                "text": "Parivar ke sadasya (1-4)"
+              },
+              {
+                "type": "TextSubheading",
+                "text": "Sadasya 1"
+              },
+              {
+                "type": "TextInput",
+                "name": "fm1_name",
+                "label": "Naam",
+                "input-type": "text",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "name": "fm1_gotra",
+                "label": "Gotra (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "fm1_relation",
+                "label": "Rishta (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextSubheading",
+                "text": "Sadasya 2 (optional)"
+              },
+              {
+                "type": "TextInput",
+                "name": "fm2_name",
+                "label": "Naam",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "fm2_gotra",
+                "label": "Gotra (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "fm2_relation",
+                "label": "Rishta (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextSubheading",
+                "text": "Sadasya 3 (optional)"
+              },
+              {
+                "type": "TextInput",
+                "name": "fm3_name",
+                "label": "Naam",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "fm3_gotra",
+                "label": "Gotra (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "fm3_relation",
+                "label": "Rishta (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextSubheading",
+                "text": "Sadasya 4 (optional)"
+              },
+              {
+                "type": "TextInput",
+                "name": "fm4_name",
+                "label": "Naam",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "fm4_gotra",
+                "label": "Gotra (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "fm4_relation",
+                "label": "Rishta (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextHeading",
+                "text": "Pata (Prasad delivery ke liye, optional)"
+              },
+              {
+                "type": "TextInput",
+                "name": "address_line1",
+                "label": "Address line 1",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "address_line2",
+                "label": "Address line 2 (optional)",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "state",
+                "label": "State",
+                "input-type": "text",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "pincode",
+                "label": "Pincode",
+                "input-type": "number",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "name": "delivery_phone",
+                "label": "Pooja ka video kis number par bhejein? (optional, apna hi number default hai)",
+                "input-type": "phone",
+                "required": false
+              },
+              {
+                "type": "Footer",
+                "label": "Aage badhein",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "full_name": "${form.full_name}",
+                    "fm1_name": "${form.fm1_name}",
+                    "fm1_gotra": "${form.fm1_gotra}",
+                    "fm1_relation": "${form.fm1_relation}",
+                    "fm2_name": "${form.fm2_name}",
+                    "fm2_gotra": "${form.fm2_gotra}",
+                    "fm2_relation": "${form.fm2_relation}",
+                    "fm3_name": "${form.fm3_name}",
+                    "fm3_gotra": "${form.fm3_gotra}",
+                    "fm3_relation": "${form.fm3_relation}",
+                    "fm4_name": "${form.fm4_name}",
+                    "fm4_gotra": "${form.fm4_gotra}",
+                    "fm4_relation": "${form.fm4_relation}",
+                    "address_line1": "${form.address_line1}",
+                    "address_line2": "${form.address_line2}",
+                    "state": "${form.state}",
+                    "pincode": "${form.pincode}",
+                    "delivery_phone": "${form.delivery_phone}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

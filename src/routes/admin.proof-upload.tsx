@@ -66,6 +66,7 @@ interface SubRow {
   user_id: string;
   start_date: string | null;
   created_at: string;
+  delivery_phone: string | null;
 }
 interface PlanRow {
   id: string;
@@ -424,7 +425,7 @@ function BatchDetail({
         const chunk = subIds.slice(i, i + 200);
         const { data, error: subErr } = await supabase
           .from("subscriptions")
-          .select("id,plan_id,user_id,start_date,created_at")
+          .select("id,plan_id,user_id,start_date,created_at,delivery_phone")
           .in("id", chunk);
         if (subErr) setError(subErr.message);
         subData.push(...((data as SubRow[]) ?? []));
@@ -957,6 +958,13 @@ function DeliveryCard({
   const [busy, setBusy] = useState(false);
   const [manualBusy, setManualBusy] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // [Bug 10.1] A subscriber with no resolvable phone used to be
+  // silently `continue`d past — no proof_deliveries row, no warning,
+  // no count. Nobody ever learned that customer got no video that
+  // month. Now every skip is collected and surfaced below instead.
+  const [skippedNoPhone, setSkippedNoPhone] = useState<{ subscriptionId: string; name: string }[]>(
+    [],
+  );
 
   const labelText = batchLabel(batch.batch_type, batch.batch_date);
   const deliveredCount = deliveries.filter((d) => d.is_delivered).length;
@@ -966,10 +974,20 @@ function DeliveryCard({
     setErr(null);
     try {
       const rows = [];
+      const skipped: { subscriptionId: string; name: string }[] = [];
       for (const r of sbs) {
         const sub = subs.get(r.subscription_id);
         const profile = sub ? profiles.get(sub.user_id) : undefined;
-        if (!sub || !profile?.phone) continue;
+        // Prefer the per-subscription delivery target; fall back to
+        // the account holder's own phone (existing behaviour).
+        const phone = sub?.delivery_phone || profile?.phone || null;
+        if (!sub || !phone) {
+          skipped.push({
+            subscriptionId: r.subscription_id,
+            name: profile?.full_name ?? r.subscription_id,
+          });
+          continue;
+        }
         const segUrl =
           r.segment_number != null ? (segVideoByNumber.get(r.segment_number) ?? null) : null;
         rows.push({
@@ -978,7 +996,7 @@ function DeliveryCard({
           message_kind: "segment" as const,
           segment_number: r.segment_number,
           wa_link: buildWaLink(
-            profile.phone,
+            phone,
             buildDeliveryMessage({
               sevaNames: (sevasBySub.get(r.subscription_id) ?? []).map((s) => s.name),
               batchLabelText: labelText,
@@ -993,6 +1011,7 @@ function DeliveryCard({
         });
         if (error) throw new Error(error.message);
       }
+      setSkippedNoPhone(skipped);
       await onChanged();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Prepare failed");
@@ -1084,6 +1103,20 @@ function DeliveryCard({
           )}
         </div>
         {err && <div className="text-[11px] text-rose-600">{err}</div>}
+
+        {skippedNoPhone.length > 0 && (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 space-y-1">
+            <p className="text-[11px] font-semibold text-rose-700">
+              {skippedNoPhone.length} subscriber{skippedNoPhone.length === 1 ? "" : "s"} ka number
+              nahi hai — inko video nahi jayega
+            </p>
+            <ul className="text-[11px] text-rose-600 list-disc pl-4">
+              {skippedNoPhone.map((s) => (
+                <li key={s.subscriptionId}>{s.name}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {segmentNumbers.map((n) => {
           const segDeliveries = deliveries.filter((d) => d.segment_number === n);

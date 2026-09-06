@@ -46,13 +46,6 @@ export function SlidingImageCard({
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
   const paused = useRef(false);
   const touchStartX = useRef<number | null>(null);
-  const reducedMotion = useRef(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      reducedMotion.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    }
-  }, []);
 
   const next = useCallback(() => setI((v) => (v + 1) % slides.length), [slides.length]);
   const prev = useCallback(() => setI((v) => (v - 1 + slides.length) % slides.length), [slides.length]);
@@ -91,10 +84,7 @@ export function SlidingImageCard({
       {slides.map((s, idx) => (
         <div
           key={idx}
-          className={`absolute inset-0 transition-all ease-in-out ${
-            idx === i ? "opacity-100 z-10" : "opacity-0 z-0"
-          }`}
-          style={{ transitionDuration: reducedMotion.current ? "0ms" : "600ms" }}
+          className={`absolute inset-0 ${idx === i ? "z-10 visible" : "z-0 invisible"}`}
           aria-hidden={idx !== i}
         >
           {s.step && (

@@ -114,8 +114,9 @@ interface FilterState {
    * [SESSION_STUCK_PENDING_CHECKOUT Part C] Ops queue: pending rows older
    * than STALE_PENDING_OPS_MINUTES — abandoned checkouts that will never
    * webhook-activate. Deliberately LONGER than the customer-facing reuse
-   * window in checkout-ttl.ts (20 min): by 1h a real in-flight payment is
-   * long resolved, so anything left pending is worth a proactive call.
+   * window in checkout-ttl.ts (PENDING_REUSE_WINDOW_MINUTES = 3 min): by
+   * 1h a real in-flight payment is long resolved, so anything left
+   * pending is worth a proactive call.
    */
   stalePending: boolean;
 }

@@ -309,12 +309,20 @@ export const Route = createFileRoute("/api/telecaller/send-payment-link")({
             .maybeSingle();
           const waLink = targetPhoneRow?.phone ? buildWaLink(targetPhoneRow.phone, message) : "";
 
+          // §9.1 — the panel keeps returning shareLink/waLink below (a
+          // manual fallback for when the API send fails, and so the
+          // panel can still show/copy it), but the tail now queues the
+          // send for the notifications worker instead of relying on
+          // her clicking the wa.me link herself.
           await auth.db.from("notifications").insert({
             user_id: userId,
             type: "payment_link_sent",
             channel: "whatsapp",
             status: "pending",
             message,
+            to_phone: targetPhoneRow?.phone ?? null,
+            template_name: "punyata_payment_link",
+            template_vars: { plan_name: outcome.planName, share_link: shareLink },
             meta: {
               subscription_db_id: outcome.subscriptionDbId,
               plan_slug: planIdOrSlug,
