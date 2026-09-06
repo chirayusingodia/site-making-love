@@ -41,18 +41,32 @@ function GoogleG({ size = 18 }: { size?: number }) {
 export function GoogleAuthButton({
   redirect,
   onError,
+  landOn = "complete-profile",
 }: {
   /** Internal path to return to after the round-trip (buy step / profile). */
   redirect: string;
   /** Surfaced when the OAuth hand-off itself fails before leaving the page. */
   onError?: (message: string) => void;
+  /**
+   * Where the OAuth round-trip lands. Every call site keeps today's
+   * behaviour (`/complete-profile`, which decides returning-vs-first-
+   * time-user) by default. Checkout's own inline usage passes
+   * "checkout" so Google sends the browser straight BACK to `redirect`
+   * itself — checkout.$planId.tsx handles first-time-user naam/mobile
+   * capture in-page instead (session brief
+   * SESSION_CHECKOUT_INLINE_AUTH_PROMPT.md §4.2).
+   */
+  landOn?: "checkout" | "complete-profile";
 }) {
   const [busy, setBusy] = useState(false);
 
   const startGoogleSignIn = async () => {
     setBusy(true);
     try {
-      const redirectTo = `${window.location.origin}/complete-profile?redirect=${encodeURIComponent(redirect)}`;
+      const redirectTo =
+        landOn === "checkout"
+          ? `${window.location.origin}${redirect}`
+          : `${window.location.origin}/complete-profile?redirect=${encodeURIComponent(redirect)}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo },

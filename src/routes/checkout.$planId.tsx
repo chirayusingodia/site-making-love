@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Check,
@@ -20,6 +20,8 @@ import { callUserApi, AuthApiError } from "@/lib/auth-api";
 import { normalizePhoneE164 } from "@/lib/phone";
 import { useTranslation } from "@/lib/translations";
 import { captureAttributionOnce, getStoredAttribution } from "@/lib/attribution";
+import { supabase } from "@/lib/supabase";
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 
 // Coupon entry is parked for now — flip this back on to restore the
 // "Coupon Code (optional)" card on /checkout without touching the
@@ -100,7 +102,14 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
-  const { userId, profile, loading: sessionLoading, refresh: refreshProfile } = useSessionProfile();
+  const {
+    userId,
+    user,
+    profile,
+    loading: sessionLoading,
+    profileLoading,
+    refresh: refreshProfile,
+  } = useSessionProfile();
 
   // This route doesn't wrap in <SiteChrome> (renders <Header> directly),
   // so it needs its own capture call — an ad can link straight to
@@ -110,16 +119,68 @@ function CheckoutPage() {
     captureAttributionOnce();
   }, []);
 
-  // Session gate — remember which plan they wanted via ?redirect
-  // (and carry the attribution token through the login bounce).
+  // The URL this page returns to after the Google round-trip — same
+  // route, att token carried through exactly like the old /login
+  // ?redirect bounce used to (session brief §4.4).
+  const checkoutUrl = attToken
+    ? `/checkout/${planId}?att=${encodeURIComponent(attToken)}`
+    : `/checkout/${planId}`;
+
+  // ── Inline auth states (session brief §4.3) ─────────────────────
+  // No more navigating away to /login or /complete-profile for this
+  // entry point. useSessionProfile() resolves fast off the persisted
+  // session, but right after the Google redirect lands back on THIS
+  // URL, Supabase is still parsing the OAuth code/hash — resolving to
+  // "logged out" for a beat before the real session shows up. Detect
+  // that one case (an OAuth return marker in the URL) and give it the
+  // same bounded 5s grace window complete-profile.tsx already uses,
+  // so this page doesn't flash the "Continue with Google" button right
+  // after someone just used it. A plain first-time visit (no OAuth
+  // markers) skips the wait and shows logged-out state immediately.
+  const isOAuthReturn = useRef(
+    typeof window !== "undefined" &&
+      (window.location.hash.includes("access_token") || /[?&]code=/.test(window.location.search)),
+  ).current;
+  const [authPhase, setAuthPhase] = useState<"checking" | "oauth-resolving" | "logged-out" | "ready">(
+    "checking",
+  );
+  const oauthPollDone = useRef(false);
+
   useEffect(() => {
-    if (!sessionLoading && !userId) {
-      const back = attToken
-        ? `/checkout/${planId}?att=${encodeURIComponent(attToken)}`
-        : `/checkout/${planId}`;
-      navigate({ to: "/login", search: { redirect: back }, replace: true });
+    if (sessionLoading) return;
+    if (userId) {
+      setAuthPhase("ready");
+      return;
     }
-  }, [sessionLoading, userId, planId, attToken, navigate]);
+    // userId === null, session check finished, nobody's signed in.
+    if (!isOAuthReturn || oauthPollDone.current) {
+      setAuthPhase("logged-out");
+      return;
+    }
+    setAuthPhase("oauth-resolving");
+    let cancelled = false;
+    (async () => {
+      for (let waited = 0; waited < 5000; waited += 300) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (session?.user) {
+          oauthPollDone.current = true;
+          refreshProfile();
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 300));
+      }
+      if (!cancelled) {
+        oauthPollDone.current = true;
+        setAuthPhase("logged-out");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionLoading, userId, isOAuthReturn, refreshProfile]);
 
   const [couponInput, setCouponInput] = useState("");
   const [couponApplied, setCouponApplied] = useState<string | null>(null);
@@ -138,14 +199,23 @@ function CheckoutPage() {
   const [identitySeeded, setIdentitySeeded] = useState(false);
   const [identitySaving, setIdentitySaving] = useState(false);
   const [identityError, setIdentityError] = useState<string | null>(null);
+  const [phoneTaken, setPhoneTaken] = useState(false);
 
   useEffect(() => {
-    if (!identitySeeded && profile) {
+    if (identitySeeded || authPhase !== "ready" || profileLoading) return;
+    if (profile) {
       setNameInput(profile.full_name ?? "");
       setPhoneInput(profile.phone ? profile.phone.replace(/\D/g, "").slice(-10) : "");
       setIdentitySeeded(true);
+      return;
     }
-  }, [profile, identitySeeded]);
+    // State C (§4.3): first-time Google user, no `profiles` row yet —
+    // seed naam from Google's own metadata, same as complete-profile.tsx
+    // used to; phone stays blank and required.
+    const meta = user?.user_metadata as { full_name?: string; name?: string } | undefined;
+    setNameInput(meta?.full_name ?? meta?.name ?? "");
+    setIdentitySeeded(true);
+  }, [profile, identitySeeded, authPhase, profileLoading, user]);
 
   // Persists whichever of naam/mobile actually changed. Phone is
   // UNIQUE across profiles (same as the Google sign-in confirm step),
@@ -175,11 +245,20 @@ function CheckoutPage() {
 
     setIdentitySaving(true);
     setIdentityError(null);
+    setPhoneTaken(false);
     try {
-      await callUserApi("/api/profile/identity", payload);
+      // Upsert-capable: a first-time Google user reaching Pay has no
+      // `profiles` row yet, so the old UPDATE-only endpoint would
+      // silently write nothing (session brief §2.5/§4.1).
+      await callUserApi("/api/profile/upsert-identity", payload);
       refreshProfile();
       return true;
     } catch (err) {
+      if (err instanceof AuthApiError && err.status === 409) {
+        setPhoneTaken(true);
+        setIdentityError(err.message);
+        return false;
+      }
       setIdentityError(
         err instanceof AuthApiError ? err.message : t("checkout_identity_save_error"),
       );
@@ -189,7 +268,7 @@ function CheckoutPage() {
     }
   };
 
-  if (isLoading || sessionLoading || !userId) {
+  if (isLoading || authPhase === "checking") {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -232,6 +311,110 @@ function CheckoutPage() {
             {t("checkout_back_to_plans")}
           </Link>
         </main>
+      </div>
+    );
+  }
+
+  // ── State A / B (§4.3): not signed in yet, or the Google redirect
+  // just landed back here and the session is still resolving. Same
+  // plan summary + trust strip as the paid states — just no naam/
+  // mobile card and no Pay button until a session exists.
+  if (authPhase === "logged-out" || authPhase === "oauth-resolving") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="max-w-md mx-auto px-4 pb-32 pt-4 space-y-5">
+          <Link
+            to="/plan/$planId"
+            params={{ planId: plan.id }}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-brand mb-1"
+          >
+            <ArrowLeft size={16} /> {t("checkout_back")}
+          </Link>
+
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              {
+                icon: RefreshCcw,
+                title: t("checkout_trust_refund_title"),
+                desc: t("checkout_trust_refund_desc"),
+              },
+              {
+                icon: CalendarX,
+                title: t("checkout_trust_cancel_title"),
+                desc: t("checkout_trust_cancel_desc"),
+              },
+              {
+                icon: Lock,
+                title: t("checkout_trust_secure_title"),
+                desc: t("checkout_trust_secure_desc"),
+              },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="rounded-2xl bg-success/10 border border-success/20 px-2.5 py-3 text-center space-y-1"
+              >
+                <Icon size={18} className="text-success mx-auto" />
+                <div className="text-[11px] font-bold text-foreground leading-tight">{title}</div>
+                <div className="text-[9.5px] text-muted-foreground leading-tight">{desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="card-soft overflow-hidden">
+            <div className="bg-gradient-to-r from-brand to-[#F5A742] px-5 py-4 flex items-baseline justify-between">
+              <div className="font-bold text-lg text-white">{plan.name}</div>
+              <div className="text-right">
+                <span className="text-2xl font-bold text-white">{plan.price}</span>
+                <span className="text-xs text-white/80 font-medium">{plan.cycle}</span>
+              </div>
+            </div>
+            <div className="p-5 space-y-3">
+              {plan.strikePrice && (
+                <div className="text-xs text-muted-foreground line-through -mt-1">
+                  {plan.strikePrice}
+                </div>
+              )}
+              <div className="space-y-2">
+                {plan.features.slice(0, 4).map((f) => (
+                  <div key={f} className="flex items-start gap-2.5 text-sm">
+                    <div className="mt-0.5 w-4 h-4 rounded-full bg-success/15 flex items-center justify-center shrink-0">
+                      <Check size={11} className="text-success" strokeWidth={3} />
+                    </div>
+                    <span className="text-foreground/85">{f}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground border-t border-black/5 pt-3">
+                <MapPin size={12} className="text-brand shrink-0" />
+                {plan.location}
+              </div>
+            </div>
+          </div>
+
+          {authPhase === "oauth-resolving" ? (
+            <div className="card-soft p-5 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 size={16} className="animate-spin text-brand" />
+              Aapki Google login confirm ho rahi hai…
+            </div>
+          ) : (
+            <div className="card-soft p-4 space-y-3">
+              <div className="text-sm font-bold text-brand flex items-center gap-1.5">
+                <BadgeCheck size={15} /> {t("checkout_your_details")}
+              </div>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Aage badhne ke liye pehle Google se login karein.
+              </p>
+              <GoogleAuthButton redirect={checkoutUrl} landOn="checkout" onError={setPayError} />
+              {payError && <p className="text-xs text-destructive">{payError}</p>}
+            </div>
+          )}
+
+          <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+            <ShieldCheck size={12} className="text-success" /> {t("checkout_secure_footer")}
+          </div>
+        </main>
+        <WhatsAppFloat />
       </div>
     );
   }
@@ -469,7 +652,10 @@ function CheckoutPage() {
               type="tel"
               inputMode="numeric"
               value={phoneInput}
-              onChange={(e) => setPhoneInput(e.target.value.replace(/[^\d]/g, "").slice(0, 10))}
+              onChange={(e) => {
+                setPhoneInput(e.target.value.replace(/[^\d]/g, "").slice(0, 10));
+                setPhoneTaken(false);
+              }}
               onBlur={saveIdentity}
               placeholder={t("checkout_phone_placeholder")}
               className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground"
@@ -481,6 +667,20 @@ function CheckoutPage() {
             </p>
           )}
           {identityError && <p className="text-[11px] text-destructive">{identityError}</p>}
+          {phoneTaken && (
+            // §5 edge case: this number already belongs to another
+            // account — no merge here, only /login's OTP path can
+            // prove ownership. This one hop back out is a genuine
+            // account-conflict recovery path, not part of the
+            // "3 pages for everyone" problem this change fixes.
+            <Link
+              to="/login"
+              search={{ redirect: checkoutUrl, prefill: phoneInput.replace(/\D/g, "") }}
+              className="inline-block text-[11px] font-bold text-brand underline"
+            >
+              OTP se login karein
+            </Link>
+          )}
           <p className="text-[11px] text-muted-foreground pt-1">{t("checkout_family_note")}</p>
         </div>
 
