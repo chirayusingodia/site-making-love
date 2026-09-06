@@ -57,7 +57,22 @@ export function Header() {
   const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    let ticking = false;
+    // Hysteresis: enter/leave the "scrolled" state at different thresholds so
+    // small scroll jitter (rubber-banding, trackpad momentum) right around a
+    // single cutoff can't flip the header size back and forth every frame.
+    const evaluate = () => {
+      ticking = false;
+      setScrolled((prev) => {
+        const y = window.scrollY;
+        return prev ? y > 4 : y > 32;
+      });
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(evaluate);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);

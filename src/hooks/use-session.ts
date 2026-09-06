@@ -21,6 +21,10 @@ export interface SessionState {
   user: User | null;
   profile: MyProfile | null;
   loading: boolean;
+  /** true while a known-logged-in user's profile row is still being
+   *  fetched — lets a consumer tell "no profile yet" apart from "haven't
+   *  checked yet" (checkout's first-time-Google-user state needs this). */
+  profileLoading: boolean;
 }
 
 export function useSessionProfile(): SessionState & { refresh: () => void } {
@@ -28,6 +32,7 @@ export function useSessionProfile(): SessionState & { refresh: () => void } {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -53,10 +58,15 @@ export function useSessionProfile(): SessionState & { refresh: () => void } {
       // arrive later, while the authenticated UI stays usable.
       setLoading(false);
       if (u) {
+        setProfileLoading(true);
         const p = await fetchMyProfile().catch(() => null);
-        if (!cancelled) setProfile(p);
+        if (!cancelled) {
+          setProfile(p);
+          setProfileLoading(false);
+        }
       } else if (!cancelled) {
         setProfile(null);
+        setProfileLoading(false);
       }
     })();
 
@@ -86,6 +96,7 @@ export function useSessionProfile(): SessionState & { refresh: () => void } {
     user,
     profile,
     loading,
+    profileLoading,
     refresh: () => setTick((t) => t + 1),
   };
 }

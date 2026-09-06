@@ -74,10 +74,12 @@ import { Route as ApiTelecallerCreateLeadRouteImport } from './routes/api/teleca
 import { Route as ApiTelecallerAgentsRouteImport } from './routes/api/telecaller/agents'
 import { Route as ApiSubscriptionsCreateCheckoutRouteImport } from './routes/api/subscriptions/create-checkout'
 import { Route as ApiSankalpGenerateBatchRouteImport } from './routes/api/sankalp/generate-batch'
+import { Route as ApiProfileUpsertIdentityRouteImport } from './routes/api/profile/upsert-identity'
 import { Route as ApiProfileIdentityRouteImport } from './routes/api/profile/identity'
 import { Route as ApiProfileFamilyMembersRouteImport } from './routes/api/profile/family-members'
 import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/address'
 import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
+import { Route as ApiCronSendNotificationsRouteImport } from './routes/api/cron/send-notifications'
 import { Route as ApiCronRenewMandatesRouteImport } from './routes/api/cron/renew-mandates'
 import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
@@ -87,6 +89,7 @@ import { Route as ApiAuthCompleteGoogleProfileRouteImport } from './routes/api/a
 import { Route as ApiAgentMyLeadsRouteImport } from './routes/api/agent/my-leads'
 import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
+import { Route as ApiWhatsappWebhookSecretRouteImport } from './routes/api/whatsapp/webhook.$secret'
 import { Route as ApiTelecallerQueueListRouteImport } from './routes/api/telecaller/queue/list'
 import { Route as ApiTelecallerLeadUpdateRouteImport } from './routes/api/telecaller/lead/update'
 import { Route as ApiAgentLeadsUploadRouteImport } from './routes/api/agent/leads/upload'
@@ -449,6 +452,12 @@ const ApiSankalpGenerateBatchRoute = ApiSankalpGenerateBatchRouteImport.update({
   path: '/api/sankalp/generate-batch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProfileUpsertIdentityRoute =
+  ApiProfileUpsertIdentityRouteImport.update({
+    id: '/api/profile/upsert-identity',
+    path: '/api/profile/upsert-identity',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiProfileIdentityRoute = ApiProfileIdentityRouteImport.update({
   id: '/api/profile/identity',
   path: '/api/profile/identity',
@@ -469,6 +478,12 @@ const ApiPaymentsWebhookRoute = ApiPaymentsWebhookRouteImport.update({
   path: '/api/payments/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronSendNotificationsRoute =
+  ApiCronSendNotificationsRouteImport.update({
+    id: '/api/cron/send-notifications',
+    path: '/api/cron/send-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCronRenewMandatesRoute = ApiCronRenewMandatesRouteImport.update({
   id: '/api/cron/renew-mandates',
   path: '/api/cron/renew-mandates',
@@ -516,6 +531,12 @@ const AdminPanditBatchIdRoute = AdminPanditBatchIdRouteImport.update({
   path: '/pandit/$batchId',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiWhatsappWebhookSecretRoute =
+  ApiWhatsappWebhookSecretRouteImport.update({
+    id: '/api/whatsapp/webhook/$secret',
+    path: '/api/whatsapp/webhook/$secret',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiTelecallerQueueListRoute = ApiTelecallerQueueListRouteImport.update({
   id: '/api/telecaller/queue/list',
   path: '/api/telecaller/queue/list',
@@ -741,10 +762,12 @@ export interface FileRoutesByFullPath {
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
+  '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/profile/identity': typeof ApiProfileIdentityRoute
+  '/api/profile/upsert-identity': typeof ApiProfileUpsertIdentityRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
   '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
@@ -794,6 +817,7 @@ export interface FileRoutesByFullPath {
   '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
   '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
   '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
+  '/api/whatsapp/webhook/$secret': typeof ApiWhatsappWebhookSecretRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -849,10 +873,12 @@ export interface FileRoutesByTo {
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
+  '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/profile/identity': typeof ApiProfileIdentityRoute
+  '/api/profile/upsert-identity': typeof ApiProfileUpsertIdentityRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
   '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
@@ -902,6 +928,7 @@ export interface FileRoutesByTo {
   '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
   '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
   '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
+  '/api/whatsapp/webhook/$secret': typeof ApiWhatsappWebhookSecretRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -961,10 +988,12 @@ export interface FileRoutesById {
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
+  '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
   '/api/profile/family-members': typeof ApiProfileFamilyMembersRoute
   '/api/profile/identity': typeof ApiProfileIdentityRoute
+  '/api/profile/upsert-identity': typeof ApiProfileUpsertIdentityRoute
   '/api/sankalp/generate-batch': typeof ApiSankalpGenerateBatchRoute
   '/api/subscriptions/create-checkout': typeof ApiSubscriptionsCreateCheckoutRoute
   '/api/telecaller/agents': typeof ApiTelecallerAgentsRoute
@@ -1014,6 +1043,7 @@ export interface FileRoutesById {
   '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
   '/api/telecaller/lead/update': typeof ApiTelecallerLeadUpdateRoute
   '/api/telecaller/queue/list': typeof ApiTelecallerQueueListRoute
+  '/api/whatsapp/webhook/$secret': typeof ApiWhatsappWebhookSecretRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1074,10 +1104,12 @@ export interface FileRouteTypes {
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
     | '/api/cron/renew-mandates'
+    | '/api/cron/send-notifications'
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
     | '/api/profile/identity'
+    | '/api/profile/upsert-identity'
     | '/api/sankalp/generate-batch'
     | '/api/subscriptions/create-checkout'
     | '/api/telecaller/agents'
@@ -1127,6 +1159,7 @@ export interface FileRouteTypes {
     | '/api/agent/leads/upload'
     | '/api/telecaller/lead/update'
     | '/api/telecaller/queue/list'
+    | '/api/whatsapp/webhook/$secret'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1182,10 +1215,12 @@ export interface FileRouteTypes {
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
     | '/api/cron/renew-mandates'
+    | '/api/cron/send-notifications'
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
     | '/api/profile/identity'
+    | '/api/profile/upsert-identity'
     | '/api/sankalp/generate-batch'
     | '/api/subscriptions/create-checkout'
     | '/api/telecaller/agents'
@@ -1235,6 +1270,7 @@ export interface FileRouteTypes {
     | '/api/agent/leads/upload'
     | '/api/telecaller/lead/update'
     | '/api/telecaller/queue/list'
+    | '/api/whatsapp/webhook/$secret'
   id:
     | '__root__'
     | '/'
@@ -1293,10 +1329,12 @@ export interface FileRouteTypes {
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
     | '/api/cron/renew-mandates'
+    | '/api/cron/send-notifications'
     | '/api/payments/webhook'
     | '/api/profile/address'
     | '/api/profile/family-members'
     | '/api/profile/identity'
+    | '/api/profile/upsert-identity'
     | '/api/sankalp/generate-batch'
     | '/api/subscriptions/create-checkout'
     | '/api/telecaller/agents'
@@ -1346,6 +1384,7 @@ export interface FileRouteTypes {
     | '/api/agent/leads/upload'
     | '/api/telecaller/lead/update'
     | '/api/telecaller/queue/list'
+    | '/api/whatsapp/webhook/$secret'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1378,10 +1417,12 @@ export interface RootRouteChildren {
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
   ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
   ApiCronRenewMandatesRoute: typeof ApiCronRenewMandatesRoute
+  ApiCronSendNotificationsRoute: typeof ApiCronSendNotificationsRoute
   ApiPaymentsWebhookRoute: typeof ApiPaymentsWebhookRoute
   ApiProfileAddressRoute: typeof ApiProfileAddressRoute
   ApiProfileFamilyMembersRoute: typeof ApiProfileFamilyMembersRoute
   ApiProfileIdentityRoute: typeof ApiProfileIdentityRoute
+  ApiProfileUpsertIdentityRoute: typeof ApiProfileUpsertIdentityRoute
   ApiSankalpGenerateBatchRoute: typeof ApiSankalpGenerateBatchRoute
   ApiSubscriptionsCreateCheckoutRoute: typeof ApiSubscriptionsCreateCheckoutRoute
   ApiTelecallerAgentsRoute: typeof ApiTelecallerAgentsRoute
@@ -1427,6 +1468,7 @@ export interface RootRouteChildren {
   ApiAdminSubscriptionsResumeRoute: typeof ApiAdminSubscriptionsResumeRoute
   ApiAgentLeadsUploadRoute: typeof ApiAgentLeadsUploadRoute
   ApiTelecallerQueueListRoute: typeof ApiTelecallerQueueListRoute
+  ApiWhatsappWebhookSecretRoute: typeof ApiWhatsappWebhookSecretRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1886,6 +1928,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSankalpGenerateBatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/profile/upsert-identity': {
+      id: '/api/profile/upsert-identity'
+      path: '/api/profile/upsert-identity'
+      fullPath: '/api/profile/upsert-identity'
+      preLoaderRoute: typeof ApiProfileUpsertIdentityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/profile/identity': {
       id: '/api/profile/identity'
       path: '/api/profile/identity'
@@ -1912,6 +1961,13 @@ declare module '@tanstack/react-router' {
       path: '/api/payments/webhook'
       fullPath: '/api/payments/webhook'
       preLoaderRoute: typeof ApiPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/send-notifications': {
+      id: '/api/cron/send-notifications'
+      path: '/api/cron/send-notifications'
+      fullPath: '/api/cron/send-notifications'
+      preLoaderRoute: typeof ApiCronSendNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/renew-mandates': {
@@ -1976,6 +2032,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/pandit/$batchId'
       preLoaderRoute: typeof AdminPanditBatchIdRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/api/whatsapp/webhook/$secret': {
+      id: '/api/whatsapp/webhook/$secret'
+      path: '/api/whatsapp/webhook/$secret'
+      fullPath: '/api/whatsapp/webhook/$secret'
+      preLoaderRoute: typeof ApiWhatsappWebhookSecretRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/telecaller/queue/list': {
       id: '/api/telecaller/queue/list'
@@ -2332,10 +2395,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
   ApiCouponsValidateRoute: ApiCouponsValidateRoute,
   ApiCronRenewMandatesRoute: ApiCronRenewMandatesRoute,
+  ApiCronSendNotificationsRoute: ApiCronSendNotificationsRoute,
   ApiPaymentsWebhookRoute: ApiPaymentsWebhookRoute,
   ApiProfileAddressRoute: ApiProfileAddressRoute,
   ApiProfileFamilyMembersRoute: ApiProfileFamilyMembersRoute,
   ApiProfileIdentityRoute: ApiProfileIdentityRoute,
+  ApiProfileUpsertIdentityRoute: ApiProfileUpsertIdentityRoute,
   ApiSankalpGenerateBatchRoute: ApiSankalpGenerateBatchRoute,
   ApiSubscriptionsCreateCheckoutRoute: ApiSubscriptionsCreateCheckoutRoute,
   ApiTelecallerAgentsRoute: ApiTelecallerAgentsRoute,
@@ -2383,6 +2448,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminSubscriptionsResumeRoute: ApiAdminSubscriptionsResumeRoute,
   ApiAgentLeadsUploadRoute: ApiAgentLeadsUploadRoute,
   ApiTelecallerQueueListRoute: ApiTelecallerQueueListRoute,
+  ApiWhatsappWebhookSecretRoute: ApiWhatsappWebhookSecretRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
