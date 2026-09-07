@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { BookOpen, Flame, Sun, Wind, Heart, Users, Sparkles, AlertTriangle, RefreshCw } from "lucide-react";
 import { usePublicPlans } from "@/lib/plans";
+import { useTranslation, localizedName } from "@/lib/translations";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 
@@ -58,6 +59,7 @@ const sevaMedia: Record<string, SevaStaticMedia> = {
 };
 
 function SevasPage() {
+  const { t, lang } = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
   const sevaList = data?.sevaList ?? [];
 
@@ -66,10 +68,8 @@ function SevasPage() {
       <main className="max-w-4xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-10">
         <header className="text-center">
           <div className="text-xs font-bold uppercase tracking-widest text-brand">Our Sevas</div>
-          <h1 className="mt-2 text-3xl font-bold">पुण्यता की सेवाएँ</h1>
-          <p className="mt-2 text-[15px] text-muted-foreground max-w-xl mx-auto">
-            तीर्थ गुरु पुष्करराज में आपके नाम एवं गोत्र से सम्पन्न होने वाली सभी सेवाएँ — पूर्ण पारदर्शिता और WhatsApp Video Proof के साथ।
-          </p>
+          <h1 className="mt-2 text-3xl font-bold">{t("sevas_title")}</h1>
+          <p className="mt-2 text-[15px] text-muted-foreground max-w-xl mx-auto">{t("sevas_sub")}</p>
         </header>
 
         {isLoading ? (
@@ -88,17 +88,15 @@ function SevasPage() {
         ) : isError ? (
           <div className="card-soft border border-destructive/30 p-8 text-center space-y-3">
             <AlertTriangle size={32} className="text-destructive mx-auto" />
-            <p className="text-sm font-semibold text-foreground">Seva सूची abhi load nahi ho payi.</p>
-            <p className="text-xs text-muted-foreground">
-              Live seva data fetch karne mein samasya aayi. Kripya punah prayas karein.
-            </p>
+            <p className="text-sm font-semibold text-foreground">{t("sevas_err")}</p>
+            <p className="text-xs text-muted-foreground">{t("sevas_err_desc")}</p>
             <button
               onClick={() => refetch()}
               disabled={isRefetching}
               className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
             >
               <RefreshCw size={14} className={isRefetching ? "animate-spin" : ""} />
-              {isRefetching ? "Retrying..." : "Retry"}
+              {isRefetching ? t("checkout_retrying") : t("checkout_retry")}
             </button>
           </div>
         ) : (
@@ -130,7 +128,7 @@ function SevasPage() {
                       <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center shrink-0">
                         <Icon size={24} className="text-brand" />
                       </div>
-                      <h2 className="text-xl font-bold text-foreground">{s.title}</h2>
+                      <h2 className="text-xl font-bold text-foreground">{localizedName(s.title, s.titleEn, lang)}</h2>
                     </div>
                     <p className="text-[15px] text-muted-foreground leading-relaxed">{s.desc}</p>
                   </div>

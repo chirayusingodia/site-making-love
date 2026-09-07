@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, ScrollText, ListChecks, Quote, Sparkles } from "lucide-react";
 import { ChadhavaHeartBadge, AuthenticityTrust } from "@/components/TrustAuthenticity";
-import { usePublicPlans, getPlanById, fetchPublicPlansData, type Plan } from "@/lib/plans";
+import { usePublicPlans, getPlanById, fetchPublicPlansData, localizePlan, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { CountUp } from "@/components/CountUp";
-import { useTranslation } from "@/lib/translations";
+import { useTranslation, localizedName } from "@/lib/translations";
 import { LottieIcon } from "@/components/LottieIcon";
 import { PizzaComparison } from "@/components/PizzaComparison";
 import { ComparisonTable } from "@/components/ComparisonTable";
@@ -65,6 +65,7 @@ export const Route = createFileRoute("/plan/$planId")({
 
 function PlanDetailPage() {
   const { planId } = Route.useParams();
+  const { t } = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
 
   if (isLoading) {
@@ -93,16 +94,14 @@ function PlanDetailPage() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="max-w-2xl mx-auto px-4 py-16 text-center space-y-3">
-          <h1 className="text-xl font-bold">Sadasyata load nahi ho paya</h1>
-          <p className="text-sm text-muted-foreground">
-            Live Sadasyata data fetch karne mein samasya aayi. Kripya punah prayas karein.
-          </p>
+          <h1 className="text-xl font-bold">{t("pd_err_title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("plans_err_desc")}</p>
           <button
             onClick={() => refetch()}
             disabled={isRefetching}
             className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
           >
-            {isRefetching ? "Retrying..." : "Retry"}
+            {isRefetching ? t("checkout_retrying") : t("checkout_retry")}
           </button>
         </main>
       </div>
@@ -124,8 +123,9 @@ function PlanDetailPage() {
   return <PlanDetail plan={plan} allPlans={data.plans} />;
 }
 
-function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
-  const { lang } = useTranslation();
+function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
+  const { t, lang } = useTranslation();
+  const plan = localizePlan(rawPlan, lang);
   const slides: Slide[] = plan.slides.map((s) => ({
     image: s.image,
     alt: s.title,
@@ -201,7 +201,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
               <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
                 <ScrollText size={16} className="text-brand" />
               </div>
-              <h2 className="text-lg font-bold text-foreground">इस संकल्प के बारे में</h2>
+              <h2 className="text-lg font-bold text-foreground">{t("pd_about")}</h2>
             </div>
 
             {plan.detail.benefits.length > 0 && (
@@ -234,7 +234,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
             <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
               <ListChecks size={16} className="text-brand" />
             </div>
-            <h2 className="text-lg font-bold text-foreground">इस पैक में शामिल सेवाएँ</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("pd_included")}</h2>
           </div>
           <div className="card-soft divide-y divide-black/5">
             {plan.detail.sevas.map((s) => (
@@ -243,7 +243,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
                   <Check size={14} className="text-success" strokeWidth={3} />
                 </div>
                 <div>
-                  <div className="font-bold text-foreground">{s.title}</div>
+                  <div className="font-bold text-foreground">{localizedName(s.title, s.titleEn, lang)}</div>
                   <div className="text-sm text-muted-foreground mt-0.5">{s.note}</div>
                 </div>
               </div>
@@ -252,7 +252,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
         </section>
 
         {/* Dynamic seva flow — reads current plan's actual sevas */}
-        <SevaFlow sevaTitles={plan.detail.sevas.map((s) => s.title)} />
+        <SevaFlow sevaTitles={plan.detail.sevas.map((s) => localizedName(s.title, s.titleEn, lang))} />
 
         {/* Aapki Sewa Kaise Sampann Hoti Hai section */}
         <section className="mt-8 space-y-4">
@@ -328,7 +328,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
               autoplay
               fallback={<div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0"><Check size={16} className="text-brand" /></div>}
             />
-            <h2 className="text-lg font-bold text-foreground">इस संकल्प के फायदे</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("pd_benefits")}</h2>
           </div>
           <div className="relative rounded-2xl bg-gradient-to-b from-[#FFF6EE] to-[#FDECDC] border border-brand/15 p-5 space-y-3">
             <Sparkles size={18} className="absolute top-4 right-4 text-[#F5A742]" />
@@ -360,7 +360,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
             <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
               <Quote size={16} className="text-brand" />
             </div>
-            <h2 className="text-lg font-bold text-foreground">इस पैक के भक्तों की राय</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("pd_reviews")}</h2>
           </div>
           <div className="space-y-3">
             {plan.detail.reviews.map((r, i) => (
@@ -386,10 +386,12 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
             <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
               <ArrowRight size={16} className="text-brand" />
             </div>
-            <h2 className="text-lg font-bold text-foreground">अन्य पैक देखें</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("pd_related")}</h2>
           </div>
           <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2">
-            {allPlans.filter((p) => p.id !== plan.id && p.isVisible !== false).map((p) => (
+            {allPlans.filter((p) => p.id !== plan.id && p.isVisible !== false).map((rawP) => {
+              const p = localizePlan(rawP, lang);
+              return (
               <Link key={p.id} to="/plan/$planId" params={{ planId: p.id }} className="card-soft p-3 w-[260px] min-w-[260px] shrink-0 flex flex-col justify-between border border-black/5 hover:border-brand/20 transition-all">
                 <div>
                   <div className="h-28 overflow-hidden rounded-xl bg-muted">
@@ -404,7 +406,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="mt-2 font-extrabold text-sm text-foreground line-clamp-1">{p.name}</div>
+                  <div className="mt-2 font-extrabold text-sm text-foreground line-clamp-1">{localizedName(p.name, p.nameEn, lang)}</div>
                   <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 leading-tight h-7">{p.subheading}</p>
                 </div>
                 <div className="mt-2 pt-2 border-t border-black/5 flex items-baseline justify-between">
@@ -412,7 +414,8 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
                   <span className="text-[10px] font-bold text-brand hover:underline">View →</span>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -426,7 +429,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-black/5 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3 pb-[env(safe-area-inset-bottom,0.5rem)]">
           <div>
-            <div className="text-xs text-muted-foreground">कुल राशि</div>
+            <div className="text-xs text-muted-foreground">{t("pd_total")}</div>
             <div className="font-bold text-foreground">{plan.price}<span className="text-sm text-muted-foreground font-medium">{plan.cycle}</span></div>
           </div>
           <Link
@@ -434,7 +437,7 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
             params={{ planId: plan.id }}
             className="flex items-center justify-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-full hover:bg-brand-deep transition-colors text-sm shadow-md shadow-brand/10 btn-glow primary-btn-glow"
           >
-            {lang === "hindi" ? "पुण्य शुरू करें" : "Punya Start Kare"} <ArrowRight size={18} />
+            {t("plans_cta")} <ArrowRight size={18} />
           </Link>
         </div>
       </div>

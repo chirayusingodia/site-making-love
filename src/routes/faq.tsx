@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { faqs } from "@/lib/plans";
+import { faqs, faqsEn } from "@/lib/plans";
+import { useTranslation } from "@/lib/translations";
 import { SiteChrome } from "@/components/site-chrome";
 import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
 
@@ -21,7 +22,9 @@ export const Route = createFileRoute("/faq")({
 });
 
 function FaqPage() {
+  const { t, lang } = useTranslation();
   const [open, setOpen] = useState<number | null>(0);
+  const visibleFaqs = lang === "english" ? faqsEn : faqs;
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -41,10 +44,10 @@ function FaqPage() {
       <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-6">
         <header className="text-center">
           <div className="text-xs font-bold uppercase tracking-widest text-brand">FAQ</div>
-          <h1 className="mt-2 text-3xl font-bold">आपके प्रश्न</h1>
+          <h1 className="mt-2 text-3xl font-bold">{t("faq_page_title")}</h1>
         </header>
         <div className="card-soft overflow-hidden">
-          {faqs.map((f, i) => {
+          {visibleFaqs.map((f, i) => {
             const isOpen = open === i;
             return (
               <div key={i} className="border-b border-black/5 last:border-b-0">

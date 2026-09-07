@@ -45,6 +45,7 @@ export type PlanSlide = {
 interface DbPlan {
   id: string;
   name: string;
+  name_en: string | null;
   slug: string;
   price_paise: number;
   billing_period: "monthly" | "yearly";
@@ -57,6 +58,7 @@ interface DbPlan {
 interface DbSeva {
   id: string;
   name: string;
+  name_en: string | null;
   slug: string;
   description: string | null;
   is_active: boolean;
@@ -87,6 +89,7 @@ export type Plan = {
   id: string; // public URL id (slug alias, e.g. "grah" for "premium")
   slug: string; // DB slug
   name: string; // DB plans.name
+  nameEn: string | null; // DB plans.name_en (optional English display name)
   heading: string; // presentation
   subheading: string; // presentation
   tagline: string; // DB plans.tagline (presentation fallback when null)
@@ -101,19 +104,26 @@ export type Plan = {
   badge?: { label: string; kind: "popular" | "save" | "max" }; // presentation
   location: string; // single-location label (Pushkar only, user-visible today)
   serviceTags: string[]; // derived from live composition
-  features: string[]; // derived live from plan_sevas + schedule rules + addons
+  features: string[]; // derived live from plan_sevas + schedule rules + addons (Hindi)
+  featuresEn: string[]; // same, English cadence words + seva name_en when set
   includedSevas: LiveSeva[]; // live plan_sevas join
   comparison: Record<string, ComparisonValue>; // keyed by seva slug + proof/family/prasad/billing
   detail: {
     description: string[]; // presentation
-    sevas: { title: string; note: string }[]; // LIVE from plan_sevas
+    sevas: { title: string; titleEn: string | null; note: string }[]; // LIVE from plan_sevas
     benefits: string[]; // presentation
     reviews: { n: string; city: string; q: string; stars: number }[]; // presentation
   };
   isVisible: boolean; // DB is_active (rows are pre-filtered)
 };
 
-export type SevaListItem = { slug: string; title: string; desc: string; iconKey: string };
+export type SevaListItem = {
+  slug: string;
+  title: string;
+  titleEn: string | null;
+  desc: string;
+  iconKey: string;
+};
 
 // ─── Presentation-only per-slug assets (NO composition data here) ────────────
 type PlanPresentation = {
@@ -361,6 +371,232 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
   },
 };
 
+// ─── English presentation (owner-approved) ───────────────────────────────────
+// Mirror of PLAN_PRESENTATION's translatable text, keyed by DB slug. Ritual
+// nouns (Sundarkand, Gau Seva, hawan, sankalp, gotra, daan-punya) are kept as
+// transliterations by design. Consumed via localizePlan() when lang==="english".
+type PlanPresentationEn = {
+  heading: string;
+  subheading: string;
+  tagline: string;
+  slides: PlanSlide[];
+  ribbon?: string;
+  badge?: Plan["badge"];
+  detail: {
+    description: string[];
+    benefits: string[];
+    reviews: { n: string; city: string; q: string; stars: number }[];
+  };
+};
+
+const LOCATION_LABEL_EN = "Tirth Guru Pushkarraj, Pushkar";
+
+const PLAN_PRESENTATION_EN: Record<string, PlanPresentationEn> = {
+  basic: {
+    heading:
+      "Monthly Sundarkand Path, Gau Seva & Vanar Seva — Sankalp on the 2nd Tuesday of Every Month",
+    subheading:
+      "A sankalp in your name and gotra every month, for your family's protection, health and prosperity",
+    tagline:
+      "The start of seva — monthly Sundarkand, Gau Seva & Vanar Seva (2nd Tuesday only) for ₹251/month.",
+    slides: [
+      {
+        image: SITE_IMAGES.planBasicHero,
+        title: "Basic Seva — for up to 4 members",
+        subtitle: "Sundarkand Path • Vanar Seva • Gau Seva",
+      },
+      {
+        image: SITE_IMAGES.planBasicSankalp,
+        title: "Sankalp — in your name & gotra",
+        subtitle: "Your details are included in the seva every month",
+        step: "Step 1",
+      },
+      {
+        image: SITE_IMAGES.planBasicSeva,
+        title: "Seva performed by our Pandit ji",
+        subtitle: "With full vedic vidhi at Tirth Guru Pushkarraj, Pushkar",
+        step: "Step 2",
+      },
+      {
+        image: SITE_IMAGES.planBasicProof,
+        title: "Proof straight to your WhatsApp",
+        subtitle: "🙏 Jai Shri Ram, [Name] ji — your seva is complete this month. Proof attached.",
+        step: "Step 3",
+      },
+    ],
+    ribbon: "800+ families joined",
+    detail: {
+      description: [
+        "When you take the core sankalp, a Sundarkand Path and Aarti dedicated to Shri Hanuman ji is performed in your name and gotra on the second Tuesday of every month — this punya brings peace, protection and prosperity to your family.",
+        "This pack includes — Sundarkand Path, Aarti, Gau Seva and Vanar Seva. Video proof of every seva, straight to your WhatsApp.",
+      ],
+      benefits: [
+        "Positive energy and mental peace in the family",
+        "Relief from Pitra Dosh and planetary afflictions",
+        "Freedom from fear and crisis by the grace of Shri Hanuman ji",
+        "A continuous flow of direct daan-punya",
+      ],
+      reviews: [
+        { n: "Rajesh Sharma", city: "Delhi", q: "So much punya for ₹251 — watching the video each month brings my heart peace.", stars: 5 },
+        { n: "Sunita Verma", city: "Mumbai", q: "I took the sankalp in my child's name, and now I show every seva's proof to the whole family.", stars: 5 },
+        { n: "Vikas Tiwari", city: "Lucknow", q: "I doubted it at first, but seeing the video proof only deepened my faith.", stars: 5 },
+      ],
+    },
+  },
+  premium: {
+    heading:
+      "Monthly Sundarkand Path, Gau Seva, Vanar Seva, Feeding of Saints, Griha Shanti Hawan & Sarv Rog Nivaran Hawan — Sankalp on the 2nd Tuesday & Last Saturday of Every Month",
+    subheading:
+      "Two sankalps every month — two different hawans for peace at home and relief from illness and obstacles",
+    tagline:
+      "Complete family seva — 2 Sundarkands, 2 separate hawans (Griha Shanti & Sarv Rog Nivaran), Feeding of Saints, and Gau/Vanar Seva every month.",
+    slides: [
+      {
+        image: SITE_IMAGES.planPremiumHero,
+        title: "Premium Seva — complete pooja with hawan",
+        subtitle: "Hawan & offerings • Sundarkand Path • Feeding of Saints • Vanar Seva • Gau Seva",
+      },
+      {
+        image: SITE_IMAGES.planPremiumSankalp,
+        title: "Sankalp — in your name & gotra",
+        subtitle: "A complete pooja with hawan, carried out with your details",
+        step: "Step 1",
+      },
+      {
+        image: SITE_IMAGES.planPremiumHawan,
+        title: "Hawan — performed by our Pandit ji with full vidhi",
+        subtitle: "At Tirth Guru Pushkarraj, Pushkar",
+        step: "Step 2",
+      },
+      {
+        image: SITE_IMAGES.planPremiumProof,
+        title: "Proof of every seva — with photos & video",
+        subtitle:
+          "🙏 Jai Shri Ram, [Name] ji — your complete seva with hawan is done this month. Proof attached.",
+        step: "Step 3",
+      },
+    ],
+    ribbon: "500+ families joined",
+    badge: { label: "Most Popular", kind: "popular" },
+    detail: {
+      description: [
+        "The Griha Shanti sankalp is a spiritual shield for your family — two Sundarkand Paths, two separate hawans (Griha Shanti and Sarv Rog Nivaran), Aarti, feeding of saints, and Gau-Vanar Seva every month bring auspiciousness into your home.",
+        "This pack is made especially for families who want positive energy at home and relief from illness, grief and Vastu dosh.",
+      ],
+      benefits: [
+        "Relief from household discord and Vastu dosh",
+        "Grace of Shri Hanuman ji on every family member",
+        "Destruction of financial obstacles and poverty",
+        "Peace and blessings for ancestors",
+        "Positive energy and mental peace in the family",
+        "Relief from Pitra Dosh and planetary afflictions",
+        "Freedom from fear and crisis by the grace of Shri Hanuman ji",
+        "A continuous flow of direct daan-punya",
+      ],
+      reviews: [
+        { n: "Meena Patel", city: "Ahmedabad", q: "A Sundarkand every month in my father's memory — hearing his name in the video brings tears to my eyes.", stars: 5 },
+        { n: "Amit Khandelwal", city: "Jaipur", q: "After the hawan, the whole atmosphere of our home changed. Truly a divine experience.", stars: 5 },
+        { n: "Neha Joshi", city: "Pune", q: "The most balanced pack for the whole family — every rupee accounted for in the video.", stars: 5 },
+      ],
+    },
+  },
+  "premium-annual": {
+    heading:
+      "12 Months of Sundarkand Path, Gau Seva, Vanar Seva, Feeding of Saints, Griha Shanti Hawan & Sarv Rog Nivaran Hawan — 24 Sankalps a Year with Prasad & Certificate",
+    subheading:
+      "A whole year of accumulated punya — delivered to your home with Prasad and a Sankalp Certificate",
+    tagline:
+      "A full year of sankalp — all the ₹399 sevas for 12 months + Prasad Box + Sankalp Certificate.",
+    slides: [
+      {
+        image: SITE_IMAGES.planAnnualHero,
+        title: "Premium Annual — a whole year, worry-free",
+        subtitle:
+          "Hawan & offerings • Sundarkand • Feeding of Saints • Vanar Seva • Gau Seva • Sankalp Certificate & Prasad",
+      },
+      {
+        image: SITE_IMAGES.planAnnualSankalp,
+        title: "Sankalp — in your name & gotra",
+        subtitle: "A complete pooja with hawan, carried out with your details",
+        step: "Step 1",
+      },
+      {
+        image: SITE_IMAGES.planAnnualHawan,
+        title: "Hawan — performed by our Pandit ji with full vidhi",
+        subtitle: "At Tirth Guru Pushkarraj, Pushkar",
+        step: "Step 2",
+      },
+      {
+        image: SITE_IMAGES.planAnnualProof,
+        title: "Proof of every seva — with photos & video",
+        subtitle:
+          "🙏 Jai Shri Ram, [Name] ji — your complete seva with hawan is done this month. Proof attached.",
+        step: "Step 3",
+      },
+      {
+        image: SITE_IMAGES.planAnnualBonus,
+        title: "Special prasad for annual members",
+        subtitle: "Sarovar water, chandan tilak, akshat-kumkum and a Sankalp Certificate",
+      },
+    ],
+    ribbon: "Most Punya-Giving",
+    badge: { label: "Save ₹711", kind: "save" },
+    detail: {
+      description: [
+        "The punya of one annual maha-sankalp is considered far more fruitful than 12 separate monthly ones. Through the whole year, sevas run unbroken in your name and gotra — without interruption, without pause.",
+        "This pack includes all the Griha Shanti sevas for 12 months + a Quarterly Prasad Box and a Sankalp Certificate. ₹4,812 of sevas for just ₹4,101 — a saving of ₹711.",
+      ],
+      benefits: [
+        "Relief from household discord and Vastu dosh",
+        "Grace of Shri Hanuman ji on every family member",
+        "Destruction of financial obstacles and poverty",
+        "Peace and blessings for ancestors",
+        "Positive energy and mental peace in the family",
+        "Relief from Pitra Dosh and planetary afflictions",
+        "Freedom from fear and crisis by the grace of Shri Hanuman ji",
+        "A continuous flow of direct daan-punya",
+        "Unbroken annual punya — sankalp without interruption",
+        "A saving of ₹711 — just ₹340 per month",
+      ],
+      reviews: [
+        { n: "Prakash Agarwal", city: "Kolkata", q: "A whole year's worry settled at once — it was the most peaceful decision.", stars: 5 },
+        { n: "Kavita Iyer", city: "Bengaluru", q: "Watching the Chola Seva video gave me goosebumps. The money felt truly worthwhile.", stars: 5 },
+        { n: "Ramesh Gupta", city: "Indore", q: "The ₹711 saving is a bonus — the real gain is a full year of unbroken punya.", stars: 5 },
+      ],
+    },
+  },
+};
+
+/**
+ * Return a plan with its English marketing copy swapped in when the site is
+ * in English and a PLAN_PRESENTATION_EN entry exists for its slug. Ritual and
+ * seva names still resolve per-field via localizedName in the components; this
+ * swaps the long-form presentation prose, slides, features, ribbon/badge and
+ * location wholesale. A no-op in Hindi or for a slug with no English draft.
+ */
+export function localizePlan(plan: Plan, lang: "hindi" | "english"): Plan {
+  if (lang !== "english") return plan;
+  const en = PLAN_PRESENTATION_EN[plan.slug];
+  if (!en) return plan;
+  return {
+    ...plan,
+    heading: en.heading,
+    subheading: en.subheading,
+    tagline: en.tagline,
+    slides: en.slides,
+    ribbon: en.ribbon ?? plan.ribbon,
+    badge: en.badge ?? plan.badge,
+    location: LOCATION_LABEL_EN,
+    features: plan.featuresEn,
+    detail: {
+      ...plan.detail,
+      description: en.detail.description,
+      benefits: en.detail.benefits,
+      reviews: en.detail.reviews,
+    },
+  };
+}
+
 /** Generic presentation for a plan slug with no bespoke assets yet (e.g. a new plan added in admin). */
 function genericPresentation(plan: DbPlan): PlanPresentation {
   return {
@@ -443,6 +679,12 @@ function buildPlan(
   addons.forEach((a) => features.push(a.description ?? a.addon_type));
   features.push("WhatsApp Video Proof"); // universal platform feature, not a seva
 
+  // English mirror — seva cadence in English (name_en where set); addon
+  // descriptions stay as the admin wrote them (DB content).
+  const featuresEn = sevaFeatureLines(includedSevas, "english");
+  addons.forEach((a) => featuresEn.push(a.description ?? a.addon_type));
+  featuresEn.push("WhatsApp Video Proof");
+
   // Comparison matrix values — every active seva gets a row keyed by its slug,
   // with the frequency the PLAN gives it (Premium runs Sundarkand twice a month).
   const comparison: Record<string, ComparisonValue> = buildSevaComparison(liveSevas, includedSevas);
@@ -475,6 +717,7 @@ function buildPlan(
     id: resolvedPres.planId,
     slug: dbPlan.slug,
     name: dbPlan.name,
+    nameEn: dbPlan.name_en ?? null,
     heading: resolvedPres.heading,
     subheading: resolvedPres.subheading,
     tagline: dbPlan.tagline ?? resolvedPres.tagline,
@@ -494,12 +737,14 @@ function buildPlan(
     location: LOCATION_LABEL,
     serviceTags,
     features,
+    featuresEn,
     includedSevas,
     comparison,
     detail: {
       description: resolvedPres.detail.description,
       sevas: includedSevas.map((s) => ({
         title: s.name,
+        titleEn: s.nameEn,
         note: s.description ?? (s.days.length ? `हर माह — ${s.days.join(" & ")}` : ""),
       })),
       benefits: resolvedPres.detail.benefits,
@@ -550,6 +795,7 @@ export async function fetchPublicPlansData(): Promise<PublicPlansData> {
   const sevaList: SevaListItem[] = dbSevas.map((s) => ({
     slug: s.slug,
     title: s.name,
+    titleEn: s.name_en ?? null,
     desc: s.description ?? "",
     iconKey: iconKeyForSeva(s),
   }));
@@ -597,6 +843,32 @@ export const acharyas = [
     role: "गौ सेवा एवं अनुष्ठान प्रमुख",
     bio: "15 वर्षों से गौशाला सेवा। वानर सेवा एवं साधु संतों को भोजन के संयोजक।",
     quote: "गौ माता की सेवा में ही समस्त देवताओं की सेवा है।",
+  },
+];
+
+// English mirror of `acharyas` (owner-approved). Same order, so the initials
+// avatar and any position-matched assets stay aligned.
+export const acharyasEn = [
+  {
+    initials: "रा",
+    name: "Pt. Ramswaroop Sharma",
+    role: "Chief Acharya — Tirth Guru Pushkarraj",
+    bio: "Serving at Tirth Guru Pushkarraj for 22 years. Hawan specialist. Graduate in Vedic scriptures from Kashi Vidyapeeth.",
+    quote: "Seva is our dharma.",
+  },
+  {
+    initials: "वि",
+    name: "Pt. Vinayak ji",
+    role: "Sundarkand Lead",
+    bio: "A specialist in Sundarkand Path for 8 years — an acharya of melodious, sankalp-precise recitation.",
+    quote: "The name of Ram is the greatest mantra.",
+  },
+  {
+    initials: "गो",
+    name: "Pt. Govind Prasad Tiwari",
+    role: "Gau Seva & Rituals Lead",
+    bio: "15 years of gaushala seva. Coordinator of Vanar Seva and the feeding of saints.",
+    quote: "In the service of Gau Mata lies the service of all the gods.",
   },
 ];
 
@@ -686,5 +958,46 @@ export const faqs = [
   {
     q: "क्या मैं किसी भी समय cancel कर सकता हूँ?",
     a: "जी हाँ, बिना किसी शुल्क या प्रश्न के आप अपना मासिक योगदान कभी भी रोक सकते हैं।",
+  },
+];
+
+// English mirror of `faqs` (owner-approved). Same order and count so the
+// accordion index and the page's FAQ JSON-LD stay aligned.
+export const faqsEn = [
+  {
+    q: "How can you do all this so affordably?",
+    a: "Everyone's sankalp is taken together. Each person's name and gotra is spoken separately, but the Pandit ji takes everyone's sankalp collectively in a single sitting. That is what keeps this seva accessible and affordable for all.",
+  },
+  {
+    q: "When does my first seva begin?",
+    a: "If you subscribe before the second Tuesday of the month, your first seva takes place on that very second Tuesday — with all the sevas in your plan. Premium and Premium Annual members also receive additional sevas on the last Saturday of that month (Feeding of Saints again + Sarv Rog Nivaran Hawan). If you join after the second Tuesday, Basic members wait for the second Tuesday of the next month (though they are still included once in that month's last Saturday, except for the Hawan).",
+  },
+  {
+    q: "What is the Refund Policy?",
+    a: "If for any reason a seva cannot be performed, the full amount is refunded.",
+  },
+  {
+    q: "Will I get proof of every seva?",
+    a: "Yes. Live or video proof of every ritual is sent directly to your WhatsApp.",
+  },
+  {
+    q: "Is this a business?",
+    a: `Honestly — Punyata is an organized seva, and any organization has to be self-sustaining to keep running. We don't hide that. The only difference is priority: here seva comes first, and then the arrangement to keep it going every month without pause. And you have every right to know where the money you give actually goes.
+
+The larger share — goes directly into daan-punya: fodder for Gau Mata, fruit for the monkeys, food for saints, and the materials for the hawan and rituals.
+
+The remaining share — goes into running Punyata: the dakshina of the acharyas and the Pandit ji's team; the team that records and edits the video of every seva; the office in Pushkar and its upkeep; and the technical cost of the app, website, payments and delivering proof over WhatsApp.
+
+Along with that, the whole team too — the managers and coordinators who prepare the sankalp list every month, manage the seva schedule, verify each proof and send it to every family, and answer your questions. These are the people who make sure every seva is completed on time, without fail.
+
+This is the balance that lets a seva which normally costs thousands reach you for just ₹251 — and keep reaching you every month.`,
+  },
+  {
+    q: "Can I take a sankalp in my parents' name?",
+    a: "Of course. You can begin this monthly sankalp in the name and gotra of your parents, departed loved ones, or any family member.",
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes — you can stop your monthly contribution at any time, with no fee and no questions asked.",
   },
 ];
