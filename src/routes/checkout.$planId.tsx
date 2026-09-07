@@ -376,7 +376,7 @@ function CheckoutPage() {
                 </div>
               )}
               <div className="space-y-2">
-                {plan.features.slice(0, 4).map((f) => (
+                {plan.features.map((f) => (
                   <div key={f} className="flex items-start gap-2.5 text-sm">
                     <div className="mt-0.5 w-4 h-4 rounded-full bg-success/15 flex items-center justify-center shrink-0">
                       <Check size={11} className="text-success" strokeWidth={3} />
@@ -611,7 +611,7 @@ function CheckoutPage() {
               </div>
             )}
             <div className="space-y-2">
-              {plan.features.slice(0, 4).map((f) => (
+              {plan.features.map((f) => (
                 <div key={f} className="flex items-start gap-2.5 text-sm">
                   <div className="mt-0.5 w-4 h-4 rounded-full bg-success/15 flex items-center justify-center shrink-0">
                     <Check size={11} className="text-success" strokeWidth={3} />

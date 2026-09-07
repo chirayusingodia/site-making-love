@@ -1,0 +1,13 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 2340, "title": "My Subscription — Punya Bank" },
+    { "file": "Home.dc.html", "x": 490, "y": 0, "w": 390, "h": 1120, "title": "Home — Active Subscriber" },
+    { "file": "Indicators.dc.html", "x": 980, "y": 0, "w": 390, "h": 1180, "title": "Subscribed State — Everywhere" }
+  ],
+  "annotations": [
+    { "id": "note-main", "x": 0, "y": -104, "w": 390, "text": "MY SUBSCRIPTION — redesigned as the \"Punya Bank\" passbook: accumulated punya at the top, then exactly what ₹399 (गृह शांति) includes, a bahi-khata ledger with WhatsApp proof, Ashirwad Patra, family sankalp." },
+    { "id": "note-home", "x": 490, "y": -104, "w": 390, "text": "HOME — a subscriber lands on a warm \"welcome back\" banner: active status, this-month sevas, next seva date, and one clear button into My Subscription." },
+    { "id": "note-ind", "x": 980, "y": -104, "w": 390, "text": "SUBSCRIBED STATE — how the active-membership cue appears across the app: header, plans page, profile, and the collapsed home banner." }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -40,7 +40,8 @@ export const Route = createFileRoute("/api/cloudinary/sign-upload")({
         // `punyata-proofs/*`   = per-subscriber seva proofs (video).
         // `punyata-site/*`     = marketing site photography (image).
         // `punyata-ashirwad/*` = rendered Ashirwad Patra images.
-        if (!folder || !/^punyata-(proofs|site|ashirwad)\/[\w\-/]+$/.test(folder)) {
+        // `punyata-content/*`  = Content Studio quote-card PNGs.
+        if (!folder || !/^punyata-(proofs|site|ashirwad|content)\/[\w\-/]+$/.test(folder)) {
           return json({ error: "Invalid folder" }, 400);
         }
 

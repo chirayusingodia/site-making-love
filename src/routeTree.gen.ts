@@ -53,6 +53,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminImagesRouteImport } from './routes/admin.images'
+import { Route as AdminContentStudioRouteImport } from './routes/admin.content-studio'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminAshirwadPatraRouteImport } from './routes/admin.ashirwad-patra'
@@ -81,6 +82,7 @@ import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/addr
 import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
 import { Route as ApiCronSendNotificationsRouteImport } from './routes/api/cron/send-notifications'
 import { Route as ApiCronRenewMandatesRouteImport } from './routes/api/cron/renew-mandates'
+import { Route as ApiCronPublishContentRouteImport } from './routes/api/cron/publish-content'
 import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
 import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
@@ -88,6 +90,7 @@ import { Route as ApiAuthReconcileProfileRouteImport } from './routes/api/auth/r
 import { Route as ApiAuthCompleteGoogleProfileRouteImport } from './routes/api/auth/complete-google-profile'
 import { Route as ApiAgentMyLeadsRouteImport } from './routes/api/agent/my-leads'
 import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
+import { Route as ApiAdminLoginMethodCountsRouteImport } from './routes/api/admin/login-method-counts'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
 import { Route as ApiWhatsappWebhookSecretRouteImport } from './routes/api/whatsapp/webhook.$secret'
 import { Route as ApiTelecallerQueueListRouteImport } from './routes/api/telecaller/queue/list'
@@ -117,6 +120,14 @@ import { Route as ApiAdminLeadsAssignRouteImport } from './routes/api/admin/lead
 import { Route as ApiAdminHospitalsReallotRouteImport } from './routes/api/admin/hospitals/reallot'
 import { Route as ApiAdminHospitalsListRouteImport } from './routes/api/admin/hospitals/list'
 import { Route as ApiAdminHospitalsCreateRouteImport } from './routes/api/admin/hospitals/create'
+import { Route as ApiAdminContentUpdateStatusRouteImport } from './routes/api/admin/content/update-status'
+import { Route as ApiAdminContentStrategyRouteImport } from './routes/api/admin/content/strategy'
+import { Route as ApiAdminContentSetImageRouteImport } from './routes/api/admin/content/set-image'
+import { Route as ApiAdminContentSaveRouteImport } from './routes/api/admin/content/save'
+import { Route as ApiAdminContentPublishRouteImport } from './routes/api/admin/content/publish'
+import { Route as ApiAdminContentListRouteImport } from './routes/api/admin/content/list'
+import { Route as ApiAdminContentGenerateRouteImport } from './routes/api/admin/content/generate'
+import { Route as ApiAdminContentAnalyzeRouteImport } from './routes/api/admin/content/analyze'
 import { Route as ApiAdminCommissionsReconcileRouteImport } from './routes/api/admin/commissions/reconcile'
 import { Route as ApiAdminCommissionsLockRouteImport } from './routes/api/admin/commissions/lock'
 import { Route as ApiAdminAuditLogListRouteImport } from './routes/api/admin/audit-log/list'
@@ -342,6 +353,11 @@ const AdminImagesRoute = AdminImagesRouteImport.update({
   path: '/images',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContentStudioRoute = AdminContentStudioRouteImport.update({
+  id: '/content-studio',
+  path: '/content-studio',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
   id: '/commissions',
   path: '/commissions',
@@ -489,6 +505,11 @@ const ApiCronRenewMandatesRoute = ApiCronRenewMandatesRouteImport.update({
   path: '/api/cron/renew-mandates',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronPublishContentRoute = ApiCronPublishContentRouteImport.update({
+  id: '/api/cron/publish-content',
+  path: '/api/cron/publish-content',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCouponsValidateRoute = ApiCouponsValidateRouteImport.update({
   id: '/api/coupons/validate',
   path: '/api/coupons/validate',
@@ -524,6 +545,12 @@ const ApiAdminOverviewFinancialsRoute =
   ApiAdminOverviewFinancialsRouteImport.update({
     id: '/api/admin/overview-financials',
     path: '/api/admin/overview-financials',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminLoginMethodCountsRoute =
+  ApiAdminLoginMethodCountsRouteImport.update({
+    id: '/api/admin/login-method-counts',
+    path: '/api/admin/login-method-counts',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AdminPanditBatchIdRoute = AdminPanditBatchIdRouteImport.update({
@@ -683,6 +710,47 @@ const ApiAdminHospitalsCreateRoute = ApiAdminHospitalsCreateRouteImport.update({
   path: '/api/admin/hospitals/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminContentUpdateStatusRoute =
+  ApiAdminContentUpdateStatusRouteImport.update({
+    id: '/api/admin/content/update-status',
+    path: '/api/admin/content/update-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminContentStrategyRoute = ApiAdminContentStrategyRouteImport.update({
+  id: '/api/admin/content/strategy',
+  path: '/api/admin/content/strategy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentSetImageRoute = ApiAdminContentSetImageRouteImport.update({
+  id: '/api/admin/content/set-image',
+  path: '/api/admin/content/set-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentSaveRoute = ApiAdminContentSaveRouteImport.update({
+  id: '/api/admin/content/save',
+  path: '/api/admin/content/save',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentPublishRoute = ApiAdminContentPublishRouteImport.update({
+  id: '/api/admin/content/publish',
+  path: '/api/admin/content/publish',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentListRoute = ApiAdminContentListRouteImport.update({
+  id: '/api/admin/content/list',
+  path: '/api/admin/content/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentGenerateRoute = ApiAdminContentGenerateRouteImport.update({
+  id: '/api/admin/content/generate',
+  path: '/api/admin/content/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentAnalyzeRoute = ApiAdminContentAnalyzeRouteImport.update({
+  id: '/api/admin/content/analyze',
+  path: '/api/admin/content/analyze',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminCommissionsReconcileRoute =
   ApiAdminCommissionsReconcileRouteImport.update({
     id: '/api/admin/commissions/reconcile',
@@ -728,6 +796,7 @@ export interface FileRoutesByFullPath {
   '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/content-studio': typeof AdminContentStudioRoute
   '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -754,6 +823,7 @@ export interface FileRoutesByFullPath {
   '/agent/': typeof AgentIndexRoute
   '/telecaller/': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/admin/login-method-counts': typeof ApiAdminLoginMethodCountsRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
@@ -761,6 +831,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
@@ -790,6 +861,14 @@ export interface FileRoutesByFullPath {
   '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/content/analyze': typeof ApiAdminContentAnalyzeRoute
+  '/api/admin/content/generate': typeof ApiAdminContentGenerateRoute
+  '/api/admin/content/list': typeof ApiAdminContentListRoute
+  '/api/admin/content/publish': typeof ApiAdminContentPublishRoute
+  '/api/admin/content/save': typeof ApiAdminContentSaveRoute
+  '/api/admin/content/set-image': typeof ApiAdminContentSetImageRoute
+  '/api/admin/content/strategy': typeof ApiAdminContentStrategyRoute
+  '/api/admin/content/update-status': typeof ApiAdminContentUpdateStatusRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
@@ -839,6 +918,7 @@ export interface FileRoutesByTo {
   '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/content-studio': typeof AdminContentStudioRoute
   '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -865,6 +945,7 @@ export interface FileRoutesByTo {
   '/agent': typeof AgentIndexRoute
   '/telecaller': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/admin/login-method-counts': typeof ApiAdminLoginMethodCountsRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
@@ -872,6 +953,7 @@ export interface FileRoutesByTo {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
@@ -901,6 +983,14 @@ export interface FileRoutesByTo {
   '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/content/analyze': typeof ApiAdminContentAnalyzeRoute
+  '/api/admin/content/generate': typeof ApiAdminContentGenerateRoute
+  '/api/admin/content/list': typeof ApiAdminContentListRoute
+  '/api/admin/content/publish': typeof ApiAdminContentPublishRoute
+  '/api/admin/content/save': typeof ApiAdminContentSaveRoute
+  '/api/admin/content/set-image': typeof ApiAdminContentSetImageRoute
+  '/api/admin/content/strategy': typeof ApiAdminContentStrategyRoute
+  '/api/admin/content/update-status': typeof ApiAdminContentUpdateStatusRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
@@ -954,6 +1044,7 @@ export interface FileRoutesById {
   '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
+  '/admin/content-studio': typeof AdminContentStudioRoute
   '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -980,6 +1071,7 @@ export interface FileRoutesById {
   '/agent/': typeof AgentIndexRoute
   '/telecaller/': typeof TelecallerIndexRoute
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
+  '/api/admin/login-method-counts': typeof ApiAdminLoginMethodCountsRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
   '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
@@ -987,6 +1079,7 @@ export interface FileRoutesById {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
@@ -1016,6 +1109,14 @@ export interface FileRoutesById {
   '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/content/analyze': typeof ApiAdminContentAnalyzeRoute
+  '/api/admin/content/generate': typeof ApiAdminContentGenerateRoute
+  '/api/admin/content/list': typeof ApiAdminContentListRoute
+  '/api/admin/content/publish': typeof ApiAdminContentPublishRoute
+  '/api/admin/content/save': typeof ApiAdminContentSaveRoute
+  '/api/admin/content/set-image': typeof ApiAdminContentSetImageRoute
+  '/api/admin/content/strategy': typeof ApiAdminContentStrategyRoute
+  '/api/admin/content/update-status': typeof ApiAdminContentUpdateStatusRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
@@ -1070,6 +1171,7 @@ export interface FileRouteTypes {
     | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
+    | '/admin/content-studio'
     | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
@@ -1096,6 +1198,7 @@ export interface FileRouteTypes {
     | '/agent/'
     | '/telecaller/'
     | '/admin/pandit/$batchId'
+    | '/api/admin/login-method-counts'
     | '/api/admin/overview-financials'
     | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
@@ -1103,6 +1206,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
     | '/api/cron/send-notifications'
     | '/api/payments/webhook'
@@ -1132,6 +1236,14 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log/list'
     | '/api/admin/commissions/lock'
     | '/api/admin/commissions/reconcile'
+    | '/api/admin/content/analyze'
+    | '/api/admin/content/generate'
+    | '/api/admin/content/list'
+    | '/api/admin/content/publish'
+    | '/api/admin/content/save'
+    | '/api/admin/content/set-image'
+    | '/api/admin/content/strategy'
+    | '/api/admin/content/update-status'
     | '/api/admin/hospitals/create'
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
@@ -1181,6 +1293,7 @@ export interface FileRouteTypes {
     | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
+    | '/admin/content-studio'
     | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
@@ -1207,6 +1320,7 @@ export interface FileRouteTypes {
     | '/agent'
     | '/telecaller'
     | '/admin/pandit/$batchId'
+    | '/api/admin/login-method-counts'
     | '/api/admin/overview-financials'
     | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
@@ -1214,6 +1328,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
     | '/api/cron/send-notifications'
     | '/api/payments/webhook'
@@ -1243,6 +1358,14 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log/list'
     | '/api/admin/commissions/lock'
     | '/api/admin/commissions/reconcile'
+    | '/api/admin/content/analyze'
+    | '/api/admin/content/generate'
+    | '/api/admin/content/list'
+    | '/api/admin/content/publish'
+    | '/api/admin/content/save'
+    | '/api/admin/content/set-image'
+    | '/api/admin/content/strategy'
+    | '/api/admin/content/update-status'
     | '/api/admin/hospitals/create'
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
@@ -1295,6 +1418,7 @@ export interface FileRouteTypes {
     | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
+    | '/admin/content-studio'
     | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
@@ -1321,6 +1445,7 @@ export interface FileRouteTypes {
     | '/agent/'
     | '/telecaller/'
     | '/admin/pandit/$batchId'
+    | '/api/admin/login-method-counts'
     | '/api/admin/overview-financials'
     | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
@@ -1328,6 +1453,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
     | '/api/cron/send-notifications'
     | '/api/payments/webhook'
@@ -1357,6 +1483,14 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log/list'
     | '/api/admin/commissions/lock'
     | '/api/admin/commissions/reconcile'
+    | '/api/admin/content/analyze'
+    | '/api/admin/content/generate'
+    | '/api/admin/content/list'
+    | '/api/admin/content/publish'
+    | '/api/admin/content/save'
+    | '/api/admin/content/set-image'
+    | '/api/admin/content/strategy'
+    | '/api/admin/content/update-status'
     | '/api/admin/hospitals/create'
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
@@ -1409,6 +1543,7 @@ export interface RootRouteChildren {
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   CheckoutPlanIdRoute: typeof CheckoutPlanIdRoute
   PlanPlanIdRoute: typeof PlanPlanIdRoute
+  ApiAdminLoginMethodCountsRoute: typeof ApiAdminLoginMethodCountsRoute
   ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
   ApiAgentMyLeadsRoute: typeof ApiAgentMyLeadsRoute
   ApiAuthCompleteGoogleProfileRoute: typeof ApiAuthCompleteGoogleProfileRoute
@@ -1416,6 +1551,7 @@ export interface RootRouteChildren {
   ApiAuthRequestOtpRoute: typeof ApiAuthRequestOtpRoute
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
   ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
+  ApiCronPublishContentRoute: typeof ApiCronPublishContentRoute
   ApiCronRenewMandatesRoute: typeof ApiCronRenewMandatesRoute
   ApiCronSendNotificationsRoute: typeof ApiCronSendNotificationsRoute
   ApiPaymentsWebhookRoute: typeof ApiPaymentsWebhookRoute
@@ -1442,6 +1578,14 @@ export interface RootRouteChildren {
   ApiAdminAuditLogListRoute: typeof ApiAdminAuditLogListRoute
   ApiAdminCommissionsLockRoute: typeof ApiAdminCommissionsLockRoute
   ApiAdminCommissionsReconcileRoute: typeof ApiAdminCommissionsReconcileRoute
+  ApiAdminContentAnalyzeRoute: typeof ApiAdminContentAnalyzeRoute
+  ApiAdminContentGenerateRoute: typeof ApiAdminContentGenerateRoute
+  ApiAdminContentListRoute: typeof ApiAdminContentListRoute
+  ApiAdminContentPublishRoute: typeof ApiAdminContentPublishRoute
+  ApiAdminContentSaveRoute: typeof ApiAdminContentSaveRoute
+  ApiAdminContentSetImageRoute: typeof ApiAdminContentSetImageRoute
+  ApiAdminContentStrategyRoute: typeof ApiAdminContentStrategyRoute
+  ApiAdminContentUpdateStatusRoute: typeof ApiAdminContentUpdateStatusRoute
   ApiAdminHospitalsCreateRoute: typeof ApiAdminHospitalsCreateRoute
   ApiAdminHospitalsListRoute: typeof ApiAdminHospitalsListRoute
   ApiAdminHospitalsReallotRoute: typeof ApiAdminHospitalsReallotRoute
@@ -1781,6 +1925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminImagesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/content-studio': {
+      id: '/admin/content-studio'
+      path: '/content-studio'
+      fullPath: '/admin/content-studio'
+      preLoaderRoute: typeof AdminContentStudioRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/commissions': {
       id: '/admin/commissions'
       path: '/commissions'
@@ -1977,6 +2128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronRenewMandatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/publish-content': {
+      id: '/api/cron/publish-content'
+      path: '/api/cron/publish-content'
+      fullPath: '/api/cron/publish-content'
+      preLoaderRoute: typeof ApiCronPublishContentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/coupons/validate': {
       id: '/api/coupons/validate'
       path: '/api/coupons/validate'
@@ -2024,6 +2182,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/overview-financials'
       fullPath: '/api/admin/overview-financials'
       preLoaderRoute: typeof ApiAdminOverviewFinancialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/login-method-counts': {
+      id: '/api/admin/login-method-counts'
+      path: '/api/admin/login-method-counts'
+      fullPath: '/api/admin/login-method-counts'
+      preLoaderRoute: typeof ApiAdminLoginMethodCountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/pandit/$batchId': {
@@ -2229,6 +2394,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminHospitalsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/content/update-status': {
+      id: '/api/admin/content/update-status'
+      path: '/api/admin/content/update-status'
+      fullPath: '/api/admin/content/update-status'
+      preLoaderRoute: typeof ApiAdminContentUpdateStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/strategy': {
+      id: '/api/admin/content/strategy'
+      path: '/api/admin/content/strategy'
+      fullPath: '/api/admin/content/strategy'
+      preLoaderRoute: typeof ApiAdminContentStrategyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/set-image': {
+      id: '/api/admin/content/set-image'
+      path: '/api/admin/content/set-image'
+      fullPath: '/api/admin/content/set-image'
+      preLoaderRoute: typeof ApiAdminContentSetImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/save': {
+      id: '/api/admin/content/save'
+      path: '/api/admin/content/save'
+      fullPath: '/api/admin/content/save'
+      preLoaderRoute: typeof ApiAdminContentSaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/publish': {
+      id: '/api/admin/content/publish'
+      path: '/api/admin/content/publish'
+      fullPath: '/api/admin/content/publish'
+      preLoaderRoute: typeof ApiAdminContentPublishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/list': {
+      id: '/api/admin/content/list'
+      path: '/api/admin/content/list'
+      fullPath: '/api/admin/content/list'
+      preLoaderRoute: typeof ApiAdminContentListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/generate': {
+      id: '/api/admin/content/generate'
+      path: '/api/admin/content/generate'
+      fullPath: '/api/admin/content/generate'
+      preLoaderRoute: typeof ApiAdminContentGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/analyze': {
+      id: '/api/admin/content/analyze'
+      path: '/api/admin/content/analyze'
+      fullPath: '/api/admin/content/analyze'
+      preLoaderRoute: typeof ApiAdminContentAnalyzeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/commissions/reconcile': {
       id: '/api/admin/commissions/reconcile'
       path: '/api/admin/commissions/reconcile'
@@ -2264,6 +2485,7 @@ interface AdminRouteChildren {
   AdminAshirwadPatraRoute: typeof AdminAshirwadPatraRoute
   AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
+  AdminContentStudioRoute: typeof AdminContentStudioRoute
   AdminImagesRoute: typeof AdminImagesRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminOverviewRoute: typeof AdminOverviewRoute
@@ -2285,6 +2507,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAshirwadPatraRoute: AdminAshirwadPatraRoute,
   AdminAuditLogRoute: AdminAuditLogRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
+  AdminContentStudioRoute: AdminContentStudioRoute,
   AdminImagesRoute: AdminImagesRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminOverviewRoute: AdminOverviewRoute,
@@ -2387,6 +2610,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   CheckoutPlanIdRoute: CheckoutPlanIdRoute,
   PlanPlanIdRoute: PlanPlanIdRoute,
+  ApiAdminLoginMethodCountsRoute: ApiAdminLoginMethodCountsRoute,
   ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
   ApiAgentMyLeadsRoute: ApiAgentMyLeadsRoute,
   ApiAuthCompleteGoogleProfileRoute: ApiAuthCompleteGoogleProfileRoute,
@@ -2394,6 +2618,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthRequestOtpRoute: ApiAuthRequestOtpRoute,
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
   ApiCouponsValidateRoute: ApiCouponsValidateRoute,
+  ApiCronPublishContentRoute: ApiCronPublishContentRoute,
   ApiCronRenewMandatesRoute: ApiCronRenewMandatesRoute,
   ApiCronSendNotificationsRoute: ApiCronSendNotificationsRoute,
   ApiPaymentsWebhookRoute: ApiPaymentsWebhookRoute,
@@ -2420,6 +2645,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAuditLogListRoute: ApiAdminAuditLogListRoute,
   ApiAdminCommissionsLockRoute: ApiAdminCommissionsLockRoute,
   ApiAdminCommissionsReconcileRoute: ApiAdminCommissionsReconcileRoute,
+  ApiAdminContentAnalyzeRoute: ApiAdminContentAnalyzeRoute,
+  ApiAdminContentGenerateRoute: ApiAdminContentGenerateRoute,
+  ApiAdminContentListRoute: ApiAdminContentListRoute,
+  ApiAdminContentPublishRoute: ApiAdminContentPublishRoute,
+  ApiAdminContentSaveRoute: ApiAdminContentSaveRoute,
+  ApiAdminContentSetImageRoute: ApiAdminContentSetImageRoute,
+  ApiAdminContentStrategyRoute: ApiAdminContentStrategyRoute,
+  ApiAdminContentUpdateStatusRoute: ApiAdminContentUpdateStatusRoute,
   ApiAdminHospitalsCreateRoute: ApiAdminHospitalsCreateRoute,
   ApiAdminHospitalsListRoute: ApiAdminHospitalsListRoute,
   ApiAdminHospitalsReallotRoute: ApiAdminHospitalsReallotRoute,

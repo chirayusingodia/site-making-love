@@ -17,7 +17,7 @@ import {
   CircleStop,
   RotateCcw,
 } from "lucide-react";
-import { Header, WhatsAppFloat } from "@/components/site-chrome";
+import { Header, WhatsAppFloat, WHATSAPP_URL } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { signOut } from "@/lib/auth-api";
 import { formatPhoneDisplay } from "@/lib/phone";
@@ -114,8 +114,8 @@ function LoggedOutView() {
 
       <div className="card-soft mt-8 divide-y divide-black/5">
         {[
-          { icon: HelpCircle, label: "Help / Support", href: "#" },
-          { icon: FileText, label: "Terms & Privacy", href: "#" },
+          { icon: HelpCircle, label: "Help / Support", href: WHATSAPP_URL },
+          { icon: FileText, label: "Terms & Privacy", href: "/terms-and-conditions" },
         ].map(({ icon: Icon, label, href }) => (
           <a
             key={label}
@@ -394,17 +394,18 @@ function LoggedInView() {
           <ArrowRight size={16} className="text-muted-foreground" />
         </Link>
         {[
-          { icon: HelpCircle, label: "Help / Support" },
-          { icon: FileText, label: "Terms & Privacy" },
-        ].map(({ icon: Icon, label }) => (
-          <button
+          { icon: HelpCircle, label: "Help / Support", href: WHATSAPP_URL },
+          { icon: FileText, label: "Terms & Privacy", href: "/terms-and-conditions" },
+        ].map(({ icon: Icon, label, href }) => (
+          <a
             key={label}
-            className="w-full flex items-center gap-3 px-4 py-4 hover:bg-secondary/50 transition-colors"
+            href={href}
+            className="flex items-center gap-3 px-4 py-4 hover:bg-secondary/50 transition-colors"
           >
             <Icon size={20} className="text-muted-foreground" />
             <span className="font-semibold text-foreground flex-1 text-left">{label}</span>
             <ArrowRight size={16} className="text-muted-foreground" />
-          </button>
+          </a>
         ))}
       </div>
 

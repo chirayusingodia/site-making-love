@@ -20,6 +20,7 @@ import {
   Info,
   Lock,
   PhoneCall,
+  LogIn,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -182,6 +183,12 @@ function AdminOverviewPage() {
   const [metrics, setMetrics] = useState<OverviewMetrics | null>(null);
   const [financials, setFinancials] = useState<OwnerFinancials | null>(null);
   const [freeSewaPendingCount, setFreeSewaPendingCount] = useState<number | null>(null);
+  const [loginCounts, setLoginCounts] = useState<{
+    google: number;
+    phone: number;
+    other: number;
+    total: number;
+  } | null>(null);
   const [channelBreakdown, setChannelBreakdown] = useState<
     { channel: string; count: number }[] | null
   >(null);
@@ -298,6 +305,23 @@ function AdminOverviewPage() {
       } catch (freeSewaErr) {
         console.error("free-sewa-pending-count fetch failed:", freeSewaErr);
         setFreeSewaPendingCount(null);
+      }
+
+      // 4c. Logins by method — how many people have signed in via
+      // Google vs Phone/OTP, regardless of subscription. auth.users is
+      // not RLS-readable, so this goes through the service-role admin
+      // endpoint. Non-financial, so admin-visible like the counts above.
+      try {
+        const counts = await callAdminApi<{
+          google: number;
+          phone: number;
+          other: number;
+          total: number;
+        }>("/api/admin/login-method-counts");
+        setLoginCounts(counts);
+      } catch (loginErr) {
+        console.error("login-method-counts fetch failed:", loginErr);
+        setLoginCounts(null);
       }
 
       setMetrics({
@@ -544,6 +568,26 @@ function AdminOverviewPage() {
           icon={PhoneCall}
           iconBg="bg-violet-100"
           iconColor="text-violet-700"
+          loading={loading}
+        />
+
+        {/* 4d. Logins by method — Google vs Phone/OTP, all registered
+            users (subscription-independent). Phone/OTP login is
+            currently disabled in the app, so this normally reads all
+            Google until that path is re-enabled. */}
+        <MetricCard
+          title="Logins (Google / Phone)"
+          value={loginCounts ? loginCounts.total : 0}
+          subtitle={
+            loginCounts
+              ? `Google: ${loginCounts.google} • Phone: ${loginCounts.phone}` +
+                (loginCounts.other ? ` • Other: ${loginCounts.other}` : "")
+              : "Registered users by sign-in method"
+          }
+          badge={{ text: "All users", variant: "secondary" }}
+          icon={LogIn}
+          iconBg="bg-sky-100"
+          iconColor="text-sky-700"
           loading={loading}
         />
 

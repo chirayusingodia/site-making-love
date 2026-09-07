@@ -22,6 +22,7 @@ import {
   Search,
   ClipboardList,
   Image as ImageIcon,
+  PenSquare,
   type LucideIcon,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
@@ -78,6 +79,9 @@ function AdminLayout() {
     // base list alongside Payments/Plans & Sevas.
     { label: "SEO & Content", href: "/admin/seo", icon: Search, badge: "New" },
     { label: "Photos", href: "/admin/images", icon: ImageIcon, badge: "New" },
+    // Content Studio — AI social-post generator (Gemini + immortaltalks
+    // model). Admin/owner tier, same as SEO & Content.
+    { label: "Content Studio", href: "/admin/content-studio", icon: PenSquare, badge: "New" },
     // Reports is OWNER-ONLY (financial data). Hidden until the role
     // resolves and confirmed 'owner' — the route itself is also
     // guarded in beforeLoad, and the API rejects non-owners with 403.
@@ -201,8 +205,7 @@ function AdminNavList({
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
-            pathname === item.href ||
-            (item.href === "/admin/overview" && pathname === "/admin");
+            pathname === item.href || (item.href === "/admin/overview" && pathname === "/admin");
           return (
             <Link
               key={item.href}
