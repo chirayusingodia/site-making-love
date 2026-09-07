@@ -38,20 +38,26 @@ export interface ExistingAddress {
 
 interface MemberDraft {
   name: string;
-  gotra: string;
-  noGotra: boolean;
   relation: string;
   dob: string;
+  showDob: boolean;
+}
+
+// Gotra is a property of the FAMILY (patrilineal), not of each
+// person — so it is captured ONCE here and written to every member
+// row on save, instead of being asked in each member card.
+interface FamilyGotra {
+  value: string;
+  noGotra: boolean;
 }
 
 const RELATIONS = ["Self", "Spouse", "Parent", "Child", "Other"] as const;
 
 const emptyMember = (relation = "Self"): MemberDraft => ({
   name: "",
-  gotra: "",
-  noGotra: false,
   relation,
   dob: "",
+  showDob: false,
 });
 
 function seedMembers(existing: ExistingMember[]): MemberDraft[] {
@@ -60,11 +66,18 @@ function seedMembers(existing: ExistingMember[]): MemberDraft[] {
     .sort((a, b) => a.slot_number - b.slot_number)
     .map((m) => ({
       name: m.full_name ?? "",
-      gotra: m.gotra ?? "",
-      noGotra: !m.gotra,
       relation: m.relation || "Other",
       dob: m.dob ?? "",
+      showDob: !!m.dob,
     }));
+}
+
+function seedGotra(existing: ExistingMember[]): FamilyGotra {
+  const withGotra = existing.find((m) => m.gotra && m.gotra.trim());
+  if (withGotra) return { value: withGotra.gotra!.trim(), noGotra: false };
+  // Existing members but none carries a gotra → they had chosen "nahi pata".
+  if (existing.length > 0) return { value: "", noGotra: true };
+  return { value: "", noGotra: false };
 }
 
 export function FamilyAddressForm({
@@ -79,6 +92,7 @@ export function FamilyAddressForm({
   onSaved?: () => void;
 }) {
   const [members, setMembers] = useState<MemberDraft[]>(() => seedMembers(initialMembers));
+  const [gotra, setGotra] = useState<FamilyGotra>(() => seedGotra(initialMembers));
   const [address, setAddress] = useState({
     line1: initialAddress?.address_line1 ?? "",
     line2: initialAddress?.address_line2 ?? "",
@@ -111,10 +125,10 @@ export function FamilyAddressForm({
       /^\d{6}$/.test(address.pincode.trim()));
 
   const membersFilled = members.filter((m) => m.name.trim());
-  const membersValid =
-    membersFilled.length >= 1 && membersFilled.every((m) => m.noGotra || m.gotra.trim());
+  const gotraValid = gotra.noGotra || !!gotra.value.trim();
+  const membersValid = membersFilled.length >= 1;
 
-  const canSave = membersValid && addressValid && !busy;
+  const canSave = membersValid && gotraValid && addressValid && !busy;
 
   const save = async () => {
     setError(null);
@@ -126,7 +140,8 @@ export function FamilyAddressForm({
         members: membersFilled.map((m, i) => ({
           slot_number: i + 1,
           full_name: m.name.trim(),
-          ...(m.noGotra || !m.gotra.trim() ? {} : { gotra: m.gotra.trim() }),
+          // One family gotra, written to every member row.
+          ...(gotra.noGotra || !gotra.value.trim() ? {} : { gotra: gotra.value.trim() }),
           relation: m.relation,
           ...(m.dob ? { dob: m.dob } : {}),
         })),
@@ -165,9 +180,32 @@ export function FamilyAddressForm({
         <div>
           <h3 className="font-bold text-foreground">परिवार सदस्य (Sankalp Details)</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            हर सेवा में इन्हीं नाम-गोत्रों का संकल्प लिया जाएगा। अभी नहीं पता? बाद में भी जोड़ सकते
-            हैं।
+            हर सेवा में इन्हीं नामों का संकल्प लिया जाएगा। अभी नहीं पता? बाद में भी जोड़ सकते हैं।
           </p>
+        </div>
+
+        {/* Gotra — asked ONCE for the whole family, not per member */}
+        <div className="card-soft p-4 space-y-2">
+          <label className="text-sm font-bold text-brand">गोत्र (पूरे परिवार का एक ही)</label>
+          <input
+            type="text"
+            placeholder="जैसे: कश्यप, भारद्वाज"
+            value={gotra.value}
+            disabled={gotra.noGotra}
+            onChange={(e) => setGotra((g) => ({ ...g, value: e.target.value }))}
+            className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground disabled:bg-secondary disabled:cursor-not-allowed"
+          />
+          <label className="flex items-center gap-2 text-sm text-foreground/80">
+            <input
+              type="checkbox"
+              checked={gotra.noGotra}
+              onChange={(e) =>
+                setGotra((g) => ({ value: e.target.checked ? "" : g.value, noGotra: e.target.checked }))
+              }
+              className="accent-brand"
+            />
+            मुझे अपना गोत्र नहीं पता
+          </label>
         </div>
 
         {members.map((m, idx) => (
@@ -194,31 +232,7 @@ export function FamilyAddressForm({
             />
 
             <div>
-              <input
-                type="text"
-                placeholder="गोत्र (जैसे: कश्यप, भारद्वाज)"
-                value={m.gotra}
-                disabled={m.noGotra}
-                onChange={(e) => updateMember(idx, { gotra: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground disabled:bg-secondary disabled:cursor-not-allowed"
-              />
-              <label className="flex items-center gap-2 mt-2 text-sm text-foreground/80">
-                <input
-                  type="checkbox"
-                  checked={m.noGotra}
-                  onChange={(e) =>
-                    updateMember(idx, {
-                      noGotra: e.target.checked,
-                      gotra: e.target.checked ? "" : m.gotra,
-                    })
-                  }
-                  className="accent-brand"
-                />
-                मुझे अपना गोत्र नहीं पता
-              </label>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-xs text-muted-foreground mb-1">रिश्ता</label>
               <select
                 value={m.relation}
                 onChange={(e) => updateMember(idx, { relation: e.target.value })}
@@ -230,14 +244,43 @@ export function FamilyAddressForm({
                   </option>
                 ))}
               </select>
-              <input
-                type="date"
-                value={m.dob}
-                onChange={(e) => updateMember(idx, { dob: e.target.value })}
-                aria-label="Date of birth (optional)"
-                className="w-full px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
-              />
             </div>
+
+            {/* DOB — genuinely optional, hidden until asked for so an
+                empty date box never looks like a broken required field */}
+            {m.showDob ? (
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">
+                  जन्म तिथि (optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={m.dob}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => updateMember(idx, { dob: e.target.value })}
+                    aria-label="Date of birth (optional)"
+                    className="flex-1 px-4 py-3 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateMember(idx, { dob: "", showDob: false })}
+                    className="text-muted-foreground text-xs px-2 py-1"
+                    aria-label="Remove date of birth"
+                  >
+                    हटाएं
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => updateMember(idx, { showDob: true })}
+                className="text-brand text-sm flex items-center gap-1"
+              >
+                <Plus size={14} /> जन्म तिथि जोड़ें (optional)
+              </button>
+            )}
           </div>
         ))}
 
@@ -295,6 +338,12 @@ export function FamilyAddressForm({
         </div>
       </div>
 
+      {savedFlash && (
+        <div className="flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+          <Check size={16} className="shrink-0" />
+          <span>आपके परिवार की जानकारी सेव हो गई है।</span>
+        </div>
+      )}
       {error && <p className="text-xs text-destructive">{error}</p>}
       {/* [Pass-2 F21] explain WHY Save is disabled — a partially-filled
           address used to dead-end the button silently. */}
@@ -304,8 +353,11 @@ export function FamilyAddressForm({
         </p>
       )}
       {!canSave && !busy && !membersValid && (
+        <p className="text-xs text-amber-600">Kam se kam ek sadasya ka naam likhein.</p>
+      )}
+      {!canSave && !busy && membersValid && !gotraValid && (
         <p className="text-xs text-amber-600">
-          Kam se kam ek naam likhein aur gotra bharein (ya "gotra nahi pata" chunein).
+          Gotra bharein (ya "gotra nahi pata" chunein).
         </p>
       )}
 
