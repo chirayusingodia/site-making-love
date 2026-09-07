@@ -371,7 +371,7 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
   },
 };
 
-// ─── English presentation (DRAFT copy — pending owner review) ────────────────
+// ─── English presentation (owner-approved) ───────────────────────────────────
 // Mirror of PLAN_PRESENTATION's translatable text, keyed by DB slug. Ritual
 // nouns (Sundarkand, Gau Seva, hawan, sankalp, gotra, daan-punya) are kept as
 // transliterations by design. Consumed via localizePlan() when lang==="english".
@@ -846,8 +846,8 @@ export const acharyas = [
   },
 ];
 
-// English mirror of `acharyas` (DRAFT — pending owner review). Same order, so
-// the initials avatar and any position-matched assets stay aligned.
+// English mirror of `acharyas` (owner-approved). Same order, so the initials
+// avatar and any position-matched assets stay aligned.
 export const acharyasEn = [
   {
     initials: "रा",
@@ -961,8 +961,8 @@ export const faqs = [
   },
 ];
 
-// English mirror of `faqs` (DRAFT — pending owner review). Same order and count
-// so the accordion index and the page's FAQ JSON-LD stay aligned.
+// English mirror of `faqs` (owner-approved). Same order and count so the
+// accordion index and the page's FAQ JSON-LD stay aligned.
 export const faqsEn = [
   {
     q: "How can you do all this so affordably?",
