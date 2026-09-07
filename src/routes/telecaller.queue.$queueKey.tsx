@@ -284,7 +284,7 @@ function SubscriberListItem({ row, queueKey }: { row: TelecallerQueueRow; queueK
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-bold text-slate-900">
-              {row.fullName ?? "(naam nahi)"}
+              {row.sankalpName ?? row.fullName ?? "(naam nahi)"}
             </span>
             {badge && (
               <span
@@ -323,9 +323,7 @@ function SubscriberListItem({ row, queueKey }: { row: TelecallerQueueRow; queueK
                 <span className="italic">karan: {row.cancelReason}</span>
               </>
             )}
-            {(queueKey === "sankalp_pending" ||
-              queueKey === "cutoff_risk" ||
-              queueKey === "incomplete_details") && (
+            {(queueKey === "cutoff_risk" || queueKey === "incomplete_details") && (
               <>
                 <span className="text-slate-300">·</span>
                 <span>{row.familyMemberCount}/4 naam</span>

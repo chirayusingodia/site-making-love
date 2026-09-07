@@ -196,7 +196,7 @@ function PersonCallCardPage() {
             })
           : navigate({
               to: "/telecaller/queue/$queueKey",
-              params: { queueKey: search.queue ?? "sankalp_pending" },
+              params: { queueKey: search.queue ?? "incomplete_details" },
               replace: true,
             })
       }
@@ -328,6 +328,20 @@ function PersonCard({
 
   const needsAddress =
     (row.hasPrasadAddon && !(row.pincode ?? "").trim()) || queue === "missing_prasad_address";
+
+  // The payment link is a SIGN-UP / RESTART tool — it must never
+  // appear for a customer who is already paying. An active or paused
+  // subscriber is live; showing "send a payment link" there is both
+  // nonsensical and an invitation to a duplicate charge (the bug the
+  // owner flagged: an already-active subscriber in incomplete_details
+  // was being offered a fresh link). Only surface it when the person
+  // still needs to start — or restart — a mandate.
+  const canSendPaymentLink =
+    row.subscriptionStatus === null || // bare lead — never bought
+    row.subscriptionStatus === "pending" || // abandoned checkout
+    row.subscriptionStatus === "cancelled" || // win-back
+    row.subscriptionStatus === "halted" || // dead mandate — needs a fresh link
+    row.latestPaymentStatus === "failed"; // payment failed — retry
 
   async function saveFamily() {
     if (!row.subscriptionId) return;
@@ -461,7 +475,9 @@ function PersonCard({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-slate-900">{row.fullName ?? "(naam nahi)"}</h1>
+              <h1 className="text-xl font-bold text-slate-900">
+                {row.sankalpName ?? row.fullName ?? "(naam nahi)"}
+              </h1>
               {badge && (
                 <span
                   className={`text-[11px] px-2 py-0.5 rounded border font-semibold ${badge.cls}`}
@@ -489,6 +505,9 @@ function PersonCard({
                   {row.phone}
                   {row.altPhone && " (WhatsApp)"}
                 </span>
+              )}
+              {row.sankalpName && row.fullName && row.fullName !== row.sankalpName && (
+                <span className="text-slate-500">khaata: {row.fullName}</span>
               )}
               {row.planName && (
                 <span>
@@ -830,6 +849,9 @@ function PersonCard({
       </div>
 
       {/* ── Payment link (§5.5 — she never touches money) ─────── */}
+      {/* Hidden for already-paying (active/paused) subscribers — see
+          canSendPaymentLink above. */}
+      {canSendPaymentLink && (
       <div className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">
         <h2 className="text-base font-bold text-slate-900">Payment link bhejein</h2>
         <p className="text-xs text-slate-500 mt-0.5">
@@ -903,6 +925,7 @@ function PersonCard({
           </div>
         )}
       </div>
+      )}
 
       {/* ── Call history ──────────────────────────────────────── */}
       <div className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">

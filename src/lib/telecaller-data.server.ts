@@ -96,6 +96,25 @@ interface MemberRow {
   full_name: string | null;
   gotra: string | null;
   relation: string | null;
+  slot_number?: number | null;
+  is_primary?: boolean | null;
+}
+
+/**
+ * The SUBSCRIBER'S display name the way admin.subscribers derives it:
+ * primary member first (is_primary DESC, then lowest slot), else the
+ * first member. Null when there are no members yet — the caller then
+ * falls back to the account-holder profile name.
+ */
+function primaryMemberName(members: MemberRow[]): string | null {
+  if (members.length === 0) return null;
+  const primary = [...members].sort(
+    (a, b) =>
+      Number(Boolean(b.is_primary)) - Number(Boolean(a.is_primary)) ||
+      (a.slot_number ?? 99) - (b.slot_number ?? 99),
+  )[0];
+  const name = primary?.full_name?.trim();
+  return name ? name : null;
 }
 
 function buildRow(
@@ -109,6 +128,7 @@ function buildRow(
     subscriptionId: v?.subscription_id ?? null,
     profileId: profile.id,
     fullName: profile.full_name,
+    sankalpName: primaryMemberName(members),
     phone: profile.phone,
     altPhone: profile.alt_phone,
     city: profile.city,

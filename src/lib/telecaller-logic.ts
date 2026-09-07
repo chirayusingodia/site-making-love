@@ -89,10 +89,15 @@ const IST_OFFSET_MS = 5.5 * HOUR_MS;
 
 // ─── Work queues (§3 — this is the product) ──────────────────
 
+// NOTE: there is deliberately NO "sankalp_pending" queue. A 0-naam
+// active subscriber is not a separate state from a 1–3-naam one — both
+// are simply INCOMPLETE DETAILS (the owner's call, 2026-09-08), so 0
+// naam now folds into `incomplete_details`. The internal
+// `isSankalpPending` predicate lives on (see below) purely to feed the
+// batch-cutoff urgency queue — it is no longer a caller-facing queue.
 export const TELECALLER_QUEUE_KEYS = [
   "free_sewa_pending",
   "aaj_ke_leads",
-  "sankalp_pending",
   "cutoff_risk",
   "payment_failed",
   "abandoned_checkout",
@@ -117,10 +122,6 @@ export const QUEUE_META: Record<TelecallerQueueKey, { title: string; why: string
   aaj_ke_leads: {
     title: "Aaj Ke Leads",
     why: "Field agent ne aaj aapko jo numbers diye hain — yahi aapka asli kaam hai",
-  },
-  sankalp_pending: {
-    title: "Sankalp Pending",
-    why: "Paid kar diya, par aage ke batch mein kuch nahi milega — naam bharna zaroori hai",
   },
   cutoff_risk: {
     title: "Batch Cutoff At Risk",
@@ -152,7 +153,7 @@ export const QUEUE_META: Record<TelecallerQueueKey, { title: string; why: string
   },
   incomplete_details: {
     title: "Incomplete Details",
-    why: "Naam list mein jayenge, par gotra/relation adhoora hai",
+    why: "Paid subscriber hai par naam/gotra/relation adhoora hai — poora karke batch mein bhejein",
   },
   missing_prasad_address: {
     title: "Missing Prasad Address",
@@ -234,7 +235,16 @@ export interface TelecallerMemberLite {
 export interface TelecallerQueueRow {
   subscriptionId: string | null;
   profileId: string;
+  /** Account-holder name (profiles.full_name) — who owns the phone/login. */
   fullName: string | null;
+  /**
+   * The SUBSCRIBER'S name as the rest of the product shows it — the
+   * primary sankalp member (family_members.is_primary, else lowest
+   * slot). Mirrors admin.subscribers' `primary?.full_name` so the
+   * telecaller and the owner see the SAME person. Null for bare leads
+   * and not-yet-started sankalps, where `fullName` is all we have.
+   */
+  sankalpName: string | null;
   phone: string | null;
   /** Separate calling number, only set when different from `phone`
    *  (which stays the WhatsApp number) — call this one first. */
@@ -369,6 +379,13 @@ export function isCallbackDue(
 
 // ─── Derived incompleteness (never a stored flag) ────────────
 
+/**
+ * A paid subscriber with ZERO names — the extreme end of incomplete
+ * details (they get nothing in the next Pandit batch). No longer a
+ * caller-facing queue of its own (folded into `incomplete_details`),
+ * but still the trigger for the time-boxed `cutoff_risk` queue, so the
+ * "batch is closing and this person has no names" alarm survives.
+ */
 export function isSankalpPending(row: TelecallerQueueRow): boolean {
   return row.subscriptionStatus === "active" && row.familyMemberCount === 0;
 }
@@ -386,20 +403,23 @@ export function hasRelationGap(row: TelecallerQueueRow): boolean {
   );
 }
 
-/** Queue #9 — active, ≥1 member, but visibly incomplete somewhere. */
+/**
+ * Incomplete Details — an ACTIVE subscriber whose sankalp roster isn't
+ * finished. This now spans the WHOLE range of incompleteness, 0 naam
+ * included (2026-09-08 owner decision): a paid subscriber with zero
+ * names is not a distinct "Sankalp Pending" state, just the most
+ * incomplete case. `familyMemberCount < TARGET_MEMBER_COUNT` already
+ * covers 0; the gotra/relation gaps catch a "full 4 but blank field"
+ * roster.
+ */
 export function isIncompleteDetails(row: TelecallerQueueRow): boolean {
   return (
     row.subscriptionStatus === "active" &&
-    row.familyMemberCount >= 1 &&
     (hasGotraGap(row) || hasRelationGap(row) || row.familyMemberCount < TARGET_MEMBER_COUNT)
   );
 }
 
-// ─── The thirteen queue predicates (named, one per queue) ──────
-
-export function matchesSankalpPending(row: TelecallerQueueRow): boolean {
-  return !row.doNotCall && isSankalpPending(row);
-}
+// ─── The queue predicates (named, one per queue) ──────────────
 
 export function matchesCutoffRisk(
   row: TelecallerQueueRow,
@@ -574,7 +594,6 @@ export function assignQueues(input: {
     // Cooldown hides everyone logged in the last N hours — EXCEPT
     // callback-due (the promise itself is the reason to call again)
     // and welcome-call (which requires zero contact anyway).
-    if (matchesSankalpPending(row) && !cooled) out.sankalp_pending.push(row);
     if (matchesCutoffRisk(row, batch.cutoffAtMs, nowMs) && !cooled) out.cutoff_risk.push(row);
     if (matchesPaymentFailed(row) && !cooled) out.payment_failed.push(row);
     if (matchesAbandonedCheckout(row, nowMs) && !cooled) out.abandoned_checkout.push(row);
@@ -590,7 +609,6 @@ export function assignQueues(input: {
     if (matchesRenewalAhead(row, nowMs) && !cooled) out.renewal_ahead.push(row);
   }
 
-  out.sankalp_pending.sort(ascendingBy((r) => ms(r.startDate ?? r.subscriptionCreatedAt)));
   out.cutoff_risk.sort(ascendingBy((r) => ms(r.startDate ?? r.subscriptionCreatedAt)));
   // Money is silently leaking — longest-broken first.
   out.payment_failed.sort(ascendingBy((r) => ms(r.latestPaymentPaidAt ?? r.cancelledAt)));
@@ -703,7 +721,8 @@ export const TC_PLAN_COLS = "name,billing_period,price_paise";
 export const TC_PAYMENT_COLS = "subscription_id,status,method,paid_at,failure_reason,created_at";
 
 /** Family-member columns (all visible per §4). */
-export const TC_FAMILY_COLS = "id,subscription_id,full_name,gotra,relation,slot_number,dob";
+export const TC_FAMILY_COLS =
+  "id,subscription_id,full_name,gotra,relation,slot_number,is_primary,dob";
 
 /** Her own call history columns. */
 export const TC_CALLLOG_COLS =
@@ -763,8 +782,6 @@ export function bannerForQueue(key: TelecallerQueueKey, row: TelecallerQueueRow)
       return `Free sewa ka wada pura karna hai — ${row.fullName ?? "naam nahi"} se confirm karein`;
     case "aaj_ke_leads":
       return `Aaj ka lead — ${row.fullName ?? "naam nahi"} ko call karke plan samjhaein`;
-    case "sankalp_pending":
-      return `Sankalp adhoora hai — ${TARGET_MEMBER_COUNT} mein se ${row.familyMemberCount} naam bhare hain`;
     case "cutoff_risk":
       return "Agla batch nazdeek hai — naam abhi nahi bhare to is baar list mein nahi jayenge";
     case "payment_failed":
@@ -782,7 +799,9 @@ export function bannerForQueue(key: TelecallerQueueKey, row: TelecallerQueueRow)
     case "callback_due":
       return "Aapne kaha tha baad mein call karein — wahi call hai";
     case "incomplete_details":
-      return `Details adhoori hain — ${row.familyMemberCount} naam bhare hain, gotra/relation check karein`;
+      return row.familyMemberCount === 0
+        ? `Ek bhi naam nahi bhara — ${TARGET_MEMBER_COUNT} tak naam/gotra/relation lein, warna batch mein kuch nahi jayega`
+        : `Details adhoori hain — ${TARGET_MEMBER_COUNT} mein se ${row.familyMemberCount} naam bhare hain, gotra/relation check karein`;
     case "missing_prasad_address":
       return "Prasad bhejna hai — poori address chahiye";
     case "welcome_call":

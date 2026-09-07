@@ -1288,7 +1288,7 @@ function AdminSubscribersPage() {
               ))}
             </select>
 
-            {/* Sankalp Pending call queue */}
+            {/* Details Incomplete call queue (0 family members) */}
             <label
               className={`flex items-center gap-2 text-xs border rounded-lg px-2.5 py-2 cursor-pointer select-none ${
                 pendingFilters.sankalpPending
@@ -1303,7 +1303,7 @@ function AdminSubscribersPage() {
                 onChange={(e) => setPending((p) => ({ ...p, sankalpPending: e.target.checked }))}
                 className="accent-rose-600"
               />
-              Sankalp Pending (0 members)
+              Details Incomplete (0 members)
             </label>
 
             {/* Stale Pending queue — abandoned checkouts [Part C] */}
@@ -1470,7 +1470,7 @@ function AdminSubscribersPage() {
                             {row.family_member_count === 0 && row.status === "active" && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-rose-50 text-rose-700 border-rose-200">
                                 <PhoneCall className="w-3 h-3" />
-                                Sankalp Pending
+                                Details Incomplete
                               </span>
                             )}
                           </div>

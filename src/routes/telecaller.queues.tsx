@@ -24,7 +24,6 @@ function fmtHours(h: number | null): string {
 
 const QUEUE_ACCENTS: Record<string, string> = {
   free_sewa_pending: "border-l-amber-600 hover:bg-amber-50/40",
-  sankalp_pending: "border-l-red-500 hover:bg-red-50/40",
   cutoff_risk: "border-l-orange-500 hover:bg-orange-50/40",
   payment_failed: "border-l-amber-500 hover:bg-amber-50/40",
   abandoned_checkout: "border-l-sky-500 hover:bg-sky-50/40",
@@ -111,9 +110,9 @@ function TelecallerQueuesPage() {
               <span className="font-semibold text-indigo-800">
                 ~{fmtHours(data.cutoffHoursRemaining)} baaki
               </span>
-              . Sankalp Pending:{" "}
+              . Is batch pe risk:{" "}
               <span className="font-semibold text-red-700">
-                {data.queues.find((q) => q.key === "sankalp_pending")?.count ?? 0}
+                {data.queues.find((q) => q.key === "cutoff_risk")?.count ?? 0}
               </span>{" "}
               subscribers.
             </div>
@@ -147,7 +146,7 @@ function TelecallerQueuesPage() {
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    {q.count > 0 && q.key === "sankalp_pending" && (
+                    {q.count > 0 && q.key === "cutoff_risk" && (
                       <Flame className="w-4 h-4 text-red-500" />
                     )}
                     {QUEUE_META[q.key].title}
