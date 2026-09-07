@@ -12,7 +12,7 @@ import giftBox from "@/assets/lottie/gift-box.json";
 import diya from "@/assets/lottie/diya.json";
 import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
 import { SITE_IMAGES } from "@/lib/site-images";
-import { useTranslation } from "@/lib/translations";
+import { useTranslation, localizedName } from "@/lib/translations";
 import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
 
 export const Route = createFileRoute("/plans")({
@@ -33,6 +33,7 @@ export const Route = createFileRoute("/plans")({
 const iconMap = { BookOpen, Flame, Sun: SunIcon, Wind: Heart, Heart, Users };
 
 function PlansPage() {
+  const { t, lang } = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
   const visiblePlans = (data?.plans ?? []).filter((p) => p.isVisible !== false);
   const sevaList = data?.sevaList ?? [];
@@ -47,9 +48,7 @@ function PlansPage() {
         <header className="text-center animate-fade-up">
           <div className="text-xs font-bold uppercase tracking-widest text-brand">Choose Your Sankalp</div>
           <h1 className="mt-2 text-3xl font-bold">Punyata Sadasyata</h1>
-          <p className="mt-2 text-[15px] text-muted-foreground max-w-xl mx-auto">
-            हर पैक में — Pooja + Chadava + Daan + Sewa + Aarti। एक ही सदस्यता में 4 परिवारजनों तक का संकल्प।
-          </p>
+          <p className="mt-2 text-[15px] text-muted-foreground max-w-xl mx-auto">{t("plans_sub2")}</p>
         </header>
 
         {/* Plan cards — live from Supabase plans + plan_sevas */}
@@ -70,17 +69,15 @@ function PlansPage() {
         ) : isError ? (
           <section className="card-soft border border-destructive/30 p-8 text-center space-y-3">
             <AlertTriangle size={32} className="text-destructive mx-auto" />
-            <p className="text-sm font-semibold text-foreground">Sadasyata abhi load nahi ho paye.</p>
-            <p className="text-xs text-muted-foreground">
-              Live Sadasyata data fetch karne mein samasya aayi. Kripya punah prayas karein.
-            </p>
+            <p className="text-sm font-semibold text-foreground">{t("plans_err_title")}</p>
+            <p className="text-xs text-muted-foreground">{t("plans_err_desc")}</p>
             <button
               onClick={() => refetch()}
               disabled={isRefetching}
               className="inline-flex items-center gap-2 bg-brand text-white text-xs font-bold px-5 py-2.5 rounded-full disabled:opacity-60"
             >
               <RefreshCw size={14} className={isRefetching ? "animate-spin" : ""} />
-              {isRefetching ? "Retrying..." : "Retry"}
+              {isRefetching ? t("checkout_retrying") : t("checkout_retry")}
             </button>
           </section>
         ) : (
@@ -116,9 +113,9 @@ function PlansPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#5B1A1A]/90 via-[#5B1A1A]/45 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-6 space-y-1.5">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F5A742]">सुंदरकांड का महात्म्य</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F5A742]">{t("sk_kicker")}</div>
               <h2 className="text-2xl md:text-3xl font-bold text-white leading-snug drop-shadow-sm">
-                जहाँ सुंदरकांड, वहाँ संकट का नाश।
+                {t("sk_title")}
               </h2>
             </div>
           </div>
@@ -126,41 +123,39 @@ function PlansPage() {
           <div className="p-6 md:p-8 space-y-5">
             <blockquote className="relative text-[17px] md:text-[19px] leading-relaxed text-[#5B1A1A] font-medium pl-5">
               <span className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-gradient-to-b from-[#F5A742] to-[#E85D1F]" />
-              "सुंदरकांड का पाठ करने वाले के घर में न दरिद्रता रहती है, न रोग, न शोक, न भय।"
+              {t("sk_quote")}
             </blockquote>
 
-            <p className="text-[15px] text-foreground/75 leading-relaxed">
-              श्री राम चरितमानस का सुंदरकांड — एकमात्र ऐसा कांड है जिसमें श्री हनुमान जी ने स्वयं अपने पराक्रम से असंभव को संभव कर दिखाया। यह पाठ साक्षात हनुमान जी का आवाहन है — बिगड़े काम बनते हैं, ग्रह दोष शांत होते हैं, और परिवार में सकारात्मक ऊर्जा का संचार होता है।
-            </p>
+            <p className="text-[15px] text-foreground/75 leading-relaxed">{t("sk_para")}</p>
 
             {/* Cost comparison */}
             <div className="rounded-2xl bg-[#FFF6EE] border border-[#F5A742]/30 p-5 md:p-6 space-y-5">
               <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
                 <div className="space-y-1">
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    आज के समय में सुंदरकांड की लागत
+                    {t("sk_cost_label")}
                   </div>
                   <div className="text-2xl font-bold text-foreground/45 line-through decoration-[#C0362C]/50 decoration-2">
                     ₹7,000–11,000
                   </div>
-                  <div className="text-xs text-muted-foreground">सामान्य आचार्य शुल्क</div>
+                  <div className="text-xs text-muted-foreground">{t("sk_cost_note")}</div>
                 </div>
 
                 <div className="hidden sm:block self-stretch w-px bg-[#F5A742]/30" />
 
                 <div className="space-y-1">
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-brand">
-                    सामूहिक संकल्प से
+                    {t("sk_collective")}
                   </div>
                   <div className="text-4xl font-bold text-brand leading-none">
                     {cheapestMonthly ? cheapestMonthly.price : "—"}
                   </div>
-                  <div className="text-xs text-muted-foreground">आपके नाम और गोत्र से</div>
+                  <div className="text-xs text-muted-foreground">{t("sk_your_name")}</div>
                 </div>
               </div>
 
               <p className="text-[15px] text-foreground/75 leading-relaxed pt-4 border-t border-[#F5A742]/25">
-                इसलिए श्री हनुमान जी की कृपा से हमने संकल्प लिया — यह पुण्य हर घर तक पहुँचे।
+                {t("sk_closing")}
               </p>
             </div>
           </div>
@@ -178,7 +173,7 @@ function PlansPage() {
                     <Icon size={26} className="text-brand" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-foreground">{s.title}</h4>
+                    <h4 className="font-bold text-foreground">{localizedName(s.title, s.titleEn, lang)}</h4>
                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{s.desc}</p>
                   </div>
                 </div>
@@ -189,7 +184,7 @@ function PlansPage() {
 
         {/* Acharyas */}
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-center">हमारे आचार्य</h2>
+          <h2 className="text-2xl font-bold text-center">{t("plans_acharyas")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {acharyas.map((a) => (
               <div key={a.name} className="card-soft p-5">
@@ -291,7 +286,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           {/* Badges */}
           <div className="flex flex-wrap gap-1.5">
             <span className="inline-flex items-center gap-1 bg-[#5B1A1A] text-[#F5A742] text-[10px] font-bold px-2 py-1 rounded-full">
-              Daan-Punya एक साथ
+              {t("plans_daan_together")}
             </span>
             <span className="inline-flex items-center gap-1 bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full">
               <Video size={10} /> Video Proof
@@ -350,7 +345,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           params={{ planId: plan.id }}
           className="mt-5 w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-3 rounded-full hover:bg-brand-deep transition-colors primary-btn-glow"
         >
-          {lang === "hindi" ? "पुण्य शुरू करें" : "Punya Start Kare"} <ArrowRight size={18} />
+          {t("plans_cta")} <ArrowRight size={18} />
         </Link>
       </div>
     </article>

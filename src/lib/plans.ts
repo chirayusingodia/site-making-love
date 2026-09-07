@@ -109,14 +109,20 @@ export type Plan = {
   comparison: Record<string, ComparisonValue>; // keyed by seva slug + proof/family/prasad/billing
   detail: {
     description: string[]; // presentation
-    sevas: { title: string; note: string }[]; // LIVE from plan_sevas
+    sevas: { title: string; titleEn: string | null; note: string }[]; // LIVE from plan_sevas
     benefits: string[]; // presentation
     reviews: { n: string; city: string; q: string; stars: number }[]; // presentation
   };
   isVisible: boolean; // DB is_active (rows are pre-filtered)
 };
 
-export type SevaListItem = { slug: string; title: string; desc: string; iconKey: string };
+export type SevaListItem = {
+  slug: string;
+  title: string;
+  titleEn: string | null;
+  desc: string;
+  iconKey: string;
+};
 
 // ─── Presentation-only per-slug assets (NO composition data here) ────────────
 type PlanPresentation = {
@@ -504,6 +510,7 @@ function buildPlan(
       description: resolvedPres.detail.description,
       sevas: includedSevas.map((s) => ({
         title: s.name,
+        titleEn: s.nameEn,
         note: s.description ?? (s.days.length ? `हर माह — ${s.days.join(" & ")}` : ""),
       })),
       benefits: resolvedPres.detail.benefits,
@@ -554,6 +561,7 @@ export async function fetchPublicPlansData(): Promise<PublicPlansData> {
   const sevaList: SevaListItem[] = dbSevas.map((s) => ({
     slug: s.slug,
     title: s.name,
+    titleEn: s.name_en ?? null,
     desc: s.description ?? "",
     iconKey: iconKeyForSeva(s),
   }));

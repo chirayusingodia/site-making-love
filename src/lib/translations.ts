@@ -234,6 +234,44 @@ export const translations = {
     ms_empty_desc:
       "अपनी पहली सेवा शुरू करने के लिए एक सदस्यता चुनें — फिर हर माह का पुण्य यहाँ जुड़ता जाएगा।",
     ms_see_sadasyata: "सदस्यता देखें",
+
+    // Sevas page
+    sevas_title: "पुण्यता की सेवाएँ",
+    sevas_sub:
+      "तीर्थ गुरु पुष्करराज में आपके नाम एवं गोत्र से सम्पन्न होने वाली सभी सेवाएँ — पूर्ण पारदर्शिता और WhatsApp Video Proof के साथ।",
+    sevas_err: "सेवा सूची अभी लोड नहीं हो पाई।",
+    sevas_err_desc: "Live seva data लाने में समस्या आई। कृपया पुनः प्रयास करें।",
+
+    // Plans page
+    plans_sub2:
+      "हर पैक में — Pooja + Chadava + Daan + Sewa + Aarti। एक ही सदस्यता में 4 परिवारजनों तक का संकल्प।",
+    plans_err_title: "सदस्यता अभी लोड नहीं हो पाई।",
+    plans_err_desc: "Live Sadasyata data लाने में समस्या आई। कृपया पुनः प्रयास करें।",
+    plans_acharyas: "हमारे आचार्य",
+    plans_daan_together: "Daan-Punya एक साथ",
+    plans_cta: "पुण्य शुरू करें",
+
+    // Sundarkand Mahatmya section
+    sk_kicker: "सुंदरकांड का महात्म्य",
+    sk_title: "जहाँ सुंदरकांड, वहाँ संकट का नाश।",
+    sk_quote:
+      "\"सुंदरकांड का पाठ करने वाले के घर में न दरिद्रता रहती है, न रोग, न शोक, न भय।\"",
+    sk_para:
+      "श्री राम चरितमानस का सुंदरकांड — एकमात्र ऐसा कांड है जिसमें श्री हनुमान जी ने स्वयं अपने पराक्रम से असंभव को संभव कर दिखाया। यह पाठ साक्षात हनुमान जी का आवाहन है — बिगड़े काम बनते हैं, ग्रह दोष शांत होते हैं, और परिवार में सकारात्मक ऊर्जा का संचार होता है।",
+    sk_cost_label: "आज के समय में सुंदरकांड की लागत",
+    sk_cost_note: "सामान्य आचार्य शुल्क",
+    sk_collective: "सामूहिक संकल्प से",
+    sk_your_name: "आपके नाम और गोत्र से",
+    sk_closing: "इसलिए श्री हनुमान जी की कृपा से हमने संकल्प लिया — यह पुण्य हर घर तक पहुँचे।",
+
+    // Plan detail page
+    pd_err_title: "सदस्यता लोड नहीं हो पाई",
+    pd_about: "इस संकल्प के बारे में",
+    pd_included: "इस पैक में शामिल सेवाएँ",
+    pd_benefits: "इस संकल्प के फायदे",
+    pd_reviews: "इस पैक के भक्तों की राय",
+    pd_related: "अन्य पैक देखें",
+    pd_total: "कुल राशि",
   },
   english: {
     // Navigation / Header
@@ -465,6 +503,45 @@ export const translations = {
     ms_empty_desc:
       "Choose a membership to begin your first seva — then each month's punya accumulates here.",
     ms_see_sadasyata: "See Sadasyata",
+
+    // Sevas page
+    sevas_title: "Punyata's Sevas",
+    sevas_sub:
+      "Every seva performed in your name & gotra at Tirth Guru Pushkarraj — with full transparency and WhatsApp video proof.",
+    sevas_err: "The seva list couldn't load.",
+    sevas_err_desc: "We ran into a problem fetching live seva data. Please try again.",
+
+    // Plans page
+    plans_sub2:
+      "Every pack — Pooja + Chadava + Daan + Sewa + Aarti. One membership, sankalp for up to 4 family members.",
+    plans_err_title: "Sadasyata couldn't load.",
+    plans_err_desc: "We ran into a problem fetching live Sadasyata data. Please try again.",
+    plans_acharyas: "Our Acharyas",
+    plans_daan_together: "Daan-Punya together",
+    plans_cta: "Start Your Punya",
+
+    // Sundarkand Mahatmya section
+    sk_kicker: "The Glory of Sundarkand",
+    sk_title: "Where there is Sundarkand, troubles are destroyed.",
+    sk_quote:
+      "\"In the home of one who recites Sundarkand, there is no poverty, no illness, no grief, and no fear.\"",
+    sk_para:
+      "The Sundarkand of Shri Ram Charitmanas is the one chapter where Shri Hanuman ji, by his own might, made the impossible possible. Its recitation is a direct invocation of Hanuman ji — stalled work moves forward, planetary afflictions are calmed, and positive energy flows through the family.",
+    sk_cost_label: "Cost of a Sundarkand today",
+    sk_cost_note: "Typical acharya fee",
+    sk_collective: "Through collective sankalp",
+    sk_your_name: "In your name & gotra",
+    sk_closing:
+      "So by the grace of Shri Hanuman ji we took a sankalp — that this punya reaches every home.",
+
+    // Plan detail page
+    pd_err_title: "Sadasyata couldn't load",
+    pd_about: "About this Sankalp",
+    pd_included: "Sevas Included in this Pack",
+    pd_benefits: "Benefits of this Sankalp",
+    pd_reviews: "What Devotees Say",
+    pd_related: "See Other Packs",
+    pd_total: "Total",
   },
 } as const;
 
