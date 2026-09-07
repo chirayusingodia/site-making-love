@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { Check, Loader2, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { callUserApi } from "@/lib/auth-api";
 
 // ─────────────────────────────────────────────────────────────
@@ -101,7 +101,15 @@ export function FamilyAddressForm({
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedFlash, setSavedFlash] = useState(false);
+  // [Save-feedback] When details already exist we open in a read-only
+  // "saved" summary instead of dropping the user straight into an
+  // editable form that gives no sign anything was ever stored. After a
+  // successful save we also flip back here so the confirmation is
+  // permanent (a 2.5s toast used to be destroyed by the parent's
+  // key-based remount on /profile — the user saw nothing).
+  const [mode, setMode] = useState<"view" | "edit">(
+    initialMembers.length > 0 ? "view" : "edit",
+  );
 
   const updateMember = (idx: number, patch: Partial<MemberDraft>) =>
     setMembers((ms) => ms.map((m, i) => (i === idx ? { ...m, ...patch } : m)));
@@ -155,8 +163,9 @@ export function FamilyAddressForm({
           pincode: address.pincode.trim(),
         });
       }
-      setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 2500);
+      // Show the persistent saved summary immediately on THIS instance
+      // (before the parent's async reload swaps in a fresh one).
+      setMode("view");
       onSaved?.();
     } catch (err) {
       // [Pass-2 F21] two-step save: when the family POST already
@@ -172,6 +181,69 @@ export function FamilyAddressForm({
       setBusy(false);
     }
   };
+
+  // ── Saved summary (read-only) ────────────────────────────────
+  // A professional confirmation of what is on record, with an Edit
+  // affordance — replaces the "did anything save?" dead-end.
+  if (mode === "view") {
+    const savedMembers = members.filter((m) => m.name.trim());
+    const gotraLabel = gotra.noGotra
+      ? "गोत्र नहीं पता"
+      : gotra.value.trim()
+        ? `गोत्र: ${gotra.value.trim()}`
+        : null;
+    const hasAddress = !!address.line1.trim();
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+          <ShieldCheck size={16} className="shrink-0" />
+          <span className="font-semibold">आपकी जानकारी सुरक्षित है — Saved ✓</span>
+        </div>
+
+        {/* Members on record */}
+        <div className="card-soft p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-bold text-brand">परिवार सदस्य (Sankalp Details)</div>
+            {gotraLabel && (
+              <span className="text-xs text-muted-foreground">{gotraLabel}</span>
+            )}
+          </div>
+          <ul className="divide-y divide-black/5">
+            {savedMembers.map((m, i) => (
+              <li key={i} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                <span className="font-semibold text-foreground">{m.name.trim()}</span>
+                <span className="text-xs text-muted-foreground">{m.relation}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Address on record */}
+        {hasAddress && (
+          <div className="card-soft p-4 space-y-1">
+            <div className="text-sm font-bold text-brand">डिलीवरी पता (Prasad Address)</div>
+            <div className="text-sm text-foreground">{address.line1.trim()}</div>
+            {address.line2.trim() && (
+              <div className="text-sm text-foreground">{address.line2.trim()}</div>
+            )}
+            <div className="text-sm text-foreground">
+              {[address.state.trim(), address.pincode.trim()].filter(Boolean).join(" – ")}
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={() => {
+            setError(null);
+            setMode("edit");
+          }}
+          className="w-full flex items-center justify-center gap-2 border-2 border-brand/40 text-brand font-bold py-3 rounded-full hover:bg-brand-soft/40 transition-colors"
+        >
+          <Pencil size={16} /> Details Edit karein
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -338,12 +410,6 @@ export function FamilyAddressForm({
         </div>
       </div>
 
-      {savedFlash && (
-        <div className="flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
-          <Check size={16} className="shrink-0" />
-          <span>आपके परिवार की जानकारी सेव हो गई है।</span>
-        </div>
-      )}
       {error && <p className="text-xs text-destructive">{error}</p>}
       {/* [Pass-2 F21] explain WHY Save is disabled — a partially-filled
           address used to dead-end the button silently. */}
@@ -370,12 +436,8 @@ export function FamilyAddressForm({
             : "bg-secondary text-muted-foreground cursor-not-allowed"
         }`}
       >
-        {busy ? (
-          <Loader2 size={18} className="animate-spin" />
-        ) : savedFlash ? (
-          <Check size={18} />
-        ) : null}
-        {savedFlash ? "Save ho gaya ✓" : "Save & Continue"}
+        {busy ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+        {busy ? "Save ho raha hai…" : "Save & Continue"}
       </button>
     </div>
   );

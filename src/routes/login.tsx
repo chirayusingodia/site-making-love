@@ -11,7 +11,7 @@ import {
   Bell,
   HelpCircle,
 } from "lucide-react";
-import { Header } from "@/components/site-chrome";
+import { Header, WHATSAPP_URL } from "@/components/site-chrome";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 import {
   InputOTP,
@@ -362,7 +362,7 @@ function LoginPage() {
 
             <div className="card-soft mt-4 divide-y divide-black/5">
               {[
-                { icon: HelpCircle, label: "Help / Support", href: "#" },
+                { icon: HelpCircle, label: "Help / Support", href: WHATSAPP_URL },
                 { icon: FileText, label: "Terms & Privacy", href: "/terms-and-conditions" },
               ].map(({ icon: Icon, label, href }) => (
                 <a

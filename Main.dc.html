@@ -1,0 +1,390 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600;700&family=Martel:wght@400;700&family=Poppins:wght@700;800&display=swap">
+  <style>
+    body { margin: 0; background: #FDF1EC; font-family: 'Hind','Noto Sans Devanagari',system-ui,sans-serif; color: #1A1A1A; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #E85D1F; text-decoration: none; } a:hover { color: #B8460F; }
+    h1,h2,h3,h4 { margin: 0; font-weight: 700; color: #1A1A1A; }
+    p { margin: 0; }
+    .wrap { width: 390px; }
+    .card { background: #FFFFFF; border-radius: 20px; box-shadow: 0 4px 20px rgba(139,79,40,0.08), 0 1px 3px rgba(139,79,40,0.04); }
+    .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #E85D1F; }
+    .muted { color: #6B6B6B; }
+    .btn-primary { display:flex; align-items:center; justify-content:center; gap:8px; background:#E85D1F; color:#fff; font-weight:700; font-size:15px; padding:14px 20px; border-radius:9999px; border:none; cursor:pointer; }
+    .btn-secondary { display:flex; align-items:center; justify-content:center; gap:8px; background:#F5E9DF; color:#1A1A1A; font-weight:700; font-size:15px; padding:13px 20px; border-radius:9999px; border:none; cursor:pointer; }
+    .pill-active { display:inline-flex; align-items:center; gap:6px; background:rgba(63,174,85,0.12); color:#2f8f43; font-size:12px; font-weight:700; padding:5px 11px; border-radius:9999px; }
+    .dot { width:7px; height:7px; border-radius:50%; background:#3FAE55; box-shadow:0 0 0 3px rgba(63,174,85,0.22); }
+    .seva-tile { background:#FFF7F1; border:1px solid rgba(232,93,31,0.12); border-radius:16px; padding:13px 12px; display:flex; flex-direction:column; gap:8px; }
+    .ico { color:#E85D1F; }
+  </style>
+</helmet>
+
+<div class="wrap" style="padding-bottom:8px;">
+
+  <!-- ===== Header (site chrome) ===== -->
+  <div style="position:sticky; top:0; z-index:5; background:rgba(253,241,236,0.92); backdrop-filter:blur(10px); border-bottom:1px solid rgba(0,0,0,0.05); padding:12px 16px; display:flex; align-items:center; justify-content:space-between;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#F5A742,#E85D1F); display:flex; align-items:center; justify-content:center;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c-.7 3-3 4.5-3 7a3 3 0 0 0 6 0c0-2.5-2.3-4-3-7Z"/><path d="M5 15c0 4 3 6 7 6s7-2 7-6c0-1.6-.9-3-2.2-3.8"/></svg>
+      </div>
+      <span style="font-family:'Poppins','Noto Sans Devanagari',sans-serif; font-weight:800; font-size:26px; color:#E85D1F; line-height:1;">पुण्यता</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <div style="display:inline-flex; background:#fff; border:1px solid rgba(0,0,0,0.10); border-radius:9999px; padding:2px;">
+        <span style="background:#E85D1F; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:9999px;">Hindi</span>
+        <span style="color:rgba(26,26,26,0.55); font-size:11px; font-weight:700; padding:5px 10px;">English</span>
+      </div>
+      <div style="width:38px; height:38px; border-radius:50%; background:#1A1A1A; display:flex; align-items:center; justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:16px 16px 0; display:flex; flex-direction:column; gap:16px;">
+
+    <!-- ===== PUNYA BANK — passbook hero ===== -->
+    <div style="position:relative; overflow:hidden; border-radius:24px; padding:20px; color:#FFF3EA; background:radial-gradient(120% 120% at 85% 0%, #E85D1F 0%, #C0451A 45%, #7A2A10 100%); box-shadow:0 14px 36px rgba(122,42,16,0.35);">
+      <!-- faint passbook ledger lines -->
+      <div style="position:absolute; inset:0; opacity:0.10; background:repeating-linear-gradient(180deg, transparent 0 27px, #fff 27px 28px);"></div>
+      <!-- gold wheel/mandala accent -->
+      <svg style="position:absolute; right:-26px; top:-26px; opacity:0.18;" width="150" height="150" viewBox="0 0 100 100" fill="none" stroke="#FFE7B8" stroke-width="1"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="30"/><path d="M50 4V96M4 50H96M18 18 82 82M82 18 18 82M50 20 61 44 50 20M50 20 39 44"/></svg>
+      <div style="position:relative;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFE7B8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
+            <span style="font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#FFE7B8;">आपका पुण्य बैंक</span>
+          </div>
+          <span style="font-family:ui-monospace,monospace; font-size:11px; letter-spacing:0.05em; color:rgba(255,231,184,0.85);">PN&#8209;10428</span>
+        </div>
+
+        <div style="display:flex; align-items:flex-end; gap:10px; margin-top:16px;">
+          <div style="font-family:'Poppins',sans-serif; font-size:52px; font-weight:800; line-height:0.9; color:#FFFFFF;">42</div>
+          <div style="padding-bottom:6px;">
+            <div style="font-size:15px; font-weight:700; color:#FFFFFF;">सेवाएँ संपन्न</div>
+            <div style="font-size:12px; color:rgba(255,243,234,0.8);">आपके नाम एवं गोत्र से</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <div style="flex:1; background:rgba(255,255,255,0.13); border:1px solid rgba(255,231,184,0.22); border-radius:14px; padding:10px;">
+            <div style="font-size:19px; font-weight:800; color:#fff;">6 माह</div>
+            <div style="font-size:11px; color:rgba(255,243,234,0.82);">सक्रिय सदस्यता</div>
+          </div>
+          <div style="flex:1; background:rgba(255,255,255,0.13); border:1px solid rgba(255,231,184,0.22); border-radius:14px; padding:10px;">
+            <div style="font-size:19px; font-weight:800; color:#fff;">6</div>
+            <div style="font-size:11px; color:rgba(255,243,234,0.82);">आशीर्वाद पत्र</div>
+          </div>
+          <div style="flex:1; background:rgba(255,255,255,0.13); border:1px solid rgba(255,231,184,0.22); border-radius:14px; padding:10px;">
+            <div style="font-size:19px; font-weight:800; color:#fff;">24</div>
+            <div style="font-size:11px; color:rgba(255,243,234,0.82);">प्रमाण वीडियो</div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,231,184,0.25); display:flex; align-items:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE7B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 8l6 .9-4.5 4.3 1 6L12 16.8 6.5 19.2l1-6L3 8.9 9 8Z"/></svg>
+          <span style="font-family:'Martel','Noto Serif Devanagari',serif; font-size:13px; font-style:normal; color:#FFF3EA;">दान पुण्य आपका · सेवा हमारी</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ACTIVE MEMBERSHIP ===== -->
+    <div class="card" style="padding:18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <span class="kicker">वर्तमान सदस्यता</span>
+        <span class="pill-active"><span class="dot"></span>सक्रिय</span>
+      </div>
+      <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:8px;">
+        <div>
+          <div style="font-size:20px; font-weight:700;">गृह शांति</div>
+          <div class="muted" style="font-size:12.5px; margin-top:2px;">तीर्थ गुरु पुष्करराज, पुष्कर</div>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-family:'Poppins',sans-serif; font-size:26px; font-weight:800; color:#E85D1F;">₹399</span>
+          <span class="muted" style="font-size:13px; font-weight:600;">/माह</span>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <div style="flex:1; background:#FFF7F1; border-radius:14px; padding:11px 12px;">
+          <div style="display:flex; align-items:center; gap:6px; color:#E85D1F;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span style="font-size:11px; font-weight:700;">अगली सेवा</span>
+          </div>
+          <div style="font-size:14px; font-weight:700; margin-top:4px;">मंगल, 13 अक्टूबर</div>
+          <div class="muted" style="font-size:11px;">दूसरा मंगलवार · 8 दिन में</div>
+        </div>
+        <div style="flex:1; background:#FFF7F1; border-radius:14px; padding:11px 12px;">
+          <div style="display:flex; align-items:center; gap:6px; color:#6B6B6B;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
+            <span style="font-size:11px; font-weight:700;">अगला बिलिंग</span>
+          </div>
+          <div style="font-size:14px; font-weight:700; margin-top:4px;">01 नवंबर</div>
+          <div class="muted" style="font-size:11px;">ऑटो-रिन्यू · ₹399</div>
+        </div>
+      </div>
+
+      <button class="btn-secondary" style="width:100%; margin-top:14px;">
+        सदस्यता प्रबंधित करें
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <!-- ===== ₹399 me kya-kya ===== -->
+    <div class="card" style="padding:18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div>
+          <span class="kicker">आपकी सदस्यता में</span>
+          <h3 style="font-size:17px; margin-top:3px;">₹399 में हर माह क्या&#8209;क्या</h3>
+        </div>
+        <div style="background:#FFF1E6; color:#E85D1F; font-size:11px; font-weight:800; padding:6px 10px; border-radius:9999px; white-space:nowrap;">7 सेवाएँ + प्रमाण</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:14px;">
+        <div class="seva-tile">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c3-1.2 5.5-1.2 8 .3v13c-2.5-1.5-5-1.5-8-.3Z"/><path d="M22 5c-3-1.2-5.5-1.2-8 .3v13c2.5-1.5 5-1.5 8-.3Z"/></svg>
+            <span style="background:#E85D1F; color:#fff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:9999px;">×2</span>
+          </div>
+          <div style="font-size:13.5px; font-weight:700;">सुंदरकांड पाठ</div>
+          <div class="muted" style="font-size:11px;">2nd मंगल + अंतिम शनि</div>
+        </div>
+
+        <div class="seva-tile">
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.5-4 1-6-.5 2.5.5 3.5 2 5s2 3 2 5a5 5 0 1 1-10 0c0-1 .3-2 1-3 .2 1.5 1 2.5 2 3Z"/></svg>
+          <div style="font-size:13.5px; font-weight:700;">गृह शांति हवन</div>
+          <div class="muted" style="font-size:11px;">हर माह · आहुति सहित</div>
+        </div>
+
+        <div class="seva-tile">
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.5-4 1-6-.5 2.5.5 3.5 2 5s2 3 2 5a5 5 0 1 1-10 0c0-1 .3-2 1-3 .2 1.5 1 2.5 2 3Z"/></svg>
+          <div style="font-size:13.5px; font-weight:700;">सर्व रोग निवारण हवन</div>
+          <div class="muted" style="font-size:11px;">अंतिम शनिवार</div>
+        </div>
+
+        <div class="seva-tile">
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
+          <div style="font-size:13.5px; font-weight:700;">आरती</div>
+          <div class="muted" style="font-size:11px;">हर संकल्प के साथ</div>
+        </div>
+
+        <div class="seva-tile">
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14c2 0 3-1 5-1s3 1 5 1"/><path d="M18 13c1.5-1 3-1 3-3 0-1.5-1.5-2-3-2-1 0-2 .3-2.5 1"/><path d="M3 14c0 3 2.5 5 6 5s6-2 6-5"/><path d="M8 9h.01M12 9h.01"/></svg>
+          <div style="font-size:13.5px; font-weight:700;">गौ सेवा</div>
+          <div class="muted" style="font-size:11px;">चारा एवं सेवा</div>
+        </div>
+
+        <div class="seva-tile">
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9-9c-1.3-3 .4-6 3.2-6 1.9 0 3 1.2 3.8 2.3C14.7 4.2 15.8 3 17.8 3 20.6 3 22.3 6 21 9c-2 4.5-9 12-9 12Z"/></svg>
+          <div style="font-size:13.5px; font-weight:700;">वानर सेवा</div>
+          <div class="muted" style="font-size:11px;">फल एवं आहार</div>
+        </div>
+
+        <div class="seva-tile">
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17.5" cy="9" r="2.3"/><path d="M15.5 20c0-2.3 1.5-3.8 4-3.8 1 0 1.8.2 2.5.7"/></svg>
+          <div style="font-size:13.5px; font-weight:700;">साधु संतों को भोजन</div>
+          <div class="muted" style="font-size:11px;">प्रत्येक माह</div>
+        </div>
+
+        <div class="seva-tile" style="background:#EAF8EE; border-color:rgba(37,211,102,0.25);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1FA855" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-1.2 4.4L21 21l-5.3-1.4A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8.5 9.2c0 3 2.3 5.3 5.3 5.3.4 0 .8-.4.8-.8v-1.3c0-.4-.4-.7-.8-.6l-1 .3-1.5-1.5.3-1c.1-.4-.2-.8-.6-.8H9.3c-.4 0-.8.4-.8.8Z"/></svg>
+          <div style="font-size:13.5px; font-weight:700;">WhatsApp Video Proof</div>
+          <div style="font-size:11px; color:#1FA855; font-weight:600;">हर सेवा का प्रमाण</div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:14px; margin-top:14px; padding-top:14px; border-top:1px solid rgba(0,0,0,0.06);">
+        <div style="display:flex; align-items:center; gap:7px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E85D1F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M15 8a3 3 0 1 0 0-.1"/><path d="M2 20c0-3 2.6-5 6-5s6 2 6 5"/><path d="M14 15c2.5 0 6 1.5 6 5"/></svg>
+          <span style="font-size:12.5px; font-weight:700;">4 परिवारजनों तक</span>
+        </div>
+        <div style="width:1px; height:22px; background:rgba(0,0,0,0.08);"></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E85D1F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h9a2 2 0 0 1 2 2v14a3 3 0 0 1-3 3H7"/><path d="M8 2a3 3 0 0 0-3 3v13a3 3 0 0 0 3 3"/><path d="M9 7h6M9 11h6"/></svg>
+          <span style="font-size:12.5px; font-weight:700;">हर पूजा पर आशीर्वाद पत्र</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PUNYA LEDGER (bahi-khata) ===== -->
+    <div class="card" style="padding:18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E85D1F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16M4 4h13a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4"/><path d="M8 8h7M8 12h7M8 16h4"/></svg>
+          <h3 style="font-size:16px;">पुण्य बही&#8209;खाता</h3>
+        </div>
+        <a style="font-size:12.5px; font-weight:700;">सभी देखें</a>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin-top:4px;">आपके नाम से संपन्न हर सेवा का लेखा — प्रमाण सहित।</p>
+
+      <div style="margin-top:12px; display:flex; flex-direction:column;">
+        <!-- entry -->
+        <div style="display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+          <div style="width:40px; text-align:center;">
+            <div style="font-size:16px; font-weight:800; color:#1A1A1A; line-height:1;">09</div>
+            <div class="muted" style="font-size:10px; font-weight:600;">सित॰</div>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:13.5px; font-weight:700;">सर्व रोग निवारण हवन</div>
+            <div class="muted" style="font-size:11px;">अंतिम शनिवार संकल्प · पुष्कर</div>
+          </div>
+          <a style="display:inline-flex; align-items:center; gap:5px; background:#EAF8EE; color:#1FA855; font-size:11.5px; font-weight:700; padding:6px 10px; border-radius:9999px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>प्रमाण
+          </a>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+          <div style="width:40px; text-align:center;">
+            <div style="font-size:16px; font-weight:800; line-height:1;">09</div>
+            <div class="muted" style="font-size:10px; font-weight:600;">सित॰</div>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:13.5px; font-weight:700;">सुंदरकांड पाठ + आरती</div>
+            <div class="muted" style="font-size:11px;">दूसरा मंगलवार संकल्प · पुष्कर</div>
+          </div>
+          <a style="display:inline-flex; align-items:center; gap:5px; background:#EAF8EE; color:#1FA855; font-size:11.5px; font-weight:700; padding:6px 10px; border-radius:9999px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>प्रमाण
+          </a>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px; padding:11px 0;">
+          <div style="width:40px; text-align:center;">
+            <div style="font-size:16px; font-weight:800; line-height:1;">27</div>
+            <div class="muted" style="font-size:10px; font-weight:600;">अग॰</div>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:13.5px; font-weight:700;">गौ सेवा · वानर सेवा · भोजन</div>
+            <div class="muted" style="font-size:11px;">दान-पुण्य संपन्न · पुष्कर</div>
+          </div>
+          <a style="display:inline-flex; align-items:center; gap:5px; background:#EAF8EE; color:#1FA855; font-size:11.5px; font-weight:700; padding:6px 10px; border-radius:9999px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>प्रमाण
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ASHIRWAD PATRA ===== -->
+    <div class="card" style="padding:18px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E85D1F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h9a2 2 0 0 1 2 2v14a3 3 0 0 1-3 3H7"/><path d="M8 2a3 3 0 0 0-3 3v13a3 3 0 0 0 3 3"/><path d="M9 7h6M9 11h6"/></svg>
+        <h3 style="font-size:16px;">आशीर्वाद पत्र</h3>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin-top:4px;">हर पूजा के बाद आपके परिवार के नाम से जारी।</p>
+      <div style="display:flex; gap:12px; margin-top:12px; overflow-x:auto; padding-bottom:2px;">
+        <div style="flex:0 0 auto; width:104px;">
+          <div style="height:140px; border-radius:12px; border:1px solid rgba(232,93,31,0.25); background:linear-gradient(160deg,#FFF7EE,#FDE9D6); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:10px; text-align:center;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B8460F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 8l6 .9-4.5 4.3 1 6L12 16.8 6.5 19.2l1-6L3 8.9 9 8Z"/></svg>
+            <div style="font-family:'Martel',serif; font-size:11px; color:#7A2A10; line-height:1.3;">श्री हनुमान<br>आशीर्वाद पत्र</div>
+            <div class="muted" style="font-size:9px;">सित॰ 2026</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:7px; justify-content:center;">
+            <a style="font-size:11px; font-weight:700;">देखें</a>
+            <span class="muted" style="font-size:11px;">·</span>
+            <a style="font-size:11px; font-weight:700; color:#6B6B6B;">Download</a>
+          </div>
+        </div>
+        <div style="flex:0 0 auto; width:104px;">
+          <div style="height:140px; border-radius:12px; border:1px solid rgba(232,93,31,0.25); background:linear-gradient(160deg,#FFF7EE,#FDE9D6); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:10px; text-align:center;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B8460F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 8l6 .9-4.5 4.3 1 6L12 16.8 6.5 19.2l1-6L3 8.9 9 8Z"/></svg>
+            <div style="font-family:'Martel',serif; font-size:11px; color:#7A2A10; line-height:1.3;">गृह शांति<br>आशीर्वाद पत्र</div>
+            <div class="muted" style="font-size:9px;">अग॰ 2026</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:7px; justify-content:center;">
+            <a style="font-size:11px; font-weight:700;">देखें</a>
+            <span class="muted" style="font-size:11px;">·</span>
+            <a style="font-size:11px; font-weight:700; color:#6B6B6B;">Download</a>
+          </div>
+        </div>
+        <div style="flex:0 0 auto; width:104px;">
+          <div style="height:140px; border-radius:12px; border:1px dashed rgba(232,93,31,0.4); background:rgba(232,93,31,0.05); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:10px; text-align:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E85D1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+            <div class="muted" style="font-size:10px;">अगली पूजा के<br>बाद जुड़ेगा</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FAMILY / SANKALP ===== -->
+    <div class="card" style="padding:18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M15 8a3 3 0 1 0 0-.1"/><path d="M2 20c0-3 2.6-5 6-5s6 2 6 5"/><path d="M14 15c2.5 0 6 1.5 6 5"/></svg>
+          <h3 style="font-size:16px;">परिवार संकल्प</h3>
+        </div>
+        <span class="muted" style="font-size:12px; font-weight:600;">2/4</span>
+      </div>
+
+      <div style="margin-top:12px; display:flex; flex-direction:column; gap:2px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid rgba(0,0,0,0.05);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:30px; height:30px; border-radius:50%; background:#FFF1E6; color:#E85D1F; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center;">रा</div>
+            <span style="font-size:14px; font-weight:600;">राजेश शर्मा</span>
+          </div>
+          <span class="muted" style="font-size:12.5px;">काश्यप गोत्र</span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid rgba(0,0,0,0.05);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:30px; height:30px; border-radius:50%; background:#FFF1E6; color:#E85D1F; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center;">सु</div>
+            <span style="font-size:14px; font-weight:600;">सुनीता शर्मा</span>
+          </div>
+          <span class="muted" style="font-size:12.5px;">काश्यप गोत्र</span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px; border-radius:14px; border:1px dashed rgba(232,93,31,0.4); background:rgba(232,93,31,0.05); padding:14px; text-align:center;">
+        <p style="font-size:12px; font-weight:700;">2 स्थान शेष</p>
+        <p class="muted" style="font-size:11px; margin-top:2px;">अपने परिवारजनों का नाम-गोत्र जोड़ें — संकल्प में शामिल होंगे।</p>
+        <button style="margin-top:10px; display:inline-flex; align-items:center; gap:6px; background:#E85D1F; color:#fff; font-size:12.5px; font-weight:700; padding:8px 16px; border-radius:9999px; border:none; cursor:pointer;">
+          सदस्य जोड़ें
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== PRASAD ADDRESS ===== -->
+    <div class="card" style="padding:16px; display:flex; align-items:flex-start; gap:12px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3FAE55" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      <div style="min-width:0;">
+        <div style="font-size:14px; font-weight:700;">प्रसाद पता</div>
+        <p class="muted" style="font-size:12px; margin-top:2px;">बी-204, शांति निकुंज, वैशाली नगर, जयपुर, राजस्थान - 302021</p>
+      </div>
+    </div>
+
+    <button class="btn-primary" style="width:100%; margin-top:2px;">
+      प्रोफ़ाइल पूरी करें
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+
+  <!-- ===== BOTTOM NAV ===== -->
+  <div style="margin-top:18px; background:#fff; border-top:1px solid rgba(0,0,0,0.06); display:flex; padding:8px 6px;">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      <span style="font-size:10px; font-weight:600; color:#6B6B6B;">Home</span>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px; position:relative;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E85D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 14 9l6 .5-4.5 4 1.4 6L12 16.8 6.1 19.5 7.5 13.5 3 9.5 9 9Z"/></svg>
+      <span style="font-size:10px; font-weight:700; color:#E85D1F;">My Subscription</span>
+      <span style="position:absolute; top:2px; left:calc(50% + 10px); width:7px; height:7px; border-radius:50%; background:#3FAE55; border:1.5px solid #fff;"></span>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+      <span style="font-size:10px; font-weight:600; color:#6B6B6B;">Reviews</span>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+      <span style="font-size:10px; font-weight:600; color:#6B6B6B;">About Us</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
