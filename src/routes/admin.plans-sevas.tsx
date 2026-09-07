@@ -45,6 +45,7 @@ export const Route = createFileRoute("/admin/plans-sevas")({
 interface Plan {
   id: string;
   name: string;
+  name_en: string | null;
   slug: string;
   price_paise: number;
   billing_period: "monthly" | "yearly";
@@ -58,6 +59,7 @@ interface Plan {
 interface Seva {
   id: string;
   name: string;
+  name_en: string | null;
   slug: string;
   description: string | null;
   sort_order: number;
@@ -564,6 +566,7 @@ function PlansCrud({
       .from("plans")
       .update({
         name: editing.name.trim(),
+        name_en: editing.name_en?.trim() || null,
         price_paise: editing.price_paise,
         billing_period: editing.billing_period,
         tagline: editing.tagline?.trim() || null,
@@ -699,14 +702,27 @@ function PlansCrud({
           </DialogHeader>
           {editing && (
             <div className="space-y-4 mt-2">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Name</Label>
-                <Input
-                  id="edit-plan-name"
-                  value={editing.name}
-                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  className="text-sm"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">Name (Hindi / default)</Label>
+                  <Input
+                    id="edit-plan-name"
+                    value={editing.name}
+                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">English Name</Label>
+                  <Input
+                    id="edit-plan-name-en"
+                    value={editing.name_en ?? ""}
+                    onChange={(e) => setEditing({ ...editing, name_en: e.target.value })}
+                    className="text-sm"
+                    placeholder="e.g. Griha Shanti"
+                  />
+                  <p className="text-[10px] text-slate-400">Shown when the site is in English. Blank → uses the default name.</p>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -862,6 +878,7 @@ function SevasCrud({
   const [creating, setCreating] = useState(false);
   const [newSeva, setNewSeva] = useState<Partial<Seva>>({
     name: "",
+    name_en: "",
     slug: "",
     description: "",
     sort_order: 0,
@@ -879,6 +896,7 @@ function SevasCrud({
       .from("sevas")
       .update({
         name: editing.name.trim(),
+        name_en: editing.name_en?.trim() || null,
         slug: editing.slug.trim(),
         description: editing.description?.trim() || null,
         sort_order: editing.sort_order,
@@ -908,6 +926,7 @@ function SevasCrud({
     setError(null);
     const { error: err } = await supabase.from("sevas").insert({
       name: newSeva.name.trim(),
+      name_en: newSeva.name_en?.trim() || null,
       slug: newSeva.slug.trim(),
       description: newSeva.description?.trim() || null,
       sort_order: newSeva.sort_order ?? 0,
@@ -917,7 +936,7 @@ function SevasCrud({
       setError(err.message);
     } else {
       setCreating(false);
-      setNewSeva({ name: "", slug: "", description: "", sort_order: 0, is_active: true });
+      setNewSeva({ name: "", name_en: "", slug: "", description: "", sort_order: 0, is_active: true });
       onUpdated();
     }
     setSaving(false);
@@ -1051,6 +1070,17 @@ function SevasCrud({
                 </div>
               </div>
               <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-700">English Name</Label>
+                <Input
+                  id="edit-seva-name-en"
+                  value={editing.name_en ?? ""}
+                  onChange={(e) => setEditing({ ...editing, name_en: e.target.value })}
+                  className="text-sm"
+                  placeholder="e.g. Sundarkand Path"
+                />
+                <p className="text-[10px] text-slate-400">Shown when the site is in English. Blank → uses the default name.</p>
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-700">Description</Label>
                 <Textarea
                   id="edit-seva-desc"
@@ -1163,6 +1193,17 @@ function SevasCrud({
                   placeholder="sundarkand-path"
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-slate-700">English Name</Label>
+              <Input
+                id="create-seva-name-en"
+                value={newSeva.name_en ?? ""}
+                onChange={(e) => setNewSeva({ ...newSeva, name_en: e.target.value })}
+                className="text-sm"
+                placeholder="e.g. Sundarkand Path"
+              />
+              <p className="text-[10px] text-slate-400">Optional — shown when the site is in English.</p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">Description</Label>

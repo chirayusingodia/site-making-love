@@ -15,6 +15,8 @@
 export interface SevaRowLite {
   id: string;
   name: string;
+  /** Optional English display name; null → fall back to `name`. */
+  name_en?: string | null;
   slug: string;
   description: string | null;
 }
@@ -30,6 +32,8 @@ export type LiveSeva = {
   id: string;
   slug: string;
   name: string;
+  /** Optional English display name; null → fall back to `name`. */
+  nameEn: string | null;
   description: string | null;
   /** e.g. ["2nd Tuesday"] or ["2nd Tuesday", "Last Saturday"] */
   days: string[];
@@ -81,6 +85,7 @@ export function buildLiveSeva(seva: SevaRowLite, rules: ScheduleRuleLite[]): Liv
     id: seva.id,
     slug: seva.slug,
     name: seva.name,
+    nameEn: seva.name_en ?? null,
     description: seva.description,
     days,
     frequency: days.length > 0 ? frequencyLabel(days.length) : "",

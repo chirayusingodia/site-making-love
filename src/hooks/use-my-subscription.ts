@@ -24,6 +24,7 @@ export interface CurrentSubscription {
   created_at: string;
   plan: {
     name: string;
+    name_en: string | null;
     slug: string;
     billing_period: string;
     price_paise: number;
@@ -36,13 +37,22 @@ interface SubRow {
   start_date: string | null;
   next_billing_date: string | null;
   created_at: string;
-  plans: { name: string; slug: string; billing_period: string; price_paise: number } | null;
+  plans: {
+    name: string;
+    name_en: string | null;
+    slug: string;
+    billing_period: string;
+    price_paise: number;
+  } | null;
 }
 
 async function fetchCurrentSubscription(userId: string): Promise<CurrentSubscription | null> {
   const res = await supabase
     .from("subscriptions")
-    .select("id,status,start_date,next_billing_date,created_at,plans(name,slug,billing_period,price_paise)")
+    // plans(*) — not an explicit column list — so this keeps working
+    // whether or not plans.name_en exists yet (migration 035). name_en
+    // is simply absent (→ null) until the column is added.
+    .select("id,status,start_date,next_billing_date,created_at,plans(*)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   const rows = (res.data as unknown as SubRow[]) ?? [];

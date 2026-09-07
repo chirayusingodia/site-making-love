@@ -45,6 +45,7 @@ export type PlanSlide = {
 interface DbPlan {
   id: string;
   name: string;
+  name_en: string | null;
   slug: string;
   price_paise: number;
   billing_period: "monthly" | "yearly";
@@ -57,6 +58,7 @@ interface DbPlan {
 interface DbSeva {
   id: string;
   name: string;
+  name_en: string | null;
   slug: string;
   description: string | null;
   is_active: boolean;
@@ -87,6 +89,7 @@ export type Plan = {
   id: string; // public URL id (slug alias, e.g. "grah" for "premium")
   slug: string; // DB slug
   name: string; // DB plans.name
+  nameEn: string | null; // DB plans.name_en (optional English display name)
   heading: string; // presentation
   subheading: string; // presentation
   tagline: string; // DB plans.tagline (presentation fallback when null)
@@ -475,6 +478,7 @@ function buildPlan(
     id: resolvedPres.planId,
     slug: dbPlan.slug,
     name: dbPlan.name,
+    nameEn: dbPlan.name_en ?? null,
     heading: resolvedPres.heading,
     subheading: resolvedPres.subheading,
     tagline: dbPlan.tagline ?? resolvedPres.tagline,

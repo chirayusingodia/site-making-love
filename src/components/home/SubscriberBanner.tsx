@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Landmark, CalendarDays, Check } from "lucide-react";
 import { useMySubscription } from "@/hooks/use-my-subscription";
 import { useSessionProfile } from "@/hooks/use-session";
-import { useTranslation } from "@/lib/translations";
+import { useTranslation, localizedName } from "@/lib/translations";
 import { usePublicPlans, getPlanById } from "@/lib/plans";
 import { isHawanSeva } from "@/lib/plans-schedule";
 import { nextSevaDate, fmtSevaDate, daysUntil, monthsActive } from "@/lib/seva-dates";
@@ -38,7 +38,7 @@ export function SubscriberBanner() {
   const months = monthsActive(subscription.start_date);
 
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] ?? "";
-  const planName = plan?.name ?? "";
+  const planName = plan ? localizedName(plan.name, plan.name_en, lang) : "";
   const whenLabel =
     inDays > 0
       ? lang === "english"
@@ -47,7 +47,7 @@ export function SubscriberBanner() {
       : t("s_today");
 
   // Up to 4 seva-name pills + a Video Proof pill; overflow collapses to "+N".
-  const pills = includedSevas.slice(0, 4).map((s) => s.name);
+  const pills = includedSevas.slice(0, 4).map((s) => localizedName(s.name, s.nameEn, lang));
   const extra = sevaCount - pills.length;
 
   return (

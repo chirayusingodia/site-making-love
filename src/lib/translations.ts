@@ -468,6 +468,16 @@ export const translations = {
   },
 } as const;
 
+/**
+ * Pick a DB-backed display name for the current language. Plan and seva
+ * names live in the DB (Devanagari ritual names); an optional `name_en`
+ * column supplies an English rendering. Falls back to the default name
+ * whenever the English one is missing, so untranslated rows still show.
+ */
+export function localizedName(name: string, nameEn: string | null | undefined, lang: Lang): string {
+  return lang === "english" && nameEn?.trim() ? nameEn.trim() : name;
+}
+
 export function useLanguage() {
   // [Pass-2 L8] Hydration-safe: the SSR pass and the first client
   // render must agree (both "hindi"); a stored preference is applied

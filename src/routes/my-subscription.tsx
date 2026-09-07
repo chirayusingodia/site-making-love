@@ -34,7 +34,7 @@ import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 import { usePublicPlans, getPlanById, formatINR } from "@/lib/plans";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
 import { nextSevaDate, fmtSevaDate, daysUntil, monthsActive } from "@/lib/seva-dates";
-import { useTranslation, type Lang } from "@/lib/translations";
+import { useTranslation, localizedName, type Lang } from "@/lib/translations";
 
 export const Route = createFileRoute("/my-subscription")({
   head: () => ({
@@ -69,7 +69,13 @@ interface SubRow {
   start_date: string | null;
   next_billing_date: string | null;
   created_at: string;
-  plans: { name: string; billing_period: string; price_paise: number; slug: string } | null;
+  plans: {
+    name: string;
+    name_en: string | null;
+    billing_period: string;
+    price_paise: number;
+    slug: string;
+  } | null;
 }
 
 interface MemberRow {
@@ -185,7 +191,9 @@ function MySubscriptionPage() {
       const subsRes = await supabase
         .from("subscriptions")
         .select(
-          "id,status,start_date,next_billing_date,created_at,plans(name,slug,billing_period,price_paise)",
+          // plans(*) so a not-yet-migrated DB (no plans.name_en) still
+          // returns rows; name_en lights up once migration 035 lands.
+          "id,status,start_date,next_billing_date,created_at,plans(*)",
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
@@ -414,7 +422,9 @@ function MySubscriptionPage() {
           </div>
           <div className="flex items-end justify-between mt-2">
             <div>
-              <div className="text-xl font-bold">{plan?.name ?? "—"}</div>
+              <div className="text-xl font-bold">
+                {plan ? localizedName(plan.name, plan.name_en, lang) : "—"}
+              </div>
               <div className="text-xs text-muted-foreground mt-0.5">{t("ms_location")}</div>
             </div>
             {plan && (
@@ -496,7 +506,7 @@ function MySubscriptionPage() {
                         </span>
                       )}
                     </div>
-                    <div className="text-[13.5px] font-bold leading-tight">{s.name}</div>
+                    <div className="text-[13.5px] font-bold leading-tight">{localizedName(s.name, s.nameEn, lang)}</div>
                     {s.days.length > 0 && (
                       <div className="text-[11px] text-muted-foreground leading-tight">{s.days.join(" + ")}</div>
                     )}
