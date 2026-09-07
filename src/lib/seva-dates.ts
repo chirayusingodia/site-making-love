@@ -35,10 +35,13 @@ function lastWeekday(year: number, month: number, weekday: number): Date {
   return new Date(year, month, last.getDate() - shift);
 }
 
+/** Translation keys for the two cadence labels — resolved by the caller via t(). */
+export type SevaLabelKey = "sd_2nd_tuesday" | "sd_last_saturday";
+
 export interface SevaDate {
   date: Date;
-  /** short Hindi cadence label for the date */
-  label: string;
+  /** i18n key for the cadence label — caller resolves with t(labelKey) */
+  labelKey: SevaLabelKey;
 }
 
 /**
@@ -57,9 +60,9 @@ export function nextSevaDate(hasLastSaturday: boolean): SevaDate {
     [y, m],
     [y, m + 1],
   ] as const) {
-    candidates.push({ date: nthWeekday(yy, mm, 2 /* Tue */, 2), label: "दूसरा मंगलवार" });
+    candidates.push({ date: nthWeekday(yy, mm, 2 /* Tue */, 2), labelKey: "sd_2nd_tuesday" });
     if (hasLastSaturday) {
-      candidates.push({ date: lastWeekday(yy, mm, 6 /* Sat */), label: "अंतिम शनिवार" });
+      candidates.push({ date: lastWeekday(yy, mm, 6 /* Sat */), labelKey: "sd_last_saturday" });
     }
   }
 
@@ -90,9 +93,9 @@ export function monthsActive(startISO: string | null): number {
   return Math.max(0, months);
 }
 
-/** e.g. "मंगल, 13 अक्टूबर" — short IST-anchored weekday + day + month, Hindi. */
-export function fmtSevaDate(d: Date): string {
-  return d.toLocaleDateString("hi-IN", {
+/** e.g. "मंगल, 13 अक्टूबर" / "Tue, 13 October" — IST-anchored, per language. */
+export function fmtSevaDate(d: Date, lang: "hindi" | "english" = "hindi"): string {
+  return d.toLocaleDateString(lang === "english" ? "en-IN" : "hi-IN", {
     weekday: "short",
     day: "numeric",
     month: "long",

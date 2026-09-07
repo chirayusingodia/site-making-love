@@ -120,7 +120,7 @@ export function Header() {
               className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1.5 text-[11px] font-extrabold text-brand-deep hover:bg-brand/15 transition-colors"
               aria-label="Meri sadasyata"
             >
-              <Sparkles size={12} /> सदस्य
+              <Sparkles size={12} /> {t("member_badge")}
             </Link>
           )}
           <Link to="/profile" className="relative w-9 h-9 md:w-10 md:h-10 rounded-full bg-black text-white flex items-center justify-center" aria-label="Account">

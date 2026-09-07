@@ -34,6 +34,7 @@ import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 import { usePublicPlans, getPlanById, formatINR } from "@/lib/plans";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
 import { nextSevaDate, fmtSevaDate, daysUntil, monthsActive } from "@/lib/seva-dates";
+import { useTranslation, type Lang } from "@/lib/translations";
 
 export const Route = createFileRoute("/my-subscription")({
   head: () => ({
@@ -51,19 +52,15 @@ export const Route = createFileRoute("/my-subscription")({
 // ─────────────────────────────────────────────────────────────
 // MY SUBSCRIPTION — the devotee's "Punya Bank" passbook.
 //
-// Everything here is real (RLS-scoped) or calendar-derived; nothing
-// is fabricated. Accumulated punya = months active (from the sub's
-// own start_date) + completed sevas (distinct delivered proof
-// batches) + Ashirwad Patras. "₹399 me kya-kya" is the LIVE plan
-// composition (plan_sevas + addons), never hardcoded. The bahi-khata
-// ledger is driven by ashirwad_patras (labelled + dated + a proof
-// image) — the one subscriber-readable, human-legible record of a
-// completed pooja.
-//
-// Status is still rendered HONESTLY (Bug B): a fresh pending row
-// shows "Confirming…", a stale one an explicit retry, and
-// cancelled/expired/halted keep their own labels. Activation stays
-// webhook-only; this page only reflects the status that exists.
+// Fully bilingual: every UI label is a translation key (t()), dates
+// format per the active language, and seva NAMES come straight from
+// the DB (ritual names, shown as-is in both languages). Everything is
+// real (RLS-scoped) or calendar-derived — nothing fabricated.
+// Accumulated punya = months active + completed sevas (distinct
+// delivered proof batches) + Ashirwad Patras; "kya-kya" is the LIVE
+// plan composition; the bahi-khata ledger is driven by ashirwad_patras.
+// Status stays honest (Bug B): fresh pending → "Confirming…", stale →
+// explicit retry, others keep their own labels.
 // ─────────────────────────────────────────────────────────────
 
 interface SubRow {
@@ -118,22 +115,24 @@ function fmtDate(d: string | null): string {
       });
 }
 
-// Short IST day + month, e.g. "09 सित॰" — for the ledger date chip.
-function fmtDayMonth(d: string): { day: string; mon: string } {
+// Short day + month for the ledger date chip, per language.
+function fmtDayMonth(d: string, lang: Lang): { day: string; mon: string } {
   const iso = d.length === 10 ? `${d}T00:00:00+05:30` : d;
   const dt = new Date(iso);
   if (isNaN(dt.getTime())) return { day: "—", mon: "" };
+  const loc = lang === "english" ? "en-IN" : "hi-IN";
   return {
     day: dt.toLocaleDateString("en-IN", { day: "2-digit", timeZone: "Asia/Kolkata" }),
-    mon: dt.toLocaleDateString("hi-IN", { month: "short", timeZone: "Asia/Kolkata" }),
+    mon: dt.toLocaleDateString(loc, { month: "short", timeZone: "Asia/Kolkata" }),
   };
 }
 
 // [Bug B] Honest status pill — colours/icons mirror admin.subscribers.tsx's
-// StatusBadge so customer-facing and admin-facing language match.
+// StatusBadge so customer-facing and admin-facing language match. The
+// "active" label is localised at the call site.
 function statusPill(status: string, pendingStale: boolean) {
   if (status === "active") {
-    return { label: "सक्रिय", cls: "bg-success/12 text-[#2f8f43]", icon: ShieldCheck };
+    return { label: "Active", cls: "bg-success/12 text-[#2f8f43]", icon: ShieldCheck };
   }
   if (status === "pending") {
     return pendingStale
@@ -167,6 +166,7 @@ function sevaIcon(s: LiveSeva): LucideIcon {
 
 function MySubscriptionPage() {
   const { userId, loading: sessionLoading } = useSessionProfile();
+  const { t, lang } = useTranslation();
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [membersBySub, setMembersBySub] = useState<Record<string, MemberRow[]>>({});
   const [patras, setPatras] = useState<PatraRow[]>([]);
@@ -254,17 +254,15 @@ function MySubscriptionPage() {
               <Landmark size={34} className="text-brand" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Login karein</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Apna Punya Bank aur sadasyata dekhne ke liye mobile OTP se login karein.
-              </p>
+              <h1 className="text-2xl font-bold">{t("ms_login_title")}</h1>
+              <p className="mt-2 text-sm text-muted-foreground">{t("ms_login_desc")}</p>
             </div>
             <Link
               to="/login"
               search={{ redirect: "/my-subscription" }}
               className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full hover:bg-brand-deep transition-colors"
             >
-              <LogIn size={18} /> Login
+              <LogIn size={18} /> {t("ms_login_btn")}
             </Link>
           </div>
         </main>
@@ -284,16 +282,14 @@ function MySubscriptionPage() {
               <Landmark size={34} className="text-brand" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">आपका पुण्य बैंक खाली है</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                अपनी पहली सेवा शुरू करने के लिए एक Sadasyata चुनें — फिर हर माह का पुण्य यहाँ जुड़ता जाएगा।
-              </p>
+              <h1 className="text-2xl font-bold">{t("ms_empty_title")}</h1>
+              <p className="mt-2 text-sm text-muted-foreground">{t("ms_empty_desc")}</p>
             </div>
             <Link
               to="/plans"
               className="inline-flex items-center gap-2 bg-brand text-white font-bold px-6 py-3.5 rounded-full hover:bg-brand-deep transition-colors"
             >
-              See Sadasyata <ArrowRight size={18} />
+              {t("ms_see_sadasyata")} <ArrowRight size={18} />
             </Link>
           </div>
         </main>
@@ -309,6 +305,7 @@ function MySubscriptionPage() {
   const pendingStale = current.status === "pending" && pendingCheckoutIsStale(current.created_at);
   const pill = statusPill(current.status, pendingStale);
   const PillIcon = pill.icon;
+  const pillLabel = current.status === "active" ? t("s_active") : pill.label;
 
   const statusCopy: string | null =
     current.status === "pending"
@@ -323,7 +320,7 @@ function MySubscriptionPage() {
             ? "Payment ki samasya ki wajah se seva ruki hai — hamari team aapse sampark karegi."
             : null;
 
-  // Live plan composition for "₹399 me kya-kya" — never hardcoded.
+  // Live plan composition for "kya-kya" — never hardcoded.
   const livePlan = plansData && plan ? getPlanById(plansData.plans, plan.slug) : undefined;
   const includedSevas = livePlan?.includedSevas ?? [];
   const hasPrasad = livePlan?.comparison.prasad?.has ?? false;
@@ -336,8 +333,22 @@ function MySubscriptionPage() {
   // Next scheduled seva (cadence hint) — only meaningful while active.
   const next = isActive ? nextSevaDate(hasLastSaturday) : null;
   const nextInDays = next ? daysUntil(next.date) : 0;
+  const whenLabel = next
+    ? nextInDays > 0
+      ? lang === "english"
+        ? `in ${nextInDays} ${nextInDays === 1 ? t("unit_day") : t("unit_days")}`
+        : `${nextInDays} ${t("unit_days")} में`
+      : t("s_today")
+    : "";
 
   const joinLabel = fmtDate(current.start_date ?? current.created_at);
+  const priceLabel = plan ? formatINR(plan.price_paise) : "";
+  const whatsInTitle = plan
+    ? lang === "english"
+      ? `What you get for ${priceLabel}`
+      : `${priceLabel} में क्या-क्या`
+    : t("ms_whats_included");
+  const perLabel = plan?.billing_period === "yearly" ? t("ms_per_year") : t("ms_per_month");
 
   return (
     <SiteChrome>
@@ -356,39 +367,39 @@ function MySubscriptionPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Landmark size={18} className="text-[#FFE7B8]" />
-                <span className="text-xs font-bold uppercase tracking-[0.1em] text-[#FFE7B8]">आपका पुण्य बैंक</span>
+                <span className="text-xs font-bold uppercase tracking-[0.1em] text-[#FFE7B8]">{t("ms_punya_bank")}</span>
               </div>
-              <span className="text-[11px] text-[#FFE7B8]/85">जुड़े · {joinLabel}</span>
+              <span className="text-[11px] text-[#FFE7B8]/85">{t("ms_joined")} · {joinLabel}</span>
             </div>
 
             {sevasCompleted > 0 ? (
               <div className="mt-4 flex items-end gap-2.5">
                 <div className="font-display text-[52px] font-extrabold leading-[0.9] text-white">{sevasCompleted}</div>
                 <div className="pb-1.5">
-                  <div className="text-[15px] font-bold text-white">सेवाएँ संपन्न</div>
-                  <div className="text-xs text-[#FFF3EA]/80">आपके नाम एवं गोत्र से</div>
+                  <div className="text-[15px] font-bold text-white">{t("ms_sevas_done")}</div>
+                  <div className="text-xs text-[#FFF3EA]/80">{t("ms_in_name_gotra")}</div>
                 </div>
               </div>
             ) : (
               <div className="mt-4">
-                <div className="text-[21px] font-bold text-white">आपकी सेवा यात्रा शुरू 🪔</div>
+                <div className="text-[21px] font-bold text-white">{t("ms_journey")}</div>
                 <div className="text-xs text-[#FFF3EA]/85 mt-0.5">
                   {next
-                    ? `पहली सेवा — ${fmtSevaDate(next.date)} (${next.label})`
-                    : "आपकी सदस्यता की पुष्टि होते ही पहली सेवा शुरू होगी।"}
+                    ? `${t("ms_first_seva")} — ${fmtSevaDate(next.date, lang)} (${t(next.labelKey)})`
+                    : t("ms_confirm_wait")}
                 </div>
               </div>
             )}
 
             <div className="mt-4 flex gap-2">
-              <PunyaStat value={months > 0 ? `${months} माह` : "नया"} label="सक्रिय सदस्यता" />
-              <PunyaStat value={`${patraCount}`} label="आशीर्वाद पत्र" />
-              <PunyaStat value={`${sevasCompleted}`} label="संपन्न सेवाएँ" />
+              <PunyaStat value={months > 0 ? `${months} ${t("unit_months")}` : t("ms_new")} label={t("ms_active_membership")} />
+              <PunyaStat value={`${patraCount}`} label={t("ms_patra")} />
+              <PunyaStat value={`${sevasCompleted}`} label={t("ms_completed_sevas")} />
             </div>
 
             <div className="mt-3.5 pt-3 border-t border-[#FFE7B8]/25 flex items-center gap-2">
               <Sparkles size={15} className="text-[#FFE7B8]" />
-              <span className="font-scripture text-[13px] text-[#FFF3EA]">दान पुण्य आपका · सेवा हमारी</span>
+              <span className="font-scripture text-[13px] text-[#FFF3EA]">{t("ms_tagline")}</span>
             </div>
           </div>
         </section>
@@ -396,20 +407,20 @@ function MySubscriptionPage() {
         {/* ═══ ACTIVE MEMBERSHIP ═══ */}
         <div className="card-soft p-5">
           <div className="flex items-center justify-between">
-            <div className="text-[11px] font-bold uppercase tracking-[0.09em] text-brand">वर्तमान सदस्यता</div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.09em] text-brand">{t("ms_current")}</div>
             <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${pill.cls}`}>
-              <PillIcon size={12} /> {pill.label}
+              <PillIcon size={12} /> {pillLabel}
             </span>
           </div>
           <div className="flex items-end justify-between mt-2">
             <div>
               <div className="text-xl font-bold">{plan?.name ?? "—"}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">तीर्थ गुरु पुष्करराज, पुष्कर</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{t("ms_location")}</div>
             </div>
             {plan && (
               <div className="text-right shrink-0">
-                <span className="font-display text-2xl font-extrabold text-brand">{formatINR(plan.price_paise)}</span>
-                <span className="text-sm text-muted-foreground font-semibold">/{plan.billing_period === "yearly" ? "वर्ष" : "माह"}</span>
+                <span className="font-display text-2xl font-extrabold text-brand">{priceLabel}</span>
+                <span className="text-sm text-muted-foreground font-semibold">{perLabel}</span>
               </div>
             )}
           </div>
@@ -425,21 +436,21 @@ function MySubscriptionPage() {
               <div className="flex-1 bg-[#FFF7F1] rounded-2xl p-3">
                 <div className="flex items-center gap-1.5 text-brand">
                   <CalendarDays size={14} />
-                  <span className="text-[11px] font-bold">अगली सेवा</span>
+                  <span className="text-[11px] font-bold">{t("ms_next_seva")}</span>
                 </div>
-                <div className="text-sm font-bold mt-1">{next ? fmtSevaDate(next.date) : "—"}</div>
+                <div className="text-sm font-bold mt-1">{next ? fmtSevaDate(next.date, lang) : "—"}</div>
                 <div className="text-[11px] text-muted-foreground">
-                  {next?.label}{nextInDays > 0 ? ` · ${nextInDays} दिन में` : " · आज"}
+                  {next ? t(next.labelKey) : ""}{whenLabel ? ` · ${whenLabel}` : ""}
                 </div>
               </div>
               <div className="flex-1 bg-[#FFF7F1] rounded-2xl p-3">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Clock size={14} />
-                  <span className="text-[11px] font-bold">अगला बिलिंग</span>
+                  <span className="text-[11px] font-bold">{t("ms_next_billing")}</span>
                 </div>
                 <div className="text-sm font-bold mt-1">{fmtDate(current.next_billing_date)}</div>
                 <div className="text-[11px] text-muted-foreground">
-                  ऑटो-रिन्यू{plan ? ` · ${formatINR(plan.price_paise)}` : ""}
+                  {t("ms_auto_renew")}{plan ? ` · ${priceLabel}` : ""}
                 </div>
               </div>
             </div>
@@ -453,23 +464,21 @@ function MySubscriptionPage() {
               params={{ planId: plan.slug }}
               className="mt-3.5 inline-flex items-center gap-2 bg-brand text-white text-sm font-bold px-5 py-2.5 rounded-full hover:bg-brand-deep transition-colors"
             >
-              <RotateCcw size={15} /> Payment Dobara Karein <ArrowRight size={15} />
+              <RotateCcw size={15} /> {t("ms_retry_pay")} <ArrowRight size={15} />
             </Link>
           )}
         </div>
 
-        {/* ═══ WHAT ₹399 INCLUDES — live composition ═══ */}
+        {/* ═══ WHAT'S INCLUDED — live composition ═══ */}
         {includedSevas.length > 0 && (
           <div className="card-soft p-5">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.09em] text-brand">आपकी सदस्यता में</div>
-                <h3 className="text-[17px] mt-0.5">
-                  {plan ? `${formatINR(plan.price_paise)} में क्या-क्या` : "क्या-क्या शामिल है"}
-                </h3>
+                <div className="text-[11px] font-bold uppercase tracking-[0.09em] text-brand">{t("ms_in_membership")}</div>
+                <h3 className="text-[17px] mt-0.5">{whatsInTitle}</h3>
               </div>
               <div className="bg-accent text-brand text-[11px] font-extrabold px-2.5 py-1.5 rounded-full whitespace-nowrap">
-                {includedSevas.length} सेवाएँ
+                {includedSevas.length} {t("s_sevas")}
               </div>
             </div>
 
@@ -498,25 +507,25 @@ function MySubscriptionPage() {
               {/* Universal platform benefit — every plan, every seva. */}
               <div className="rounded-2xl bg-[#EAF8EE] border border-whatsapp/25 p-3 flex flex-col gap-2">
                 <MessageCircle size={22} className="text-[#1FA855]" />
-                <div className="text-[13.5px] font-bold leading-tight">WhatsApp Video Proof</div>
-                <div className="text-[11px] text-[#1FA855] font-semibold leading-tight">हर सेवा का प्रमाण</div>
+                <div className="text-[13.5px] font-bold leading-tight">{t("s_video_proof")}</div>
+                <div className="text-[11px] text-[#1FA855] font-semibold leading-tight">{t("ms_video_proof_sub")}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-3.5 mt-3.5 pt-3.5 border-t border-black/5">
               <div className="flex items-center gap-1.5">
                 <Users size={17} className="text-brand" />
-                <span className="text-xs font-bold">4 परिवारजनों तक</span>
+                <span className="text-xs font-bold">{t("ms_upto_family")}</span>
               </div>
               <div className="w-px h-5 bg-black/10" />
               <div className="flex items-center gap-1.5">
                 <ScrollText size={17} className="text-brand" />
-                <span className="text-xs font-bold">हर पूजा पर आशीर्वाद पत्र</span>
+                <span className="text-xs font-bold">{t("ms_patra_each")}</span>
               </div>
             </div>
             {hasPrasad && (
               <div className="mt-2.5 inline-flex items-center gap-1.5 bg-brand-soft text-brand-deep text-[11px] font-bold px-3 py-1.5 rounded-full">
-                <Sparkles size={12} /> Prasad Box घर तक
+                <Sparkles size={12} /> {t("ms_prasad_box")}
               </div>
             )}
           </div>
@@ -526,25 +535,23 @@ function MySubscriptionPage() {
         <div className="card-soft p-5">
           <div className="flex items-center gap-2">
             <BookOpen size={18} className="text-brand" />
-            <h3 className="text-base">पुण्य बही-खाता</h3>
+            <h3 className="text-base">{t("ms_ledger")}</h3>
           </div>
-          <p className="text-[11.5px] text-muted-foreground mt-0.5">
-            आपके नाम से संपन्न हर सेवा का लेखा — प्रमाण सहित।
-          </p>
+          <p className="text-[11.5px] text-muted-foreground mt-0.5">{t("ms_ledger_desc")}</p>
 
           {patras.length === 0 ? (
             <div className="mt-3 rounded-2xl border border-dashed border-brand/40 bg-brand-soft/30 p-4 text-center">
-              <p className="text-xs font-semibold text-foreground/80">अभी कोई सेवा दर्ज नहीं</p>
+              <p className="text-xs font-semibold text-foreground/80">{t("ms_ledger_empty")}</p>
               <p className="text-[11px] text-muted-foreground mt-1">
                 {isActive && next
-                  ? `आपकी पहली सेवा ${fmtSevaDate(next.date)} को होगी — उसका प्रमाण WhatsApp पर एवं यहाँ जुड़ जाएगा।`
-                  : "सदस्यता सक्रिय होते ही आपकी सेवाएँ यहाँ दर्ज होने लगेंगी।"}
+                  ? `${t("ms_ledger_empty_active_pre")} ${fmtSevaDate(next.date, lang)} ${t("ms_ledger_empty_active_post")}`
+                  : t("ms_ledger_empty_inactive")}
               </p>
             </div>
           ) : (
             <ul className="mt-3">
               {patras.map((p) => {
-                const dm = fmtDayMonth(p.batch_date);
+                const dm = fmtDayMonth(p.batch_date, lang);
                 return (
                   <li key={p.id} className="flex items-center gap-3 py-2.5 border-b border-black/5 last:border-0">
                     <div className="w-10 text-center shrink-0">
@@ -553,7 +560,7 @@ function MySubscriptionPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13.5px] font-bold truncate">{p.occasion_label}</div>
-                      <div className="text-[11px] text-muted-foreground">आशीर्वाद पत्र {p.patra_no}</div>
+                      <div className="text-[11px] text-muted-foreground">{t("ms_patra")} {p.patra_no}</div>
                     </div>
                     {p.image_url ? (
                       <a
@@ -562,10 +569,10 @@ function MySubscriptionPage() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 bg-[#EAF8EE] text-[#1FA855] text-[11.5px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
                       >
-                        <Play size={12} /> प्रमाण
+                        <Play size={12} /> {t("ms_proof")}
                       </a>
                     ) : (
-                      <span className="text-[11px] text-muted-foreground shrink-0">तैयार हो रहा</span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">{t("ms_preparing")}</span>
                     )}
                   </li>
                 );
@@ -579,23 +586,21 @@ function MySubscriptionPage() {
           <div className="card-soft p-5">
             <div className="flex items-center gap-2">
               <ScrollText size={18} className="text-brand" />
-              <h3 className="text-base">आशीर्वाद पत्र</h3>
+              <h3 className="text-base">{t("ms_patra_title")}</h3>
             </div>
-            <p className="text-[11.5px] text-muted-foreground mt-0.5">
-              हर पूजा के बाद आपके परिवार के नाम से जारी।
-            </p>
+            <p className="text-[11.5px] text-muted-foreground mt-0.5">{t("ms_patra_desc")}</p>
             <div className="flex gap-3 mt-3 overflow-x-auto scrollbar-none pb-1">
               {patras.map((p) => (
                 <div key={p.id} className="shrink-0 w-[104px]">
                   <div className="h-[140px] rounded-xl border border-brand/25 overflow-hidden bg-gradient-to-b from-[#FFF7EE] to-[#FDE9D6]">
                     {p.image_url ? (
                       <a href={p.image_url} target="_blank" rel="noreferrer">
-                        <img src={p.image_url} alt={`आशीर्वाद पत्र ${p.patra_no}`} className="w-full h-full object-cover" />
+                        <img src={p.image_url} alt={`${t("ms_patra")} ${p.patra_no}`} className="w-full h-full object-cover" />
                       </a>
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-2 text-center">
                         <ScrollText size={24} className="text-brand-deep" />
-                        <span className="text-[9px] text-muted-foreground">जल्द ही</span>
+                        <span className="text-[9px] text-muted-foreground">{t("ms_soon")}</span>
                       </div>
                     )}
                   </div>
@@ -603,10 +608,10 @@ function MySubscriptionPage() {
                     {p.image_url && (
                       <>
                         <a href={p.image_url} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-brand inline-flex items-center gap-1">
-                          <ExternalLink size={11} /> देखें
+                          <ExternalLink size={11} /> {t("ms_view")}
                         </a>
                         <a href={patraDownloadUrl(p.image_url)} className="text-[11px] font-bold text-foreground/70 inline-flex items-center gap-1">
-                          <Download size={11} /> Save
+                          <Download size={11} /> {t("ms_save")}
                         </a>
                       </>
                     )}
@@ -622,19 +627,17 @@ function MySubscriptionPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users size={18} className={members.length === 0 ? "text-brand" : "text-foreground"} />
-              <h3 className="text-base">परिवार संकल्प</h3>
+              <h3 className="text-base">{t("ms_family")}</h3>
             </div>
             <span className="text-xs text-muted-foreground font-semibold">{members.length}/4</span>
           </div>
 
           {members.length === 0 ? (
             <div className="mt-3 rounded-2xl border border-dashed border-brand/40 bg-brand-soft/30 p-4 text-center space-y-2">
-              <p className="text-xs text-foreground/80 font-semibold">Sankalp Pending</p>
-              <p className="text-[11px] text-muted-foreground">
-                Naam-gotra abhi add nahi hue. Hamari team call karke help bhi karti hai — ya aap khud abhi add kar sakte hain.
-              </p>
+              <p className="text-xs text-foreground/80 font-semibold">{t("ms_sankalp_pending")}</p>
+              <p className="text-[11px] text-muted-foreground">{t("ms_sankalp_pending_desc")}</p>
               <Link to="/profile" className="inline-flex items-center gap-1.5 bg-brand text-white text-xs font-bold px-4 py-2 rounded-full mt-1">
-                Details Add Karein <ArrowRight size={13} />
+                {t("ms_add_details")} <ArrowRight size={13} />
               </Link>
             </div>
           ) : (
@@ -648,7 +651,7 @@ function MySubscriptionPage() {
                       </div>
                       <span className="text-sm font-semibold">{m.full_name}</span>
                     </div>
-                    <span className="text-muted-foreground text-[12.5px]">{m.gotra?.trim() || "गोत्र अज्ञात"}</span>
+                    <span className="text-muted-foreground text-[12.5px]">{m.gotra?.trim() || t("ms_gotra_unknown")}</span>
                   </li>
                 ))}
               </ul>
@@ -657,7 +660,10 @@ function MySubscriptionPage() {
                   to="/profile"
                   className="mt-3 inline-flex items-center gap-1.5 bg-brand text-white text-xs font-bold px-4 py-2 rounded-full"
                 >
-                  <Plus size={13} /> {4 - members.length} और सदस्य जोड़ें
+                  <Plus size={13} />{" "}
+                  {lang === "english"
+                    ? `${t("ms_add_members_en_pre")} ${4 - members.length} ${t("ms_add_members_en_post")}`
+                    : `${4 - members.length} ${t("ms_add_members_hi_post")}`}
                 </Link>
               )}
             </>
@@ -671,7 +677,7 @@ function MySubscriptionPage() {
           to="/profile"
           className="w-full flex items-center justify-center gap-2 bg-secondary text-foreground font-bold py-3.5 rounded-full hover:bg-muted transition-colors"
         >
-          Profile Poore Karein <ArrowRight size={18} />
+          {t("ms_complete_profile")} <ArrowRight size={18} />
         </Link>
       </main>
     </SiteChrome>
@@ -691,6 +697,7 @@ function AddressCard() {
   // [Bug 3.8] Reuses the profile already resolved for the page — no
   // second auth round-trip.
   const { profile } = useSessionProfile();
+  const { t } = useTranslation();
   const addr = {
     address_line1: profile?.address_line1 ?? null,
     state: profile?.state ?? null,
@@ -702,16 +709,14 @@ function AddressCard() {
     <div className="card-soft p-4 flex items-start gap-3">
       <MapPin size={18} className={filled ? "text-success mt-0.5" : "text-brand mt-0.5"} />
       <div className="min-w-0">
-        <div className="text-sm font-bold">Prasad Address</div>
+        <div className="text-sm font-bold">{t("ms_prasad_address")}</div>
         {filled ? (
           <p className="text-xs text-muted-foreground mt-0.5">
             {addr.address_line1}
             {addr.state ? `, ${addr.state}` : ""} {addr.pincode ? `- ${addr.pincode}` : ""}
           </p>
         ) : (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Abhi add nahi hua — Premium Annual prasad delivery ke liye zaroori.
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t("ms_address_empty")}</p>
         )}
       </div>
     </div>
