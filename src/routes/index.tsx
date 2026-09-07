@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Plus,
 } from "lucide-react";
-import { usePublicPlans, faqs } from "@/lib/plans";
+import { usePublicPlans, faqs, faqsEn } from "@/lib/plans";
 import { PizzaComparison } from "@/components/PizzaComparison";
 import { SiteChrome } from "@/components/site-chrome";
 import { SubscriberBanner } from "@/components/home/SubscriberBanner";
@@ -472,12 +472,14 @@ function PlansPreview() {
 }
 
 function FaqSection() {
+  const { lang } = useTranslation();
   const [open, setOpen] = useState<number | null>(0);
+  const visibleFaqs = lang === "english" ? faqsEn : faqs;
   return (
     <section id="faq" className="space-y-4 scroll-mt-32">
       <h2 className="text-2xl font-bold text-center">FAQ's</h2>
       <div className="card-soft overflow-hidden">
-        {faqs.map((f, i) => {
+        {visibleFaqs.map((f, i) => {
           const isOpen = open === i;
           return (
             <div key={i} className="border-b border-black/5 last:border-b-0">

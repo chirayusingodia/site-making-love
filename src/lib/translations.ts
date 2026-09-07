@@ -272,6 +272,9 @@ export const translations = {
     pd_reviews: "इस पैक के भक्तों की राय",
     pd_related: "अन्य पैक देखें",
     pd_total: "कुल राशि",
+
+    // FAQ page
+    faq_page_title: "आपके प्रश्न",
   },
   english: {
     // Navigation / Header
@@ -542,6 +545,9 @@ export const translations = {
     pd_reviews: "What Devotees Say",
     pd_related: "See Other Packs",
     pd_total: "Total",
+
+    // FAQ page
+    faq_page_title: "Your Questions",
   },
 } as const;
 

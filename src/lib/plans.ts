@@ -960,3 +960,44 @@ export const faqs = [
     a: "जी हाँ, बिना किसी शुल्क या प्रश्न के आप अपना मासिक योगदान कभी भी रोक सकते हैं।",
   },
 ];
+
+// English mirror of `faqs` (DRAFT — pending owner review). Same order and count
+// so the accordion index and the page's FAQ JSON-LD stay aligned.
+export const faqsEn = [
+  {
+    q: "How can you do all this so affordably?",
+    a: "Everyone's sankalp is taken together. Each person's name and gotra is spoken separately, but the Pandit ji takes everyone's sankalp collectively in a single sitting. That is what keeps this seva accessible and affordable for all.",
+  },
+  {
+    q: "When does my first seva begin?",
+    a: "If you subscribe before the second Tuesday of the month, your first seva takes place on that very second Tuesday — with all the sevas in your plan. Premium and Premium Annual members also receive additional sevas on the last Saturday of that month (Feeding of Saints again + Sarv Rog Nivaran Hawan). If you join after the second Tuesday, Basic members wait for the second Tuesday of the next month (though they are still included once in that month's last Saturday, except for the Hawan).",
+  },
+  {
+    q: "What is the Refund Policy?",
+    a: "If for any reason a seva cannot be performed, the full amount is refunded.",
+  },
+  {
+    q: "Will I get proof of every seva?",
+    a: "Yes. Live or video proof of every ritual is sent directly to your WhatsApp.",
+  },
+  {
+    q: "Is this a business?",
+    a: `Honestly — Punyata is an organized seva, and any organization has to be self-sustaining to keep running. We don't hide that. The only difference is priority: here seva comes first, and then the arrangement to keep it going every month without pause. And you have every right to know where the money you give actually goes.
+
+The larger share — goes directly into daan-punya: fodder for Gau Mata, fruit for the monkeys, food for saints, and the materials for the hawan and rituals.
+
+The remaining share — goes into running Punyata: the dakshina of the acharyas and the Pandit ji's team; the team that records and edits the video of every seva; the office in Pushkar and its upkeep; and the technical cost of the app, website, payments and delivering proof over WhatsApp.
+
+Along with that, the whole team too — the managers and coordinators who prepare the sankalp list every month, manage the seva schedule, verify each proof and send it to every family, and answer your questions. These are the people who make sure every seva is completed on time, without fail.
+
+This is the balance that lets a seva which normally costs thousands reach you for just ₹251 — and keep reaching you every month.`,
+  },
+  {
+    q: "Can I take a sankalp in my parents' name?",
+    a: "Of course. You can begin this monthly sankalp in the name and gotra of your parents, departed loved ones, or any family member.",
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes — you can stop your monthly contribution at any time, with no fee and no questions asked.",
+  },
+];
