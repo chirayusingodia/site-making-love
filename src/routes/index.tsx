@@ -15,6 +15,7 @@ import {
 import { usePublicPlans, faqs } from "@/lib/plans";
 import { PizzaComparison } from "@/components/PizzaComparison";
 import { SiteChrome } from "@/components/site-chrome";
+import { SubscriberBanner } from "@/components/home/SubscriberBanner";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { PunyaMeter } from "@/components/home/PunyaMeter";
 import { useTranslation } from "@/lib/translations";
@@ -99,6 +100,7 @@ function HomePage() {
         </div>
       </div>
       <main className="max-w-2xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-12">
+        <SubscriberBanner />
         <Hero />
         <PunyaMeter />
         <Mission />

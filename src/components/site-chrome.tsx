@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { User, Home, Sparkles, MessageSquareText, Info } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
+import { useMySubscription } from "@/hooks/use-my-subscription";
 import { useLanguage, useTranslation, LANG_KEY, type Lang } from "@/lib/translations";
 import { captureAttributionOnce } from "@/lib/attribution";
 
@@ -55,6 +56,7 @@ function LanguageToggle() {
 
 export function Header() {
   const { t } = useTranslation();
+  const { hasActive } = useMySubscription();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     let ticking = false;
@@ -112,8 +114,20 @@ export function Header() {
 
         <div className="flex items-center gap-2 shrink-0">
           <LanguageToggle />
-          <Link to="/profile" className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-black text-white flex items-center justify-center" aria-label="Account">
+          {hasActive && (
+            <Link
+              to="/my-subscription"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1.5 text-[11px] font-extrabold text-brand-deep hover:bg-brand/15 transition-colors"
+              aria-label="Meri sadasyata"
+            >
+              <Sparkles size={12} /> सदस्य
+            </Link>
+          )}
+          <Link to="/profile" className="relative w-9 h-9 md:w-10 md:h-10 rounded-full bg-black text-white flex items-center justify-center" aria-label="Account">
             <User size={18} />
+            {hasActive && (
+              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-[#FDF1EC]" />
+            )}
           </Link>
         </div>
       </div>
@@ -144,14 +158,21 @@ const BOTTOM_TABS = [
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { hasActive } = useMySubscription();
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-black/5 md:hidden pb-[env(safe-area-inset-bottom,0)]">
       <div className="max-w-2xl mx-auto flex items-stretch justify-around px-2 py-2">
         {BOTTOM_TABS.map(({ to, label, Icon, exact }) => {
           const on = exact ? pathname === to : pathname.startsWith(to);
+          const showDot = to === "/my-subscription" && hasActive && !on;
           return (
             <Link key={to} to={to} className="flex flex-col items-center gap-1 py-1 px-2 flex-1">
-              <Icon size={22} className={on ? "text-brand" : "text-muted-foreground"} />
+              <span className="relative">
+                <Icon size={22} className={on ? "text-brand" : "text-muted-foreground"} />
+                {showDot && (
+                  <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-success border-2 border-white" />
+                )}
+              </span>
               <span className={`text-[10px] font-semibold leading-tight text-center ${on ? "text-brand" : "text-muted-foreground"}`}>{label}</span>
             </Link>
           );
