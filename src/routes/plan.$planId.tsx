@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, ScrollText, ListChecks, Quote, Sparkles } from "lucide-react";
 import { ChadhavaHeartBadge, AuthenticityTrust } from "@/components/TrustAuthenticity";
-import { usePublicPlans, getPlanById, fetchPublicPlansData, type Plan } from "@/lib/plans";
+import { usePublicPlans, getPlanById, fetchPublicPlansData, localizePlan, type Plan } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
@@ -123,8 +123,9 @@ function PlanDetailPage() {
   return <PlanDetail plan={plan} allPlans={data.plans} />;
 }
 
-function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
+function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
   const { t, lang } = useTranslation();
+  const plan = localizePlan(rawPlan, lang);
   const slides: Slide[] = plan.slides.map((s) => ({
     image: s.image,
     alt: s.title,
@@ -388,7 +389,9 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
             <h2 className="text-lg font-bold text-foreground">{t("pd_related")}</h2>
           </div>
           <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2">
-            {allPlans.filter((p) => p.id !== plan.id && p.isVisible !== false).map((p) => (
+            {allPlans.filter((p) => p.id !== plan.id && p.isVisible !== false).map((rawP) => {
+              const p = localizePlan(rawP, lang);
+              return (
               <Link key={p.id} to="/plan/$planId" params={{ planId: p.id }} className="card-soft p-3 w-[260px] min-w-[260px] shrink-0 flex flex-col justify-between border border-black/5 hover:border-brand/20 transition-all">
                 <div>
                   <div className="h-28 overflow-hidden rounded-xl bg-muted">
@@ -411,7 +414,8 @@ function PlanDetail({ plan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
                   <span className="text-[10px] font-bold text-brand hover:underline">View →</span>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
 

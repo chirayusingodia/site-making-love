@@ -147,13 +147,26 @@ export function buildSevaComparison(
   return out;
 }
 
-/** Hindi feature bullets for a plan's included sevas, with their day labels. */
-export function sevaFeatureLines(includedSevas: LiveSeva[]): string[] {
-  return includedSevas.map((s) =>
-    s.days.length > 1
-      ? `${s.name} — ${s.days.length}× हर माह (${s.days.join(" & ")})`
-      : s.days.length === 1
-        ? `${s.name} — हर माह (${s.days[0]})`
-        : s.name
-  );
+/**
+ * Feature bullets for a plan's included sevas, with their day labels.
+ * Bilingual: uses each seva's English name when lang === "english" and a
+ * name_en exists (else the default name), plus English cadence words.
+ */
+export function sevaFeatureLines(
+  includedSevas: LiveSeva[],
+  lang: "hindi" | "english" = "hindi",
+): string[] {
+  const en = lang === "english";
+  return includedSevas.map((s) => {
+    const nm = en && s.nameEn ? s.nameEn : s.name;
+    if (s.days.length > 1) {
+      return en
+        ? `${nm} — ${s.days.length}× a month (${s.days.join(" & ")})`
+        : `${nm} — ${s.days.length}× हर माह (${s.days.join(" & ")})`;
+    }
+    if (s.days.length === 1) {
+      return en ? `${nm} — every month (${s.days[0]})` : `${nm} — हर माह (${s.days[0]})`;
+    }
+    return nm;
+  });
 }

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Sun as SunIcon, AlertTriangle, RefreshCw, CalendarDays } from "lucide-react";
 import { ComparisonTable } from "@/components/ComparisonTable";
-import { usePublicPlans, acharyas, type Plan } from "@/lib/plans";
+import { usePublicPlans, acharyas, acharyasEn, localizePlan, type Plan } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { LottieIcon } from "@/components/LottieIcon";
@@ -186,7 +186,7 @@ function PlansPage() {
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-center">{t("plans_acharyas")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {acharyas.map((a) => (
+            {(lang === "english" ? acharyasEn : acharyas).map((a) => (
               <div key={a.name} className="card-soft p-5">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand to-[#F5A742] text-white flex items-center justify-center font-bold text-xl">
                   {a.initials}
@@ -206,15 +206,16 @@ function PlansPage() {
 
 
 
-function PlanCard({ plan }: { plan: Plan }) {
+function PlanCard({ plan: rawPlan }: { plan: Plan }) {
+  const { t, lang } = useTranslation();
+  const plan = localizePlan(rawPlan, lang);
+
   const badgeColor =
     plan.badge?.kind === "popular"
       ? "bg-gradient-to-r from-[#FDD9C3] to-[#F5A742] text-[#7A3A00]"
       : plan.badge?.kind === "save"
         ? "bg-success text-white"
         : "bg-gradient-to-r from-[#FDD9C3] to-[#F5A742] text-[#7A3A00]";
-
-  const { t, lang } = useTranslation();
 
   const slides: Slide[] = (plan.slides ?? []).map((slide) => ({
     image: slide.image,
