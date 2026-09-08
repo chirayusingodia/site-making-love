@@ -92,7 +92,7 @@ export function Header() {
           />
           <span
             className={`font-extrabold text-brand tracking-tight leading-none transition-all duration-300 ${scrolled ? "text-2xl md:text-3xl" : "text-3xl md:text-5xl"}`}
-            style={{ fontFamily: "'Poppins', 'Noto Sans Devanagari', system-ui, sans-serif" }}
+            style={{ fontFamily: "'Noto Sans Devanagari', system-ui, sans-serif" }}
           >
             पुण्यता
           </span>

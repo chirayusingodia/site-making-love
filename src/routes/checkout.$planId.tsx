@@ -85,15 +85,42 @@ declare global {
   }
 }
 
+// Cache the in-flight load so calling this twice (the mount-time warmup
+// below + the actual Pay click) never appends the script twice or kicks
+// off a second download — both callers await the same promise.
+let razorpayScriptPromise: Promise<boolean> | null = null;
+
 function loadRazorpayScript(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (window.Razorpay) return resolve(true);
+  if (typeof window === "undefined") return Promise.resolve(false);
+  if (window.Razorpay) return Promise.resolve(true);
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+  razorpayScriptPromise = new Promise((resolve) => {
     const s = document.createElement("script");
     s.src = "https://checkout.razorpay.com/v1/checkout.js";
     s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
+    s.onerror = () => {
+      // Let a later attempt retry from scratch instead of caching failure.
+      razorpayScriptPromise = null;
+      resolve(false);
+    };
     document.body.appendChild(s);
   });
+  return razorpayScriptPromise;
+}
+
+// Open a connection to Razorpay's checkout + API hosts before the user
+// clicks Pay, so the TLS/DNS handshake isn't part of the critical path
+// when the modal (and its own subscription-fetch calls) fire.
+function preconnectRazorpay() {
+  if (typeof document === "undefined") return;
+  for (const href of ["https://checkout.razorpay.com", "https://api.razorpay.com"]) {
+    if (document.head.querySelector(`link[rel="preconnect"][href="${href}"]`)) continue;
+    const link = document.createElement("link");
+    link.rel = "preconnect";
+    link.href = href;
+    link.crossOrigin = "anonymous";
+    document.head.appendChild(link);
+  }
 }
 
 function CheckoutPage() {
@@ -181,6 +208,19 @@ function CheckoutPage() {
       cancelled = true;
     };
   }, [sessionLoading, userId, isOAuthReturn, refreshProfile]);
+
+  // Warm up Razorpay the moment the buy step is actually shown, not when
+  // Pay is clicked. By the time someone reads the plan, checks the terms
+  // box and taps Pay, the ~100KB checkout.js is already downloaded and the
+  // TLS handshake to Razorpay is done — so the modal opens near-instantly.
+  // Razorpay is the primary gateway, so prefetching it costs one cached
+  // script even on the rare failover to a hosted-redirect provider (which
+  // simply ignores window.Razorpay).
+  useEffect(() => {
+    if (authPhase !== "ready") return;
+    preconnectRazorpay();
+    void loadRazorpayScript();
+  }, [authPhase]);
 
   const [couponInput, setCouponInput] = useState("");
   const [couponApplied, setCouponApplied] = useState<string | null>(null);
@@ -463,10 +503,14 @@ function CheckoutPage() {
     if (!identityOk) return;
     setPayState("creating");
     try {
-      // Create the mandate FIRST, then load the SDK the chosen gateway
-      // actually needs. Loading Razorpay's script before knowing the
-      // gateway would both waste a request and hard-wire this flow to
-      // one provider again.
+      // Kick the Razorpay SDK download off IN PARALLEL with the mandate
+      // creation instead of waiting for the server round-trip to finish
+      // first. In practice the mount-time warmup above has already loaded
+      // it (this resolves instantly), but a very fast click still overlaps
+      // the ~100KB download with the create-checkout call rather than
+      // stacking them. We only actually USE the SDK on the razorpay_sdk
+      // branch below; a hosted-redirect gateway just leaves it unused.
+      const scriptReady = loadRazorpayScript();
       const attribution = getStoredAttribution();
       const res = await callUserApi<CreateCheckoutResponse>("/api/subscriptions/create-checkout", {
         plan_id: plan.slug,
@@ -490,7 +534,7 @@ function CheckoutPage() {
         throw new Error(t("checkout_gateway_error"));
       }
 
-      const ready = await loadRazorpayScript();
+      const ready = await scriptReady;
       if (!ready || !window.Razorpay) throw new Error(t("checkout_gateway_error"));
       if (!res.gatewayPublicKey) throw new Error(t("checkout_keys_error"));
 

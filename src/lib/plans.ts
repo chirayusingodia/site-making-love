@@ -811,7 +811,12 @@ export function usePublicPlans() {
   return useQuery<PublicPlansData>({
     queryKey: ["public-plans-data"],
     queryFn: fetchPublicPlansData,
-    staleTime: 60_000,
+    // Plans/sevas are near-static admin config that changes rarely. A
+    // 5-minute stale window means browsing home → plan detail → checkout
+    // reuses the same fetch instead of re-running five Supabase queries on
+    // each page, while an admin edit still lands within a few minutes on
+    // already-open sessions (and immediately on any fresh page load).
+    staleTime: 5 * 60_000,
     retry: 1,
   });
 }
