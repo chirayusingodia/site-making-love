@@ -32,19 +32,27 @@ import { findMandateByGatewayId, promoteMandate, recordMandateCycle } from "@/li
 //    header. Compared with timingSafeEqual — never ===.
 //  - Payment rows are UPSERTED on razorpay_payment_id (UNIQUE) so
 //    Razorpay's at-least-once delivery can never double-record.
-//  - subscription.payment.failed NEVER touches subscription status
-//    on the first failure. Only after 3 CONSECUTIVE failed payments
-//    (most-recent-first count over payments history, any captured
-//    payment breaks the chain) does status drop to 'pending'.
+//  - subscription.payment.failed demotes 'active'→'pending' on either
+//    (a) the FIRST failure when the subscription has NEVER had a
+//    captured payment — a never-paid mandate is an incomplete checkout,
+//    not a paying member, so it must not sit as 'active' against ₹0 — or
+//    (b) 3 CONSECUTIVE failures once a real payment HAS landed (the
+//    lenient renewal grace: one transient card blip must not visibly
+//    demote an established subscriber). The count is most-recent-first
+//    over payments history ORDERED BY attempted_at (the gateway attempt
+//    time, migration 036 — NOT created_at, our webhook-insert time,
+//    which Razorpay does not deliver in order); any captured payment
+//    above breaks the chain.
 //  - Failed→pending transition only fires from 'active' — never
 //    stomps 'paused' or 'cancelled'.
 //  - Razorpay's OWN 'subscription.pending' fires on the very FIRST
-//    failed charge attempt (T+0) — stricter than our deliberate
-//    3-consecutive-failure grace buffer above. We do NOT let it
-//    override that buffer (a single card blip should not visibly
-//    demote a subscriber) — it is audit-logged only, so the
-//    discrepancy between "Razorpay already flagged this" and "we're
-//    still showing active" stays visible without changing behaviour.
+//    failed charge attempt (T+0) — for a subscriber who has already paid
+//    this is stricter than our deliberate 3-consecutive-failure grace
+//    buffer above, and we do NOT let it override that buffer (a single
+//    card blip should not visibly demote a paying subscriber); it is
+//    audit-logged only, so the discrepancy between "Razorpay already
+//    flagged this" and "we're still showing active" stays visible
+//    without changing behaviour.
 //  - Every processed event writes an audit_logs row (admin_id NULL
 //    = system actor) so reactivations/failures are reconstructable.
 //  - refund.* events are a SEPARATE event family (fired off the
@@ -359,6 +367,11 @@ export function capturedPaymentRow(
     cycle_number: ctx.subscription?.paid_count ?? null,
     paid_at:
       typeof pay.created_at === "number" ? unixToIso(pay.created_at) : new Date().toISOString(),
+    // Gateway attempt time — the authoritative ordering key (migration
+    // 036). For a capture it equals paid_at; kept as its own column so a
+    // failed row (paid_at NULL) can still be ordered chronologically.
+    attempted_at:
+      typeof pay.created_at === "number" ? unixToIso(pay.created_at) : new Date().toISOString(),
     failure_reason: null,
   };
 }
@@ -432,6 +445,12 @@ export function failedPaymentRow(
     method: pay.method ?? null,
     cycle_number: ctx.subscription?.paid_count ?? null,
     paid_at: null,
+    // Gateway attempt time (migration 036) — a failed row has no paid_at,
+    // so this is the ONLY chronological anchor it carries. Ordering by it
+    // (not created_at) is what stops a late-delivered failure webhook for
+    // an old attempt from masquerading as the newest payment.
+    attempted_at:
+      typeof pay.created_at === "number" ? unixToIso(pay.created_at) : new Date().toISOString(),
     failure_reason: reason,
   };
 }
@@ -674,19 +693,43 @@ export async function processWebhookEvent(
     }
     action = "payment_failed";
 
-    // ── 3-consecutive-failure demotion ──
-    // Read recent history AFTER this failure is recorded. A single
+    // ── Demotion policy ──
+    // Read recent history AFTER this failure is recorded, ordered by the
+    // gateway ATTEMPT time (migration 036), NOT our webhook-insert time:
+    // Razorpay does not guarantee delivery order, so a late 'failed' for
+    // an old attempt must not be counted as the newest event. A single
     // captured payment anywhere above breaks the chain.
     const { data: recent, error: histErr } = await db
       .from("payments")
       .select("status")
       .eq("subscription_id", sub.id)
-      .order("created_at", { ascending: false })
+      .order("attempted_at", { ascending: false })
+      .order("created_at", { ascending: false }) // deterministic tiebreak
       .limit(FAILURE_DEMOTE_THRESHOLD);
     if (histErr) throw new Error(`payments history failed: ${histErr.message}`);
     consecutiveFailures = countConsecutiveFailures(recent ?? []);
 
-    if (consecutiveFailures >= FAILURE_DEMOTE_THRESHOLD && sub.status === "active") {
+    // First cycle vs renewal (the industry dunning split — cf. Stripe's
+    // incomplete→active vs active→past_due). A subscriber who has NEVER
+    // had a captured payment has not actually paid: the mandate is
+    // authorised but no money has moved. Treat that first-charge failure
+    // like an incomplete checkout and demote on the FIRST failure, rather
+    // than granting an 'active' entitlement against ₹0 that masquerades as
+    // a paying member and hides in the wrong work-queues. Only once a real
+    // payment has landed do we extend the lenient 3-strike grace, whose
+    // sole job is to keep ONE transient renewal blip from visibly demoting
+    // an established subscriber.
+    const { data: captured, error: capErr } = await db
+      .from("payments")
+      .select("id")
+      .eq("subscription_id", sub.id)
+      .eq("status", "captured")
+      .limit(1);
+    if (capErr) throw new Error(`captured-payment lookup failed: ${capErr.message}`);
+    const hasEverPaid = (captured?.length ?? 0) > 0;
+    const demoteThreshold = hasEverPaid ? FAILURE_DEMOTE_THRESHOLD : 1;
+
+    if (consecutiveFailures >= demoteThreshold && sub.status === "active") {
       const { error: demErr } = await db
         .from("subscriptions")
         .update({ status: "pending", updated_at: nowIso })

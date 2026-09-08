@@ -200,8 +200,14 @@ export async function loadTelecallerDataset(db: SupabaseClient): Promise<{
     fetchAllRows<PaymentLite>((from, to) =>
       asRows<PaymentLite>(
         db
+          // attempted_at = gateway attempt time (migration 036); the
+          // in-memory reduce below keeps the FIRST row per subscription,
+          // so this order decides which one counts as "latest payment".
+          // Ordering by created_at (webhook-insert time) let a late failed
+          // webhook outrank a real capture.
           .from("payments")
           .select(`${TC_PAYMENT_COLS}, id`)
+          .order("attempted_at", { ascending: false })
           .order("created_at", { ascending: false })
           .range(from, to),
       ),
@@ -800,6 +806,9 @@ export async function fetchPersonCard(
           .from("payments")
           .select(TC_PAYMENT_COLS)
           .eq("subscription_id", primarySubId)
+          // Newest ATTEMPT first (migration 036), not newest webhook
+          // insert — see loadTelecallerDataset above.
+          .order("attempted_at", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(1)
       : Promise.resolve({ data: [], error: null }),

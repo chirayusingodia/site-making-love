@@ -140,6 +140,11 @@ export const Route = createFileRoute("/api/admin/payments/list")({
                   db
                     .from("payments")
                     .select(SELECT_COLS)
+                    // Real gateway attempt order (migration 036), created_at
+                    // as a stable tiebreak — a payment ledger should read in
+                    // the order money was attempted, not the order our
+                    // webhooks happened to land.
+                    .order("attempted_at", { ascending: false })
                     .order("created_at", { ascending: false })
                     .range(from, to),
                   filters,
@@ -155,6 +160,8 @@ export const Route = createFileRoute("/api/admin/payments/list")({
               db
                 .from("payments")
                 .select(SELECT_COLS, { count: "exact" })
+                // Real gateway attempt order (migration 036), created_at tiebreak.
+                .order("attempted_at", { ascending: false })
                 .order("created_at", { ascending: false })
                 .range(from, from + pageSize - 1),
               filters,
