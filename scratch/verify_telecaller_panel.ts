@@ -31,7 +31,6 @@ import {
   matchesPaymentFailed,
   matchesRecentlyCancelled,
   matchesRenewalAhead,
-  matchesSankalpPending,
   matchesWelcomeCall,
   nextBatchCutoff,
   paginateByIdentity,
@@ -59,6 +58,7 @@ function row(over: Partial<TelecallerQueueRow>): TelecallerQueueRow {
     subscriptionId: "sub-1",
     profileId: "prof-1",
     fullName: "Ramesh",
+    sankalpName: null,
     phone: "+919876543210",
     city: null,
     state: null,
@@ -102,12 +102,16 @@ console.log("\n— Queue predicates —");
 const NOW = Date.parse("2026-08-20T10:00:00Z");
 const BATCH_IN_48H = NOW + 48 * HOUR;
 
-check("sankalp pending: active + 0 members",
-  matchesSankalpPending(row({ familyMemberCount: 0 })));
-check("sankalp pending: NOT when members exist",
-  !matchesSankalpPending(row({ familyMemberCount: 2 })));
-check("sankalp pending: DNC excluded",
-  !matchesSankalpPending(row({ familyMemberCount: 0, doNotCall: true })));
+// 0-naam active subscribers fold into Incomplete Details (no separate
+// Sankalp Pending queue anymore — 2026-09-08 owner decision).
+check("incomplete details: active + 0 members folds in",
+  matchesIncompleteDetails(row({ familyMemberCount: 0 })));
+check("incomplete details: active + 2 members (still < 4)",
+  matchesIncompleteDetails(row({ familyMemberCount: 2, members: [{ fullName: "a", gotra: "G", relation: "pita" }, { fullName: "b", gotra: "G", relation: "mata" }] })));
+check("incomplete details: DNC excluded",
+  !matchesIncompleteDetails(row({ familyMemberCount: 0, doNotCall: true })));
+check("incomplete details: complete 4/4 roster excluded",
+  !matchesIncompleteDetails(row({ familyMemberCount: 4, members: Array.from({ length: 4 }, (_, i) => ({ fullName: String(i), gotra: "G", relation: "R" })) })));
 
 check("cutoff risk: pending inside window",
   matchesCutoffRisk(row({ familyMemberCount: 0 }), BATCH_IN_48H, NOW));
@@ -161,8 +165,8 @@ check("incomplete details: full book clean",
     familyMemberCount: 4,
     members: Array.from({ length: 4 }, () => ({ fullName: "N", gotra: "G", relation: "swayam" })),
   })));
-check("incomplete details: 0 members belongs to sankalp queue instead",
-  !matchesIncompleteDetails(row({ familyMemberCount: 0 })));
+check("incomplete details: 0 members now folds IN (no separate sankalp queue)",
+  matchesIncompleteDetails(row({ familyMemberCount: 0 })));
 
 check("missing prasad address: prasad + no pincode",
   matchesMissingPrasadAddress(row({ hasPrasadAddon: true, pincode: null })));
@@ -206,14 +210,14 @@ const datasetRows = [
   row({ subscriptionId: "sub-a", profileId: "prof-a", familyMemberCount: 0, startDate: "2026-07-01" }),
 ];
 const assignment = assignQueues({ rows: datasetRows, logs: [], nowMs: NOW });
-check("integration: sankalp pending lands", assignment.sankalp_pending.length >= 1);
+check("integration: 0-naam lands in incomplete_details", assignment.incomplete_details.length >= 1);
 
 const cooledAssignment = assignQueues({
   rows: [row({ subscriptionId: "sub-x", profileId: "prof-x", familyMemberCount: 0 })],
   logs: mkLogs("sub-x", "prof-x", new Date(NOW - 2 * HOUR).toISOString(), "no_answer"),
   nowMs: NOW,
 });
-check("cooldown hides sankalp-pending called 2h ago", cooledAssignment.sankalp_pending.length === 0);
+check("cooldown hides incomplete-details called 2h ago", cooledAssignment.incomplete_details.length === 0);
 
 const dueAssignment = assignQueues({
   rows: [row({ subscriptionId: "sub-y", profileId: "prof-y" })],
@@ -322,7 +326,8 @@ check("profile edit: nothing to change rejected",
 
 // ─────────────────────────────────────────────────────────────
 console.log("\n— Banner copy —");
-check("banner fills member counts", bannerForQueue("sankalp_pending", row({ familyMemberCount: 2 })).includes("2 naam bhare hain"));
+check("banner fills member counts", bannerForQueue("incomplete_details", row({ familyMemberCount: 2 })).includes("2 naam bhare hain"));
+check("banner handles 0 naam (folded sankalp-pending)", bannerForQueue("incomplete_details", row({ familyMemberCount: 0 })).includes("Ek bhi naam nahi"));
 check("banner payment_failed shows method only, no amount",
   bannerForQueue("payment_failed", row({ latestPaymentMethod: "upi", latestPaymentFailureReason: null })).includes("upi"));
 

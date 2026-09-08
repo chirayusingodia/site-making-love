@@ -216,7 +216,7 @@ export const translations = {
     ms_save: "Save",
     ms_soon: "जल्द ही",
     ms_family: "परिवार संकल्प",
-    ms_sankalp_pending: "संकल्प बाकी",
+    ms_sankalp_pending: "विवरण अधूरा है",
     ms_sankalp_pending_desc:
       "नाम-गोत्र अभी जोड़े नहीं गए। हमारी टीम कॉल करके मदद भी करती है — या आप अभी खुद जोड़ सकते हैं।",
     ms_add_details: "विवरण जोड़ें",
@@ -488,7 +488,7 @@ export const translations = {
     ms_save: "Save",
     ms_soon: "Soon",
     ms_family: "Family Sankalp",
-    ms_sankalp_pending: "Sankalp Pending",
+    ms_sankalp_pending: "Details incomplete",
     ms_sankalp_pending_desc:
       "Names & gotras aren't added yet. Our team can help you over a call — or you can add them yourself now.",
     ms_add_details: "Add Details",
