@@ -336,12 +336,21 @@ function PersonCard({
   // owner flagged: an already-active subscriber in incomplete_details
   // was being offered a fresh link). Only surface it when the person
   // still needs to start — or restart — a mandate.
+  //
+  // Every "needs a fresh mandate" case is already a STATUS: null (never
+  // bought) / pending (abandoned) / cancelled (win-back) / halted (dead
+  // mandate). We deliberately do NOT gate on latestPaymentStatus:
+  // an ACTIVE (or paused) subscriber whose latest payment merely FAILED
+  // — a bounced renewal debit — still has a LIVE mandate; a fresh
+  // Razorpay link there double-charges. That failed-payment clause was
+  // the leak that put the link back on active subscribers like the ones
+  // in incomplete_details (2026-09-08). Retrying a failed debit on a
+  // live mandate is the gateway's job, not a new checkout.
   const canSendPaymentLink =
     row.subscriptionStatus === null || // bare lead — never bought
     row.subscriptionStatus === "pending" || // abandoned checkout
     row.subscriptionStatus === "cancelled" || // win-back
-    row.subscriptionStatus === "halted" || // dead mandate — needs a fresh link
-    row.latestPaymentStatus === "failed"; // payment failed — retry
+    row.subscriptionStatus === "halted"; // dead mandate — needs a fresh link
 
   async function saveFamily() {
     if (!row.subscriptionId) return;
