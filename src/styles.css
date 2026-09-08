@@ -2,16 +2,21 @@
 @source "../src";
 @import "tw-animate-css";
 
-@import "@fontsource/hind/300.css";
+/* Hind (body + display) — only the weights the UI actually uses.
+   300/font-light has zero usages; 800/font-extrabold is used widely but
+   Hind ships no 800 face, so the browser already synthesises it from 700
+   — loading it would add a download, not remove one, so we don't. */
 @import "@fontsource/hind/400.css";
 @import "@fontsource/hind/500.css";
 @import "@fontsource/hind/600.css";
 @import "@fontsource/hind/700.css";
+/* Martel — scripture serif (var(--font-scripture)). */
 @import "@fontsource/martel/devanagari-400.css";
 @import "@fontsource/martel/devanagari-700.css";
-@import "@fontsource/poppins/600.css";
-@import "@fontsource/poppins/700.css";
-@import "@fontsource/poppins/800.css";
+/* Poppins removed: its only reference was the Devanagari wordmark
+   "पुण्यता", which Poppins (a Latin-only face) can never render — it
+   always fell through to Noto Sans Devanagari. Three weight files were
+   downloading for nothing. */
 
 @custom-variant dark (&:is(.dark *));
 
