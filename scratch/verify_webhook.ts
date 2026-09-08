@@ -1,14 +1,16 @@
 // Verification harness — Session 6 Razorpay webhook.
-// Run:  node scratch/verify_webhook.ts   (Node 24 strips types natively)
+// Run:  npm run test:webhook
+//       (= node --import ./scratch/ts-aliases.mjs scratch/verify_webhook.ts;
+//        the loader resolves the "@/…" aliases the app modules use, and
+//        Node 24 strips the TS types natively.)
 //
-// ⚠️ RUNTIME DEBT (pre-existing, flagged 2026-09-08): this file imports
-// razorpay-webhook.server.ts, which since migration 022 resolves events
-// via subscription_mandates (findMandateByGatewayId) and imports "@/…"
-// aliases. Plain `node` cannot resolve those aliases, and the mock below
-// does not model the mandate table, so the integration scenarios (A–I)
-// need BOTH an alias-aware loader AND a subscription_mandates mock before
-// they execute. The assertions are kept correct as the SPEC of intended
-// behaviour; repairing the runner is tracked separately.
+// NOTE: razorpay-webhook.server.ts resolves events via
+// subscription_mandates (migration 022, findMandateByGatewayId). The mock
+// below models that table — it auto-derives one CURRENT mandate per seeded
+// subscription that carries a razorpay_sub_id — so the integration
+// scenarios exercise the real resolution path. (This was stale/dead
+// between migration 022 and 2026-09-08; repaired alongside the attempted_at
+// + first-cycle-demotion fix.)
 //
 // Covers:
 //  1. HMAC-SHA256 signature verification (valid / wrong secret /
@@ -257,11 +259,38 @@ interface Row {
 }
 
 /** Minimal chainable mock of the supabase-js surface the webhook uses. */
-function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
+function makeMockDb(seed: {
+  subscriptions?: Row[];
+  payments?: Row[];
+  subscription_mandates?: Row[];
+}) {
   let clock = Date.parse("2026-08-05T10:00:00Z");
   const tables: Record<string, Row[]> = {
     subscriptions: (seed.subscriptions ?? []).map((r) => ({ ...r })),
     payments: (seed.payments ?? []).map((r) => ({ ...r })),
+    // Since migration 022 the webhook resolves events by
+    // (gateway, gateway_mandate_id) → subscription_mandates →
+    // subscriptions. Auto-derive one CURRENT mandate per seeded
+    // subscription that carries a razorpay_sub_id, so a scenario can keep
+    // reading "a subscription with this gateway id" without spelling out
+    // the mandate row every time. An explicit seed.subscription_mandates
+    // wins when a test needs a bespoke shape (e.g. a replacement mandate).
+    subscription_mandates:
+      seed.subscription_mandates?.map((r) => ({ ...r })) ??
+      (seed.subscriptions ?? [])
+        .filter((s) => typeof s.razorpay_sub_id === "string")
+        .map((s) => ({
+          id: `mnd_${String(s.id)}`,
+          subscription_id: s.id,
+          gateway: "razorpay",
+          gateway_mandate_id: s.razorpay_sub_id,
+          status: "active",
+          is_current: true,
+          replaces_mandate_id: null,
+          cycles_paid: 0,
+          total_count: 120,
+          created_at: new Date(clock).toISOString(),
+        })),
     audit_logs: [],
   };
 
@@ -269,6 +298,9 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
     rows.filter((r) => filters.every(([c, v]) => r[c] === v));
 
   function builder(table: string) {
+    // Any table the code touches but no scenario seeded starts empty,
+    // rather than crashing applyFilters on `undefined`.
+    if (!tables[table]) tables[table] = [];
     const st: {
       mode: string | null;
       filters: [string, unknown][];
@@ -279,6 +311,7 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
       limitN: number | null;
       payload: unknown;
       upsertKey: string | null;
+      returning: boolean;
     } = {
       mode: null,
       filters: [],
@@ -286,6 +319,7 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
       limitN: null,
       payload: null,
       upsertKey: null,
+      returning: false,
     };
 
     const execSelect = () => {
@@ -323,14 +357,28 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
         return Promise.resolve({ data: null, error: null });
       }
       if (st.mode === "update") {
-        for (const t of applyFilters(tables[table], st.filters)) Object.assign(t, st.payload);
-        return Promise.resolve({ data: null, error: null });
+        // CAS filter applied BEFORE the write: zero matches (the row's
+        // status already moved) returns [] so the handler's
+        // updatedRows.length check sees the lost race, exactly like
+        // PostgREST's `.update(...).select()`.
+        const affected = applyFilters(tables[table], st.filters);
+        for (const t of affected) Object.assign(t, st.payload as Row);
+        return Promise.resolve({
+          data: st.returning ? affected.map((r) => ({ ...r })) : null,
+          error: null,
+        });
       }
       return Promise.resolve({ data: null, error: null });
     };
 
     const api: Record<string, unknown> = {
-      select: () => ((st.mode = "select"), api),
+      // A leading .select() is a read; a .select() AFTER a write mode
+      // (update/insert/upsert) is a RETURNING clause on that write.
+      select: () => {
+        if (st.mode === null) st.mode = "select";
+        else st.returning = true;
+        return api;
+      },
       insert: (p: unknown) => ((st.mode = "insert"), (st.payload = p), api),
       upsert: (p: unknown, o?: { onConflict?: string }) => (
         (st.mode = "upsert"),
@@ -351,7 +399,15 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
     return api;
   }
 
-  return { from: (t: string) => builder(t), tables };
+  return {
+    from: (t: string) => builder(t),
+    // promoteMandate() calls db.rpc('promote_mandate', …); it only fires
+    // for a REPLACEMENT mandate (replaces_mandate_id set, not current),
+    // which the auto-seeded current mandate never is — so a no-op that
+    // reports "nothing displaced" is all these scenarios need.
+    rpc: async () => ({ data: [], error: null }),
+    tables,
+  };
 }
 
 // Realistic event factories
@@ -582,7 +638,7 @@ const seedCapture = (payId: string, ts = 1785000000) => ({
   );
 }
 
-// — Scenario I: OUT-OF-ORDER delivery — a late 'failed' for an OLD attempt
+// — Scenario OO: OUT-OF-ORDER delivery — a late 'failed' for an OLD attempt
 // must NOT demote a subscriber whose newest attempt actually SUCCEEDED.
 // This is the core of the attempted_at fix: the capture has the newest
 // attempt time but was inserted FIRST; the stale failure is inserted LAST
@@ -625,7 +681,7 @@ const seedCapture = (payId: string, ts = 1785000000) => ({
   // arrives late, so it is inserted with the newest created_at.
   const r = await processWebhookEvent(db as never, evFailed("pay_STALE", 1788479403));
   check(
-    "I: stale late failure does NOT demote (capture is newest by attempt time)",
+    "OO: stale late failure does NOT demote (capture is newest by attempt time)",
     r.action === "payment_failed" && db.tables.subscriptions[0].status === "active",
   );
 }
