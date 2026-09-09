@@ -87,27 +87,30 @@ Three formats, each with a different job. You need all three.
 
 ---
 
-## 7. Caption formula (copy this structure every time)
+## 7. Caption rule (VERIFIED against live @immortaltalks posts — 2026-09-09)
 
-The caption is where reach and depth live. Structure:
+> **This section was corrected after directly opening real immortaltalks posts.**
+> The original version of this playbook assumed a hook→expansion→question→CTA→hashtag
+> caption formula. That assumption was WRONG. Checked 4 live posts directly:
+>
+> | Post | Type | Caption | Likes |
+> |---|---|---|---|
+> | Reel (Sep 4) | Book promo | *"Immortal Talks Book 3 and Kalihanuvani... now available on Amazon."* (one plain sentence) | 1,710 |
+> | Card (Sep 3) | Pure wisdom | **EMPTY — literally no caption text** | 4,302 (29 comments) |
+> | Reel (Aug 30) | Book promo | *"Book 3 will be back in stock soon on Amazon..."* (one plain sentence) | 430 |
+> | Card (Aug 30) | Pure wisdom | **EMPTY — literally no caption text** | **5,792** (88 comments — the highest-engagement post checked) |
+
+**The real rule:**
+1. **Wisdom posts (the large majority) carry an EMPTY caption.** No hook, no expansion, no question, no "save this," no hashtags. The on-screen text on the image/video IS the entire post. This is not a missed opportunity — their best-performing post had zero caption.
+2. **Only when explicitly promoting something** (a book, an offer) does a caption appear — and even then it is **ONE short, plain, factual sentence**. No formula, no engagement bait, no hashtags.
+3. **No hashtags were found on any post checked**, wisdom or promo. Hashtags are not part of this model — leave them out.
 
 ```
-[HOOK LINE — restate or deepen the thought on the card]
+Wisdom post caption:  ""  (empty)
 
-[2–4 short lines expanding the idea. One thought. White space between lines.]
-
-[A QUESTION to the reader → this drives comments]
-
-Save this if it spoke to you. 🔖
-Follow @[handle] for daily reflections.
-
-.
-.
-[3–5 niche hashtags]
+Promo post caption:   "[One flat, factual sentence stating the offer/product.]"
+                       e.g. "Book 3 ... now available on Amazon."
 ```
-
-**Hashtag pool (pick 3–5, rotate):**
-`#spirituality #mindfulness #detachment #innerpeace #stillness #letgo #selfawareness #meditation #consciousness #sanatan #wisdom #peaceofmind #presentmoment`
 
 ---
 
@@ -121,10 +124,10 @@ Follow @[handle] for daily reflections.
 
 ## 9. Growth mechanics (what actually grows the account)
 
-1. **Optimize for SAVES and SHARES**, not likes. Ask in every caption: *"Save this"* / *"Send this to someone who needs it."*
+1. **Optimize for SAVES and SHARES**, not likes — but the ask lives ON-SCREEN if anywhere (a closing on-screen line like "Save this"), NOT in the caption. Verified: their top post (5,792 likes) had an empty caption and still drove 88 comments purely from the on-screen content.
 2. **Reels = discovery engine.** Post reels for reach; convert those viewers with cards + carousels.
 3. **First comment matters.** Reply to early comments fast — it signals activity to the algorithm.
-4. **Question in every caption** → comments → reach.
+4. **The on-screen text does the work a caption normally would** — the hook, the depth, the emotional pull all have to live in the 2-second visual, since the caption is usually blank.
 5. **Story re-shares** create a loop: feed post → story → poll → DMs.
 6. **Cross-post** to Threads (same wisdom, text-only) for extra reach.
 
@@ -222,19 +225,22 @@ A new reflection, every day.
 
 When asked to generate content, you MUST:
 1. Pick a **pillar** (Section 4) and a **format** (Section 5).
-2. Write the **on-card text** following the voice rules (Section 3): short, calm, declarative, no emojis, one idea.
-3. Write the **caption** using the exact formula in Section 7 (hook → expansion → question → CTA → hashtags).
-4. For reels: give a **hook + 2–3 text beats + end card + B-roll suggestion**.
-5. For carousels: give a **cover + 4–6 slides + a CTA slide**.
-6. Never put paragraphs on the image. Never use hype language. Always optimize for **saves and shares**.
+2. Write the **on-card text** following the voice rules (Section 3): short, calm, declarative, no emojis, one idea. This carries ALL the weight — hook, depth, everything — because the caption will usually be empty.
+3. Decide: is this a **wisdom post** (default) or an explicit **promo post**?
+   - Wisdom post → caption = "" (empty string, both languages). Do not write anything here.
+   - Promo post → caption = ONE short, plain, factual sentence (Section 7). No hook, no question, no hashtags.
+4. Leave hashtags EMPTY always — they are not part of this model.
+5. For reels: give a **hook + 2–3 text beats + end card + B-roll suggestion** (all on-screen, not in caption).
+6. For carousels: give a **cover + 4–6 slides + a CTA slide** (the CTA slide is itself on-screen, not a caption).
+7. Never put paragraphs on the image. Never use hype language. Always optimize for **saves and shares** through the on-screen content.
 
 **Output format for each post:**
 ```
 FORMAT: [card / reel / carousel]
 PILLAR: [1–5]
 ON-CARD TEXT: [...]
-CAPTION: [...]
-HASHTAGS: [...]
+POST TYPE: [wisdom (caption empty) / promo (one-line caption)]
+CAPTION: [empty, or one plain sentence if promo]
 (reels: + B-ROLL + MUSIC MOOD)
 ```
 
@@ -244,7 +250,7 @@ HASHTAGS: [...]
 
 > This section applies the whole playbook above to the real account **@punyata_foundation_** (Instagram) — a religious organization offering poojas & seva performed by Pushkar's pandits, for devotees in India & abroad, delivered to the home. Website: www.punyata.com. WhatsApp + Message enabled.
 >
-> **Model:** Video/card = pure wisdom (broad reach). Caption below = wisdom + a soft "Join the divine pooja" invite. The offer lives in the bio + captions, NEVER inside the video. Publish BOTH a Hindi and an English version of each post (or alternate languages day to day).
+> **Model (corrected per Section 7's verified findings):** Video/card = pure wisdom (broad reach). The caption below is **EMPTY for wisdom posts** — the offer lives ONLY in the bio, permanently. Only on the rare, deliberate promo post does a caption appear, and even then it's one flat sentence like immortaltalks' own book-promo captions ("Book 3 ... now available on Amazon") — never a hook/expansion/question/CTA formula, never hashtags. Publish BOTH a Hindi and an English version of each post (or alternate languages day to day).
 
 ### 15a. Name field (searchable)
 - **English:** `Punyata · Pooja & Seva from Pushkar`
@@ -292,50 +298,51 @@ Link: `www.punyata.com`
 
 ### 15e. Content — each post in Hindi + English
 
-**Reel 2 — "Not your thoughts"**
+> Per Section 7's verified rule: **wisdom posts (2, 3, 4, 5, 8, 9 below) get NO caption at all.** Only the two deliberate promo posts (7, and the carousel's last slide) carry any caption text, and it's one flat line — no emoji-heavy soft-sell paragraph.
+
+**Reel 2 — "Not your thoughts"** (wisdom — caption empty)
 - On-screen EN: *You are not your thoughts. / You are the one watching them. / Notice the thought — you've already stepped outside it.*
 - On-screen HI: *आप आपके विचार नहीं हैं। / आप वह हैं जो उन्हें देख रहा है। / जिस पल विचार को देखा — आप उससे बाहर आ गए।*
-- Caption EN: *The watcher is always calm. Return to it. 🙏 / 🪔 Join the divine pooja → link in bio.*
-- Caption HI: *साक्षी सदा शांत है। उसी में लौटो। 🙏 / 🪔 दिव्य पूजा से जुड़ें → लिंक बायो में।*
+- Caption: *(empty)*
 
-**Reel 4 — Banana parable**
+**Reel 4 — Banana parable** (wisdom — caption empty)
 - On-screen EN: *When you buy a banana, you don't fight the peel. / You take the fruit, you drop the peel. / Life gives you both. Stop carrying the peels.*
 - On-screen HI: *केला लेते हो तो छिलके से नहीं लड़ते। / फल ले लेते हो, छिलका छोड़ देते हो। / जीवन दोनों देता है। छिलके ढोना बंद करो।*
-- Caption EN: *Every burden you carry, you once chose to keep. Save this. 🔖 / 🪔 Join the divine pooja → link in bio.*
-- Caption HI: *हर बोझ जो आप ढो रहे हैं, कभी आपने ही रखा था। सेव करें। 🔖 / 🪔 दिव्य पूजा से जुड़ें → लिंक बायो में।*
+- Caption: *(empty)*
 
-**Reel 7 — "Blessings you can't earn alone" (soft-sell)**
+**Reel 7 — "Blessings you can't earn alone"** (the deliberate PROMO post — the only one with a caption)
 - On-screen EN: *Some blessings can't be earned alone. / They arrive when the right prayers are offered for you.*
 - On-screen HI: *कुछ आशीर्वाद अकेले नहीं मिलते। / वे तब आते हैं जब सही प्रार्थना आपके लिए की जाती है।*
-- Caption EN: *For generations, families gathered for pooja — out of love, not fear. You don't have to do it alone. 🪔 Join the divine pooja — our pandits perform it in your name. → link in bio.*
-- Caption HI: *पीढ़ियों से परिवार पूजा में जुड़ते आए हैं — डर से नहीं, प्रेम से। आपको यह अकेले नहीं करना। 🪔 दिव्य पूजा से जुड़ें — पंडित जी आपके नाम से पूजा करते हैं। → लिंक बायो में।*
+- Caption EN (one flat line, immortaltalks style): *Join the divine pooja — book now on punyata.com.*
+- Caption HI: *दिव्य पूजा अब बुक करें — punyata.com पर।*
 
-**Reel 9 — Free Sewa**
+**Reel 9 — Free Sewa** (wisdom — caption empty)
 - On-screen EN: *Not everyone can afford a pooja. / So for those who can't, we perform one — free. / Because blessings should reach everyone.*
 - On-screen HI: *हर कोई पूजा का खर्च नहीं उठा सकता। / इसलिए जो नहीं कर सकते, उनके लिए हम एक पूजा — निःशुल्क करते हैं। / क्योंकि आशीर्वाद सब तक पहुँचना चाहिए।*
-- Caption EN: *Every soul deserves a prayer. Tag someone who needs blessings today. 🙏 / 🪔 Join the divine pooja → link in bio.*
-- Caption HI: *हर आत्मा एक प्रार्थना की हकदार है। किसी को टैग करें जिसे आज आशीर्वाद चाहिए। 🙏 / 🪔 दिव्य पूजा से जुड़ें → लिंक बायो में।*
+- Caption: *(empty)*
 
-**Cards 1, 3, 5, 8**
+**Cards 1, 3, 5, 8** (all wisdom — caption empty on every one)
 - 1 EN: *Your merit, our service.* / HI: *पुण्य आपका, सेवा हमारी।*
 - 3 EN: *Detachment isn't not caring. It's caring without clinging.* / HI: *वैराग्य का अर्थ न परवाह करना नहीं — बिना मोह के परवाह करना है।*
 - 5 EN: *Peace is not the absence of noise. It's the absence of resistance.* / HI: *शांति शोर का अभाव नहीं — प्रतिरोध का अभाव है।*
 - 8 EN: *The mind repeats what the heart hasn't released.* / HI: *मन वही दोहराता है जिसे हृदय ने छोड़ा नहीं।*
 
-**Carousel 6 — "How a Punyata pooja works" (5 slides, bilingual)**
+**Carousel 6 — "How a Punyata pooja works"** (5 slides, bilingual — this IS a promo carousel, so its last slide states the offer plainly on-screen; the caption below it still stays empty or, at most, one flat line)
 1. EN: *How your pooja reaches you* / HI: *आपकी पूजा आप तक कैसे पहुँचती है*
 2. EN: *You book & share your name (sankalp)* / HI: *आप बुक करें और अपना नाम दें (संकल्प)*
 3. EN: *Pushkar's pandits perform it in your name* / HI: *पुष्कर के पंडित आपके नाम से पूजा करते हैं*
 4. EN: *You receive your Ashirwad Patra* / HI: *आपको आशीर्वाद पत्र मिलता है*
-5. CTA — EN: *Join the divine pooja → link in bio* / HI: *दिव्य पूजा से जुड़ें → लिंक बायो में*
+5. EN: *Join the divine pooja — link in bio* / HI: *दिव्य पूजा से जुड़ें — लिंक बायो में*
+- Caption: *(empty — the offer is already on-screen in slide 5)*
 
-### 15f. Rules recap for Punyata
-- Video INSIDE = pure wisdom only (no pooja, no selling, no link).
-- Caption BELOW = wisdom + "Join the divine pooja" / "दिव्य पूजा से जुड़ें" + link + hashtags.
-- Post 1/day, evening IST. ~90% pure wisdom, ~10% soft-sell.
+### 15f. Rules recap for Punyata (corrected)
+- Video/card INSIDE = pure wisdom only (no pooja, no selling, no link) — unchanged.
+- **Caption BELOW = EMPTY for wisdom posts.** This is the default for ~90%+ of posts.
+- Only a deliberate PROMO post gets a caption, and it is ONE flat, factual line (no emojis stacked, no hook/expansion/question, no hashtags) — e.g. *"Join the divine pooja — book now on punyata.com."*
+- **No hashtags anywhere** — immortaltalks uses none, on any post type.
+- Post 1/day, evening IST.
 - Publish Hindi + English versions (or alternate by day).
-- Hashtags EN: `#pooja #bhakti #blessings #sanatan #devotion #pushkar`
-- Hashtags HI: `#पूजा #भक्ति #आशीर्वाद #सनातन #पुष्कर`
+- The offer (pooja/sadasyata) lives primarily in the **bio**, which is permanent and always visible — that carries the weight the caption used to.
 
 ---
 

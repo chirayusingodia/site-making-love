@@ -17,6 +17,11 @@ const BodySchema = z.object({
   format: z.enum(["reel", "card", "carousel"]),
   pillar: z.enum(["mirror", "mind", "detachment", "parable", "stillness", "custom"]).optional(),
   topic: z.string().max(500).optional(),
+  // Verified against live immortaltalks posts (2026-09-09): wisdom posts
+  // carry an EMPTY caption; only an explicit promo post gets one plain
+  // line. Defaults to false so "Generate" always produces the normal,
+  // caption-less wisdom post unless the owner opts into a promo.
+  promo: z.boolean().optional(),
 });
 
 export const Route = createFileRoute("/api/admin/content/generate")({
@@ -38,6 +43,7 @@ export const Route = createFileRoute("/api/admin/content/generate")({
             format: body.format,
             pillar: body.pillar,
             topic: body.topic,
+            promo: body.promo,
           });
           const { content, model } = await generateContent({
             systemPrompt: PLAYBOOK_SYSTEM_PROMPT,
