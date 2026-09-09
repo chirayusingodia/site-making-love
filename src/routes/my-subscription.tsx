@@ -225,14 +225,21 @@ function MySubscriptionPage() {
         setPatras((pRes.data as PatraRow[]) ?? []);
 
         // Completed sevas = distinct batches with a delivered WhatsApp
-        // proof for this devotee (proof_deliveries: user reads own).
-        const dRes = await supabase
-          .from("proof_deliveries")
-          .select("batch_id,is_delivered")
-          .in("subscription_id", subIds)
-          .eq("is_delivered", true);
+        // proof for this devotee (proof_deliveries: user reads own),
+        // PLUS any off-cycle sevas a telecaller/admin manually marked
+        // done (seva_completions — batch-independent, e.g. a courtesy
+        // seva done before her first monthly batch runs).
+        const [dRes, scRes] = await Promise.all([
+          supabase
+            .from("proof_deliveries")
+            .select("batch_id,is_delivered")
+            .in("subscription_id", subIds)
+            .eq("is_delivered", true),
+          supabase.from("seva_completions").select("id").in("subscription_id", subIds),
+        ]);
         const proofRows = (dRes.data as ProofRow[]) ?? [];
-        setSevasCompleted(new Set(proofRows.map((p) => p.batch_id)).size);
+        const manualCount = scRes.data?.length ?? 0;
+        setSevasCompleted(new Set(proofRows.map((p) => p.batch_id)).size + manualCount);
       } else {
         setPatras([]);
         setSevasCompleted(0);

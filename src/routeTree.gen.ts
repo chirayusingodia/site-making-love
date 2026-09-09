@@ -67,6 +67,7 @@ import { Route as ApiTelecallerProfileRouteImport } from './routes/api/telecalle
 import { Route as ApiTelecallerPlansRouteImport } from './routes/api/telecaller/plans'
 import { Route as ApiTelecallerPersonRouteImport } from './routes/api/telecaller/person'
 import { Route as ApiTelecallerMyDayRouteImport } from './routes/api/telecaller/my-day'
+import { Route as ApiTelecallerMarkSevaDoneRouteImport } from './routes/api/telecaller/mark-seva-done'
 import { Route as ApiTelecallerLogCallRouteImport } from './routes/api/telecaller/log-call'
 import { Route as ApiTelecallerLeadRouteImport } from './routes/api/telecaller/lead'
 import { Route as ApiTelecallerFamilyMembersRouteImport } from './routes/api/telecaller/family-members'
@@ -426,6 +427,12 @@ const ApiTelecallerMyDayRoute = ApiTelecallerMyDayRouteImport.update({
   path: '/api/telecaller/my-day',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTelecallerMarkSevaDoneRoute =
+  ApiTelecallerMarkSevaDoneRouteImport.update({
+    id: '/api/telecaller/mark-seva-done',
+    path: '/api/telecaller/mark-seva-done',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiTelecallerLogCallRoute = ApiTelecallerLogCallRouteImport.update({
   id: '/api/telecaller/log-call',
   path: '/api/telecaller/log-call',
@@ -847,6 +854,7 @@ export interface FileRoutesByFullPath {
   '/api/telecaller/family-members': typeof ApiTelecallerFamilyMembersRoute
   '/api/telecaller/lead': typeof ApiTelecallerLeadRouteWithChildren
   '/api/telecaller/log-call': typeof ApiTelecallerLogCallRoute
+  '/api/telecaller/mark-seva-done': typeof ApiTelecallerMarkSevaDoneRoute
   '/api/telecaller/my-day': typeof ApiTelecallerMyDayRoute
   '/api/telecaller/person': typeof ApiTelecallerPersonRoute
   '/api/telecaller/plans': typeof ApiTelecallerPlansRoute
@@ -969,6 +977,7 @@ export interface FileRoutesByTo {
   '/api/telecaller/family-members': typeof ApiTelecallerFamilyMembersRoute
   '/api/telecaller/lead': typeof ApiTelecallerLeadRouteWithChildren
   '/api/telecaller/log-call': typeof ApiTelecallerLogCallRoute
+  '/api/telecaller/mark-seva-done': typeof ApiTelecallerMarkSevaDoneRoute
   '/api/telecaller/my-day': typeof ApiTelecallerMyDayRoute
   '/api/telecaller/person': typeof ApiTelecallerPersonRoute
   '/api/telecaller/plans': typeof ApiTelecallerPlansRoute
@@ -1095,6 +1104,7 @@ export interface FileRoutesById {
   '/api/telecaller/family-members': typeof ApiTelecallerFamilyMembersRoute
   '/api/telecaller/lead': typeof ApiTelecallerLeadRouteWithChildren
   '/api/telecaller/log-call': typeof ApiTelecallerLogCallRoute
+  '/api/telecaller/mark-seva-done': typeof ApiTelecallerMarkSevaDoneRoute
   '/api/telecaller/my-day': typeof ApiTelecallerMyDayRoute
   '/api/telecaller/person': typeof ApiTelecallerPersonRoute
   '/api/telecaller/plans': typeof ApiTelecallerPlansRoute
@@ -1222,6 +1232,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/family-members'
     | '/api/telecaller/lead'
     | '/api/telecaller/log-call'
+    | '/api/telecaller/mark-seva-done'
     | '/api/telecaller/my-day'
     | '/api/telecaller/person'
     | '/api/telecaller/plans'
@@ -1344,6 +1355,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/family-members'
     | '/api/telecaller/lead'
     | '/api/telecaller/log-call'
+    | '/api/telecaller/mark-seva-done'
     | '/api/telecaller/my-day'
     | '/api/telecaller/person'
     | '/api/telecaller/plans'
@@ -1469,6 +1481,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/family-members'
     | '/api/telecaller/lead'
     | '/api/telecaller/log-call'
+    | '/api/telecaller/mark-seva-done'
     | '/api/telecaller/my-day'
     | '/api/telecaller/person'
     | '/api/telecaller/plans'
@@ -1567,6 +1580,7 @@ export interface RootRouteChildren {
   ApiTelecallerFamilyMembersRoute: typeof ApiTelecallerFamilyMembersRoute
   ApiTelecallerLeadRoute: typeof ApiTelecallerLeadRouteWithChildren
   ApiTelecallerLogCallRoute: typeof ApiTelecallerLogCallRoute
+  ApiTelecallerMarkSevaDoneRoute: typeof ApiTelecallerMarkSevaDoneRoute
   ApiTelecallerMyDayRoute: typeof ApiTelecallerMyDayRoute
   ApiTelecallerPersonRoute: typeof ApiTelecallerPersonRoute
   ApiTelecallerPlansRoute: typeof ApiTelecallerPlansRoute
@@ -2021,6 +2035,13 @@ declare module '@tanstack/react-router' {
       path: '/api/telecaller/my-day'
       fullPath: '/api/telecaller/my-day'
       preLoaderRoute: typeof ApiTelecallerMyDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/mark-seva-done': {
+      id: '/api/telecaller/mark-seva-done'
+      path: '/api/telecaller/mark-seva-done'
+      fullPath: '/api/telecaller/mark-seva-done'
+      preLoaderRoute: typeof ApiTelecallerMarkSevaDoneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/telecaller/log-call': {
@@ -2634,6 +2655,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTelecallerFamilyMembersRoute: ApiTelecallerFamilyMembersRoute,
   ApiTelecallerLeadRoute: ApiTelecallerLeadRouteWithChildren,
   ApiTelecallerLogCallRoute: ApiTelecallerLogCallRoute,
+  ApiTelecallerMarkSevaDoneRoute: ApiTelecallerMarkSevaDoneRoute,
   ApiTelecallerMyDayRoute: ApiTelecallerMyDayRoute,
   ApiTelecallerPersonRoute: ApiTelecallerPersonRoute,
   ApiTelecallerPlansRoute: ApiTelecallerPlansRoute,
