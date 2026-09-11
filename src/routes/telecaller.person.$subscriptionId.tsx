@@ -101,6 +101,7 @@ interface CardPayload {
         segmentDelivered: boolean;
       }[]
     | null;
+  sevaCompletions: { id: string; completedAt: string; note: string | null }[];
   callHistory: CallLogRow[];
   subscriptions: SubscriptionLite[];
   nextInQueue: string | null;
@@ -280,6 +281,8 @@ function PersonCard({
   // §7.7 proof re-send request.
   const [proofReqBusy, setProofReqBusy] = useState(false);
   const [proofReqMsg, setProofReqMsg] = useState<string | null>(null);
+  const [sevaDoneBusy, setSevaDoneBusy] = useState(false);
+  const [sevaDoneMsg, setSevaDoneMsg] = useState<string | null>(null);
 
   useEffect(() => {
     callAdminApi<{ plans: PlanOption[] }>("/api/telecaller/plans")
@@ -853,6 +856,54 @@ function PersonCard({
                   {proofReqMsg && <span className="text-[11px] text-slate-600">{proofReqMsg}</span>}
                 </div>
               )}
+          </div>
+        )}
+
+        {/* Manual "iski seva ho gayi" — batch-independent, shows up on
+            her /my-subscription "Completed Sevas" count right away. */}
+        {row.subscriptionId && (
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <div className="text-xs font-semibold text-slate-500 mb-1.5">Seva completion</div>
+            {card.sevaCompletions.length > 0 && (
+              <div className="mb-2 space-y-1">
+                {card.sevaCompletions.map((c) => (
+                  <div key={c.id} className="text-[11px] text-slate-600">
+                    ✅ {new Date(c.completedAt).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                    {c.note ? ` — ${c.note}` : ""}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                className="h-9 md:h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                disabled={sevaDoneBusy}
+                onClick={async () => {
+                  setSevaDoneBusy(true);
+                  setSevaDoneMsg(null);
+                  try {
+                    await callAdminApi("/api/telecaller/mark-seva-done", {
+                      subscription_id: row.subscriptionId,
+                    });
+                    setSevaDoneMsg("Seva done mark ho gayi ✅");
+                    onSaved();
+                  } catch (err) {
+                    setSevaDoneMsg(err instanceof Error ? err.message : "Mark nahi ho paya");
+                  } finally {
+                    setSevaDoneBusy(false);
+                  }
+                }}
+              >
+                {sevaDoneBusy && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                Iski seva ho gayi — mark karein
+              </Button>
+              {sevaDoneMsg && <span className="text-[11px] text-slate-600">{sevaDoneMsg}</span>}
+            </div>
           </div>
         )}
       </div>

@@ -200,8 +200,14 @@ export async function loadTelecallerDataset(db: SupabaseClient): Promise<{
     fetchAllRows<PaymentLite>((from, to) =>
       asRows<PaymentLite>(
         db
+          // attempted_at = gateway attempt time (migration 036); the
+          // in-memory reduce below keeps the FIRST row per subscription,
+          // so this order decides which one counts as "latest payment".
+          // Ordering by created_at (webhook-insert time) let a late failed
+          // webhook outrank a real capture.
           .from("payments")
           .select(`${TC_PAYMENT_COLS}, id`)
+          .order("attempted_at", { ascending: false })
           .order("created_at", { ascending: false })
           .range(from, to),
       ),
@@ -674,6 +680,8 @@ export interface PersonCardPayload {
         segmentDelivered: boolean;
       }[]
     | null;
+  /** Manually-marked, batch-independent seva completions (newest first). */
+  sevaCompletions: { id: string; completedAt: string; note: string | null }[];
   callHistory: CallLogRow[];
   subscriptions: SubscriptionStatusLite[];
   /** Identity of the NEXT row in the same queue (auto-advance, §6.4). */
@@ -800,6 +808,9 @@ export async function fetchPersonCard(
           .from("payments")
           .select(TC_PAYMENT_COLS)
           .eq("subscription_id", primarySubId)
+          // Newest ATTEMPT first (migration 036), not newest webhook
+          // insert — see loadTelecallerDataset above.
+          .order("attempted_at", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(1)
       : Promise.resolve({ data: [], error: null }),
@@ -875,6 +886,23 @@ export async function fetchPersonCard(
     }
   }
 
+  // ── Manually-marked seva completions (batch-independent) ─────
+  let sevaCompletions: PersonCardPayload["sevaCompletions"] = [];
+  if (primarySubId) {
+    const { data: completions, error: scErr } = await db
+      .from("seva_completions")
+      .select("id,completed_at,note")
+      .eq("subscription_id", primarySubId)
+      .order("completed_at", { ascending: false })
+      .limit(10);
+    if (scErr) throw new Error(`seva completions: ${scErr.message}`);
+    sevaCompletions = (completions ?? []).map((c) => ({
+      id: c.id as string,
+      completedAt: c.completed_at as string,
+      note: (c.note as string | null) ?? null,
+    }));
+  }
+
   const viewLike = primary
     ? {
         subscription_id: primary.id,
@@ -941,6 +969,7 @@ export async function fetchPersonCard(
       .map((s) => s.sevas?.name ?? "")
       .filter(Boolean),
     proofsThisMonth,
+    sevaCompletions,
     callHistory: (historyRes.data ?? []) as unknown as CallLogRow[],
     subscriptions: subs.map(({ user_id: _u, plan_id: _p, ...rest }) => rest),
     nextInQueue,

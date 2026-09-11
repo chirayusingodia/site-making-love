@@ -1,13 +1,25 @@
 // Verification harness — Session 6 Razorpay webhook.
-// Run:  node scratch/verify_webhook.ts   (Node 24 strips types natively)
+// Run:  npm run test:webhook
+//       (= node --import ./scratch/ts-aliases.mjs scratch/verify_webhook.ts;
+//        the loader resolves the "@/…" aliases the app modules use, and
+//        Node 24 strips the TS types natively.)
+//
+// NOTE: razorpay-webhook.server.ts resolves events via
+// subscription_mandates (migration 022, findMandateByGatewayId). The mock
+// below models that table — it auto-derives one CURRENT mandate per seeded
+// subscription that carries a razorpay_sub_id — so the integration
+// scenarios exercise the real resolution path. (This was stale/dead
+// between migration 022 and 2026-09-08; repaired alongside the attempted_at
+// + first-cycle-demotion fix.)
 //
 // Covers:
 //  1. HMAC-SHA256 signature verification (valid / wrong secret /
 //     tampered body / missing sig / length-mismatch / empty secret)
 //  2. Pure payload/date/patch/failure-counter logic
 //  3. End-to-end processWebhookEvent against a mock Supabase client:
-//     activation, charging, failure demotion (3 consecutive),
-//     chain-break on success, paused-guard, unknown-sub ack,
+//     activation, charging, failure demotion (first-cycle immediate vs
+//     3-consecutive renewal grace), attempted_at ordering vs out-of-order
+//     delivery, chain-break on success, paused-guard, unknown-sub ack,
 //     unsupported event, replay idempotency, audit logging.
 
 import { createHmac } from "node:crypto";
@@ -247,11 +259,38 @@ interface Row {
 }
 
 /** Minimal chainable mock of the supabase-js surface the webhook uses. */
-function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
+function makeMockDb(seed: {
+  subscriptions?: Row[];
+  payments?: Row[];
+  subscription_mandates?: Row[];
+}) {
   let clock = Date.parse("2026-08-05T10:00:00Z");
   const tables: Record<string, Row[]> = {
     subscriptions: (seed.subscriptions ?? []).map((r) => ({ ...r })),
     payments: (seed.payments ?? []).map((r) => ({ ...r })),
+    // Since migration 022 the webhook resolves events by
+    // (gateway, gateway_mandate_id) → subscription_mandates →
+    // subscriptions. Auto-derive one CURRENT mandate per seeded
+    // subscription that carries a razorpay_sub_id, so a scenario can keep
+    // reading "a subscription with this gateway id" without spelling out
+    // the mandate row every time. An explicit seed.subscription_mandates
+    // wins when a test needs a bespoke shape (e.g. a replacement mandate).
+    subscription_mandates:
+      seed.subscription_mandates?.map((r) => ({ ...r })) ??
+      (seed.subscriptions ?? [])
+        .filter((s) => typeof s.razorpay_sub_id === "string")
+        .map((s) => ({
+          id: `mnd_${String(s.id)}`,
+          subscription_id: s.id,
+          gateway: "razorpay",
+          gateway_mandate_id: s.razorpay_sub_id,
+          status: "active",
+          is_current: true,
+          replaces_mandate_id: null,
+          cycles_paid: 0,
+          total_count: 120,
+          created_at: new Date(clock).toISOString(),
+        })),
     audit_logs: [],
   };
 
@@ -259,31 +298,39 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
     rows.filter((r) => filters.every(([c, v]) => r[c] === v));
 
   function builder(table: string) {
+    // Any table the code touches but no scenario seeded starts empty,
+    // rather than crashing applyFilters on `undefined`.
+    if (!tables[table]) tables[table] = [];
     const st: {
       mode: string | null;
       filters: [string, unknown][];
-      orderCol: string | null;
-      orderAsc: boolean;
+      // Multi-column order (chained .order() calls), applied in sequence
+      // like PostgREST — so `.order("attempted_at").order("created_at")`
+      // sorts by attempted_at then breaks ties by created_at.
+      orders: { col: string; asc: boolean }[];
       limitN: number | null;
       payload: unknown;
       upsertKey: string | null;
+      returning: boolean;
     } = {
       mode: null,
       filters: [],
-      orderCol: null,
-      orderAsc: true,
+      orders: [],
       limitN: null,
       payload: null,
       upsertKey: null,
+      returning: false,
     };
 
     const execSelect = () => {
       let rows = applyFilters(tables[table], st.filters);
-      if (st.orderCol) {
-        const col = st.orderCol;
+      if (st.orders.length) {
         rows = [...rows].sort((a, b) => {
-          const cmp = String(a[col]).localeCompare(String(b[col]));
-          return st.orderAsc ? cmp : -cmp;
+          for (const { col, asc } of st.orders) {
+            const cmp = String(a[col] ?? "").localeCompare(String(b[col] ?? ""));
+            if (cmp !== 0) return asc ? cmp : -cmp;
+          }
+          return 0;
         });
       }
       if (st.limitN != null) rows = rows.slice(0, st.limitN);
@@ -310,14 +357,28 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
         return Promise.resolve({ data: null, error: null });
       }
       if (st.mode === "update") {
-        for (const t of applyFilters(tables[table], st.filters)) Object.assign(t, st.payload);
-        return Promise.resolve({ data: null, error: null });
+        // CAS filter applied BEFORE the write: zero matches (the row's
+        // status already moved) returns [] so the handler's
+        // updatedRows.length check sees the lost race, exactly like
+        // PostgREST's `.update(...).select()`.
+        const affected = applyFilters(tables[table], st.filters);
+        for (const t of affected) Object.assign(t, st.payload as Row);
+        return Promise.resolve({
+          data: st.returning ? affected.map((r) => ({ ...r })) : null,
+          error: null,
+        });
       }
       return Promise.resolve({ data: null, error: null });
     };
 
     const api: Record<string, unknown> = {
-      select: () => ((st.mode = "select"), api),
+      // A leading .select() is a read; a .select() AFTER a write mode
+      // (update/insert/upsert) is a RETURNING clause on that write.
+      select: () => {
+        if (st.mode === null) st.mode = "select";
+        else st.returning = true;
+        return api;
+      },
       insert: (p: unknown) => ((st.mode = "insert"), (st.payload = p), api),
       upsert: (p: unknown, o?: { onConflict?: string }) => (
         (st.mode = "upsert"),
@@ -328,9 +389,7 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
       update: (p: unknown) => ((st.mode = "update"), (st.payload = p), api),
       eq: (c: string, v: unknown) => (st.filters.push([c, v]), api),
       order: (c: string, o?: { ascending?: boolean }) => (
-        (st.orderCol = c),
-        (st.orderAsc = o?.ascending !== false),
-        api
+        st.orders.push({ col: c, asc: o?.ascending !== false }), api
       ),
       limit: (n: number) => ((st.limitN = n), api),
       maybeSingle: () => Promise.resolve({ data: execSelect()[0] ?? null, error: null }),
@@ -340,7 +399,15 @@ function makeMockDb(seed: { subscriptions?: Row[]; payments?: Row[] }) {
     return api;
   }
 
-  return { from: (t: string) => builder(t), tables };
+  return {
+    from: (t: string) => builder(t),
+    // promoteMandate() calls db.rpc('promote_mandate', …); it only fires
+    // for a REPLACEMENT mandate (replaces_mandate_id set, not current),
+    // which the auto-seeded current mandate never is — so a no-op that
+    // reports "nothing displaced" is all these scenarios need.
+    rpc: async () => ({ data: [], error: null }),
+    tables,
+  };
 }
 
 // Realistic event factories
@@ -371,7 +438,11 @@ const evActivated = {
     },
   },
 };
-const evCharged = (payId: string, paidCount: number) => ({
+// `ts` = the gateway payment-entity created_at (unix seconds), i.e. when
+// the charge was ATTEMPTED. Distinct values let a scenario order events in
+// real time independently of the order they are fed to the handler — which
+// is the whole point of the attempted_at fix (migration 036).
+const evCharged = (payId: string, paidCount: number, ts = 1788479400) => ({
   entity: "event",
   event: "subscription.charged",
   payload: {
@@ -382,12 +453,12 @@ const evCharged = (payId: string, paidCount: number) => ({
         amount: 25100,
         status: "captured",
         method: "upi",
-        created_at: 1788479400,
+        created_at: ts,
       },
     },
   },
 });
-const evFailed = (payId: string) => ({
+const evFailed = (payId: string, ts = 1788479400) => ({
   entity: "event",
   event: "subscription.payment.failed",
   payload: {
@@ -398,11 +469,27 @@ const evFailed = (payId: string) => ({
         amount: 25100,
         status: "failed",
         method: "upi",
-        created_at: 1788479400,
+        created_at: ts,
         error_description: "UPI mandate payment failed - insufficient funds",
       },
     },
   },
+});
+
+// A prior CAPTURED payment — marks an "established" (already-paid)
+// subscriber, so failures fall under the lenient 3-strike RENEWAL grace
+// rather than the first-cycle immediate demotion. `ts` (unix seconds) sits
+// BEFORE the failure timestamps so the capture never sorts to the top of
+// the recent-history window.
+const seedCapture = (payId: string, ts = 1785000000) => ({
+  subscription_id: "S1",
+  razorpay_payment_id: payId,
+  amount_paise: 25100,
+  status: "captured",
+  method: "upi",
+  paid_at: new Date(ts * 1000).toISOString(),
+  attempted_at: new Date(ts * 1000).toISOString(),
+  created_at: new Date(ts * 1000).toISOString(),
 });
 
 // — Scenario A: activation (the ONLY 'active' setter) —
@@ -444,10 +531,27 @@ const evFailed = (payId: string) => ({
   check("B: status stays active", db.tables.subscriptions[0].status === "active");
 }
 
-// — Scenario C: 1st + 2nd failure do NOT demote —
+// — Scenario C0: FIRST-cycle failure (never captured) demotes at once —
+// A mandate that authorised but never collected a rupee is an incomplete
+// checkout, not a paying member: one failure drops it to 'pending' so it
+// can never sit as 'active' against ₹0.
 {
   const db = makeMockDb({
     subscriptions: [{ id: "S1", razorpay_sub_id: "sub_REAL1", status: "active" }],
+  });
+  const r1 = await processWebhookEvent(db as never, evFailed("pay_FC1"));
+  const s = db.tables.subscriptions[0];
+  check(
+    "C0: first-ever charge fails → demoted_pending immediately",
+    r1.action === "demoted_pending" && s.status === "pending",
+  );
+}
+
+// — Scenario C: an ESTABLISHED subscriber's 1st + 2nd renewal failures do NOT demote —
+{
+  const db = makeMockDb({
+    subscriptions: [{ id: "S1", razorpay_sub_id: "sub_REAL1", status: "active" }],
+    payments: [seedCapture("pay_PAID1")], // has paid before → renewal grace
   });
   const r1 = await processWebhookEvent(db as never, evFailed("pay_F1"));
   const r2 = await processWebhookEvent(db as never, evFailed("pay_F2"));
@@ -467,10 +571,11 @@ const evFailed = (payId: string) => ({
   );
 }
 
-// — Scenario D: 3rd consecutive failure demotes active → pending —
+// — Scenario D: an established subscriber's 3rd consecutive failure demotes active → pending —
 {
   const db = makeMockDb({
     subscriptions: [{ id: "S1", razorpay_sub_id: "sub_REAL1", status: "active" }],
+    payments: [seedCapture("pay_PAID1")], // paid before → 3-strike grace applies
   });
   await processWebhookEvent(db as never, evFailed("pay_F1"));
   await processWebhookEvent(db as never, evFailed("pay_F2"));
@@ -485,14 +590,17 @@ const evFailed = (payId: string) => ({
 }
 
 // — Scenario E: a success between failures breaks the chain —
+// Distinct attempt timestamps so the successful retry sorts ABOVE the
+// later failure in the recent-history window (attempted_at ordering).
 {
   const db = makeMockDb({
     subscriptions: [{ id: "S1", razorpay_sub_id: "sub_REAL1", status: "active" }],
+    payments: [seedCapture("pay_PAID1")], // established subscriber
   });
-  await processWebhookEvent(db as never, evFailed("pay_F1"));
-  await processWebhookEvent(db as never, evFailed("pay_F2"));
-  await processWebhookEvent(db as never, evCharged("pay_OK", 3)); // retry succeeds
-  const r = await processWebhookEvent(db as never, evFailed("pay_F3"));
+  await processWebhookEvent(db as never, evFailed("pay_F1", 1788479401));
+  await processWebhookEvent(db as never, evFailed("pay_F2", 1788479402));
+  await processWebhookEvent(db as never, evCharged("pay_OK", 3, 1788479403)); // retry succeeds
+  const r = await processWebhookEvent(db as never, evFailed("pay_F3", 1788479404));
   check("E: captured payment breaks chain → counter resets", r.consecutiveFailures === 1);
   check(
     "E: no demotion after broken chain",
@@ -518,14 +626,63 @@ const evFailed = (payId: string) => ({
 {
   const db = makeMockDb({
     subscriptions: [{ id: "S1", razorpay_sub_id: "sub_REAL1", status: "active" }],
+    payments: [seedCapture("pay_PAID1")], // established subscriber
   });
   await processWebhookEvent(db as never, evFailed("pay_F1"));
   await processWebhookEvent(db as never, evFailed("pay_F2"));
   await processWebhookEvent(db as never, evFailed("pay_F3")); // → pending
-  const rc = await processWebhookEvent(db as never, evCharged("pay_RECOVER", 4));
+  const rc = await processWebhookEvent(db as never, evCharged("pay_RECOVER", 4, 1788500000));
   check(
     "G: demoted sub returns to active on successful charge",
     rc.action === "charged" && db.tables.subscriptions[0].status === "active",
+  );
+}
+
+// — Scenario OO: OUT-OF-ORDER delivery — a late 'failed' for an OLD attempt
+// must NOT demote a subscriber whose newest attempt actually SUCCEEDED.
+// This is the core of the attempted_at fix: the capture has the newest
+// attempt time but was inserted FIRST; the stale failure is inserted LAST
+// (newest created_at) yet carries an OLDER attempt time. Ordering by
+// created_at would put the stale failure on top and wrongly complete a
+// 3-failure chain; ordering by attempted_at keeps the capture on top.
+{
+  const db = makeMockDb({
+    subscriptions: [{ id: "S1", razorpay_sub_id: "sub_REAL1", status: "active" }],
+    payments: [
+      seedCapture("pay_PAID1", 1785000000),
+      // two earlier failed attempts, and the real latest event = a capture
+      {
+        subscription_id: "S1",
+        razorpay_payment_id: "pay_OLDF1",
+        amount_paise: 25100,
+        status: "failed",
+        attempted_at: new Date(1788479401 * 1000).toISOString(),
+        created_at: new Date(1788479401 * 1000).toISOString(),
+      },
+      {
+        subscription_id: "S1",
+        razorpay_payment_id: "pay_OLDF2",
+        amount_paise: 25100,
+        status: "failed",
+        attempted_at: new Date(1788479402 * 1000).toISOString(),
+        created_at: new Date(1788479402 * 1000).toISOString(),
+      },
+      {
+        subscription_id: "S1",
+        razorpay_payment_id: "pay_LATECAP",
+        amount_paise: 25100,
+        status: "captured",
+        attempted_at: new Date(1788479500 * 1000).toISOString(), // NEWEST attempt
+        created_at: new Date(1788479500 * 1000).toISOString(),
+      },
+    ],
+  });
+  // A stale failure webhook (attempt time 1788479403 — BEFORE the capture)
+  // arrives late, so it is inserted with the newest created_at.
+  const r = await processWebhookEvent(db as never, evFailed("pay_STALE", 1788479403));
+  check(
+    "OO: stale late failure does NOT demote (capture is newest by attempt time)",
+    r.action === "payment_failed" && db.tables.subscriptions[0].status === "active",
   );
 }
 

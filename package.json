@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "test": "npm run test:schedule && npm run test:webhook",
     "test:schedule": "node scratch/run_schedule_tests.mjs",
+    "test:webhook": "node --import ./scratch/ts-aliases.mjs scratch/verify_webhook.ts",
     "format": "prettier --write ."
   },
   "dependencies": {

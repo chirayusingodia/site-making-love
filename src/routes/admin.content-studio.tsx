@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -111,6 +112,7 @@ function CreateTab() {
   const [format, setFormat] = useState<PostFormat>("reel");
   const [pillar, setPillar] = useState<Pillar>("mirror");
   const [topic, setTopic] = useState("");
+  const [promo, setPromo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,7 +127,7 @@ function CreateTab() {
     try {
       const res = await callAdminApi<{ content: GeneratedContent; model: string }>(
         "/api/admin/content/generate",
-        { format, pillar, topic: topic.trim() || undefined },
+        { format, pillar, topic: topic.trim() || undefined, promo },
       );
       setContent(res.content);
       setModel(res.model);
@@ -134,7 +136,7 @@ function CreateTab() {
     } finally {
       setLoading(false);
     }
-  }, [format, pillar, topic]);
+  }, [format, pillar, topic, promo]);
 
   const save = useCallback(
     async (status: PostStatus) => {
@@ -205,6 +207,17 @@ function CreateTab() {
             placeholder="e.g. overthinking at night, gratitude, forgiveness…"
             rows={2}
           />
+        </div>
+
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-900/10 bg-amber-50/40 px-3 py-2.5">
+          <div>
+            <p className="text-sm font-medium text-slate-800">Promo post</p>
+            <p className="text-[11px] text-slate-500">
+              Off = pure wisdom, empty caption (the normal, high-engagement post — verified against
+              immortaltalks' own top posts). On = a rare, one-line offer caption.
+            </p>
+          </div>
+          <Switch checked={promo} onCheckedChange={setPromo} />
         </div>
 
         <Button onClick={generate} disabled={loading} className="w-full">
@@ -337,19 +350,21 @@ function ContentEditor({
         </Field>
       )}
 
-      {/* Caption */}
-      <Field label="Caption (below the post)">
+      {/* Caption — usually intentionally empty (verified against
+          immortaltalks' live posts: wisdom posts carry no caption at
+          all, and that's the pattern behind their top engagement). */}
+      <Field label="Caption (below the post) — empty is normal for wisdom posts">
         <BilingualText
           en={content.caption.en}
           hi={content.caption.hi}
-          rows={5}
+          rows={3}
           onEn={(v) => setPair("caption", "en", v)}
           onHi={(v) => setPair("caption", "hi", v)}
         />
       </Field>
 
-      {/* CTA */}
-      <Field label="CTA (soft invite)">
+      {/* CTA — only meaningful on a Promo post; empty otherwise */}
+      <Field label="CTA (promo posts only)">
         <BilingualText
           en={content.cta.en}
           hi={content.cta.hi}
@@ -375,19 +390,23 @@ function ContentEditor({
         </Field>
       )}
 
-      {/* Hashtags */}
-      <Field label="Hashtags">
-        <div className="grid sm:grid-cols-2 gap-2 text-xs">
-          <p className="text-slate-600">
-            <span className="font-semibold text-slate-400">EN: </span>
-            {content.hashtags.en.join(" ")}
-          </p>
-          <p className="text-slate-600">
-            <span className="font-semibold text-slate-400">HI: </span>
-            {content.hashtags.hi.join(" ")}
-          </p>
-        </div>
-      </Field>
+      {/* Hashtags — empty by default. immortaltalks uses none, on any
+          post type; leave this blank unless you deliberately want to
+          deviate from the model. */}
+      {(content.hashtags.en.length > 0 || content.hashtags.hi.length > 0) && (
+        <Field label="Hashtags (off-model — immortaltalks uses none)">
+          <div className="grid sm:grid-cols-2 gap-2 text-xs">
+            <p className="text-slate-600">
+              <span className="font-semibold text-slate-400">EN: </span>
+              {content.hashtags.en.join(" ")}
+            </p>
+            <p className="text-slate-600">
+              <span className="font-semibold text-slate-400">HI: </span>
+              {content.hashtags.hi.join(" ")}
+            </p>
+          </div>
+        </Field>
+      )}
     </div>
   );
 }
@@ -611,7 +630,9 @@ function LibraryCard({
         <div>
           <p className="text-[10px] font-semibold text-slate-400 uppercase mb-0.5">Caption (EN)</p>
           <p className="text-slate-700 whitespace-pre-wrap line-clamp-4">
-            {post.content.caption?.en}
+            {post.content.caption?.en || (
+              <em className="text-slate-400">(empty — pure wisdom post, by design)</em>
+            )}
           </p>
         </div>
       </div>
@@ -691,7 +712,9 @@ function LibraryCard({
           onClick={() =>
             copy(
               "cap-en",
-              `${post.content.caption?.en ?? ""}\n\n${(post.content.hashtags?.en ?? []).join(" ")}`,
+              [post.content.caption?.en, (post.content.hashtags?.en ?? []).join(" ")]
+                .filter(Boolean)
+                .join("\n\n"),
             )
           }
         />
@@ -701,7 +724,9 @@ function LibraryCard({
           onClick={() =>
             copy(
               "cap-hi",
-              `${post.content.caption?.hi ?? ""}\n\n${(post.content.hashtags?.hi ?? []).join(" ")}`,
+              [post.content.caption?.hi, (post.content.hashtags?.hi ?? []).join(" ")]
+                .filter(Boolean)
+                .join("\n\n"),
             )
           }
         />
