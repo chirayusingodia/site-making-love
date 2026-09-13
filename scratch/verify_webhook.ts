@@ -294,8 +294,15 @@ function makeMockDb(seed: {
     audit_logs: [],
   };
 
-  const applyFilters = (rows: Row[], filters: [string, unknown][]) =>
-    rows.filter((r) => filters.every(([c, v]) => r[c] === v));
+  const applyFilters = (
+    rows: Row[],
+    filters: [string, unknown][],
+    neqFilters: [string, unknown][] = [],
+  ) =>
+    rows.filter(
+      (r) =>
+        filters.every(([c, v]) => r[c] === v) && neqFilters.every(([c, v]) => r[c] !== v),
+    );
 
   function builder(table: string) {
     // Any table the code touches but no scenario seeded starts empty,
@@ -304,6 +311,7 @@ function makeMockDb(seed: {
     const st: {
       mode: string | null;
       filters: [string, unknown][];
+      neqFilters: [string, unknown][];
       // Multi-column order (chained .order() calls), applied in sequence
       // like PostgREST — so `.order("attempted_at").order("created_at")`
       // sorts by attempted_at then breaks ties by created_at.
@@ -315,6 +323,7 @@ function makeMockDb(seed: {
     } = {
       mode: null,
       filters: [],
+      neqFilters: [],
       orders: [],
       limitN: null,
       payload: null,
@@ -323,7 +332,7 @@ function makeMockDb(seed: {
     };
 
     const execSelect = () => {
-      let rows = applyFilters(tables[table], st.filters);
+      let rows = applyFilters(tables[table], st.filters, st.neqFilters);
       if (st.orders.length) {
         rows = [...rows].sort((a, b) => {
           for (const { col, asc } of st.orders) {
@@ -361,7 +370,7 @@ function makeMockDb(seed: {
         // status already moved) returns [] so the handler's
         // updatedRows.length check sees the lost race, exactly like
         // PostgREST's `.update(...).select()`.
-        const affected = applyFilters(tables[table], st.filters);
+        const affected = applyFilters(tables[table], st.filters, st.neqFilters);
         for (const t of affected) Object.assign(t, st.payload as Row);
         return Promise.resolve({
           data: st.returning ? affected.map((r) => ({ ...r })) : null,
@@ -388,6 +397,7 @@ function makeMockDb(seed: {
       ),
       update: (p: unknown) => ((st.mode = "update"), (st.payload = p), api),
       eq: (c: string, v: unknown) => (st.filters.push([c, v]), api),
+      neq: (c: string, v: unknown) => (st.neqFilters.push([c, v]), api),
       order: (c: string, o?: { ascending?: boolean }) => (
         st.orders.push({ col: c, asc: o?.ascending !== false }), api
       ),
@@ -515,6 +525,37 @@ const seedCapture = (payId: string, ts = 1785000000) => ({
     (() => {
       const a = db.tables.audit_logs[0];
       return !!a && a.admin_id === null && a.action === "razorpay.subscription.activated";
+    })(),
+  );
+}
+
+// — Scenario A2: activation retires the user's LEFTOVER same-plan pending —
+// The stuck-checkout retry path can leave an orphaned `pending` row behind.
+// When the real subscription activates, that sibling must be expired (so a
+// paid subscriber never lingers in the "Abandoned Checkout" queue) — but a
+// pending row for a DIFFERENT plan is a genuine second checkout and stays.
+{
+  const db = makeMockDb({
+    subscriptions: [
+      { id: "S1", razorpay_sub_id: "sub_REAL1", status: "pending", user_id: "U1", plan_id: "P1" },
+      { id: "S_OLD", status: "pending", user_id: "U1", plan_id: "P1" }, // leftover, same plan
+      { id: "S_OTHER", status: "pending", user_id: "U1", plan_id: "P2" }, // different plan
+    ],
+  });
+  const res = await processWebhookEvent(db as never, evActivated);
+  const byId = (id: string) => db.tables.subscriptions.find((r) => r.id === id)!;
+  check("A2: activation succeeds", res.handled && res.action === "activated");
+  check("A2: activated row is active", byId("S1").status === "active");
+  check("A2: leftover same-plan pending expired", byId("S_OLD").status === "expired");
+  check("A2: different-plan pending untouched", byId("S_OTHER").status === "pending");
+  check(
+    "A2: audit records superseded count",
+    (() => {
+      const a = db.tables.audit_logs.find(
+        (r) => r.action === "razorpay.subscription.activated",
+      );
+      return !!a && (a.meta as { superseded_pending_subscriptions?: number })
+        .superseded_pending_subscriptions === 1;
     })(),
   );
 }

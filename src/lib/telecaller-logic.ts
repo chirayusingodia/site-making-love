@@ -441,8 +441,22 @@ export function matchesPaymentFailed(row: TelecallerQueueRow): boolean {
   );
 }
 
-export function matchesAbandonedCheckout(row: TelecallerQueueRow, nowMs: number): boolean {
+export function matchesAbandonedCheckout(
+  row: TelecallerQueueRow,
+  nowMs: number,
+  convertedProfileIds?: ReadonlySet<string>,
+): boolean {
   if (row.doNotCall || row.subscriptionStatus !== "pending") return false;
+  // A leftover `pending` subscription from the stuck-checkout retry path:
+  // when a mandate is alive but a webhook was missed, checkout KEEPS the old
+  // pending row and issues a FRESH checkout alongside (see
+  // subscriptions-checkout.server.ts). Once the customer pays on the newer
+  // row they are an ACTIVE subscriber — the orphaned pending is NOT an
+  // abandoned checkout and must not resurface a paid subscriber here. The
+  // dataset builds one row PER subscription, so cross-row awareness (the
+  // set of profiles that already have a non-pending subscription) has to
+  // gate this queue.
+  if (convertedProfileIds?.has(row.profileId)) return false;
   const created = ms(row.subscriptionCreatedAt);
   return created !== null && nowMs - created >= ABANDONED_CHECKOUT_MINUTES * 60_000;
 }
@@ -588,6 +602,17 @@ export function assignQueues(input: {
   const out = {} as QueueAssignment;
   for (const key of TELECALLER_QUEUE_KEYS) out[key] = [];
 
+  // Profiles that already own a NON-pending subscription (active/paused/
+  // cancelled) got past checkout at least once. Any stray `pending` row they
+  // still carry is a stuck-checkout artifact, not fresh intent — used below to
+  // keep paid subscribers out of Abandoned Checkout.
+  const convertedProfileIds = new Set<string>();
+  for (const row of rows) {
+    if (row.subscriptionStatus !== null && row.subscriptionStatus !== "pending") {
+      convertedProfileIds.add(row.profileId);
+    }
+  }
+
   for (const row of rows) {
     const cooled = wasCalledWithinCooldown(logs, row, nowMs);
 
@@ -596,7 +621,8 @@ export function assignQueues(input: {
     // and welcome-call (which requires zero contact anyway).
     if (matchesCutoffRisk(row, batch.cutoffAtMs, nowMs) && !cooled) out.cutoff_risk.push(row);
     if (matchesPaymentFailed(row) && !cooled) out.payment_failed.push(row);
-    if (matchesAbandonedCheckout(row, nowMs) && !cooled) out.abandoned_checkout.push(row);
+    if (matchesAbandonedCheckout(row, nowMs, convertedProfileIds) && !cooled)
+      out.abandoned_checkout.push(row);
     if (matchesNeverBought(row, nowMs) && !cooled) out.never_bought.push(row);
     if (matchesPaused(row) && !cooled) out.paused.push(row);
     if (matchesRecentlyCancelled(row, nowMs) && !cooled) out.recently_cancelled.push(row);

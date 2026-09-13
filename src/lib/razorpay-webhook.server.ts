@@ -580,6 +580,49 @@ export async function processRefundEvent(
 }
 
 /**
+ * Retire a subscriber's LEFTOVER `pending` checkout rows once one of
+ * their subscriptions goes live.
+ *
+ * The stuck-checkout retry path (subscriptions-checkout.server.ts) can
+ * KEEP an old `pending` subscription and issue a FRESH checkout beside
+ * it when a mandate is alive but a webhook was missed. Payment then lands
+ * on the new row and activates it here — but the old `pending` row fires
+ * zero further webhooks (its Razorpay sheet is stuck `created`) and would
+ * otherwise linger forever, resurfacing a PAID subscriber in the
+ * telecaller "Abandoned Checkout" queue.
+ *
+ * Cure at the source: when a row activates, mark that user's OTHER
+ * `pending` rows FOR THE SAME PLAN as `expired` (an unpaid checkout that
+ * lapsed — the honest terminal status). Scope mirrors the checkout
+ * reuse-lookup (`user_id` + `plan_id` + `status='pending'`); a pending
+ * row for a DIFFERENT plan is a genuine second checkout in flight and is
+ * never touched. `expired` (not `cancelled`) avoids dropping a paid
+ * subscriber into the Recently-Cancelled queue; we don't DELETE because
+ * payments.subscription_id is ON DELETE RESTRICT (a failed-payment row
+ * would block it) and the row is worth keeping as an audit trail.
+ *
+ * Returns the number of rows retired (0 in the common single-row case).
+ * Never throws — reconciliation is best-effort cleanup, never a reason
+ * to fail a webhook whose payment is already recorded.
+ */
+async function expireSupersededPendingSiblings(
+  db: SupabaseClient,
+  opts: { userId: string; planId: string | null; keepSubscriptionId: string; nowIso: string },
+): Promise<number> {
+  if (!opts.planId) return 0; // no plan to scope by — leave everything alone
+  const { data, error } = await db
+    .from("subscriptions")
+    .update({ status: "expired", updated_at: opts.nowIso })
+    .eq("user_id", opts.userId)
+    .eq("plan_id", opts.planId)
+    .eq("status", "pending")
+    .neq("id", opts.keepSubscriptionId)
+    .select("id");
+  if (error) throw new Error(`superseded-pending cleanup failed: ${error.message}`);
+  return data?.length ?? 0;
+}
+
+/**
  * Processes one verified Razorpay event against the database.
  * Idempotent: payment upserts key on razorpay_payment_id; status
  * patches are set-valued, so replays converge to the same state.
@@ -653,7 +696,7 @@ export async function processWebhookEvent(
 
   const { data: sub, error: subErr } = await db
     .from("subscriptions")
-    .select("id,status")
+    .select("id,status,user_id,plan_id")
     .eq("id", mandate.subscription_id)
     .maybeSingle();
   if (subErr) throw new Error(`subscriptions lookup failed: ${subErr.message}`);
@@ -681,6 +724,7 @@ export async function processWebhookEvent(
   const nowIso = new Date().toISOString();
   let action: ProcessResult["action"] = "skipped_no_change";
   let consecutiveFailures: number | undefined;
+  let supersededPending = 0;
 
   // ── Payment ledger writes ──
   if (ctx.event === "subscription.payment.failed") {
@@ -802,6 +846,28 @@ export async function processWebhookEvent(
         if (error) throw new Error(`payment upsert failed: ${error.message}`);
       }
     }
+
+    // Retire leftover pending checkouts once THIS row is live — but only
+    // when the status patch actually took effect this delivery (a stale
+    // or CAS-lost activation must not sweep siblings). Best-effort: the
+    // payment is already recorded, so a cleanup hiccup never fails the
+    // webhook — the next activated/charged delivery, or the backfill
+    // script, retries the sweep.
+    if (action === "activated" || action === "charged" || action === "resumed") {
+      try {
+        supersededPending = await expireSupersededPendingSiblings(db, {
+          userId: sub.user_id,
+          planId: sub.plan_id,
+          keepSubscriptionId: sub.id,
+          nowIso,
+        });
+      } catch (err) {
+        console.error(
+          "superseded-pending cleanup failed:",
+          err instanceof Error ? err.message : err,
+        );
+      }
+    }
   }
 
   // ── Mandate bookkeeping ──
@@ -852,6 +918,7 @@ export async function processWebhookEvent(
       result: action,
       consecutive_failures: consecutiveFailures ?? null,
       previous_status: sub.status,
+      ...(supersededPending > 0 ? { superseded_pending_subscriptions: supersededPending } : {}),
       ...(promotedMandate
         ? { promoted_mandate: true, replaced_mandate_id: mandate.replaces_mandate_id }
         : {}),
