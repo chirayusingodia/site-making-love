@@ -8,6 +8,13 @@ import {
   deleteSiteImageOverride,
   type SiteImageOverrideRow,
 } from "@/lib/site-image-overrides";
+import {
+  fetchProofGalleryItems,
+  addProofGalleryItem,
+  deleteProofGalleryItem,
+  updateProofGalleryItemOrder,
+  type ProofGalleryItem,
+} from "@/lib/proof-gallery-items";
 import { SITE_IMAGES, setSiteImageOverride } from "@/lib/site-images";
 import { setTestimonialAvatarOverride } from "@/lib/plans";
 import { IMAGE_SLOT_SECTIONS, type ImageSlot } from "@/lib/image-slots";
@@ -15,7 +22,7 @@ import { CldImage } from "@/components/CldImage";
 import { CloudinaryImageButton } from "@/components/admin/CloudinaryImageButton";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImageIcon, ExternalLink, RotateCcw, Info } from "lucide-react";
+import { ImageIcon, ExternalLink, RotateCcw, Info, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 // Admin/owner tier — no extra beforeLoad needed here, the parent /admin
 // shell already redirects non-staff. Same pattern as /admin/seo.
@@ -33,6 +40,7 @@ interface PlanCardRow {
 function AdminImagesPage() {
   const [overrides, setOverrides] = useState<Map<string, SiteImageOverrideRow>>(new Map());
   const [plans, setPlans] = useState<PlanCardRow[]>([]);
+  const [proofItems, setProofItems] = useState<ProofGalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,17 +48,19 @@ function AdminImagesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [overrideRows, plansRes] = await Promise.all([
+      const [overrideRows, plansRes, proofRows] = await Promise.all([
         fetchSiteImageOverrides(),
         supabase
           .from("plans")
           .select("id, slug, name, card_image_url")
           .eq("is_active", true)
           .order("sort_order"),
+        fetchProofGalleryItems(),
       ]);
       if (plansRes.error) throw new Error(plansRes.error.message);
       setOverrides(new Map(overrideRows.map((r) => [r.slot_key, r])));
       setPlans((plansRes.data ?? []) as PlanCardRow[]);
+      setProofItems(proofRows);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Load failed");
     } finally {
@@ -128,6 +138,12 @@ function AdminImagesPage() {
                   />
                 ))}
               </div>
+              {section.title === "Location व Proof Gallery" && (
+                <ProofGalleryExtras
+                  items={proofItems}
+                  onChanged={setProofItems}
+                />
+              )}
             </section>
           ))}
 
@@ -276,6 +292,133 @@ function SlotCard({
         )}
       </div>
       {err && <p className="text-[11px] text-rose-600">{err}</p>}
+    </div>
+  );
+}
+
+/**
+ * Extra Proof Gallery photos — unlimited count, appended after the 4 fixed
+ * core thumbnails on the live site (see proof-gallery-items.ts). Lives
+ * inside the "Location व Proof Gallery" admin section rather than its own
+ * page, right next to the 4 fixed slots it supplements.
+ */
+function ProofGalleryExtras({
+  items,
+  onChanged,
+}: {
+  items: ProofGalleryItem[];
+  onChanged: (items: ProofGalleryItem[]) => void;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function handleAdd(secureUrl: string, publicId: string) {
+    setErr(null);
+    try {
+      const nextOrder = items.length > 0 ? Math.max(...items.map((i) => i.sort_order)) + 1 : 0;
+      const row = await addProofGalleryItem(secureUrl, publicId, nextOrder);
+      await logAdminAudit("proof_gallery.add", "proof_gallery_items", row.id, {});
+      onChanged([...items, row]);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Add failed");
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setErr(null);
+    setBusyId(id);
+    try {
+      await deleteProofGalleryItem(id);
+      await logAdminAudit("proof_gallery.delete", "proof_gallery_items", id, {});
+      onChanged(items.filter((i) => i.id !== id));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleMove(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= items.length) return;
+    setErr(null);
+    const a = items[index];
+    const b = items[target];
+    setBusyId(a.id);
+    try {
+      await Promise.all([
+        updateProofGalleryItemOrder(a.id, b.sort_order),
+        updateProofGalleryItemOrder(b.id, a.sort_order),
+      ]);
+      const next = [...items];
+      next[index] = { ...b, sort_order: a.sort_order };
+      next[target] = { ...a, sort_order: b.sort_order };
+      onChanged(next);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Reorder failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-100">
+      <p className="text-xs font-semibold text-slate-800">Extra Proof Photos (jitni chahein utni)</p>
+      <p className="text-[11px] text-slate-500 mt-0.5">
+        Upar ke 4 fixed photo ke baad, yahan se aur photos add karein — Reviews page aur homepage
+        dono par turant dikhengi.
+      </p>
+      {items.length > 0 && (
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {items.map((item, i) => (
+            <div key={item.id} className="rounded-xl border border-slate-200 p-2 space-y-1.5">
+              <div className="w-full aspect-square rounded-lg overflow-hidden bg-slate-50">
+                <img src={item.image_url} alt={item.alt_text} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex items-center justify-center gap-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={busyId === item.id || i === 0}
+                  onClick={() => handleMove(i, -1)}
+                  className="h-7 w-7 p-0"
+                >
+                  <ArrowUp className="w-3 h-3" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={busyId === item.id || i === items.length - 1}
+                  onClick={() => handleMove(i, 1)}
+                  className="h-7 w-7 p-0"
+                >
+                  <ArrowDown className="w-3 h-3" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={busyId === item.id}
+                  onClick={() => handleDelete(item.id)}
+                  className="h-7 w-7 p-0 text-rose-600 hover:text-rose-700"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="mt-3">
+        <CloudinaryImageButton
+          folder="punyata-site/proof-gallery"
+          label="+ Photo Add Karein"
+          onUploaded={handleAdd}
+        />
+      </div>
+      {err && <p className="text-[11px] text-rose-600 mt-1.5">{err}</p>}
     </div>
   );
 }

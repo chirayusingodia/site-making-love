@@ -6,7 +6,7 @@ import { useMySubscription } from "@/hooks/use-my-subscription";
 import { useLanguage, useTranslation, LANG_KEY, type Lang } from "@/lib/translations";
 import { captureAttributionOnce } from "@/lib/attribution";
 
-const WHATSAPP_RAW = "918005828548";
+const WHATSAPP_RAW = "917014098548";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(
   "Jai Siyaram, मुझे पुण्यता से जुड़ना है।",
 )}`;

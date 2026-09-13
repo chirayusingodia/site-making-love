@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ImageIcon, Check } from "lucide-react";
 import { LottieIcon } from "./LottieIcon";
@@ -6,7 +6,8 @@ import { useTranslation } from "@/lib/translations";
 import checkmark from "@/assets/lottie/checkmark.json";
 
 import { CldImage, IMAGE_SIZES } from "./CldImage";
-import { SITE_IMAGES, type SiteImage } from "@/lib/site-images";
+import { SITE_IMAGES, externalImage, type SiteImage } from "@/lib/site-images";
+import { fetchProofGalleryItems } from "@/lib/proof-gallery-items";
 
 function VideoThumbnailCard({ image }: { image: SiteImage }) {
   const lottieRef = useRef<any>(null);
@@ -68,13 +69,37 @@ function VideoThumbnailCard({ image }: { image: SiteImage }) {
   );
 }
 
-export function ProofGallery({ showSeeAll = true }: { showSeeAll?: boolean }) {
+export function ProofGallery({
+  showSeeAll = true,
+  size = "compact",
+}: {
+  showSeeAll?: boolean;
+  /** "large" is a fixed 2-column grid — bigger tiles for a dedicated gallery page. */
+  size?: "compact" | "large";
+}) {
   const { t } = useTranslation();
+  const [extraItems, setExtraItems] = useState<SiteImage[]>([]);
+
+  // Admin-added photos (unlimited count, /admin/images) — appended after the
+  // 4 fixed core thumbnails below. Fetched client-side only; nothing to
+  // flash between since these are purely additive (never replace a default).
+  useEffect(() => {
+    let cancelled = false;
+    fetchProofGalleryItems().then((rows) => {
+      if (cancelled) return;
+      setExtraItems(rows.map((row) => externalImage(row.image_url, row.alt_text)));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const imgs: SiteImage[] = [
     SITE_IMAGES.proofGhat,
     SITE_IMAGES.proofHavan,
     SITE_IMAGES.proofWhatsapp,
     SITE_IMAGES.proofGau,
+    ...extraItems,
   ];
 
   return (
@@ -87,7 +112,13 @@ export function ProofGallery({ showSeeAll = true }: { showSeeAll?: boolean }) {
           </Link>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+      <div
+        className={
+          size === "large"
+            ? "grid grid-cols-2 gap-4"
+            : "grid grid-cols-2 md:grid-cols-4 gap-2.5"
+        }
+      >
         {imgs.map((image, i) => (
           <VideoThumbnailCard key={i} image={image} />
         ))}
