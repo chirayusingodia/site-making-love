@@ -74,6 +74,19 @@ export function nextSevaDate(hasLastSaturday: boolean): SevaDate {
   return future[0] ?? candidates.sort((a, b) => a.date.getTime() - b.date.getTime())[0];
 }
 
+/**
+ * Same as nextSevaDate(), but with a specific hour of day set — for a
+ * live ticking countdown rather than a date-only display. No actual
+ * sankalp start time is stored anywhere, so this is a display estimate
+ * (default 8 AM); it never changes which DAY is shown, only the
+ * hours/minutes/seconds ticking down to it.
+ */
+export function nextSevaDateTime(hasLastSaturday: boolean, hourOfDay = 8): Date {
+  const dt = new Date(nextSevaDate(hasLastSaturday).date);
+  dt.setHours(hourOfDay, 0, 0, 0);
+  return dt;
+}
+
 /** Whole calendar days from today (IST) until a date; 0 if today, never negative. */
 export function daysUntil(d: Date): number {
   const today = istToday();

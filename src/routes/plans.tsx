@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, X, MapPin, Video, BookOpen, Flame, Heart, Users, Sun as SunIcon, AlertTriangle, RefreshCw, CalendarDays } from "lucide-react";
 import { ComparisonTable } from "@/components/ComparisonTable";
 import { usePublicPlans, acharyas, acharyasEn, localizePlan, type Plan } from "@/lib/plans";
+import { isHawanSeva } from "@/lib/plans-schedule";
+import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
 import { SiteChrome } from "@/components/site-chrome";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { LottieIcon } from "@/components/LottieIcon";
@@ -300,6 +302,11 @@ function PlanCard({ plan: rawPlan }: { plan: Plan }) {
             <MapPin size={12} className="text-brand" />
             <span className="text-foreground">{plan.location}</span>
           </div>
+
+          <NextPoojaCountdown
+            hasLastSaturday={plan.includedSevas.some(isHawanSeva)}
+            variant="compact"
+          />
 
           <div className="border-t border-black/5 pt-4 space-y-2">
             {plan.features.map((f) => {

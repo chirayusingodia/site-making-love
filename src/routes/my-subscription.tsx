@@ -16,7 +16,6 @@ import {
   Download,
   ExternalLink,
   Landmark,
-  CalendarDays,
   BookOpen,
   Flame,
   Sun,
@@ -33,8 +32,9 @@ import { supabase } from "@/lib/supabase";
 import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 import { usePublicPlans, getPlanById, formatINR } from "@/lib/plans";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
-import { nextSevaDate, fmtSevaDate, daysUntil, monthsActive } from "@/lib/seva-dates";
+import { nextSevaDate, fmtSevaDate, monthsActive } from "@/lib/seva-dates";
 import { useTranslation, localizedName, type Lang } from "@/lib/translations";
+import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
 
 export const Route = createFileRoute("/my-subscription")({
   head: () => ({
@@ -347,14 +347,6 @@ function MySubscriptionPage() {
 
   // Next scheduled seva (cadence hint) — only meaningful while active.
   const next = isActive ? nextSevaDate(hasLastSaturday) : null;
-  const nextInDays = next ? daysUntil(next.date) : 0;
-  const whenLabel = next
-    ? nextInDays > 0
-      ? lang === "english"
-        ? `in ${nextInDays} ${nextInDays === 1 ? t("unit_day") : t("unit_days")}`
-        : `${nextInDays} ${t("unit_days")} में`
-      : t("s_today")
-    : "";
 
   const joinLabel = fmtDate(current.start_date ?? current.created_at);
   const priceLabel = plan ? formatINR(plan.price_paise) : "";
@@ -449,26 +441,14 @@ function MySubscriptionPage() {
           )}
 
           {isActive && (
-            <div className="flex gap-2.5 mt-3.5">
-              <div className="flex-1 bg-[#FFF7F1] rounded-2xl p-3">
-                <div className="flex items-center gap-1.5 text-brand">
-                  <CalendarDays size={14} />
-                  <span className="text-[11px] font-bold">{t("ms_next_seva")}</span>
-                </div>
-                <div className="text-sm font-bold mt-1">{next ? fmtSevaDate(next.date, lang) : "—"}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {next ? t(next.labelKey) : ""}{whenLabel ? ` · ${whenLabel}` : ""}
-                </div>
+            <div className="mt-3.5 bg-[#FFF7F1] rounded-2xl p-3">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock size={14} />
+                <span className="text-[11px] font-bold">{t("ms_next_billing")}</span>
               </div>
-              <div className="flex-1 bg-[#FFF7F1] rounded-2xl p-3">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Clock size={14} />
-                  <span className="text-[11px] font-bold">{t("ms_next_billing")}</span>
-                </div>
-                <div className="text-sm font-bold mt-1">{fmtDate(current.next_billing_date)}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {t("ms_auto_renew")}{plan ? ` · ${priceLabel}` : ""}
-                </div>
+              <div className="text-sm font-bold mt-1">{fmtDate(current.next_billing_date)}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {t("ms_auto_renew")}{plan ? ` · ${priceLabel}` : ""}
               </div>
             </div>
           )}
@@ -485,6 +465,9 @@ function MySubscriptionPage() {
             </Link>
           )}
         </div>
+
+        {/* ═══ NEXT POOJA — live countdown ═══ */}
+        {isActive && <NextPoojaCountdown hasLastSaturday={hasLastSaturday} variant="hero" />}
 
         {/* ═══ WHAT'S INCLUDED — live composition ═══ */}
         {includedSevas.length > 0 && (
