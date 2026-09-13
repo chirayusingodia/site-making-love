@@ -73,12 +73,18 @@ export const translations = {
     pm_subtitle:
       "Kya aap apne aur apni family ke liye har mahine punya kar paa rahe ho, vedic rituals ke saath?",
     pm_badge: "पुण्य ही वह एकमात्र धन है, जो इस जीवन के बाद भी आपके साथ जाता है",
-    pm_ques_parent: "क्या आप माता-पिता के निमित्त दान-पुण्य करवा पाते हैं?",
-    pm_ques_1: "5 sadhu-santon ko bhojan (Saadhu Santo Ko Bhojan) — vedic sankalp sahit",
-    pm_ques_2: "Gau Mata ko chara / seva",
-    pm_ques_3: "Hanuman ji ke nimit bandaron ko chana/kele (Vanara Seva)",
-    pm_ques_4: "Sundarkand Paath vidhi-vidhan se",
-    pm_ques_5: "Hawan ya Daan-Punya vedic vidhi se",
+    pm_ques_parent:
+      "क्या आप हर महीने माता-पिता के निमित्त दान-पुण्य करवा पाते हैं? (फायदा: पितृ दोष का शमन एवं पूर्वजों का आशीर्वाद)",
+    pm_ques_1:
+      "क्या आप हर महीने 5 साधु-संतों को भोजन (वैदिक संकल्प सहित) करवा पाते हैं? (फायदा: पुण्य लाभ एवं दरिद्रता का नाश)",
+    pm_ques_2:
+      "क्या आप हर महीने गौ माता को चारा एवं सेवा करवा पाते हैं? (फायदा: पापों का नाश एवं परिवार में सकारात्मक ऊर्जा)",
+    pm_ques_3:
+      "क्या आप हर महीने हनुमान जी के निमित्त वानरों को चना-केले खिलवा पाते हैं? (फायदा: हनुमान जी की कृपा से भय एवं संकट का नाश)",
+    pm_ques_4:
+      "क्या आप हर महीने विधि-विधान से सुंदरकांड पाठ करवा पाते हैं? (फायदा: घर में सकारात्मक ऊर्जा एवं मानसिक शांति)",
+    pm_ques_5:
+      "क्या आप हर महीने वैदिक विधि से हवन या दान-पुण्य करवा पाते हैं? (फायदा: ग्रह दोष का शमन एवं आर्थिक बाधाओं से मुक्ति)",
     pm_yes: "Haan, kar paata hoon",
     pm_no: "Nahi, nahi kar paata",
     pm_pass_msg: "Aapka Punya Bank sahi hai",
@@ -151,6 +157,16 @@ export const translations = {
     // Seva cadence labels
     sd_2nd_tuesday: "दूसरा मंगलवार",
     sd_last_saturday: "अंतिम शनिवार",
+
+    // Next-pooja countdown
+    cd_next_pooja: "अगली पूजा",
+    cd_next_pooja_in: "अगली पूजा शुरू होने में",
+    cd_days: "दिन",
+    cd_hours: "घंटे",
+    cd_minutes: "मिनट",
+    cd_seconds: "सेकंड",
+    cd_temple_name: "सिद्धेश्वर बालाजी, यज्ञ घाट",
+    cd_temple_significance: "मान्यता है — यहीं ब्रह्मा जी ने सृष्टि का प्रथम यज्ञ किया था",
 
     // Member cue (header / nav)
     member_badge: "सदस्य",
@@ -345,12 +361,18 @@ export const translations = {
     pm_subtitle:
       "Are you able to accumulate Punya for yourself and your family every month with Vedic rituals?",
     pm_badge: "Punya is the only wealth that goes with you after this life",
-    pm_ques_parent: "Are you able to perform daan-punya for your parents?",
-    pm_ques_1: "Feeding 5 sadhus (Saadhu Santo Ko Bhojan) — with Vedic Sankalp",
-    pm_ques_2: "Feeding Gau Mata (Cow Seva) and caring",
-    pm_ques_3: "Offering chickpeas/bananas to monkeys for Lord Hanuman (Vanara Seva)",
-    pm_ques_4: "Sundarkand path performed according to Vedic rituals",
-    pm_ques_5: "Hawan or Daan-Punya according to Vedic vidhi",
+    pm_ques_parent:
+      "Are you able to perform daan-punya for your parents every month? (Benefit: relief from Pitra Dosh and ancestors' blessings)",
+    pm_ques_1:
+      "Are you able to feed 5 sadhus every month, with Vedic Sankalp? (Benefit: punya and freedom from poverty)",
+    pm_ques_2:
+      "Are you able to feed and serve Gau Mata every month? (Benefit: relief from past sins and positive family energy)",
+    pm_ques_3:
+      "Are you able to feed monkeys for Lord Hanuman every month (Vanara Seva)? (Benefit: Hanuman ji's grace against fear and crisis)",
+    pm_ques_4:
+      "Are you able to get Sundarkand Path performed every month with full Vedic vidhi? (Benefit: positive energy and mental peace at home)",
+    pm_ques_5:
+      "Are you able to perform hawan or daan-punya every month per Vedic vidhi? (Benefit: relief from planetary afflictions and financial hurdles)",
     pm_yes: "Yes, I am able to",
     pm_no: "No, I am not able to",
     pm_pass_msg: "Your Punya Bank is healthy",
@@ -423,6 +445,16 @@ export const translations = {
     // Seva cadence labels
     sd_2nd_tuesday: "2nd Tuesday",
     sd_last_saturday: "Last Saturday",
+
+    // Next-pooja countdown
+    cd_next_pooja: "Next Pooja",
+    cd_next_pooja_in: "Next Pooja Starts In",
+    cd_days: "Days",
+    cd_hours: "Hours",
+    cd_minutes: "Minutes",
+    cd_seconds: "Seconds",
+    cd_temple_name: "Siddheshwar Balaji, Yagya Ghat",
+    cd_temple_significance: "Believed to be where Lord Brahma performed the first yagna of creation",
 
     // Member cue (header / nav)
     member_badge: "Member",

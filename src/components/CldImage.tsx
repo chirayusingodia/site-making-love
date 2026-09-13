@@ -25,6 +25,14 @@ type Props = {
   sizes: string;
   /** Above-the-fold image: eager, high priority, synchronous decode. */
   priority?: boolean;
+  /**
+   * Skip lazy-loading without claiming high fetch priority — for a
+   * carousel, where every slide should already be downloaded before its
+   * turn comes up (lazy-loading a hidden slide meant it only started
+   * fetching the moment it became active, showing the loading
+   * placeholder mid-transition and reading as an unwanted "fade").
+   */
+  eager?: boolean;
   className?: string;
   crop?: "fill" | "fit";
   gravity?: string;
@@ -43,6 +51,7 @@ export function CldImage({
   height,
   sizes,
   priority = false,
+  eager = false,
   className,
   crop,
   gravity,
@@ -69,7 +78,7 @@ export function CldImage({
       height={height}
       className={className}
       style={style}
-      loading={priority ? "eager" : "lazy"}
+      loading={priority || eager ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "low"}
       decoding={priority ? "sync" : "async"}
       onLoad={onLoad}

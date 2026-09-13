@@ -21,6 +21,29 @@ const AVATAR_INITIALS = ["R", "P", "A", "S", "V"];
 export function AuthenticityTrust() {
   return (
     <div className="card-soft p-6 text-center space-y-4">
+      {/* Lead with the "11 years" trust stat — the claim used to sit as
+          a small pill on the homepage only; it deserves the same
+          weight here as the families-connected count. */}
+      <div className="flex items-center justify-center gap-7">
+        <div className="space-y-0.5">
+          <div className="font-display text-4xl font-extrabold text-brand leading-none">11</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            वर्षों का सेवा-अनुभव
+          </div>
+        </div>
+        <div className="self-stretch w-px bg-black/10" />
+        <div className="space-y-0.5">
+          <div className="font-display text-4xl font-extrabold text-brand leading-none">
+            <CountUp value={FAMILIES_COUNT} suffix="+" />
+          </div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            परिवार जुड़े
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px bg-black/5 -mx-6" />
+
       <div className="flex items-center justify-center gap-2">
         <ShieldCheck size={18} className="text-brand shrink-0" />
         <h3 className="font-scripture text-xl font-bold text-[#B8460F] leading-snug">
@@ -29,7 +52,7 @@ export function AuthenticityTrust() {
       </div>
 
       <p className="text-[13.5px] text-muted-foreground leading-relaxed px-1">
-        हर संकल्प तीर्थ गुरु पुष्करराज के अधिकृत आचार्यों द्वारा, पूर्ण वैदिक विधि-विधान से संपन्न किया जाता है — आपकी श्रद्धा सदा सुरक्षित हाथों में है।
+        पिछले 11 वर्षों से पुण्यता आपकी सेवा में है — हर संकल्प तीर्थ गुरु पुष्करराज के अधिकृत आचार्यों द्वारा, पूर्ण वैदिक विधि-विधान से संपन्न किया जाता है, आपकी श्रद्धा सदा सुरक्षित हाथों में है।
       </p>
 
       <div className="h-px bg-black/5 -mx-6" />

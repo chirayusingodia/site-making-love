@@ -2,15 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, ScrollText, ListChecks, Quote, Sparkles } from "lucide-react";
 import { ChadhavaHeartBadge, AuthenticityTrust } from "@/components/TrustAuthenticity";
 import { usePublicPlans, getPlanById, fetchPublicPlansData, localizePlan, type Plan } from "@/lib/plans";
+import { isHawanSeva } from "@/lib/plans-schedule";
+import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { CountUp } from "@/components/CountUp";
 import { useTranslation, localizedName } from "@/lib/translations";
-import { LottieIcon } from "@/components/LottieIcon";
 import { PizzaComparison } from "@/components/PizzaComparison";
 import { ComparisonTable } from "@/components/ComparisonTable";
-import diya from "@/assets/lottie/diya.json";
 import { motion } from "framer-motion";
 import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
 import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
@@ -193,6 +193,14 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
           </div>
         </div>
 
+        {/* Next Pooja — live countdown */}
+        <div className="mt-7">
+          <NextPoojaCountdown
+            hasLastSaturday={plan.includedSevas.some(isHawanSeva)}
+            variant="hero"
+          />
+        </div>
+
         {/* Description — the lead section, so its card surfaces the key
             benefits up front before the reader even gets to the prose. */}
         <section className="mt-7">
@@ -318,36 +326,12 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
           <PizzaComparison planId={plan.id} price={plan.price} cycle={plan.cycle} size="lg" />
         </section>
 
-        {/* Blessings & Benefits */}
-        <section className="mt-7 space-y-3.5">
-          <div className="flex items-center gap-2.5">
-            <LottieIcon
-              animationData={diya}
-              size={30}
-              loop
-              autoplay
-              fallback={<div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center shrink-0"><Check size={16} className="text-brand" /></div>}
-            />
-            <h2 className="text-lg font-bold text-foreground">{t("pd_benefits")}</h2>
-          </div>
-          <div className="relative rounded-2xl bg-gradient-to-b from-[#FFF6EE] to-[#FDECDC] border border-brand/15 p-5 space-y-3">
-            <Sparkles size={18} className="absolute top-4 right-4 text-[#F5A742]" />
-            {plan.tagline && (
-              <div className="text-[14.5px] font-bold text-[#B8460F] pr-6 leading-snug">
-                {plan.tagline}
-              </div>
-            )}
-            {plan.detail.benefits.map((b) => (
-              <div key={b} className="flex items-start gap-2.5 text-[15px]">
-                <div className="w-[22px] h-[22px] rounded-full bg-success flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={12} strokeWidth={3.5} className="text-white" />
-                </div>
-                <span className="text-foreground/90 font-semibold leading-snug">{b}</span>
-              </div>
-            ))}
-          </div>
+        {/* Family trust badge — the benefits themselves are already
+            covered above under "pd_about"; this section used to repeat
+            that same list under a second "pd_benefits" heading. */}
+        <div className="mt-7 flex justify-center">
           <ChadhavaHeartBadge />
-        </section>
+        </div>
 
         {/* Authenticity / Trust */}
         <section className="mt-7">
