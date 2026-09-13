@@ -43,7 +43,6 @@ export function SlidingImageCard({
   priority = false,
 }: Props) {
   const [i, setI] = useState(0);
-  const [loaded, setLoaded] = useState<Record<number, boolean>>({});
   const paused = useRef(false);
   const touchStartX = useRef<number | null>(null);
 
@@ -96,9 +95,6 @@ export function SlidingImageCard({
             <PunyataLogo className="w-5 h-5" />
             <span className="text-[11px] font-extrabold text-brand tracking-tight">पुण्यता:</span>
           </div>
-          {!loaded[idx] && (
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-soft to-secondary" />
-          )}
           <CldImage
             publicId={s.image.publicId}
             fallback={s.image.fallback}
@@ -108,12 +104,16 @@ export function SlidingImageCard({
             sizes={sizes}
             priority={priority && idx === 0}
             // Every slide is already mounted, just hidden — load them
-            // all up front so advancing to a slide never shows the
+            // all up front so advancing to a slide never shows a
             // loading placeholder mid-transition (that pop-in read as
-            // an unwanted "fade" between slides).
+            // an unwanted "fade" between slides). No loaded-state
+            // placeholder anymore either: an eager <img>'s `load` event
+            // can fire before React finishes attaching the onLoad
+            // listener (already-cached images especially), which left
+            // that placeholder stuck on top forever — a real bug, not
+            // a fade, but it looked like one.
             eager
             className="w-full h-full object-contain bg-[#FDF3EB] object-center"
-            onLoad={() => setLoaded((m) => ({ ...m, [idx]: true }))}
           />
           {(s.title || s.subtitle) && (
             <>
