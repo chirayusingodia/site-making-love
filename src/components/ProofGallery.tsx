@@ -72,10 +72,14 @@ function VideoThumbnailCard({ image }: { image: SiteImage }) {
 export function ProofGallery({
   showSeeAll = true,
   size = "compact",
+  includeExtras = true,
 }: {
   showSeeAll?: boolean;
   /** "large" is a fixed 2-column grid — bigger tiles for a dedicated gallery page. */
   size?: "compact" | "large";
+  /** Home's compact preview stays a fixed 4 tiles; only the Reviews page (via
+   *  "See All") shows the admin-added extras appended after them. */
+  includeExtras?: boolean;
 }) {
   const { t } = useTranslation();
   const [extraItems, setExtraItems] = useState<SiteImage[]>([]);
@@ -84,6 +88,7 @@ export function ProofGallery({
   // 4 fixed core thumbnails below. Fetched client-side only; nothing to
   // flash between since these are purely additive (never replace a default).
   useEffect(() => {
+    if (!includeExtras) return;
     let cancelled = false;
     fetchProofGalleryItems().then((rows) => {
       if (cancelled) return;
@@ -92,14 +97,14 @@ export function ProofGallery({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [includeExtras]);
 
   const imgs: SiteImage[] = [
     SITE_IMAGES.proofGhat,
     SITE_IMAGES.proofHavan,
     SITE_IMAGES.proofWhatsapp,
     SITE_IMAGES.proofGau,
-    ...extraItems,
+    ...(includeExtras ? extraItems : []),
   ];
 
   return (

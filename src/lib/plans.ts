@@ -772,13 +772,39 @@ export type PublicPlansData = {
   sevaList: SevaListItem[];
 };
 
+// On a slow/flaky connection a stalled fetch never resolves OR rejects on
+// its own, so React Query's isLoading hangs forever and the user never sees
+// the error/retry UI. Aborting after 15s forces a rejection so the page can
+// recover.
+const PUBLIC_PLANS_FETCH_TIMEOUT_MS = 15_000;
+
 export async function fetchPublicPlansData(): Promise<PublicPlansData> {
   const [plansRes, sevasRes, planSevasRes, rulesRes, addonsRes] = await Promise.all([
-    supabase.from("plans").select("*").eq("is_active", true).order("sort_order"),
-    supabase.from("sevas").select("*").eq("is_active", true).order("sort_order"),
-    supabase.from("plan_sevas").select("*"),
-    supabase.from("seva_schedule_rules").select("*"),
-    supabase.from("plan_addons").select("*").eq("is_active", true),
+    supabase
+      .from("plans")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .abortSignal(AbortSignal.timeout(PUBLIC_PLANS_FETCH_TIMEOUT_MS)),
+    supabase
+      .from("sevas")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .abortSignal(AbortSignal.timeout(PUBLIC_PLANS_FETCH_TIMEOUT_MS)),
+    supabase
+      .from("plan_sevas")
+      .select("*")
+      .abortSignal(AbortSignal.timeout(PUBLIC_PLANS_FETCH_TIMEOUT_MS)),
+    supabase
+      .from("seva_schedule_rules")
+      .select("*")
+      .abortSignal(AbortSignal.timeout(PUBLIC_PLANS_FETCH_TIMEOUT_MS)),
+    supabase
+      .from("plan_addons")
+      .select("*")
+      .eq("is_active", true)
+      .abortSignal(AbortSignal.timeout(PUBLIC_PLANS_FETCH_TIMEOUT_MS)),
   ]);
   const error =
     plansRes.error ?? sevasRes.error ?? planSevasRes.error ?? rulesRes.error ?? addonsRes.error;
