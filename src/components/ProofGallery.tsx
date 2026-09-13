@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Video, Check } from "lucide-react";
+import { ImageIcon, Check } from "lucide-react";
 import { LottieIcon } from "./LottieIcon";
 import { useTranslation } from "@/lib/translations";
 import checkmark from "@/assets/lottie/checkmark.json";
@@ -61,14 +61,14 @@ function VideoThumbnailCard({ image }: { image: SiteImage }) {
       )}
 
       <div className="absolute bottom-1.5 left-1.5 text-[10px] font-bold text-white bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-1">
-        <Video size={10} className="shrink-0" />
-        <span>Video Proof</span>
+        <ImageIcon size={10} className="shrink-0" />
+        <span>Photo Proof</span>
       </div>
     </div>
   );
 }
 
-export function ProofGallery() {
+export function ProofGallery({ showSeeAll = true }: { showSeeAll?: boolean }) {
   const { t } = useTranslation();
   const imgs: SiteImage[] = [
     SITE_IMAGES.proofGhat,
@@ -81,9 +81,11 @@ export function ProofGallery() {
     <section className="space-y-4">
       <div className="flex items-end justify-between">
         <h2 className="text-2xl font-bold">{t("gallery_title")}</h2>
-        <Link to="/reviews" className="text-sm font-bold text-brand hover:underline">
-          {t("gallery_see_all")}
-        </Link>
+        {showSeeAll && (
+          <Link to="/reviews" className="text-sm font-bold text-brand hover:underline">
+            {t("gallery_see_all")}
+          </Link>
+        )}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
         {imgs.map((image, i) => (
