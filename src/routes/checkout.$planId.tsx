@@ -22,6 +22,7 @@ import { useTranslation } from "@/lib/translations";
 import { captureAttributionOnce, getStoredAttribution } from "@/lib/attribution";
 import { supabase } from "@/lib/supabase";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import { UpsellPremiumDialog } from "@/components/UpsellPremiumDialog";
 
 // Coupon entry is parked for now — flip this back on to restore the
 // "Coupon Code (optional)" card on /checkout without touching the
@@ -230,6 +231,18 @@ function CheckoutPage() {
   const [payError, setPayError] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  // ₹399 upsell — anyone landing on checkout for the ₹251 (basic) plan
+  // sees this once, before they pay, nudging them toward premium. Fires
+  // off `data` directly (not the `plan` const below, which is only
+  // computed after this component's early returns) so the hook stays
+  // unconditional.
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  useEffect(() => {
+    if (!data) return;
+    const candidate = getPlanById(data.plans, planId);
+    if (candidate?.slug === "basic") setUpsellOpen(true);
+  }, [data, planId]);
+
   // Naam/mobile shown here are editable — a typo'd name or a wrong
   // number entered at signup shouldn't force a trip to /profile
   // before someone can pay. Seeded once from the loaded profile, then
@@ -355,6 +368,25 @@ function CheckoutPage() {
     );
   }
 
+  const premiumUpsellPlan = plan.slug === "basic" ? getPlanById(data.plans, "premium") : undefined;
+  const upsellDialog = premiumUpsellPlan && (
+    <UpsellPremiumDialog
+      open={upsellOpen}
+      onOpenChange={setUpsellOpen}
+      basicPrice={plan.price}
+      premiumPrice={premiumUpsellPlan.price}
+      onContinueBasic={() => setUpsellOpen(false)}
+      onUpgrade={() => {
+        setUpsellOpen(false);
+        navigate({
+          to: "/checkout/$planId",
+          params: { planId: premiumUpsellPlan.id },
+          search: attToken ? { att: attToken } : {},
+        });
+      }}
+    />
+  );
+
   // ── State A / B (§4.3): not signed in yet, or the Google redirect
   // just landed back here and the session is still resolving. Same
   // plan summary + trust strip as the paid states — just no naam/
@@ -455,6 +487,7 @@ function CheckoutPage() {
           </div>
         </main>
         <WhatsAppFloat />
+        {upsellDialog}
       </div>
     );
   }
@@ -848,6 +881,7 @@ function CheckoutPage() {
         </div>
       </main>
       <WhatsAppFloat />
+      {upsellDialog}
     </div>
   );
 }

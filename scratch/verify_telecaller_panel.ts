@@ -144,6 +144,11 @@ check("abandoned checkout: >30min pending",
   matchesAbandonedCheckout(row({ subscriptionStatus: "pending", subscriptionCreatedAt: new Date(NOW - 31 * 60_000).toISOString() }), NOW));
 check(`abandoned checkout: fresh (<${ABANDONED_CHECKOUT_MINUTES}min) out`,
   !matchesAbandonedCheckout(row({ subscriptionStatus: "pending", subscriptionCreatedAt: new Date(NOW - 10 * 60_000).toISOString() }), NOW));
+check("abandoned checkout: paid subscriber's leftover pending row out",
+  !matchesAbandonedCheckout(
+    row({ profileId: "prof-paid", subscriptionStatus: "pending", subscriptionCreatedAt: new Date(NOW - 31 * 60_000).toISOString() }),
+    NOW,
+    new Set(["prof-paid"])));
 
 check("never bought: bare lead older than 1h",
   matchesNeverBought(row({ subscriptionId: null, subscriptionStatus: null, profileCreatedAt: new Date(NOW - 2 * HOUR).toISOString() }), NOW));
@@ -231,6 +236,20 @@ const dueAssignment = assignQueues({
   nowMs: NOW,
 });
 check("callback-due IGNORES the cooldown (promise must fire)", dueAssignment.callback_due.length === 1);
+
+// A paid subscriber who carries a stale `pending` row from the stuck-checkout
+// retry path must NOT resurface in Abandoned Checkout (real bug: Chirayu /
+// Shrawan were active but showed as pending abandoned checkouts).
+const paidWithStalePending = assignQueues({
+  rows: [
+    row({ subscriptionId: "sub-active", profileId: "prof-paid", subscriptionStatus: "active", startDate: "2026-09-07" }),
+    row({ subscriptionId: "sub-stale", profileId: "prof-paid", subscriptionStatus: "pending", subscriptionCreatedAt: new Date(NOW - 2 * HOUR).toISOString() }),
+  ],
+  logs: [],
+  nowMs: NOW,
+});
+check("paid subscriber's stale pending stays OUT of abandoned_checkout",
+  paidWithStalePending.abandoned_checkout.length === 0);
 
 const dncAssignment = assignQueues({
   rows: [row({ subscriptionId: "sub-z", profileId: "prof-z", familyMemberCount: 0, doNotCall: true })],
