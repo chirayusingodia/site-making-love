@@ -7,12 +7,22 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
+// `null` until mounted, on purpose: this page is server-rendered, and a
+// live clock computed from Date.now() will almost never match between
+// the server's render time and the client's hydration time — React
+// then flags a hydration mismatch and that subtree can render blank or
+// stale until it re-renders, which is exactly what showed up live as
+// "the timer isn't showing properly". Rendering the SAME placeholder
+// ("--") on the server and on the client's first paint keeps the two
+// identical, then the real ticking value fills in a moment later.
 function useCountdown(target: Date) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+  if (now === null) return null;
   const totalSeconds = Math.max(0, Math.floor((target.getTime() - now) / 1000));
   return {
     days: Math.floor(totalSeconds / 86400),
@@ -39,15 +49,16 @@ export function NextPoojaCountdown({
   const { t, lang } = useTranslation();
   const next = nextSevaDate(hasLastSaturday);
   const target = nextSevaDateTime(hasLastSaturday);
-  const { days, hours, minutes, seconds } = useCountdown(target);
+  const countdown = useCountdown(target);
   const dateLabel = fmtSevaDate(next.date, lang);
   const cadenceLabel = t(next.labelKey);
 
+  const fmt = (n: number | undefined) => (n === undefined ? "--" : pad(n));
   const units = [
-    { value: days, label: t("cd_days") },
-    { value: hours, label: t("cd_hours") },
-    { value: minutes, label: t("cd_minutes") },
-    { value: seconds, label: t("cd_seconds") },
+    { value: fmt(countdown?.days), label: t("cd_days") },
+    { value: fmt(countdown?.hours), label: t("cd_hours") },
+    { value: fmt(countdown?.minutes), label: t("cd_minutes") },
+    { value: fmt(countdown?.seconds), label: t("cd_seconds") },
   ];
 
   if (variant === "compact") {
@@ -65,7 +76,7 @@ export function NextPoojaCountdown({
             <div key={u.label} className="flex items-center">
               <div className="flex flex-col items-center gap-1">
                 <div className="w-10 h-10 rounded-[11px] bg-white border border-brand/15 flex items-center justify-center font-bold text-[17px] text-[#5B1A1A] tabular-nums">
-                  {pad(u.value)}
+                  {u.value}
                 </div>
                 <div className="text-[8.5px] font-bold uppercase tracking-wider text-muted-foreground">
                   {u.label}
@@ -144,7 +155,7 @@ export function NextPoojaCountdown({
             <div key={u.label} className="flex items-center">
               <div className="flex flex-col items-center gap-1">
                 <div className="w-[58px] h-[58px] rounded-2xl bg-white/[0.13] border border-white/20 backdrop-blur-sm flex items-center justify-center text-[26px] font-extrabold text-white tabular-nums">
-                  {pad(u.value)}
+                  {u.value}
                 </div>
                 <div className="text-[9.5px] font-bold uppercase tracking-wider text-[#FFE7B8]">
                   {u.label}
