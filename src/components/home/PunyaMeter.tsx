@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Lottie from "lottie-react";
-import { Check, Flame, AlertCircle, Sparkles, ArrowRight } from "lucide-react";
+import { Check, AlertCircle, Sparkles, ArrowRight } from "lucide-react";
 import { useTranslation } from "@/lib/translations";
+import { PunyaGaugeIcon } from "./PunyaGaugeIcon";
 
 export function PunyaMeter() {
   const { t, lang } = useTranslation();
@@ -11,8 +12,8 @@ export function PunyaMeter() {
   const [selectedValue, setSelectedValue] = useState<boolean | null>(null);
   const [isFinished, setIsFinished] = useState(false);
 
-  // States for Lottie JSON payloads
-  const [diyaFlameData, setDiyaFlameData] = useState<any>(null);
+  // Lottie JSON payload for the pass/fail result icon (the meter badge
+  // itself is now the animated PunyaGaugeIcon below, not a Lottie file).
   const [successCheckData, setSuccessCheckData] = useState<any>(null);
 
   // Dynamically populated questions and benefits based on current language
@@ -36,22 +37,8 @@ export function PunyaMeter() {
     t("pm_benefit_8"),
   ];
 
-  // Attempt to fetch Lottie assets dynamically
+  // Attempt to fetch the pass/fail result Lottie asset dynamically
   useEffect(() => {
-    fetch("/lottie/diya-flame.json")
-      .then((res) => {
-        if (!res.ok) throw new Error("Not found");
-        return res.json();
-      })
-      .then((data) => {
-        if (data && (data.layers || data.v)) {
-          setDiyaFlameData(data);
-        }
-      })
-      .catch(() => {
-        console.log("Diya flame Lottie asset not available, using CSS fallback.");
-      });
-
     fetch("/lottie/success-check.json")
       .then((res) => {
         if (!res.ok) throw new Error("Not found");
@@ -111,37 +98,23 @@ export function PunyaMeter() {
         {/* Quiz Card */}
         <div className="bg-[#FDF3EB] border-2 border-[#F0DFC8] rounded-2xl p-6 shadow-md relative overflow-hidden pt-8">
           {/* Centered Premium Header */}
-          <div className="flex flex-col items-center text-center space-y-4 mb-6 pt-2">
-            {/* Pulsing Diya Flame Badge */}
+          <div className="flex flex-col items-center text-center space-y-3.5 mb-6 pt-2">
+            {/* Animated gauge badge — a moving needle, not a static icon */}
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#E85D1F]/20 to-[#F5A742]/20 flex items-center justify-center border-2 border-[#E85D1F]/30 shadow-md relative">
               <span className="absolute inset-0 rounded-full bg-[#E85D1F]/10 blur-sm animate-pulse" />
-              {diyaFlameData ? (
-                <Lottie
-                  animationData={diyaFlameData}
-                  loop={true}
-                  style={{ width: 44, height: 44 }}
-                />
-              ) : (
-                <Flame className="w-8 h-8 text-[#E85D1F] fill-[#E85D1F]/30 animate-pulse" />
-              )}
+              <PunyaGaugeIcon size={46} />
             </div>
 
-            <div className="space-y-3 w-full">
+            <div className="space-y-2.5 w-full">
               <span className="inline-block bg-[#E85D1F] text-white text-[11px] font-black tracking-widest uppercase px-3 py-1 rounded-full shadow-sm">
                 {t("pm_title")}
               </span>
-              
-              {/* Visually stunning highlight container for the key question */}
-              <div className="relative max-w-lg mx-auto bg-gradient-to-b from-white to-[#FDF1EC] border border-[#F0DFC8] rounded-2xl p-4 md:p-6 shadow-inner mt-1">
-                {/* Decorative Quote Icons */}
-                <div className="absolute top-2 left-3 text-4xl text-[#E85D1F]/10 font-serif leading-none select-none">“</div>
-                <div className="absolute bottom-1 right-3 text-4xl text-[#E85D1F]/10 font-serif leading-none select-none">”</div>
-                
-                <p className="text-base md:text-lg font-black text-[#5B1A1A] leading-relaxed font-display px-4">
-                  {t("pm_subtitle")}
-                </p>
-                <div className="w-12 h-1 bg-[#E85D1F] mx-auto mt-3.5 rounded-full opacity-70" />
-              </div>
+
+              {/* One plain intro line — NOT boxed like the Q&A card below,
+                  so this doesn't read as a second question. */}
+              <p className="text-base md:text-lg font-black text-[#5B1A1A] leading-snug font-display max-w-md mx-auto px-2">
+                {t("pm_subtitle")}
+              </p>
             </div>
           </div>
 
@@ -276,55 +249,64 @@ export function PunyaMeter() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
-                className="text-center py-6 space-y-6"
+                className={`text-center rounded-2xl border-2 p-6 space-y-5 ${
+                  isPass
+                    ? "bg-gradient-to-b from-[#F3F9EC] to-[#E9F4DC] border-[#3B6D11]/20"
+                    : "bg-gradient-to-b from-[#FFF6EE] to-[#FDECDC] border-[#993C1D]/20"
+                }`}
               >
-                {/* Result Icon */}
+                {/* Score ring — the yes-count as a filled circular gauge,
+                    not just plain digits, so the result reads as a proper
+                    meter rather than a quiz tally. */}
                 <div className="flex justify-center">
-                  {isPass ? (
-                    <div className="w-16 h-16 rounded-full bg-[#3B6D11]/10 border border-[#3B6D11]/20 flex items-center justify-center text-[#3B6D11]">
-                      {successCheckData ? (
-                        <Lottie
-                          animationData={successCheckData}
-                          loop={false}
-                          style={{ width: 50, height: 50 }}
-                        />
+                  <div
+                    className="relative w-28 h-28 rounded-full flex items-center justify-center"
+                    style={{
+                      background: `conic-gradient(${isPass ? "#3B6D11" : "#D85A30"} ${
+                        (yesCount / QUESTIONS.length) * 360
+                      }deg, ${isPass ? "rgba(59,109,17,0.12)" : "rgba(216,90,48,0.12)"} 0deg)`,
+                    }}
+                  >
+                    <div className="absolute inset-[7px] rounded-full bg-white shadow-inner flex flex-col items-center justify-center">
+                      {isPass ? (
+                        successCheckData ? (
+                          <Lottie animationData={successCheckData} loop={false} style={{ width: 40, height: 40 }} />
+                        ) : (
+                          <Check className="w-7 h-7 stroke-[3] text-[#3B6D11]" />
+                        )
                       ) : (
-                        <Check className="w-8 h-8 stroke-[3]" />
+                        <AlertCircle className="w-7 h-7 stroke-[2.5] text-[#D85A30]" />
                       )}
+                      <span
+                        className={`text-[11px] font-black mt-0.5 ${
+                          isPass ? "text-[#3B6D11]" : "text-[#D85A30]"
+                        }`}
+                      >
+                        {/* [Bug 3.2] was a hardcoded "/ 5" while the quiz has
+                            QUESTIONS.length items — all-yes showed "6 / 5". */}
+                        {yesCount}/{QUESTIONS.length}
+                      </span>
                     </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-[#993C1D]/10 border border-[#993C1D]/20 flex items-center justify-center text-[#993C1D] animate-bounce">
-                      <AlertCircle className="w-8 h-8 stroke-[2.5]" />
-                    </div>
-                  )}
+                  </div>
                 </div>
 
-                {/* Score and Message */}
-                <div className="space-y-2">
-                  <div
-                    className={`text-2xl font-black ${
-                      isPass ? "text-[#3B6D11]" : "text-[#993C1D]"
-                    }`}
-                  >
-                    {isPass ? t("pm_pass_msg") : t("pm_fail_msg")}
-                  </div>
-                  <div className="text-sm font-semibold text-muted-foreground">
-                    {/* [Bug 3.2] was a hardcoded "/ 5" while the quiz has
-                        QUESTIONS.length items — all-yes showed "6 / 5". */}
-                    {t("pm_score")}:{" "}
-                    <span className="text-foreground font-black text-lg">{yesCount}</span> /{" "}
-                    {QUESTIONS.length}
-                  </div>
+                {/* Message */}
+                <div
+                  className={`text-xl md:text-2xl font-black leading-snug ${
+                    isPass ? "text-[#3B6D11]" : "text-[#993C1D]"
+                  }`}
+                >
+                  {isPass ? t("pm_pass_msg") : t("pm_fail_msg")}
                 </div>
 
                 {/* CTA or Soft Message */}
                 {isPass ? (
-                  <div className="bg-[#3B6D11]/5 border border-[#3B6D11]/10 rounded-xl p-4 text-sm text-[#3B6D11] leading-relaxed">
+                  <div className="bg-white/70 border border-[#3B6D11]/15 rounded-xl p-4 text-sm text-[#3B6D11] leading-relaxed max-w-sm mx-auto">
                     {t("pm_pass_bless")}
                   </div>
                 ) : (
-                  <div className="space-y-3 pt-2">
-                    <p className="text-sm text-[#993C1D]/80 leading-relaxed max-w-sm mx-auto">
+                  <div className="space-y-4">
+                    <p className="text-sm text-[#993C1D]/85 leading-relaxed max-w-sm mx-auto">
                       {t("pm_fail_bless")}
                     </p>
                     <a
@@ -340,7 +322,9 @@ export function PunyaMeter() {
                 {/* Reset link */}
                 <button
                   onClick={handleReset}
-                  className="text-xs font-bold text-[#D85A30]/70 hover:text-[#D85A30] underline block mx-auto pt-2"
+                  className={`text-xs font-bold underline block mx-auto ${
+                    isPass ? "text-[#3B6D11]/70 hover:text-[#3B6D11]" : "text-[#D85A30]/70 hover:text-[#D85A30]"
+                  }`}
                 >
                   {t("pm_reset")}
                 </button>

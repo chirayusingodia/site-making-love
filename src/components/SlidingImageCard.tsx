@@ -97,7 +97,7 @@ export function SlidingImageCard({
             <span className="text-[11px] font-extrabold text-brand tracking-tight">पुण्यता:</span>
           </div>
           {!loaded[idx] && (
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-soft to-secondary animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-soft to-secondary" />
           )}
           <CldImage
             publicId={s.image.publicId}
@@ -107,6 +107,11 @@ export function SlidingImageCard({
             height={s.image.h}
             sizes={sizes}
             priority={priority && idx === 0}
+            // Every slide is already mounted, just hidden — load them
+            // all up front so advancing to a slide never shows the
+            // loading placeholder mid-transition (that pop-in read as
+            // an unwanted "fade" between slides).
+            eager
             className="w-full h-full object-contain bg-[#FDF3EB] object-center"
             onLoad={() => setLoaded((m) => ({ ...m, [idx]: true }))}
           />
