@@ -244,7 +244,7 @@ function HowItWorks() {
 }
 
 function TrustPreview() {
-  return <ProofGallery />;
+  return <ProofGallery includeExtras={false} />;
 }
 
 function KaliyugShloks() {

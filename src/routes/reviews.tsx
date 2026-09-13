@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Star } from "lucide-react";
+import { Star, Quote } from "lucide-react";
 import { testimonials } from "@/lib/plans";
 import { SiteChrome } from "@/components/site-chrome";
 import { ProofGallery } from "@/components/ProofGallery";
@@ -23,12 +23,25 @@ function ReviewsPage() {
   return (
     <SiteChrome>
       <main className="max-w-4xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-6">
-        <header className="text-center">
-          <div className="text-xs font-bold uppercase tracking-widest text-brand">Reviews</div>
-          <h1 className="mt-2 text-3xl font-bold">भक्तों की राय</h1>
-          <p className="mt-2 text-[15px] text-muted-foreground max-w-xl mx-auto">
-            1,200+ परिवारों की सच्ची प्रतिक्रिया — हर सेवा के Video Proof के बाद।
-          </p>
+        <header className="relative text-center">
+          <div
+            className="absolute -top-10 left-1/2 -translate-x-1/2 w-64 h-44 rounded-full pointer-events-none"
+            style={{ background: "radial-gradient(closest-side, rgba(245,167,66,0.22), rgba(245,167,66,0))" }}
+          />
+          <div className="relative">
+            <div className="text-xs font-bold uppercase tracking-widest text-brand">Reviews</div>
+            <h1 className="mt-2 text-3xl font-bold">भक्तों की राय</h1>
+            <div className="mt-2.5 flex items-center justify-center gap-2">
+              <span className="w-6 h-px bg-gradient-to-r from-transparent to-amber-accent" />
+              <svg width="8" height="8" viewBox="0 0 8 8" className="shrink-0">
+                <rect x="0" y="0" width="8" height="8" fill="#F5A742" transform="rotate(45 4 4)" />
+              </svg>
+              <span className="w-6 h-px bg-gradient-to-l from-transparent to-amber-accent" />
+            </div>
+            <p className="mt-2.5 text-[15px] text-muted-foreground max-w-xl mx-auto">
+              1,200+ परिवारों की सच्ची प्रतिक्रिया — हर सेवा के Video Proof के बाद।
+            </p>
+          </div>
         </header>
 
         <div className="bg-white/50 backdrop-blur-sm border border-[#F0DFC8]/65 rounded-3xl p-5 shadow-sm">
@@ -39,14 +52,15 @@ function ReviewsPage() {
           {testimonials.map((t, i) => {
             const initials = t.n.split(" ").map((w) => w[0]).join("").slice(0, 2);
             return (
-              <div key={i} className="card-soft p-5">
-                <div className="flex gap-0.5 text-amber-accent mb-2">
+              <div key={i} className="card-soft p-5 relative">
+                <Quote size={26} className="absolute top-4 right-4 text-brand/10" fill="currentColor" strokeWidth={0} />
+                <div className="flex gap-0.5 text-amber-accent mb-2.5">
                   {Array.from({ length: 5 }).map((_, k) => (
                     <Star key={k} size={14} fill="#F5A742" className="text-amber-accent" />
                   ))}
                 </div>
-                <p className="text-foreground/80 leading-relaxed text-[15px]">"{t.q}"</p>
-                <div className="mt-4 pt-3 border-t border-black/5 flex items-center gap-3">
+                <p className="text-foreground/85 leading-relaxed text-[14.5px] max-w-[85%]">"{t.q}"</p>
+                <div className="mt-4 pt-3.5 border-t border-black/5 flex items-center gap-3">
                   {t.avatarUrl ? (
                     <img
                       src={t.avatarUrl}
