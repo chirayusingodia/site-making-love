@@ -22,7 +22,7 @@ export const Route = createFileRoute("/reviews")({
 function ReviewsPage() {
   return (
     <SiteChrome>
-      <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 pb-24 md:pb-16 pt-6 space-y-6">
         <header className="text-center">
           <div className="text-xs font-bold uppercase tracking-widest text-brand">Reviews</div>
           <h1 className="mt-2 text-3xl font-bold">भक्तों की राय</h1>
@@ -32,7 +32,7 @@ function ReviewsPage() {
         </header>
 
         <div className="bg-white/50 backdrop-blur-sm border border-[#F0DFC8]/65 rounded-3xl p-5 shadow-sm">
-          <ProofGallery showSeeAll={false} />
+          <ProofGallery showSeeAll={false} size="large" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

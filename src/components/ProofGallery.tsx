@@ -68,7 +68,14 @@ function VideoThumbnailCard({ image }: { image: SiteImage }) {
   );
 }
 
-export function ProofGallery({ showSeeAll = true }: { showSeeAll?: boolean }) {
+export function ProofGallery({
+  showSeeAll = true,
+  size = "compact",
+}: {
+  showSeeAll?: boolean;
+  /** "large" is a fixed 2-column grid — bigger tiles for a dedicated gallery page. */
+  size?: "compact" | "large";
+}) {
   const { t } = useTranslation();
   const imgs: SiteImage[] = [
     SITE_IMAGES.proofGhat,
@@ -87,7 +94,13 @@ export function ProofGallery({ showSeeAll = true }: { showSeeAll?: boolean }) {
           </Link>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+      <div
+        className={
+          size === "large"
+            ? "grid grid-cols-2 gap-4"
+            : "grid grid-cols-2 md:grid-cols-4 gap-2.5"
+        }
+      >
         {imgs.map((image, i) => (
           <VideoThumbnailCard key={i} image={image} />
         ))}

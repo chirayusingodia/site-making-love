@@ -41,9 +41,35 @@ export function applySiteImageOverrides(rows: SiteImageOverrideRow[]): void {
   }
 }
 
+// Last-fetched overrides, mirrored to localStorage so a returning visitor's
+// custom photos apply the instant the module loads — before React's first
+// render — instead of only after this tab's Supabase round trip resolves.
+// Without this, every hard reload showed the bundled default photo for a
+// beat and then swapped to the real one, which read as "photo not updating."
+const CACHE_KEY = "punyata:site_image_overrides:v1";
+
+function applyCachedOverrides(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return;
+    applySiteImageOverrides(JSON.parse(raw) as SiteImageOverrideRow[]);
+  } catch {
+    // Corrupt/old cache shape — ignore, the next fetch below repopulates it.
+  }
+}
+applyCachedOverrides();
+
 export async function loadAndApplySiteImageOverrides(): Promise<void> {
   const rows = await fetchSiteImageOverrides();
   applySiteImageOverrides(rows);
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(CACHE_KEY, JSON.stringify(rows));
+    } catch {
+      // Storage full/disabled — overrides still applied for this tab.
+    }
+  }
 }
 
 /** Upserts one override row. Used by /admin/images after a successful Cloudinary upload. */
