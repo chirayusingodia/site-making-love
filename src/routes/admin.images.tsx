@@ -193,7 +193,7 @@ function SlotCard({
       const row = await saveSiteImageOverride(slotKey, secureUrl, publicId);
       if (slot.kind === "site_image") setSiteImageOverride(slot.key, publicId);
       else setTestimonialAvatarOverride(slot.reviewIndex, secureUrl);
-      await logAdminAudit("site_image.upload", "site_image_overrides", slotKey, { slotKey, label: slot.label });
+      await logAdminAudit("site_image.upload", "site_image_overrides", null, { slotKey, label: slot.label });
       onChanged(slotKey, row);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Save failed — photo purani hi rahegi.");
@@ -209,7 +209,7 @@ function SlotCard({
       await deleteSiteImageOverride(slotKey);
       if (slot.kind === "site_image") setSiteImageOverride(slot.key, "");
       else setTestimonialAvatarOverride(slot.reviewIndex, undefined);
-      await logAdminAudit("site_image.reset", "site_image_overrides", slotKey, { slotKey, label: slot.label });
+      await logAdminAudit("site_image.reset", "site_image_overrides", null, { slotKey, label: slot.label });
       onChanged(slotKey, null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Reset failed");
