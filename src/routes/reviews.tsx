@@ -32,7 +32,7 @@ function ReviewsPage() {
         </header>
 
         <div className="bg-white/50 backdrop-blur-sm border border-[#F0DFC8]/65 rounded-3xl p-5 shadow-sm">
-          <ProofGallery />
+          <ProofGallery showSeeAll={false} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
