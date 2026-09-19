@@ -4,15 +4,18 @@ import { supabase } from "@/lib/supabase";
 // thumbnails stay a fixed SITE_IMAGES slot — see site-image-overrides.ts).
 // Admin can add/remove/reorder freely from /admin/images.
 
+export type ProofGalleryItemKind = "photo" | "whatsapp";
+
 export interface ProofGalleryItem {
   id: string;
   image_url: string;
   cloudinary_public_id: string;
   alt_text: string;
   sort_order: number;
+  kind: ProofGalleryItemKind;
 }
 
-const COLS = "id, image_url, cloudinary_public_id, alt_text, sort_order";
+const COLS = "id, image_url, cloudinary_public_id, alt_text, sort_order, kind";
 
 export async function fetchProofGalleryItems(): Promise<ProofGalleryItem[]> {
   const { data, error } = await supabase
@@ -31,6 +34,7 @@ export async function addProofGalleryItem(
   imageUrl: string,
   cloudinaryPublicId: string,
   sortOrder: number,
+  kind: ProofGalleryItemKind = "photo",
 ): Promise<ProofGalleryItem> {
   const {
     data: { session },
@@ -41,6 +45,7 @@ export async function addProofGalleryItem(
       image_url: imageUrl,
       cloudinary_public_id: cloudinaryPublicId,
       sort_order: sortOrder,
+      kind,
       updated_by: session?.user?.id ?? null,
     })
     .select(COLS)
