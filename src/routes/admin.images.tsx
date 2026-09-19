@@ -312,12 +312,12 @@ function ProofGalleryExtras({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  async function handleAdd(secureUrl: string, publicId: string) {
+  async function handleAdd(secureUrl: string, publicId: string, kind: "photo" | "whatsapp") {
     setErr(null);
     try {
       const nextOrder = items.length > 0 ? Math.max(...items.map((i) => i.sort_order)) + 1 : 0;
-      const row = await addProofGalleryItem(secureUrl, publicId, nextOrder);
-      await logAdminAudit("proof_gallery.add", "proof_gallery_items", row.id, {});
+      const row = await addProofGalleryItem(secureUrl, publicId, nextOrder, kind);
+      await logAdminAudit("proof_gallery.add", "proof_gallery_items", row.id, { kind });
       onChanged([...items, row]);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Add failed");
@@ -361,19 +361,27 @@ function ProofGalleryExtras({
     }
   }
 
-  return (
-    <div className="mt-4 pt-4 border-t border-slate-100">
-      <p className="text-xs font-semibold text-slate-800">Extra Proof Photos (jitni chahein utni)</p>
-      <p className="text-[11px] text-slate-500 mt-0.5">
-        Upar ke 4 fixed photo ke baad, yahan se aur photos add karein — Reviews page aur homepage
-        dono par turant dikhengi.
-      </p>
-      {items.length > 0 && (
-        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {items.map((item, i) => (
+  const photoItems = items.filter((i) => i.kind === "photo");
+  const whatsappItems = items.filter((i) => i.kind === "whatsapp");
+
+  function renderGroup(groupItems: ProofGalleryItem[]) {
+    if (groupItems.length === 0) return null;
+    return (
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {groupItems.map((item) => {
+          const i = items.indexOf(item);
+          return (
             <div key={item.id} className="rounded-xl border border-slate-200 p-2 space-y-1.5">
-              <div className="w-full aspect-square rounded-lg overflow-hidden bg-slate-50">
-                <img src={item.image_url} alt={item.alt_text} className="w-full h-full object-cover" />
+              <div
+                className={`w-full rounded-lg overflow-hidden bg-slate-50 ${
+                  item.kind === "whatsapp" ? "aspect-[3/4]" : "aspect-square"
+                }`}
+              >
+                <img
+                  src={item.image_url}
+                  alt={item.alt_text}
+                  className={`w-full h-full ${item.kind === "whatsapp" ? "object-contain" : "object-cover"}`}
+                />
               </div>
               <div className="flex items-center justify-center gap-1">
                 <Button
@@ -408,17 +416,47 @@ function ProofGalleryExtras({
                 </Button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-      <div className="mt-3">
-        <CloudinaryImageButton
-          folder="punyata-site/proof-gallery"
-          label="+ Photo Add Karein"
-          onUploaded={handleAdd}
-        />
+          );
+        })}
       </div>
-      {err && <p className="text-[11px] text-rose-600 mt-1.5">{err}</p>}
+    );
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-100 space-y-5">
+      <div>
+        <p className="text-xs font-semibold text-slate-800">Extra Photos (ghat, havan, gau seva — jitni chahein utni)</p>
+        <p className="text-[11px] text-slate-500 mt-0.5">
+          Reviews page ke "Proof Gallery" grid mein dikhengi — square crop hoga, isliye scenic photo hi
+          daalein, screenshot nahi.
+        </p>
+        {renderGroup(photoItems)}
+        <div className="mt-3">
+          <CloudinaryImageButton
+            folder="punyata-site/proof-gallery"
+            label="+ Photo Add Karein"
+            onUploaded={(url, id) => handleAdd(url, id, "photo")}
+          />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold text-slate-800">WhatsApp Screenshots (jitne chahein utne)</p>
+        <p className="text-[11px] text-slate-500 mt-0.5">
+          Reviews page ke alag "WhatsApp Proof" section mein pura screenshot dikhega — kabhi crop nahi
+          hoga, chaahe photo lambi (portrait) ho.
+        </p>
+        {renderGroup(whatsappItems)}
+        <div className="mt-3">
+          <CloudinaryImageButton
+            folder="punyata-site/proof-gallery-whatsapp"
+            label="+ WhatsApp Screenshot Add Karein"
+            onUploaded={(url, id) => handleAdd(url, id, "whatsapp")}
+          />
+        </div>
+      </div>
+
+      {err && <p className="text-[11px] text-rose-600">{err}</p>}
     </div>
   );
 }

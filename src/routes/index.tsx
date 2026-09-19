@@ -21,7 +21,7 @@ import { PunyaMeter } from "@/components/home/PunyaMeter";
 import { useTranslation } from "@/lib/translations";
 import { LottieIcon } from "@/components/LottieIcon";
 import { CountUp } from "@/components/CountUp";
-import { ProofGallery } from "@/components/ProofGallery";
+import { PhotoProofGallery } from "@/components/ProofGallery";
 import { motion } from "framer-motion";
 import namaste from "@/assets/lottie/namaste.json";
 import diya from "@/assets/lottie/diya.json";
@@ -244,7 +244,7 @@ function HowItWorks() {
 }
 
 function TrustPreview() {
-  return <ProofGallery includeExtras={false} />;
+  return <PhotoProofGallery includeExtras={false} />;
 }
 
 function KaliyugShloks() {
