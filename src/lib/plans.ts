@@ -214,10 +214,9 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
   },
   premium: {
     planId: "grah",
-    heading:
-      "Monthly Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan and Sarv Rog Nivaran Hawan — 2nd Tuesday of Every Month and Last Saturday of Every Month Sankalp",
+    heading: "Sarv Mangal Sankalp — 6 Sevas, 2 Baar Har Mahine",
     subheading:
-      "Do sankalp har mahine — do alag hawan ke saath ghar mein shanti evam rog-badha nivaran",
+      "Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan aur Sarv Rog Nivaran Hawan — sab kuch ek hi pack mein",
     tagline:
       "सम्पूर्ण पारिवारिक सेवा — 2 सुंदरकांड, 2 अलग हवन (Griha Shanti & Sarv Rog Nivaran), Saadhu Santo Ko Bhojan एवं गौ/वानर सेवा हर माह।",
     image: SITE_IMAGES.planPremiumHero,
@@ -255,14 +254,15 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
         "यह पैक विशेष रूप से उन परिवारों के लिए है जो चाहते हैं कि उनके घर में सकारात्मक ऊर्जा हो और रोग, शोक तथा वास्तु दोष का शमन हो।",
       ],
       benefits: [
-        "गृह-कलेश एवं वास्तु दोष का शमन",
-        "परिवार के सभी सदस्यों पर श्री हनुमान जी की कृपा",
-        "आर्थिक बाधा एवं दरिद्रता का नाश",
-        "पूर्वजों की तृप्ति एवं आशीर्वाद",
-        "परिवार में सकारात्मक ऊर्जा एवं मानसिक शांति",
-        "पितृ दोष एवं ग्रह दोष का शमन",
-        "श्री हनुमान जी की कृपा से भय एवं संकट का नाश",
-        "प्रत्यक्ष दान-पुण्य का सतत् प्रवाह",
+        "गृह-कलेश एवं वास्तु दोष का शमन → ग्रह शांति हवन से",
+        "परिवार के सभी सदस्यों पर श्री हनुमान जी की कृपा → वानर सेवा से",
+        "आर्थिक बाधा एवं दरिद्रता का नाश → गौ सेवा से",
+        "पूर्वजों की तृप्ति एवं पितृ आशीर्वाद → सुंदरकांड पाठ से",
+        "परिवार में सकारात्मक ऊर्जा एवं मानसिक शांति → साधु संतों को भोजन सेवा से",
+        "पितृ दोष एवं ग्रह दोष का शमन → सर्व रोग निवारण हवन से",
+        "श्री हनुमान जी की कृपा से भय एवं संकट का नाश → वानर सेवा एवं सुंदरकांड पाठ से",
+        "प्रत्यक्ष दान-पुण्य का सतत् प्रवाह → गौ सेवा एवं अन्न दान से",
+        "समस्त रोग-बाधा से रक्षा एवं उत्तम स्वास्थ्य → सर्व रोग निवारण हवन से",
       ],
       reviews: [
         {
@@ -444,10 +444,9 @@ const PLAN_PRESENTATION_EN: Record<string, PlanPresentationEn> = {
     },
   },
   premium: {
-    heading:
-      "Monthly Sundarkand Path, Gau Seva, Vanar Seva, Feeding of Saints, Griha Shanti Hawan & Sarv Rog Nivaran Hawan — Sankalp on the 2nd Tuesday & Last Saturday of Every Month",
+    heading: "Sarv Mangal Sankalp — 6 Sevas, Twice Every Month",
     subheading:
-      "Two sankalps every month — two different hawans for peace at home and relief from illness and obstacles",
+      "Sundarkand Path, Gau Seva, Vanar Seva, Feeding of Saints, Griha Shanti Hawan & Sarv Rog Nivaran Hawan — all in one pack",
     tagline:
       "Complete family seva — 2 Sundarkands, 2 separate hawans (Griha Shanti & Sarv Rog Nivaran), Feeding of Saints, and Gau/Vanar Seva every month.",
     slides: [
@@ -484,14 +483,15 @@ const PLAN_PRESENTATION_EN: Record<string, PlanPresentationEn> = {
         "This pack is made especially for families who want positive energy at home and relief from illness, grief and Vastu dosh.",
       ],
       benefits: [
-        "Relief from household discord and Vastu dosh",
-        "Grace of Shri Hanuman ji on every family member",
-        "Destruction of financial obstacles and poverty",
-        "Peace and blessings for ancestors",
-        "Positive energy and mental peace in the family",
-        "Relief from Pitra Dosh and planetary afflictions",
-        "Freedom from fear and crisis by the grace of Shri Hanuman ji",
-        "A continuous flow of direct daan-punya",
+        "Relief from household discord and Vastu dosh → from Griha Shanti Hawan",
+        "Grace of Shri Hanuman ji on every family member → from Vanar Seva",
+        "Destruction of financial obstacles and poverty → from Gau Seva",
+        "Peace and blessings for ancestors → from Sundarkand Path",
+        "Positive energy and mental peace in the family → from Feeding of Saints",
+        "Relief from Pitra Dosh and planetary afflictions → from Sarv Rog Nivaran Hawan",
+        "Freedom from fear and crisis by the grace of Shri Hanuman ji → from Vanar Seva & Sundarkand Path",
+        "A continuous flow of direct daan-punya → from Gau Seva & Anna Daan",
+        "Protection from illness and lasting good health → from Sarv Rog Nivaran Hawan",
       ],
       reviews: [
         { n: "Meena Patel", city: "Ahmedabad", q: "A Sundarkand every month in my father's memory — hearing his name in the video brings tears to my eyes.", stars: 5 },

@@ -9,6 +9,7 @@ import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
 import { LottieIcon } from "@/components/LottieIcon";
 import { CountUp } from "@/components/CountUp";
 import { PizzaComparison } from "@/components/PizzaComparison";
+import { SevaBenefitGrid } from "@/components/SevaBenefitGrid";
 import checkmark from "@/assets/lottie/checkmark.json";
 import giftBox from "@/assets/lottie/gift-box.json";
 import diya from "@/assets/lottie/diya.json";
@@ -282,6 +283,9 @@ function PlanCard({ plan: rawPlan }: { plan: Plan }) {
           <p className="text-xs text-muted-foreground leading-normal text-left">
             {plan.subheading}
           </p>
+
+          {/* Numbered seva + main-benefit grid — same clear breakdown as the plan detail page */}
+          <SevaBenefitGrid sevas={plan.detail.sevas} lang={lang} />
 
           {/* Visual Pizza/Dinner Comparison */}
           <PizzaComparison planId={plan.id} price={plan.price} cycle={plan.cycle} />

@@ -159,14 +159,14 @@ export const translations = {
     sd_last_saturday: "अंतिम शनिवार",
 
     // Next-pooja countdown
-    cd_next_pooja: "अगली पूजा",
-    cd_next_pooja_in: "अगली पूजा शुरू होने में",
+    cd_next_pooja: "पूजा बुकिंग बंद होगी इसमें",
+    cd_next_pooja_in: "पूजा बुकिंग बंद होने में",
     cd_days: "दिन",
     cd_hours: "घंटे",
     cd_minutes: "मिनट",
     cd_seconds: "सेकंड",
-    cd_temple_name: "सिद्धेश्वर बालाजी, यज्ञ घाट",
-    cd_temple_significance: "मान्यता है — यहीं ब्रह्मा जी ने सृष्टि का प्रथम यज्ञ किया था",
+    cd_temple_name: "सिद्धेश्वर बालाजी मंदिर, यज्ञ घाट — पुष्कर",
+    cd_temple_significance: "मान्यता है — पुष्कर के इसी पावन तीर्थ पर ब्रह्मा जी ने सृष्टि का प्रथम यज्ञ किया था",
 
     // Member cue (header / nav)
     member_badge: "सदस्य",
@@ -282,8 +282,9 @@ export const translations = {
 
     // Plan detail page
     pd_err_title: "सदस्यता लोड नहीं हो पाई",
-    pd_about: "इस संकल्प के बारे में",
+    pd_about: "आपको इन सारी सेवाओं से होने वाले फायदे",
     pd_included: "इस पैक में शामिल सेवाएँ",
+    pd_included_sub: "ये सभी सेवाएँ हर माह 2 बार सम्पन्न होती हैं",
     pd_benefits: "इस संकल्प के फायदे",
     pd_reviews: "इस पैक के भक्तों की राय",
     pd_related: "अन्य पैक देखें",
@@ -447,14 +448,14 @@ export const translations = {
     sd_last_saturday: "Last Saturday",
 
     // Next-pooja countdown
-    cd_next_pooja: "Next Pooja",
-    cd_next_pooja_in: "Next Pooja Starts In",
+    cd_next_pooja: "Pooja Booking Will Be Closed In",
+    cd_next_pooja_in: "Pooja Booking Closing In",
     cd_days: "Days",
     cd_hours: "Hours",
     cd_minutes: "Minutes",
     cd_seconds: "Seconds",
-    cd_temple_name: "Siddheshwar Balaji, Yagya Ghat",
-    cd_temple_significance: "Believed to be where Lord Brahma performed the first yagna of creation",
+    cd_temple_name: "Siddheshwar Balaji Temple, Yagya Ghat — Pushkar",
+    cd_temple_significance: "Believed to be where Lord Brahma performed the first yagna of creation, at this sacred tirth in Pushkar",
 
     // Member cue (header / nav)
     member_badge: "Member",
@@ -571,8 +572,9 @@ export const translations = {
 
     // Plan detail page
     pd_err_title: "Sadasyata couldn't load",
-    pd_about: "About this Sankalp",
+    pd_about: "Benefits You Get From All These Sevas",
     pd_included: "Sevas Included in this Pack",
+    pd_included_sub: "All these sevas are performed twice every month",
     pd_benefits: "Benefits of this Sankalp",
     pd_reviews: "What Devotees Say",
     pd_related: "See Other Packs",
