@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, MapPin, Video, Star, ShieldCheck, ScrollText, ListChecks, Quote, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Star, ScrollText, ListChecks, Quote, Sparkles } from "lucide-react";
 import { ChadhavaHeartBadge, AuthenticityTrust } from "@/components/TrustAuthenticity";
 import { usePublicPlans, getPlanById, fetchPublicPlansData, localizePlan, type Plan } from "@/lib/plans";
 import { isHawanSeva } from "@/lib/plans-schedule";
@@ -7,7 +7,8 @@ import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { SevaFlow } from "@/components/SevaFlow";
 import { SlidingImageCard, type Slide } from "@/components/SlidingImageCard";
-import { CountUp } from "@/components/CountUp";
+import { TrustMarquee } from "@/components/TrustMarquee";
+import { SevaBenefitGrid } from "@/components/SevaBenefitGrid";
 import { useTranslation, localizedName } from "@/lib/translations";
 import { PizzaComparison } from "@/components/PizzaComparison";
 import { ComparisonTable } from "@/components/ComparisonTable";
@@ -170,8 +171,19 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
             />
           )}
           <div className="p-5">
+            {plan.detail.sevas.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 bg-brand text-white font-bold text-xs px-3 py-1.5 rounded-full mb-2.5">
+                <ListChecks size={13} />
+                {lang === "hindi"
+                  ? `${plan.detail.sevas.length} सेवाएं शामिल — महीने में 2 बार`
+                  : `${plan.detail.sevas.length} Sevas Included — Twice a Month`}
+              </span>
+            )}
             <h1 className="text-xl font-extrabold text-foreground leading-snug">{plan.heading}</h1>
             <p className="text-xs text-muted-foreground mt-1.5 leading-normal">{plan.subheading}</p>
+            <div className="mt-3">
+              <SevaBenefitGrid sevas={plan.detail.sevas} lang={lang} />
+            </div>
             <div className="flex items-baseline gap-3 mt-3">
               <span className="text-3xl font-bold text-brand">{plan.price}</span>
               <span className="text-muted-foreground">{plan.cycle}</span>
@@ -179,16 +191,8 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
             </div>
             
 
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="inline-flex items-center gap-1 bg-brand-soft text-brand font-semibold px-3 py-1.5 rounded-full">
-                <ShieldCheck size={14} /> <CountUp value={1200} /> {lang === "hindi" ? "परिवार जुड़े" : "Families Connected"}
-              </span>
-              <span className="inline-flex items-center gap-1 bg-success/10 text-success font-semibold px-3 py-1.5 rounded-full">
-                <Video size={14} /> WhatsApp Video Proof
-              </span>
-              <span className="inline-flex items-center gap-1 bg-secondary text-foreground font-semibold px-3 py-1.5 rounded-full">
-                <MapPin size={14} /> {plan.location}
-              </span>
+            <div className="mt-3">
+              <TrustMarquee lang={lang} />
             </div>
           </div>
         </div>
@@ -215,14 +219,20 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
             {plan.detail.benefits.length > 0 && (
               <div className="relative rounded-2xl bg-gradient-to-b from-[#FFF6EE] to-[#FDECDC] border border-brand/15 p-4 space-y-2.5">
                 <Sparkles size={18} className="absolute top-4 right-4 text-[#F5A742]" />
-                {plan.detail.benefits.map((b) => (
-                  <div key={b} className="flex items-start gap-2.5 text-sm pr-6">
-                    <div className="w-[22px] h-[22px] rounded-full bg-success flex items-center justify-center shrink-0 mt-0.5">
-                      <Check size={12} strokeWidth={3.5} className="text-white" />
+                {plan.detail.benefits.map((b) => {
+                  const [claim, source] = b.split("→");
+                  return (
+                    <div key={b} className="flex items-start gap-2.5 text-sm pr-6">
+                      <div className="w-[22px] h-[22px] rounded-full bg-success flex items-center justify-center shrink-0 mt-0.5">
+                        <Check size={12} strokeWidth={3.5} className="text-white" />
+                      </div>
+                      <span className="text-foreground/90 font-semibold leading-snug">
+                        {claim.trim()}
+                        {source && <span className="text-brand font-bold"> → {source.trim()}</span>}
+                      </span>
                     </div>
-                    <span className="text-foreground/90 font-semibold leading-snug">{b}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -243,6 +253,9 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
               <ListChecks size={16} className="text-brand" />
             </div>
             <h2 className="text-lg font-bold text-foreground">{t("pd_included")}</h2>
+          </div>
+          <div className="rounded-xl bg-brand-soft border border-brand/15 px-3.5 py-2.5 text-sm font-semibold text-brand">
+            {t("pd_included_sub")}
           </div>
           <div className="card-soft divide-y divide-black/5">
             {plan.detail.sevas.map((s) => (
