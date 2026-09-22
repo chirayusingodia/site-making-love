@@ -50,6 +50,15 @@ const ITEMS: MarqueeItem[] = [
   { icon: <XCircle size={14} />, hindi: "कभी भी रद्द करने की सुविधा", english: "Cancel Anytime" },
 ];
 
+function Pill({ item, lang }: { item: MarqueeItem; lang: "hindi" | "english" }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white border border-brand/20 text-[#9A3412] font-semibold text-xs px-3.5 py-1.5 mr-2.5 shadow-sm">
+      {item.icon}
+      {lang === "hindi" ? item.hindi : item.english}
+    </span>
+  );
+}
+
 /**
  * Scrolling trust strip — sits where the old static "families / WhatsApp
  * proof / location" badge row used to be, but carries more social proof
@@ -58,21 +67,29 @@ const ITEMS: MarqueeItem[] = [
  * seamless at any strip width.
  */
 export function TrustMarquee({ lang }: { lang: "hindi" | "english" }) {
-  const loop = [...ITEMS, ...ITEMS];
   return (
     <div className="relative overflow-hidden rounded-2xl border border-brand/15 bg-gradient-to-r from-[#FFF6EC] via-[#FFEBD6] to-[#FFF6EC] py-2.5">
       <div className="pointer-events-none absolute inset-y-0 left-0 w-7 bg-gradient-to-r from-[#FFF6EC] to-transparent z-10" />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-[#FFF6EC] to-transparent z-10" />
+      {/* Two copies make the scroll loop seamless, but only the first is
+          real content for assistive tech — the second is marked aria-hidden
+          so a screen reader announces each trust point once, not twice. */}
       <div className="trust-marquee-track flex w-max">
-        {loop.map((item, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white border border-brand/20 text-[#9A3412] font-semibold text-xs px-3.5 py-1.5 mr-2.5 shadow-sm"
-          >
-            {item.icon}
-            {lang === "hindi" ? item.hindi : item.english}
-          </span>
-        ))}
+        <ul
+          className="flex list-none m-0 p-0"
+          aria-label={lang === "hindi" ? "भरोसे की बातें" : "Why families trust us"}
+        >
+          {ITEMS.map((item, i) => (
+            <li key={i}>
+              <Pill item={item} lang={lang} />
+            </li>
+          ))}
+        </ul>
+        <div className="flex" aria-hidden="true">
+          {ITEMS.map((item, i) => (
+            <Pill key={i} item={item} lang={lang} />
+          ))}
+        </div>
       </div>
       <style>{`
         .trust-marquee-track {
