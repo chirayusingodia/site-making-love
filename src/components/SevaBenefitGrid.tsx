@@ -19,37 +19,48 @@ type SevaLike = { title: string; titleEn: string | null };
 
 /**
  * Numbered 1–6 seva grid, each card naming its one main benefit in
- * brackets underneath. Shared between the plan detail page and the plan
- * cards on the listing page so both show the same clear, bold breakdown
- * instead of a dense feature checklist or a run-on sentence.
+ * brackets underneath. Shared between the plan detail page (a full-width
+ * single card) and the plan cards on the listing page (three cards side
+ * by side on desktop, so each one is much narrower than the viewport).
+ *
+ * A hardcoded `grid-cols-2` broke on the listing page: the viewport is
+ * desktop-wide, but the card itself is only ~300px, so two columns
+ * squeezed each seva's label onto 3 wrapped lines. Viewport-based Tailwind
+ * breakpoints (`sm:`, `md:`) can't fix this — they don't know the actual
+ * rendered width of a card nested inside a multi-column grid. Container
+ * queries do: `@container` on the wrapper measures the real box this
+ * component was given, so the grid only goes to 2 columns once there's
+ * genuinely enough room, in either layout, without a mode prop to keep in sync.
  */
 export function SevaBenefitGrid({ sevas, lang }: { sevas: SevaLike[]; lang: "hindi" | "english" }) {
   if (sevas.length === 0) return null;
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {sevas.map((s, i) => {
-        const benefit = SEVA_MAIN_BENEFIT[s.titleEn ?? s.title];
-        return (
-          <div
-            key={s.title}
-            className="flex items-start gap-2 bg-brand-soft border border-brand/20 rounded-xl px-3 py-2.5"
-          >
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand text-white text-xs font-extrabold shrink-0 mt-0.5">
-              {i + 1}
-            </span>
-            <span className="leading-tight">
-              <span className="block text-sm font-bold text-foreground">
-                {localizedName(s.title, s.titleEn, lang)}
+    <div className="@container">
+      <div className="grid grid-cols-1 @[26rem]:grid-cols-2 gap-2">
+        {sevas.map((s, i) => {
+          const benefit = SEVA_MAIN_BENEFIT[s.titleEn ?? s.title];
+          return (
+            <div
+              key={s.title}
+              className="flex items-start gap-2 bg-brand-soft border border-brand/20 rounded-xl px-3 py-2.5"
+            >
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand text-white text-xs font-extrabold shrink-0 mt-0.5">
+                {i + 1}
               </span>
-              {benefit && (
-                <span className="block text-[11px] font-semibold text-brand mt-0.5">
-                  ({lang === "hindi" ? benefit.hindi : benefit.english})
+              <span className="leading-tight">
+                <span className="block text-sm font-bold text-foreground">
+                  {localizedName(s.title, s.titleEn, lang)}
                 </span>
-              )}
-            </span>
-          </div>
-        );
-      })}
+                {benefit && (
+                  <span className="block text-[11px] font-semibold text-brand mt-0.5">
+                    ({lang === "hindi" ? benefit.hindi : benefit.english})
+                  </span>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
