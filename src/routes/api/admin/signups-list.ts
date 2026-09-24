@@ -15,6 +15,14 @@ import { json, requireAdmin } from "@/lib/supabase-admin.server";
 // the service-role client. perPage 1000 keeps this a single round
 // trip for the pre-launch user base; the loop still pages correctly
 // if that ever changes.
+//
+// auth.users.phone is GoTrue's OWN phone field — it is only ever set
+// for a phone-OTP identity. A Google signup who later gave her number
+// at checkout has that number in public.profiles.phone, not here, so
+// reading auth.users.phone alone showed "—" for most subscribed
+// Google users. profiles.phone (collected at checkout, same source
+// every other admin screen uses — see admin.subscribers.tsx) is the
+// fallback.
 interface SignupRow {
   id: string;
   email: string | null;
@@ -57,6 +65,27 @@ export const Route = createFileRoute("/api/admin/signups-list")({
             }
 
             if (users.length < perPage) break;
+          }
+
+          // Fill the gap above from profiles.phone — chunked (Postgres
+          // caps IN-list size in practice) since the pre-launch user
+          // count can still land in the low thousands.
+          const missingIds = rows.filter((r) => !r.phone).map((r) => r.id);
+          const profilePhoneById = new Map<string, string>();
+          const CHUNK = 500;
+          for (let i = 0; i < missingIds.length; i += CHUNK) {
+            const chunk = missingIds.slice(i, i + CHUNK);
+            const { data: profileRows, error: profileErr } = await auth.db
+              .from("profiles")
+              .select("id,phone")
+              .in("id", chunk);
+            if (profileErr) throw profileErr;
+            for (const p of profileRows ?? []) {
+              if (p.phone) profilePhoneById.set(p.id, p.phone as string);
+            }
+          }
+          for (const r of rows) {
+            if (!r.phone) r.phone = profilePhoneById.get(r.id) ?? null;
           }
 
           rows.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
