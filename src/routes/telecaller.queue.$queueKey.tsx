@@ -15,6 +15,8 @@ import {
   isTelecallerQueueKey,
   QUEUE_META,
   DAILY_LEAD_TARGET,
+  hasGotraGap,
+  hasRelationGap,
   type TelecallerLeadRow,
   type TelecallerQueueRow,
 } from "@/lib/telecaller-logic";
@@ -327,6 +329,16 @@ function SubscriberListItem({ row, queueKey }: { row: TelecallerQueueRow; queueK
               <>
                 <span className="text-slate-300">·</span>
                 <span>{row.familyMemberCount}/4 naam</span>
+                {/* Naam count can be full (4/4) while gotra/relation is
+                    still blank on a slot — that's what actually put this
+                    row in the queue, so say so or the telecaller sees a
+                    "complete" person here for no visible reason. */}
+                {row.familyMemberCount >= 4 && hasGotraGap(row) && (
+                  <span className="text-amber-700 font-medium">gotra missing</span>
+                )}
+                {row.familyMemberCount >= 4 && !hasGotraGap(row) && hasRelationGap(row) && (
+                  <span className="text-amber-700 font-medium">rishta missing</span>
+                )}
               </>
             )}
             {queueKey === "callback_due" && (

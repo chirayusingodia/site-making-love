@@ -210,8 +210,18 @@ function PersonCallCardPage() {
 interface SlotRow {
   slot_number: number;
   full_name: string;
-  gotra: string;
   relation: string;
+}
+
+/** Gotra is a property of the FAMILY (patrilineal), not of each member —
+ *  asked ONCE here and written to every saved slot, mirroring the
+ *  public /profile flow (components/profile-completion.tsx). A
+ *  per-slot gotra field here used to leave slots 2-4 blank whenever a
+ *  telecaller only filled slot 1, which then falsely tripped the
+ *  cutoff_risk "gotra missing" check on an otherwise-complete family. */
+function seedFamilyGotra(members: FamilyMemberFull[]): string {
+  const withGotra = members.find((m) => m.gotra && m.gotra.trim());
+  return withGotra?.gotra?.trim() ?? "";
 }
 
 function PersonCard({
@@ -239,11 +249,11 @@ function PersonCard({
       return {
         slot_number: n,
         full_name: existing?.full_name ?? "",
-        gotra: existing?.gotra ?? "",
         relation: existing?.relation ?? "",
       };
     }),
   );
+  const [familyGotra, setFamilyGotra] = useState(() => seedFamilyGotra(card.familyMembers));
   const [devanagari, setDevanagari] = useState(false);
   const [spellingConfirmed, setSpellingConfirmed] = useState(false);
   const [savingFamily, setSavingFamily] = useState(false);
@@ -369,9 +379,12 @@ function PersonCard({
     setSavingFamily(true);
     setFamilyMsg(null);
     try {
+      const gotra = familyGotra.trim();
       await callAdminApi("/api/telecaller/family-members", {
         subscription_id: row.subscriptionId,
-        members: filled,
+        // One family gotra, written to every member row — see
+        // seedFamilyGotra above for why this isn't per-slot.
+        members: filled.map((s) => ({ ...s, ...(gotra ? { gotra } : {}) })),
       });
       setFamilyMsg({ ok: true, text: `${filled.length} naam save ho gaye ✅` });
       setSpellingConfirmed(false);
@@ -619,10 +632,25 @@ function PersonCard({
                 />
                 देवनागरी में naam likhein
               </label>
+
+              {/* Gotra — asked ONCE for the whole family (patrilineal,
+                  same on the public /profile flow), never per member. */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2.5">
+                <Label className="text-xs font-semibold text-slate-600">
+                  Gotra (poore parivaar ka ek hi)
+                </Label>
+                <Input
+                  value={familyGotra}
+                  onChange={(e) => setFamilyGotra(e.target.value)}
+                  placeholder="Jaise Kashyap, Bhardwaj"
+                  className="mt-1.5"
+                />
+              </div>
+
               {slots.map((s, i) => (
                 <div
                   key={s.slot_number}
-                  className="grid grid-cols-1 md:grid-cols-[3rem_1fr_1fr_1fr] gap-2 items-center"
+                  className="grid grid-cols-1 md:grid-cols-[3rem_1fr_1fr] gap-2 items-center"
                 >
                   <span className="text-xs font-mono text-slate-400">{i + 1}.</span>
                   <Input
@@ -637,17 +665,6 @@ function PersonCard({
                     placeholder={devanagari ? "पूरा नाम" : "Poora naam"}
                     lang={devanagari ? "hi" : "en"}
                     className={devanagari ? "font-serif text-base" : ""}
-                  />
-                  <Input
-                    value={s.gotra}
-                    onChange={(e) =>
-                      setSlots((prev) =>
-                        prev.map((p) =>
-                          p.slot_number === s.slot_number ? { ...p, gotra: e.target.value } : p,
-                        ),
-                      )
-                    }
-                    placeholder="Gotra (jaise Kashyap)"
                   />
                   <Input
                     value={s.relation}

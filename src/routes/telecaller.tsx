@@ -56,29 +56,33 @@ function TelecallerLayout() {
       {/* Header — SAME shell as /admin, DELIBERATELY DIFFERENT accent:
           indigo, not amber. A caller handed either login must tell
           at a glance which surface she is on (§6.2). */}
-      <header className="sticky top-0 z-40 border-b border-indigo-900/10 bg-white/90 backdrop-blur-md px-4 lg:px-8 py-3 flex items-center justify-between shadow-xs print:hidden">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-2 group">
-            <PunyataLogo className="w-8 h-8 text-amber-600 transition-transform group-hover:scale-105" />
-            <span className="font-extrabold text-xl tracking-tight text-slate-900 font-serif">
+      <header className="sticky top-0 z-40 border-b border-indigo-900/10 bg-white/90 backdrop-blur-md px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 shadow-xs print:hidden">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link to="/" className="flex items-center gap-2 group flex-none">
+            <PunyataLogo className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600 transition-transform group-hover:scale-105" />
+            <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 font-serif whitespace-nowrap">
               पुण्यता
             </span>
           </Link>
-          <span className="text-slate-300">|</span>
-          <div className="flex items-center gap-1.5 bg-indigo-500/10 text-indigo-800 px-2.5 py-1 rounded-full text-xs font-semibold border border-indigo-500/20">
-            <PhoneCall className="w-3.5 h-3.5 text-indigo-600" />
+          <span className="hidden sm:inline text-slate-300">|</span>
+          <div className="hidden sm:flex items-center gap-1.5 bg-indigo-500/10 text-indigo-800 px-2.5 py-1 rounded-full text-xs font-semibold border border-indigo-500/20 whitespace-nowrap">
+            <PhoneCall className="w-3.5 h-3.5 text-indigo-600 flex-none" />
             Telecaller Portal
           </div>
+          <div className="sm:hidden flex items-center justify-center w-7 h-7 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex-none">
+            <PhoneCall className="w-3.5 h-3.5 text-indigo-600" />
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-1.5 text-[11px] text-indigo-900/60 bg-indigo-50 px-3 py-1.5 rounded-md border border-indigo-900/5">
+        <div className="flex items-center gap-2 sm:gap-4 flex-none">
+          <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-indigo-900/60 bg-indigo-50 px-3 py-1.5 rounded-md border border-indigo-900/5 whitespace-nowrap">
             ₹ nahi dikhega — status aur dates hi kaafi hain
           </div>
           <Link
             to="/"
-            className="text-xs font-medium text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200 transition-colors shadow-2xs"
+            className="text-xs font-medium text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 px-2.5 sm:px-3 py-1.5 rounded-md border border-slate-200 transition-colors shadow-2xs whitespace-nowrap"
           >
-            ← Back to Site
+            ← <span className="hidden sm:inline">Back to Site</span>
+            <span className="sm:hidden">Back</span>
           </Link>
         </div>
       </header>
