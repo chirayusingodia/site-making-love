@@ -809,7 +809,11 @@ export function bannerForQueue(key: TelecallerQueueKey, row: TelecallerQueueRow)
     case "aaj_ke_leads":
       return `Aaj ka lead — ${row.fullName ?? "naam nahi"} ko call karke plan samjhaein`;
     case "cutoff_risk":
-      return "Agla batch nazdeek hai — naam abhi nahi bhare to is baar list mein nahi jayenge";
+      return row.familyMemberCount > 0 && hasGotraGap(row)
+        ? "Agla batch nazdeek hai — naam to bhare hain par gotra khaali hai, wahi bharwana hai"
+        : row.familyMemberCount > 0 && hasRelationGap(row)
+          ? "Agla batch nazdeek hai — naam to bhare hain par rishta (relation) khaali hai, wahi bharwana hai"
+          : "Agla batch nazdeek hai — naam abhi nahi bhare to is baar list mein nahi jayenge";
     case "payment_failed":
       return `Payment fail ho gaya hai${
         row.latestPaymentMethod ? ` (${row.latestPaymentMethod})` : ""
