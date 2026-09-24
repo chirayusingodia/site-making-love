@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { usePublicPlans } from "@/lib/plans";
@@ -575,21 +575,24 @@ function AdminOverviewPage() {
             users (subscription-independent). Phone/OTP login is
             currently disabled in the app, so this normally reads all
             Google until that path is re-enabled. */}
-        <MetricCard
-          title="Logins (Google / Phone)"
-          value={loginCounts ? loginCounts.total : 0}
-          subtitle={
-            loginCounts
-              ? `Google: ${loginCounts.google} • Phone: ${loginCounts.phone}` +
-                (loginCounts.other ? ` • Other: ${loginCounts.other}` : "")
-              : "Registered users by sign-in method"
-          }
-          badge={{ text: "All users", variant: "secondary" }}
-          icon={LogIn}
-          iconBg="bg-sky-100"
-          iconColor="text-sky-700"
-          loading={loading}
-        />
+        <Link to="/admin/signups" className="block">
+          <MetricCard
+            title="Logins (Google / Phone)"
+            value={loginCounts ? loginCounts.total : 0}
+            subtitle={
+              loginCounts
+                ? `Google: ${loginCounts.google} • Phone: ${loginCounts.phone}` +
+                  (loginCounts.other ? ` • Other: ${loginCounts.other}` : "") +
+                  " — click to see emails"
+                : "Registered users by sign-in method"
+            }
+            badge={{ text: "All users", variant: "secondary" }}
+            icon={LogIn}
+            iconBg="bg-sky-100"
+            iconColor="text-sky-700"
+            loading={loading}
+          />
+        </Link>
 
         {/* 5. Failed Payments This Month */}
         <MetricCard

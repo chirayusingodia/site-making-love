@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, Star, ScrollText, ListChecks, Quote, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Star, ScrollText, ListChecks, Quote, Sparkles, Users } from "lucide-react";
 import { ChadhavaHeartBadge, AuthenticityTrust } from "@/components/TrustAuthenticity";
 import { usePublicPlans, getPlanById, fetchPublicPlansData, localizePlan, type Plan } from "@/lib/plans";
 import { isHawanSeva } from "@/lib/plans-schedule";
@@ -171,14 +171,22 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
             />
           )}
           <div className="p-5">
-            {plan.detail.sevas.length > 0 && (
-              <span className="inline-flex items-center gap-1.5 bg-brand text-white font-bold text-xs px-3 py-1.5 rounded-full mb-2.5">
-                <ListChecks size={13} />
+            <div className="flex flex-wrap gap-2 mb-2.5">
+              {plan.detail.sevas.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 bg-brand text-white font-bold text-xs px-3 py-1.5 rounded-full">
+                  <ListChecks size={13} />
+                  {lang === "hindi"
+                    ? `${plan.detail.sevas.length} सेवाएं शामिल — महीने में 2 बार`
+                    : `${plan.detail.sevas.length} Sevas Included — Twice a Month`}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5 bg-emerald-600 text-white font-bold text-xs px-3 py-1.5 rounded-full">
+                <Users size={13} />
                 {lang === "hindi"
-                  ? `${plan.detail.sevas.length} सेवाएं शामिल — महीने में 2 बार`
-                  : `${plan.detail.sevas.length} Sevas Included — Twice a Month`}
+                  ? `आपके परिवार के 4 जनों का संकल्प होगा इसी ${plan.price} के पैक में`
+                  : `Sankalp for up to 4 of your family members, included in this ${plan.price} pack`}
               </span>
-            )}
+            </div>
             <h1 className="text-xl font-extrabold text-foreground leading-snug">{plan.heading}</h1>
             <p className="text-xs text-muted-foreground mt-1.5 leading-normal">{plan.subheading}</p>
             <div className="mt-3">
@@ -189,7 +197,7 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
               <span className="text-muted-foreground">{plan.cycle}</span>
               {plan.strikePrice && <span className="text-sm text-muted-foreground line-through">{plan.strikePrice}</span>}
             </div>
-            
+
 
             <div className="mt-3">
               <TrustMarquee lang={lang} />

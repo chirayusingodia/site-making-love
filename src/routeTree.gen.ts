@@ -32,6 +32,7 @@ import { Route as TelecallerIndexRouteImport } from './routes/telecaller.index'
 import { Route as AgentIndexRouteImport } from './routes/agent.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TelecallerScriptRouteImport } from './routes/telecaller.script'
+import { Route as TelecallerReferLinkRouteImport } from './routes/telecaller.refer-link'
 import { Route as TelecallerQueuesRouteImport } from './routes/telecaller.queues'
 import { Route as TelecallerNewRouteImport } from './routes/telecaller.new'
 import { Route as TelecallerMyDayRouteImport } from './routes/telecaller.my-day'
@@ -42,6 +43,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AgentMyLeadsRouteImport } from './routes/agent.my-leads'
 import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
 import { Route as AdminStaffRouteImport } from './routes/admin.staff'
+import { Route as AdminSignupsRouteImport } from './routes/admin.signups'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-lists'
 import { Route as AdminRoutingRouteImport } from './routes/admin.routing'
@@ -61,6 +63,7 @@ import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller
 import { Route as TelecallerPersonSubscriptionIdRouteImport } from './routes/telecaller.person.$subscriptionId'
 import { Route as TelecallerLeadLeadIdRouteImport } from './routes/telecaller.lead.$leadId'
 import { Route as ApiTelecallerSendPaymentLinkRouteImport } from './routes/api/telecaller/send-payment-link'
+import { Route as ApiTelecallerReferralLinkRouteImport } from './routes/api/telecaller/referral-link'
 import { Route as ApiTelecallerQueuesRouteImport } from './routes/api/telecaller/queues'
 import { Route as ApiTelecallerProofResendRouteImport } from './routes/api/telecaller/proof-resend'
 import { Route as ApiTelecallerProfileRouteImport } from './routes/api/telecaller/profile'
@@ -90,6 +93,7 @@ import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request
 import { Route as ApiAuthReconcileProfileRouteImport } from './routes/api/auth/reconcile-profile'
 import { Route as ApiAuthCompleteGoogleProfileRouteImport } from './routes/api/auth/complete-google-profile'
 import { Route as ApiAgentMyLeadsRouteImport } from './routes/api/agent/my-leads'
+import { Route as ApiAdminSignupsListRouteImport } from './routes/api/admin/signups-list'
 import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
 import { Route as ApiAdminLoginMethodCountsRouteImport } from './routes/api/admin/login-method-counts'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
@@ -249,6 +253,11 @@ const TelecallerScriptRoute = TelecallerScriptRouteImport.update({
   path: '/script',
   getParentRoute: () => TelecallerRoute,
 } as any)
+const TelecallerReferLinkRoute = TelecallerReferLinkRouteImport.update({
+  id: '/refer-link',
+  path: '/refer-link',
+  getParentRoute: () => TelecallerRoute,
+} as any)
 const TelecallerQueuesRoute = TelecallerQueuesRouteImport.update({
   id: '/queues',
   path: '/queues',
@@ -297,6 +306,11 @@ const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
 const AdminStaffRoute = AdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSignupsRoute = AdminSignupsRouteImport.update({
+  id: '/signups',
+  path: '/signups',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSeoRoute = AdminSeoRouteImport.update({
@@ -394,6 +408,12 @@ const ApiTelecallerSendPaymentLinkRoute =
   ApiTelecallerSendPaymentLinkRouteImport.update({
     id: '/api/telecaller/send-payment-link',
     path: '/api/telecaller/send-payment-link',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiTelecallerReferralLinkRoute =
+  ApiTelecallerReferralLinkRouteImport.update({
+    id: '/api/telecaller/referral-link',
+    path: '/api/telecaller/referral-link',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiTelecallerQueuesRoute = ApiTelecallerQueuesRouteImport.update({
@@ -546,6 +566,11 @@ const ApiAuthCompleteGoogleProfileRoute =
 const ApiAgentMyLeadsRoute = ApiAgentMyLeadsRouteImport.update({
   id: '/api/agent/my-leads',
   path: '/api/agent/my-leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminSignupsListRoute = ApiAdminSignupsListRouteImport.update({
+  id: '/api/admin/signups-list',
+  path: '/api/admin/signups-list',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminOverviewFinancialsRoute =
@@ -815,6 +840,7 @@ export interface FileRoutesByFullPath {
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/signups': typeof AdminSignupsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
@@ -825,6 +851,7 @@ export interface FileRoutesByFullPath {
   '/telecaller/my-day': typeof TelecallerMyDayRoute
   '/telecaller/new': typeof TelecallerNewRoute
   '/telecaller/queues': typeof TelecallerQueuesRoute
+  '/telecaller/refer-link': typeof TelecallerReferLinkRoute
   '/telecaller/script': typeof TelecallerScriptRoute
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
@@ -832,6 +859,7 @@ export interface FileRoutesByFullPath {
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/login-method-counts': typeof ApiAdminLoginMethodCountsRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/admin/signups-list': typeof ApiAdminSignupsListRoute
   '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
@@ -861,6 +889,7 @@ export interface FileRoutesByFullPath {
   '/api/telecaller/profile': typeof ApiTelecallerProfileRoute
   '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
   '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
+  '/api/telecaller/referral-link': typeof ApiTelecallerReferralLinkRoute
   '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
@@ -938,6 +967,7 @@ export interface FileRoutesByTo {
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/signups': typeof AdminSignupsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
@@ -948,6 +978,7 @@ export interface FileRoutesByTo {
   '/telecaller/my-day': typeof TelecallerMyDayRoute
   '/telecaller/new': typeof TelecallerNewRoute
   '/telecaller/queues': typeof TelecallerQueuesRoute
+  '/telecaller/refer-link': typeof TelecallerReferLinkRoute
   '/telecaller/script': typeof TelecallerScriptRoute
   '/admin': typeof AdminIndexRoute
   '/agent': typeof AgentIndexRoute
@@ -955,6 +986,7 @@ export interface FileRoutesByTo {
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/login-method-counts': typeof ApiAdminLoginMethodCountsRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/admin/signups-list': typeof ApiAdminSignupsListRoute
   '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
@@ -984,6 +1016,7 @@ export interface FileRoutesByTo {
   '/api/telecaller/profile': typeof ApiTelecallerProfileRoute
   '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
   '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
+  '/api/telecaller/referral-link': typeof ApiTelecallerReferralLinkRoute
   '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
@@ -1065,6 +1098,7 @@ export interface FileRoutesById {
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/signups': typeof AdminSignupsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
@@ -1075,6 +1109,7 @@ export interface FileRoutesById {
   '/telecaller/my-day': typeof TelecallerMyDayRoute
   '/telecaller/new': typeof TelecallerNewRoute
   '/telecaller/queues': typeof TelecallerQueuesRoute
+  '/telecaller/refer-link': typeof TelecallerReferLinkRoute
   '/telecaller/script': typeof TelecallerScriptRoute
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
@@ -1082,6 +1117,7 @@ export interface FileRoutesById {
   '/admin/pandit/$batchId': typeof AdminPanditBatchIdRoute
   '/api/admin/login-method-counts': typeof ApiAdminLoginMethodCountsRoute
   '/api/admin/overview-financials': typeof ApiAdminOverviewFinancialsRoute
+  '/api/admin/signups-list': typeof ApiAdminSignupsListRoute
   '/api/agent/my-leads': typeof ApiAgentMyLeadsRoute
   '/api/auth/complete-google-profile': typeof ApiAuthCompleteGoogleProfileRoute
   '/api/auth/reconcile-profile': typeof ApiAuthReconcileProfileRoute
@@ -1111,6 +1147,7 @@ export interface FileRoutesById {
   '/api/telecaller/profile': typeof ApiTelecallerProfileRoute
   '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
   '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
+  '/api/telecaller/referral-link': typeof ApiTelecallerReferralLinkRoute
   '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
@@ -1193,6 +1230,7 @@ export interface FileRouteTypes {
     | '/admin/routing'
     | '/admin/sankalp-lists'
     | '/admin/seo'
+    | '/admin/signups'
     | '/admin/staff'
     | '/admin/subscribers'
     | '/agent/my-leads'
@@ -1203,6 +1241,7 @@ export interface FileRouteTypes {
     | '/telecaller/my-day'
     | '/telecaller/new'
     | '/telecaller/queues'
+    | '/telecaller/refer-link'
     | '/telecaller/script'
     | '/admin/'
     | '/agent/'
@@ -1210,6 +1249,7 @@ export interface FileRouteTypes {
     | '/admin/pandit/$batchId'
     | '/api/admin/login-method-counts'
     | '/api/admin/overview-financials'
+    | '/api/admin/signups-list'
     | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
     | '/api/auth/reconcile-profile'
@@ -1239,6 +1279,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/profile'
     | '/api/telecaller/proof-resend'
     | '/api/telecaller/queues'
+    | '/api/telecaller/referral-link'
     | '/api/telecaller/send-payment-link'
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
@@ -1316,6 +1357,7 @@ export interface FileRouteTypes {
     | '/admin/routing'
     | '/admin/sankalp-lists'
     | '/admin/seo'
+    | '/admin/signups'
     | '/admin/staff'
     | '/admin/subscribers'
     | '/agent/my-leads'
@@ -1326,6 +1368,7 @@ export interface FileRouteTypes {
     | '/telecaller/my-day'
     | '/telecaller/new'
     | '/telecaller/queues'
+    | '/telecaller/refer-link'
     | '/telecaller/script'
     | '/admin'
     | '/agent'
@@ -1333,6 +1376,7 @@ export interface FileRouteTypes {
     | '/admin/pandit/$batchId'
     | '/api/admin/login-method-counts'
     | '/api/admin/overview-financials'
+    | '/api/admin/signups-list'
     | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
     | '/api/auth/reconcile-profile'
@@ -1362,6 +1406,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/profile'
     | '/api/telecaller/proof-resend'
     | '/api/telecaller/queues'
+    | '/api/telecaller/referral-link'
     | '/api/telecaller/send-payment-link'
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
@@ -1442,6 +1487,7 @@ export interface FileRouteTypes {
     | '/admin/routing'
     | '/admin/sankalp-lists'
     | '/admin/seo'
+    | '/admin/signups'
     | '/admin/staff'
     | '/admin/subscribers'
     | '/agent/my-leads'
@@ -1452,6 +1498,7 @@ export interface FileRouteTypes {
     | '/telecaller/my-day'
     | '/telecaller/new'
     | '/telecaller/queues'
+    | '/telecaller/refer-link'
     | '/telecaller/script'
     | '/admin/'
     | '/agent/'
@@ -1459,6 +1506,7 @@ export interface FileRouteTypes {
     | '/admin/pandit/$batchId'
     | '/api/admin/login-method-counts'
     | '/api/admin/overview-financials'
+    | '/api/admin/signups-list'
     | '/api/agent/my-leads'
     | '/api/auth/complete-google-profile'
     | '/api/auth/reconcile-profile'
@@ -1488,6 +1536,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/profile'
     | '/api/telecaller/proof-resend'
     | '/api/telecaller/queues'
+    | '/api/telecaller/referral-link'
     | '/api/telecaller/send-payment-link'
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
@@ -1558,6 +1607,7 @@ export interface RootRouteChildren {
   PlanPlanIdRoute: typeof PlanPlanIdRoute
   ApiAdminLoginMethodCountsRoute: typeof ApiAdminLoginMethodCountsRoute
   ApiAdminOverviewFinancialsRoute: typeof ApiAdminOverviewFinancialsRoute
+  ApiAdminSignupsListRoute: typeof ApiAdminSignupsListRoute
   ApiAgentMyLeadsRoute: typeof ApiAgentMyLeadsRoute
   ApiAuthCompleteGoogleProfileRoute: typeof ApiAuthCompleteGoogleProfileRoute
   ApiAuthReconcileProfileRoute: typeof ApiAuthReconcileProfileRoute
@@ -1587,6 +1637,7 @@ export interface RootRouteChildren {
   ApiTelecallerProfileRoute: typeof ApiTelecallerProfileRoute
   ApiTelecallerProofResendRoute: typeof ApiTelecallerProofResendRoute
   ApiTelecallerQueuesRoute: typeof ApiTelecallerQueuesRoute
+  ApiTelecallerReferralLinkRoute: typeof ApiTelecallerReferralLinkRoute
   ApiTelecallerSendPaymentLinkRoute: typeof ApiTelecallerSendPaymentLinkRoute
   ApiAdminAuditLogFiltersRoute: typeof ApiAdminAuditLogFiltersRoute
   ApiAdminAuditLogListRoute: typeof ApiAdminAuditLogListRoute
@@ -1792,6 +1843,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TelecallerScriptRouteImport
       parentRoute: typeof TelecallerRoute
     }
+    '/telecaller/refer-link': {
+      id: '/telecaller/refer-link'
+      path: '/refer-link'
+      fullPath: '/telecaller/refer-link'
+      preLoaderRoute: typeof TelecallerReferLinkRouteImport
+      parentRoute: typeof TelecallerRoute
+    }
     '/telecaller/queues': {
       id: '/telecaller/queues'
       path: '/queues'
@@ -1860,6 +1918,13 @@ declare module '@tanstack/react-router' {
       path: '/staff'
       fullPath: '/admin/staff'
       preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/signups': {
+      id: '/admin/signups'
+      path: '/signups'
+      fullPath: '/admin/signups'
+      preLoaderRoute: typeof AdminSignupsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/seo': {
@@ -1993,6 +2058,13 @@ declare module '@tanstack/react-router' {
       path: '/api/telecaller/send-payment-link'
       fullPath: '/api/telecaller/send-payment-link'
       preLoaderRoute: typeof ApiTelecallerSendPaymentLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/referral-link': {
+      id: '/api/telecaller/referral-link'
+      path: '/api/telecaller/referral-link'
+      fullPath: '/api/telecaller/referral-link'
+      preLoaderRoute: typeof ApiTelecallerReferralLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/telecaller/queues': {
@@ -2196,6 +2268,13 @@ declare module '@tanstack/react-router' {
       path: '/api/agent/my-leads'
       fullPath: '/api/agent/my-leads'
       preLoaderRoute: typeof ApiAgentMyLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/signups-list': {
+      id: '/api/admin/signups-list'
+      path: '/api/admin/signups-list'
+      fullPath: '/api/admin/signups-list'
+      preLoaderRoute: typeof ApiAdminSignupsListRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/overview-financials': {
@@ -2518,6 +2597,7 @@ interface AdminRouteChildren {
   AdminRoutingRoute: typeof AdminRoutingRoute
   AdminSankalpListsRoute: typeof AdminSankalpListsRoute
   AdminSeoRoute: typeof AdminSeoRoute
+  AdminSignupsRoute: typeof AdminSignupsRoute
   AdminStaffRoute: typeof AdminStaffRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -2540,6 +2620,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRoutingRoute: AdminRoutingRoute,
   AdminSankalpListsRoute: AdminSankalpListsRoute,
   AdminSeoRoute: AdminSeoRoute,
+  AdminSignupsRoute: AdminSignupsRoute,
   AdminStaffRoute: AdminStaffRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -2575,6 +2656,7 @@ interface TelecallerRouteChildren {
   TelecallerMyDayRoute: typeof TelecallerMyDayRoute
   TelecallerNewRoute: typeof TelecallerNewRoute
   TelecallerQueuesRoute: typeof TelecallerQueuesRoute
+  TelecallerReferLinkRoute: typeof TelecallerReferLinkRoute
   TelecallerScriptRoute: typeof TelecallerScriptRoute
   TelecallerIndexRoute: typeof TelecallerIndexRoute
   TelecallerLeadLeadIdRoute: typeof TelecallerLeadLeadIdRoute
@@ -2587,6 +2669,7 @@ const TelecallerRouteChildren: TelecallerRouteChildren = {
   TelecallerMyDayRoute: TelecallerMyDayRoute,
   TelecallerNewRoute: TelecallerNewRoute,
   TelecallerQueuesRoute: TelecallerQueuesRoute,
+  TelecallerReferLinkRoute: TelecallerReferLinkRoute,
   TelecallerScriptRoute: TelecallerScriptRoute,
   TelecallerIndexRoute: TelecallerIndexRoute,
   TelecallerLeadLeadIdRoute: TelecallerLeadLeadIdRoute,
@@ -2633,6 +2716,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlanPlanIdRoute: PlanPlanIdRoute,
   ApiAdminLoginMethodCountsRoute: ApiAdminLoginMethodCountsRoute,
   ApiAdminOverviewFinancialsRoute: ApiAdminOverviewFinancialsRoute,
+  ApiAdminSignupsListRoute: ApiAdminSignupsListRoute,
   ApiAgentMyLeadsRoute: ApiAgentMyLeadsRoute,
   ApiAuthCompleteGoogleProfileRoute: ApiAuthCompleteGoogleProfileRoute,
   ApiAuthReconcileProfileRoute: ApiAuthReconcileProfileRoute,
@@ -2662,6 +2746,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTelecallerProfileRoute: ApiTelecallerProfileRoute,
   ApiTelecallerProofResendRoute: ApiTelecallerProofResendRoute,
   ApiTelecallerQueuesRoute: ApiTelecallerQueuesRoute,
+  ApiTelecallerReferralLinkRoute: ApiTelecallerReferralLinkRoute,
   ApiTelecallerSendPaymentLinkRoute: ApiTelecallerSendPaymentLinkRoute,
   ApiAdminAuditLogFiltersRoute: ApiAdminAuditLogFiltersRoute,
   ApiAdminAuditLogListRoute: ApiAdminAuditLogListRoute,
