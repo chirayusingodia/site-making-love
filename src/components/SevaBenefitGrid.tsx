@@ -5,14 +5,29 @@ import { localizedName } from "@/lib/translations";
 // names, it explains what each one is for at a glance.
 const SEVA_MAIN_BENEFIT: Record<string, { hindi: string; english: string }> = {
   "Sundarkand Path": {
-    hindi: "पितृ तृप्ति व आशीर्वाद",
-    english: "Peace & blessings for ancestors",
+    hindi: "किसी भी प्रकार की इच्छा हो, आपकी शीघ्र पूर्ण होती है और हनुमान जी की कृपा मिलती है",
+    english: "Any wish, of any kind, gets fulfilled quickly for you, and Hanuman ji's grace follows",
   },
-  "Gau Seva": { hindi: "आर्थिक बाधा दूर होती है", english: "Removes financial obstacles" },
-  "Vanar Seva": { hindi: "हनुमान जी की कृपा", english: "Grace of Hanuman ji" },
-  "Saadhu Santo Ko Bhojan": { hindi: "मानसिक शांति मिलती है", english: "Brings mental peace" },
-  "Griha Shanti Hawan": { hindi: "गृह-कलेश शांत होता है", english: "Ends household discord" },
-  "Sarv Rog Nivaran Hawan": { hindi: "रोग-बाधा से रक्षा", english: "Protection from illness" },
+  "Gau Seva": {
+    hindi: "गौमाता की सेवा से आपकी आर्थिक बाधा दूर होती है, सुख-समृद्धि मिलती है",
+    english: "Serving Gau Mata clears your financial obstacles and brings prosperity",
+  },
+  "Vanar Seva": {
+    hindi: "हनुमान जी की सेना की सेवा है यह, इससे आपको उनका सीधा आशीर्वाद प्राप्त होता है",
+    english: "This serves Hanuman ji's own army — in turn, his direct blessings reach you",
+  },
+  "Saadhu Santo Ko Bhojan": {
+    hindi: "सड़क पर रहने वाले साधु-संतों को जिनका कोई नहीं, उन्हें भोजन ईश्वर आपके माध्यम से करवाते हैं और उसका पुण्य आपके खाते में जाता है",
+    english: "These sadhus live on the streets with no one to feed them — God feeds them through you, and the merit lands in your account",
+  },
+  "Griha Shanti Hawan": {
+    hindi: "इससे घर का क्लेश व वास्तु दोष शांत होता है, आपको सुख-शांति व भाग्य वृद्धि मिलती है",
+    english: "This pacifies household discord and vaastu dosh, bringing you peace and rising fortune",
+  },
+  "Sarv Rog Nivaran Hawan": {
+    hindi: "दैहिक-दैविक-भौतिक सभी रोग-बाधाओं से आपको मुक्ति मिलती है इस हवन से",
+    english: "This hawan frees you from all physical, divine and worldly ailments",
+  },
 };
 
 type SevaLike = { title: string; titleEn: string | null };
