@@ -23,6 +23,7 @@ import {
   ClipboardList,
   Image as ImageIcon,
   PenSquare,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
@@ -65,6 +66,7 @@ function AdminLayout() {
     // Chirayu can sit in the same queue and check the work.
     { label: "Call Queue", href: "/telecaller", icon: PhoneCall, badge: "New" },
     { label: "Subscribers", href: "/admin/subscribers", icon: Users },
+    { label: "Signups", href: "/admin/signups", icon: Mail, badge: "New" },
     { label: "Plans & Sevas", href: "/admin/plans-sevas", icon: Layers },
     { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText, badge: "New" },
     { label: "Proof Upload", href: "/admin/proof-upload", icon: Flame, badge: "Session 4" },

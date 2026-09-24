@@ -66,13 +66,25 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
         let sourcingAgentId: string | null = null;
         if (typeof body?.att === "string" && body.att.trim()) {
           const adminDb = getServiceClient();
+          const attToken = body.att.trim();
           const { data: lead } = await adminDb
             .from("leads")
             .select("id,assigned_to,created_by,source_agent_id")
-            .eq("attribution_token", body.att.trim())
+            .eq("attribution_token", attToken)
             .maybeSingle();
-          telecallerId = lead?.assigned_to ?? lead?.created_by ?? null;
-          sourcingAgentId = lead?.source_agent_id ?? null;
+          if (lead) {
+            telecallerId = lead.assigned_to ?? lead.created_by ?? null;
+            sourcingAgentId = lead.source_agent_id ?? null;
+          } else {
+            // Self-serve telecaller referral link (no lead involved —
+            // /api/telecaller/referral-link). No field agent to credit.
+            const { data: refLink } = await adminDb
+              .from("telecaller_referral_links")
+              .select("telecaller_id")
+              .eq("token", attToken)
+              .maybeSingle();
+            telecallerId = refLink?.telecaller_id ?? null;
+          }
         }
 
         // Marketing-channel attribution (§ Attribution) — first-touch data

@@ -5,6 +5,7 @@ import {
   CalendarCheck2,
   ScrollText,
   BadgeIndianRupee,
+  Link2,
   Menu,
   ChevronDown,
   type LucideIcon,
@@ -43,6 +44,7 @@ function TelecallerLayout() {
     { label: "Call Queues", href: "/telecaller/queues", icon: PhoneCall },
     { label: "New Lead", href: "/telecaller/new", icon: UserPlus },
     { label: "My Day", href: "/telecaller/my-day", icon: CalendarCheck2 },
+    { label: "Apna Referral Link", href: "/telecaller/refer-link", icon: Link2 },
     // §11 — watching her own trail grow is the behavioural point of
     // the whole scheme.
     { label: "Meri Kamai", href: "/telecaller/earnings", icon: BadgeIndianRupee },
