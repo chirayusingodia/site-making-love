@@ -1,5 +1,15 @@
-@import "tailwindcss" source(none);
-@source "../src";
+/* The starter template shipped `@import "tailwindcss" source(none);` +
+   `@source "../src";` instead of this plain import. That combination
+   silently produced a CSS build with EVERY breakpoint-prefixed utility
+   missing (sm:/md:/lg:/xl:/2xl: — confirmed in both `npm run dev` and
+   `npm run build` output) while ordinary base utilities and other
+   variants (hover:, dark:, group-hover:, before:/after:) compiled
+   fine — so nothing looked "obviously" broken in isolated component
+   testing, only in real responsive layout on production. Do not
+   reintroduce `source(none)` + a manual `@source` without re-checking
+   the built CSS for `.sm\:hidden{display:none}` (or similar) — its
+   absence is the tell. */
+@import "tailwindcss";
 @import "tw-animate-css";
 
 /* Hind (body + display) — only the weights the UI actually uses.
