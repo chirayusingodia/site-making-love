@@ -19,15 +19,18 @@ import {
   isTelecallerQueueKey,
   OUTCOME_LABELS,
   QUEUE_META,
+  QUICK_OUTCOME_SHORTCUTS,
   type CallOutcome,
   type TelecallerQueueRow,
 } from "@/lib/telecaller-logic";
+import { useCallCardShortcuts } from "@/lib/use-call-card-shortcuts";
 import { ALLOWED_LANGUAGES } from "@/lib/family-validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OutcomePicker } from "@/components/telecaller/OutcomePicker";
 
 export const Route = createFileRoute("/telecaller/person/$subscriptionId")({
   validateSearch: (search: Record<string, unknown>): { queue?: string } => ({
@@ -307,6 +310,13 @@ function PersonCard({
   const [escalate, setEscalate] = useState(false);
   const [logging, setLogging] = useState(false);
   const [logErr, setLogErr] = useState<string | null>(null);
+
+  useCallCardShortcuts({
+    enabled: true,
+    onPickOutcome: setOutcome,
+    onSubmit: () => logThisCall(),
+    canSubmit: !logging && !!outcome,
+  });
 
   const touchedAny =
     identityVerified ||
@@ -885,7 +895,8 @@ function PersonCard({
               <div className="mb-2 space-y-1">
                 {card.sevaCompletions.map((c) => (
                   <div key={c.id} className="text-[11px] text-slate-600">
-                    ✅ {new Date(c.completedAt).toLocaleDateString("en-IN", {
+                    ✅{" "}
+                    {new Date(c.completedAt).toLocaleDateString("en-IN", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",
@@ -929,79 +940,79 @@ function PersonCard({
       {/* Hidden for already-paying (active/paused) subscribers — see
           canSendPaymentLink above. */}
       {canSendPaymentLink && (
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">
-        <h2 className="text-base font-bold text-slate-900">Payment link bhejein</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Aap paisa NAHI leti — link jaata hai, customer khud Razorpay par pay karta hai. Rate
-          poochein to public plans page dikhayein.
-        </p>
-        {row.subscriptionStatus === "halted" && row.subscriptionId && (
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">
+          <h2 className="text-base font-bold text-slate-900">Payment link bhejein</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Aap paisa NAHI leti — link jaata hai, customer khud Razorpay par pay karta hai. Rate
+            poochein to public plans page dikhayein.
+          </p>
+          {row.subscriptionStatus === "halted" && row.subscriptionId && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+              <b>Yeh subscription Razorpay par HALTED hai</b> — purana autopay band ho gaya (retries
+              fail hue). Resume sirf admin ke paas hai; aap NAYA plan chunein aur fresh link bhejein
+              — customer naya mandate set karega.
+            </div>
+          )}
           <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-            <b>Yeh subscription Razorpay par HALTED hai</b> — purana autopay band ho gaya (retries
-            fail hue). Resume sirf admin ke paas hai; aap NAYA plan chunein aur fresh link bhejein —
-            customer naya mandate set karega.
+            🚨 <b>OTP KABHI na maangein</b> — na customer se, na kahin type karein. Yeh panel mein
+            OTP ka koi field hai hi nahi. "Code bol dijiye" ka matlab fraud hai — turant Chirayu ko
+            batayein.
           </div>
-        )}
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-          🚨 <b>OTP KABHI na maangein</b> — na customer se, na kahin type karein. Yeh panel mein OTP
-          ka koi field hai hi nahi. "Code bol dijiye" ka matlab fraud hai — turant Chirayu ko
-          batayein.
-        </div>
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr_10rem_auto] gap-2">
-          <select
-            value={planSel}
-            onChange={(e) => setPlanSel(e.target.value)}
-            className={inputBase}
-          >
-            <option value="">Plan chunein…</option>
-            {plans.map((p) => (
-              <option key={p.slug} value={p.slug}>
-                {p.name} ({p.billing_period}) — {fmtPrice(p.price_paise)}
-              </option>
-            ))}
-          </select>
-          <Button
-            onClick={sendPaymentLink}
-            disabled={!planSel || linkBusy}
-            size="sm"
-            className="bg-indigo-700 hover:bg-indigo-800 h-9 sm:col-span-2"
-          >
-            {linkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Link banayein"}
-          </Button>
-        </div>
-        {linkErr && <div className="mt-2 text-xs text-red-700">{linkErr}</div>}
-        {linkResult && (
-          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 space-y-2">
-            <div className="text-sm font-semibold text-emerald-900 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              {linkResult.planName} ka link taiyaar hai
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 break-all max-w-full">
-                {linkResult.shareLink}
-              </code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigator.clipboard.writeText(linkResult.shareLink)}
-                className="gap-1 h-9 md:h-7 text-xs"
-              >
-                <Copy className="w-3 h-3" /> Copy
-              </Button>
-              {linkResult.waLink && (
-                <a href={linkResult.waLink} target="_blank" rel="noreferrer">
-                  <Button
-                    size="sm"
-                    className="gap-1.5 h-9 md:h-7 text-xs bg-emerald-700 hover:bg-emerald-800"
-                  >
-                    <MessageCircle className="w-3 h-3" /> WhatsApp par bhejein
-                  </Button>
-                </a>
-              )}
-            </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr_10rem_auto] gap-2">
+            <select
+              value={planSel}
+              onChange={(e) => setPlanSel(e.target.value)}
+              className={inputBase}
+            >
+              <option value="">Plan chunein…</option>
+              {plans.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name} ({p.billing_period}) — {fmtPrice(p.price_paise)}
+                </option>
+              ))}
+            </select>
+            <Button
+              onClick={sendPaymentLink}
+              disabled={!planSel || linkBusy}
+              size="sm"
+              className="bg-indigo-700 hover:bg-indigo-800 h-9 sm:col-span-2"
+            >
+              {linkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Link banayein"}
+            </Button>
           </div>
-        )}
-      </div>
+          {linkErr && <div className="mt-2 text-xs text-red-700">{linkErr}</div>}
+          {linkResult && (
+            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 space-y-2">
+              <div className="text-sm font-semibold text-emerald-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                {linkResult.planName} ka link taiyaar hai
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 break-all max-w-full">
+                  {linkResult.shareLink}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigator.clipboard.writeText(linkResult.shareLink)}
+                  className="gap-1 h-9 md:h-7 text-xs"
+                >
+                  <Copy className="w-3 h-3" /> Copy
+                </Button>
+                {linkResult.waLink && (
+                  <a href={linkResult.waLink} target="_blank" rel="noreferrer">
+                    <Button
+                      size="sm"
+                      className="gap-1.5 h-9 md:h-7 text-xs bg-emerald-700 hover:bg-emerald-800"
+                    >
+                      <MessageCircle className="w-3 h-3" /> WhatsApp par bhejein
+                    </Button>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── Call history ──────────────────────────────────────── */}
@@ -1032,22 +1043,15 @@ function PersonCard({
 
       {/* ── Sticky bottom bar: log this call ──────────────────── */}
       <div className="sticky bottom-0 z-30 -mx-4 lg:-mx-8 mt-6 max-h-[70vh] overflow-y-auto border-t border-indigo-900/10 bg-white/95 backdrop-blur px-4 lg:px-8 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
-        <div className="grid grid-cols-1 md:grid-cols-[14rem_10rem_1fr_auto] gap-2 items-end">
-          <div>
-            <Label className="text-[10px] uppercase tracking-wide text-slate-400">Outcome</Label>
-            <select
-              value={outcome}
-              onChange={(e) => setOutcome(e.target.value as CallOutcome | "")}
-              className={`${inputBase} mt-0.5`}
-            >
-              <option value="">— chunein —</option>
-              {(Object.keys(OUTCOME_LABELS) as CallOutcome[]).map((o) => (
-                <option key={o} value={o}>
-                  {OUTCOME_LABELS[o]}
-                </option>
-              ))}
-            </select>
+        <div className="mb-2">
+          <Label className="text-[10px] uppercase tracking-wide text-slate-400">
+            Outcome — {QUICK_OUTCOME_SHORTCUTS.length} tak digit keys se, Enter = Log
+          </Label>
+          <div className="mt-1">
+            <OutcomePicker value={outcome} onChange={setOutcome} />
           </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-[10rem_1fr_auto] gap-2 items-end">
           {outcome === "callback_requested" && (
             <div>
               <Label className="text-[10px] uppercase tracking-wide text-slate-400">Callback</Label>

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Loader2,
   PhoneCall,
+  PhoneMissed,
   RefreshCw,
   StickyNote,
   Target,
@@ -57,6 +58,42 @@ function fmtDate(iso: string | null): string {
   return iso.slice(0, 10);
 }
 
+// The date that actually explains "why is this row in this queue right
+// now" — different per queue, so callers must not reuse subscriptionCreatedAt
+// (order date) where pausedAt/cancelledAt (event date) is what's meaningful.
+function queueDateLabel(queueKey: string): string {
+  switch (queueKey) {
+    case "paused":
+      return "pause hua";
+    case "recently_cancelled":
+      return "cancel hua";
+    case "payment_failed":
+    case "abandoned_checkout":
+    case "never_bought":
+      return "order aaya";
+    case "cutoff_risk":
+    case "incomplete_details":
+      return "signup";
+    default:
+      return "banaya";
+  }
+}
+
+function queueDate(queueKey: string, row: TelecallerQueueRow): string | null {
+  switch (queueKey) {
+    case "paused":
+      return row.pausedAt;
+    case "recently_cancelled":
+      return row.cancelledAt;
+    case "payment_failed":
+    case "abandoned_checkout":
+    case "never_bought":
+      return row.subscriptionCreatedAt ?? row.profileCreatedAt;
+    default:
+      return row.profileCreatedAt;
+  }
+}
+
 function QueueWorkListPage() {
   const { queueKey } = Route.useParams();
   const meta = QUEUE_META[queueKey as keyof typeof QUEUE_META];
@@ -69,6 +106,38 @@ function QueueWorkListPage() {
   const [exhausted, setExhausted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [skippingId, setSkippingId] = useState<string | null>(null);
+
+  // Quick skip (no card, no outcome picker) — logs a neutral "no_answer"
+  // so the person leaves this list for the standard cooldown window
+  // instead of the telecaller having to open the full call card just
+  // to move past someone she can't reach right now. Not offered on
+  // callback_due — that queue deliberately IGNORES cooldown (the
+  // promise itself is the reason to call again), so a skip would do
+  // nothing there.
+  const skipRow = useCallback(
+    async (row: TelecallerQueueRow) => {
+      const identity = row.subscriptionId ?? row.profileId;
+      setSkippingId(identity);
+      try {
+        await callAdminApi("/api/telecaller/log-call", {
+          subscription_id: row.subscriptionId ?? undefined,
+          profile_id: row.profileId,
+          queue: queueKey,
+          outcome: "no_answer",
+        });
+        setItems((prev) =>
+          prev.filter((it) => !isLead(it) && (it.subscriptionId ?? it.profileId) !== identity),
+        );
+        setTotal((prev) => Math.max(0, prev - 1));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Skip fail ho gaya");
+      } finally {
+        setSkippingId(null);
+      }
+    },
+    [queueKey],
+  );
 
   const loadPage = useCallback(
     async (reset: boolean) => {
@@ -154,6 +223,8 @@ function QueueWorkListPage() {
               key={row.subscriptionId ?? row.profileId}
               row={row}
               queueKey={queueKey}
+              onSkip={queueKey === "callback_due" ? undefined : skipRow}
+              skipping={skippingId === (row.subscriptionId ?? row.profileId)}
             />
           ),
         )}
@@ -265,6 +336,8 @@ function LeadListItem({ lead, queueKey }: { lead: TelecallerLeadRow; queueKey: s
                 <span className="italic truncate max-w-[24rem]">{lead.notes}</span>
               </>
             )}
+            <span className="text-slate-300">·</span>
+            <span>aayi: {fmtDate(lead.createdAt)}</span>
           </div>
         </div>
         <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 flex-none" />
@@ -273,84 +346,120 @@ function LeadListItem({ lead, queueKey }: { lead: TelecallerLeadRow; queueKey: s
   );
 }
 
-function SubscriberListItem({ row, queueKey }: { row: TelecallerQueueRow; queueKey: string }) {
+function SubscriberListItem({
+  row,
+  queueKey,
+  onSkip,
+  skipping,
+}: {
+  row: TelecallerQueueRow;
+  queueKey: string;
+  onSkip?: (row: TelecallerQueueRow) => void;
+  skipping?: boolean;
+}) {
   const badge = (row.subscriptionStatus && STATUS_BADGE[row.subscriptionStatus]) ?? null;
   return (
-    <Link
-      to="/telecaller/person/$subscriptionId"
-      params={{ subscriptionId: row.subscriptionId ?? row.profileId }}
-      search={{ queue: queueKey }}
-      className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors shadow-2xs group"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-bold text-slate-900">
-              {row.sankalpName ?? row.fullName ?? "(naam nahi)"}
-            </span>
-            {badge && (
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${badge.cls}`}
-              >
-                {badge.label}
+    <div className="relative group">
+      <Link
+        to="/telecaller/person/$subscriptionId"
+        params={{ subscriptionId: row.subscriptionId ?? row.profileId }}
+        search={{ queue: queueKey }}
+        className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors shadow-2xs"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-bold text-slate-900">
+                {row.sankalpName ?? row.fullName ?? "(naam nahi)"}
               </span>
-            )}
-            {row.preferredLanguage && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 uppercase">
-                {row.preferredLanguage}
-              </Badge>
-            )}
-            {row.doNotCall && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-bold">
-                DND
-              </span>
-            )}
-          </div>
-          <div className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
-            <span className={row.altPhone ? "font-semibold text-emerald-700" : undefined}>
-              {row.altPhone ?? row.phone ?? "—"}
-            </span>
-            {row.planName && (
-              <>
-                <span className="text-slate-300">·</span>
-                <span>
-                  {row.planName}
-                  {row.planBillingPeriod ? ` (${row.planBillingPeriod})` : ""}
+              {badge && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${badge.cls}`}
+                >
+                  {badge.label}
                 </span>
-              </>
-            )}
-            {queueKey === "recently_cancelled" && row.cancelReason && (
-              <>
-                <span className="text-slate-300">·</span>
-                <span className="italic">karan: {row.cancelReason}</span>
-              </>
-            )}
-            {(queueKey === "cutoff_risk" || queueKey === "incomplete_details") && (
-              <>
-                <span className="text-slate-300">·</span>
-                <span>{row.familyMemberCount}/4 naam</span>
-                {/* Naam count can be full (4/4) while gotra/relation is
+              )}
+              {row.preferredLanguage && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 uppercase">
+                  {row.preferredLanguage}
+                </Badge>
+              )}
+              {row.doNotCall && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-bold">
+                  DND
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+              <span className={row.altPhone ? "font-semibold text-emerald-700" : undefined}>
+                {row.altPhone ?? row.phone ?? "—"}
+              </span>
+              {row.planName && (
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span>
+                    {row.planName}
+                    {row.planBillingPeriod ? ` (${row.planBillingPeriod})` : ""}
+                  </span>
+                </>
+              )}
+              {queueKey === "recently_cancelled" && row.cancelReason && (
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span className="italic">karan: {row.cancelReason}</span>
+                </>
+              )}
+              {(queueKey === "cutoff_risk" || queueKey === "incomplete_details") && (
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span>{row.familyMemberCount}/4 naam</span>
+                  {/* Naam count can be full (4/4) while gotra/relation is
                     still blank on a slot — that's what actually put this
                     row in the queue, so say so or the telecaller sees a
                     "complete" person here for no visible reason. */}
-                {row.familyMemberCount >= 4 && hasGotraGap(row) && (
-                  <span className="text-amber-700 font-medium">gotra missing</span>
-                )}
-                {row.familyMemberCount >= 4 && !hasGotraGap(row) && hasRelationGap(row) && (
-                  <span className="text-amber-700 font-medium">rishta missing</span>
-                )}
-              </>
-            )}
-            {queueKey === "callback_due" && (
-              <>
-                <span className="text-slate-300">·</span>
-                <span>last: {fmtDate(row.lastCalledAt)}</span>
-              </>
-            )}
+                  {row.familyMemberCount >= 4 && hasGotraGap(row) && (
+                    <span className="text-amber-700 font-medium">gotra missing</span>
+                  )}
+                  {row.familyMemberCount >= 4 && !hasGotraGap(row) && hasRelationGap(row) && (
+                    <span className="text-amber-700 font-medium">rishta missing</span>
+                  )}
+                </>
+              )}
+              {queueKey === "callback_due" && (
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span>last: {fmtDate(row.lastCalledAt)}</span>
+                </>
+              )}
+              <span className="text-slate-300">·</span>
+              <span>
+                {queueDateLabel(queueKey)}: {fmtDate(queueDate(queueKey, row))}
+              </span>
+            </div>
           </div>
+          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 flex-none" />
         </div>
-        <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 flex-none" />
-      </div>
-    </Link>
+      </Link>
+      {onSkip && (
+        <button
+          type="button"
+          title="Abhi nahi mila — 24 ghante ke liye list se hataayein"
+          disabled={skipping}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onSkip(row);
+          }}
+          className="absolute top-2.5 right-2.5 flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-1.5 py-1 text-[10px] font-semibold text-slate-500 opacity-0 group-hover:opacity-100 hover:border-orange-300 hover:text-orange-700 hover:bg-orange-50 transition-opacity disabled:opacity-100"
+        >
+          {skipping ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <PhoneMissed className="w-3 h-3" />
+          )}
+          Skip 24h
+        </button>
+      )}
+    </div>
   );
 }

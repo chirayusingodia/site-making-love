@@ -173,6 +173,30 @@ export function isTelecallerQueueKey(v: unknown): v is TelecallerQueueKey {
   return typeof v === "string" && (TELECALLER_QUEUE_KEYS as readonly string[]).includes(v);
 }
 
+/**
+ * Priority tier for the stack's visual weight (§ Phase 2 UI pass).
+ * Money/deadline-at-risk queues read "critical"; everything selling
+ * or reactivating reads "high"; hygiene/onboarding work reads
+ * "normal" — it matters, but nothing breaks today if it waits.
+ */
+export type TelecallerQueueUrgency = "critical" | "high" | "normal";
+
+export const QUEUE_URGENCY: Record<TelecallerQueueKey, TelecallerQueueUrgency> = {
+  free_sewa_pending: "high",
+  aaj_ke_leads: "high",
+  cutoff_risk: "critical",
+  payment_failed: "critical",
+  abandoned_checkout: "high",
+  never_bought: "normal",
+  paused: "normal",
+  recently_cancelled: "high",
+  callback_due: "critical",
+  incomplete_details: "high",
+  missing_prasad_address: "normal",
+  welcome_call: "normal",
+  renewal_ahead: "normal",
+};
+
 // ─── Call outcomes (§2.3 vocabulary) ─────────────────────────
 
 export const CALL_OUTCOMES = [
@@ -211,6 +235,25 @@ export const OUTCOME_LABELS: Record<CallOutcome, string> = {
 export function isCallOutcome(v: unknown): v is CallOutcome {
   return typeof v === "string" && (CALL_OUTCOMES as readonly string[]).includes(v);
 }
+
+/**
+ * Number-key shortcuts for the call card's outcome picker — high call
+ * volume means every extra click-to-select costs real minutes across
+ * a shift. Deliberately excludes do_not_call (a one-way profile
+ * mutation that must stay a deliberate click), language_barrier and
+ * complaint (rare enough that a mis-press cost outweighs the speed).
+ */
+export const QUICK_OUTCOME_SHORTCUTS: readonly CallOutcome[] = [
+  "connected_interested",
+  "connected_completed",
+  "connected_partial",
+  "connected_refused",
+  "callback_requested",
+  "no_answer",
+  "busy",
+  "switched_off",
+  "wrong_number",
+];
 
 /** Outcomes that auto-set the escalation flag (§5.6). */
 export function outcomeAutoEscalates(outcome: CallOutcome): boolean {
