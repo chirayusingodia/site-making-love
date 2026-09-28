@@ -1,4 +1,12 @@
-import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  redirect,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   PhoneCall,
   UserPlus,
@@ -8,10 +16,12 @@ import {
   Link2,
   Menu,
   ChevronDown,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
-import { fetchMyRole } from "@/lib/admin-api";
+import { callAdminApi, fetchMyRole } from "@/lib/admin-api";
+import { type QueuesResponse } from "@/lib/telecaller-logic";
 
 export const Route = createFileRoute("/telecaller")({
   // ssr:false for the SAME reason as the /admin shell: the role
@@ -37,11 +47,37 @@ export const Route = createFileRoute("/telecaller")({
   component: TelecallerLayout,
 });
 
+// Polled independently of the queues page itself — the nav badge has
+// to reflect total backlog even while she's sitting on My Day or a
+// call card, not only when /telecaller/queues happens to be mounted.
+function useQueueBacklogCount(): number | null {
+  const [count, setCount] = useState<number | null>(null);
+
+  const load = useCallback(() => {
+    callAdminApi<QueuesResponse>("/api/telecaller/queues")
+      .then((res) => setCount(res.queues.reduce((sum, q) => sum + q.count, 0)))
+      .catch(() => {
+        /* nav badge is best-effort — a failed poll just stays stale */
+      });
+  }, []);
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 60_000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  return count;
+}
+
 function TelecallerLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const backlogCount = useQueueBacklogCount();
+  const [searchQ, setSearchQ] = useState("");
 
   const navItems = [
-    { label: "Call Queues", href: "/telecaller/queues", icon: PhoneCall },
+    { label: "Call Queues", href: "/telecaller/queues", icon: PhoneCall, badge: backlogCount },
     { label: "New Lead", href: "/telecaller/new", icon: UserPlus },
     { label: "My Day", href: "/telecaller/my-day", icon: CalendarCheck2 },
     { label: "Apna Referral Link", href: "/telecaller/refer-link", icon: Link2 },
@@ -50,6 +86,13 @@ function TelecallerLayout() {
     { label: "Meri Kamai", href: "/telecaller/earnings", icon: BadgeIndianRupee },
     { label: "Script", href: "/telecaller/script", icon: ScrollText },
   ];
+
+  function submitSearch(e: FormEvent) {
+    e.preventDefault();
+    const q = searchQ.trim();
+    if (q.length < 2) return;
+    navigate({ to: "/telecaller/search", search: { q } });
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F8FC] text-slate-900 flex flex-col font-sans">
@@ -73,6 +116,17 @@ function TelecallerLayout() {
             <PhoneCall className="w-3.5 h-3.5 text-indigo-600" />
           </div>
         </div>
+        <form onSubmit={submitSearch} className="flex items-center flex-1 min-w-[90px] max-w-xs">
+          <div className="relative w-full">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              value={searchQ}
+              onChange={(e) => setSearchQ(e.target.value)}
+              placeholder="Naam ya phone search karein…"
+              className="w-full h-8 pl-8 pr-2 rounded-md border border-slate-200 bg-white text-xs focus:border-indigo-400 focus:outline-none"
+            />
+          </div>
+        </form>
         <div className="flex items-center gap-2 sm:gap-4 flex-none">
           <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-indigo-900/60 bg-indigo-50 px-3 py-1.5 rounded-md border border-indigo-900/5 whitespace-nowrap">
             ₹ nahi dikhega — status aur dates hi kaafi hain
@@ -120,7 +174,7 @@ function TelecallerNavList({
   navItems,
   pathname,
 }: {
-  navItems: { label: string; href: string; icon: LucideIcon }[];
+  navItems: { label: string; href: string; icon: LucideIcon; badge?: number | null }[];
   pathname: string;
 }) {
   return (
@@ -148,7 +202,16 @@ function TelecallerNavList({
               }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? "text-indigo-100" : "text-indigo-700/70"}`} />
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {!!item.badge && (
+                <span
+                  className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full min-w-5 text-center ${
+                    isActive ? "bg-white/20 text-white" : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}

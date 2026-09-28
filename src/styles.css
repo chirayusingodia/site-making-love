@@ -122,6 +122,12 @@
 }
 .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }
 
+@keyframes trust-seal-shine {
+  0% { transform: translateX(-120%) rotate(20deg); }
+  100% { transform: translateX(220%) rotate(20deg); }
+}
+.trust-seal-shine { animation: trust-seal-shine 3.2s ease-in-out infinite; animation-delay: 0.6s; }
+
 @keyframes pulse-ring {
   0% { box-shadow: 0 0 0 0 rgba(37,211,102,0.55); }
   100% { box-shadow: 0 0 0 18px rgba(37,211,102,0); }
@@ -255,6 +261,6 @@
 @media (prefers-reduced-motion: reduce) {
   .reveal, .reveal.is-visible { opacity: 1; transform: none; transition: none; }
   .btn-glow:hover, .card-lift:hover { transform: none; }
-  .animate-fade-up, .animate-pulse-ring, .animate-fade-in, .animate-scale-up, .animate-slide-in-right, .btn-glow-pulse { animation: none !important; }
+  .animate-fade-up, .animate-pulse-ring, .animate-fade-in, .animate-scale-up, .animate-slide-in-right, .btn-glow-pulse, .trust-seal-shine { animation: none !important; }
 }
 

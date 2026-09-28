@@ -31,6 +31,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TelecallerIndexRouteImport } from './routes/telecaller.index'
 import { Route as AgentIndexRouteImport } from './routes/agent.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as TelecallerSearchRouteImport } from './routes/telecaller.search'
 import { Route as TelecallerScriptRouteImport } from './routes/telecaller.script'
 import { Route as TelecallerReferLinkRouteImport } from './routes/telecaller.refer-link'
 import { Route as TelecallerQueuesRouteImport } from './routes/telecaller.queues'
@@ -63,6 +64,7 @@ import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller
 import { Route as TelecallerPersonSubscriptionIdRouteImport } from './routes/telecaller.person.$subscriptionId'
 import { Route as TelecallerLeadLeadIdRouteImport } from './routes/telecaller.lead.$leadId'
 import { Route as ApiTelecallerSendPaymentLinkRouteImport } from './routes/api/telecaller/send-payment-link'
+import { Route as ApiTelecallerSearchRouteImport } from './routes/api/telecaller/search'
 import { Route as ApiTelecallerReferralLinkRouteImport } from './routes/api/telecaller/referral-link'
 import { Route as ApiTelecallerQueuesRouteImport } from './routes/api/telecaller/queues'
 import { Route as ApiTelecallerProofResendRouteImport } from './routes/api/telecaller/proof-resend'
@@ -248,6 +250,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const TelecallerSearchRoute = TelecallerSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => TelecallerRoute,
+} as any)
 const TelecallerScriptRoute = TelecallerScriptRouteImport.update({
   id: '/script',
   path: '/script',
@@ -410,6 +417,11 @@ const ApiTelecallerSendPaymentLinkRoute =
     path: '/api/telecaller/send-payment-link',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiTelecallerSearchRoute = ApiTelecallerSearchRouteImport.update({
+  id: '/api/telecaller/search',
+  path: '/api/telecaller/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTelecallerReferralLinkRoute =
   ApiTelecallerReferralLinkRouteImport.update({
     id: '/api/telecaller/referral-link',
@@ -853,6 +865,7 @@ export interface FileRoutesByFullPath {
   '/telecaller/queues': typeof TelecallerQueuesRoute
   '/telecaller/refer-link': typeof TelecallerReferLinkRoute
   '/telecaller/script': typeof TelecallerScriptRoute
+  '/telecaller/search': typeof TelecallerSearchRoute
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
   '/telecaller/': typeof TelecallerIndexRoute
@@ -890,6 +903,7 @@ export interface FileRoutesByFullPath {
   '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
   '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
   '/api/telecaller/referral-link': typeof ApiTelecallerReferralLinkRoute
+  '/api/telecaller/search': typeof ApiTelecallerSearchRoute
   '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
@@ -980,6 +994,7 @@ export interface FileRoutesByTo {
   '/telecaller/queues': typeof TelecallerQueuesRoute
   '/telecaller/refer-link': typeof TelecallerReferLinkRoute
   '/telecaller/script': typeof TelecallerScriptRoute
+  '/telecaller/search': typeof TelecallerSearchRoute
   '/admin': typeof AdminIndexRoute
   '/agent': typeof AgentIndexRoute
   '/telecaller': typeof TelecallerIndexRoute
@@ -1017,6 +1032,7 @@ export interface FileRoutesByTo {
   '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
   '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
   '/api/telecaller/referral-link': typeof ApiTelecallerReferralLinkRoute
+  '/api/telecaller/search': typeof ApiTelecallerSearchRoute
   '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
@@ -1111,6 +1127,7 @@ export interface FileRoutesById {
   '/telecaller/queues': typeof TelecallerQueuesRoute
   '/telecaller/refer-link': typeof TelecallerReferLinkRoute
   '/telecaller/script': typeof TelecallerScriptRoute
+  '/telecaller/search': typeof TelecallerSearchRoute
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
   '/telecaller/': typeof TelecallerIndexRoute
@@ -1148,6 +1165,7 @@ export interface FileRoutesById {
   '/api/telecaller/proof-resend': typeof ApiTelecallerProofResendRoute
   '/api/telecaller/queues': typeof ApiTelecallerQueuesRoute
   '/api/telecaller/referral-link': typeof ApiTelecallerReferralLinkRoute
+  '/api/telecaller/search': typeof ApiTelecallerSearchRoute
   '/api/telecaller/send-payment-link': typeof ApiTelecallerSendPaymentLinkRoute
   '/telecaller/lead/$leadId': typeof TelecallerLeadLeadIdRoute
   '/telecaller/person/$subscriptionId': typeof TelecallerPersonSubscriptionIdRoute
@@ -1243,6 +1261,7 @@ export interface FileRouteTypes {
     | '/telecaller/queues'
     | '/telecaller/refer-link'
     | '/telecaller/script'
+    | '/telecaller/search'
     | '/admin/'
     | '/agent/'
     | '/telecaller/'
@@ -1280,6 +1299,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/proof-resend'
     | '/api/telecaller/queues'
     | '/api/telecaller/referral-link'
+    | '/api/telecaller/search'
     | '/api/telecaller/send-payment-link'
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
@@ -1370,6 +1390,7 @@ export interface FileRouteTypes {
     | '/telecaller/queues'
     | '/telecaller/refer-link'
     | '/telecaller/script'
+    | '/telecaller/search'
     | '/admin'
     | '/agent'
     | '/telecaller'
@@ -1407,6 +1428,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/proof-resend'
     | '/api/telecaller/queues'
     | '/api/telecaller/referral-link'
+    | '/api/telecaller/search'
     | '/api/telecaller/send-payment-link'
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
@@ -1500,6 +1522,7 @@ export interface FileRouteTypes {
     | '/telecaller/queues'
     | '/telecaller/refer-link'
     | '/telecaller/script'
+    | '/telecaller/search'
     | '/admin/'
     | '/agent/'
     | '/telecaller/'
@@ -1537,6 +1560,7 @@ export interface FileRouteTypes {
     | '/api/telecaller/proof-resend'
     | '/api/telecaller/queues'
     | '/api/telecaller/referral-link'
+    | '/api/telecaller/search'
     | '/api/telecaller/send-payment-link'
     | '/telecaller/lead/$leadId'
     | '/telecaller/person/$subscriptionId'
@@ -1638,6 +1662,7 @@ export interface RootRouteChildren {
   ApiTelecallerProofResendRoute: typeof ApiTelecallerProofResendRoute
   ApiTelecallerQueuesRoute: typeof ApiTelecallerQueuesRoute
   ApiTelecallerReferralLinkRoute: typeof ApiTelecallerReferralLinkRoute
+  ApiTelecallerSearchRoute: typeof ApiTelecallerSearchRoute
   ApiTelecallerSendPaymentLinkRoute: typeof ApiTelecallerSendPaymentLinkRoute
   ApiAdminAuditLogFiltersRoute: typeof ApiAdminAuditLogFiltersRoute
   ApiAdminAuditLogListRoute: typeof ApiAdminAuditLogListRoute
@@ -1835,6 +1860,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/telecaller/search': {
+      id: '/telecaller/search'
+      path: '/search'
+      fullPath: '/telecaller/search'
+      preLoaderRoute: typeof TelecallerSearchRouteImport
+      parentRoute: typeof TelecallerRoute
     }
     '/telecaller/script': {
       id: '/telecaller/script'
@@ -2058,6 +2090,13 @@ declare module '@tanstack/react-router' {
       path: '/api/telecaller/send-payment-link'
       fullPath: '/api/telecaller/send-payment-link'
       preLoaderRoute: typeof ApiTelecallerSendPaymentLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/search': {
+      id: '/api/telecaller/search'
+      path: '/api/telecaller/search'
+      fullPath: '/api/telecaller/search'
+      preLoaderRoute: typeof ApiTelecallerSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/telecaller/referral-link': {
@@ -2658,6 +2697,7 @@ interface TelecallerRouteChildren {
   TelecallerQueuesRoute: typeof TelecallerQueuesRoute
   TelecallerReferLinkRoute: typeof TelecallerReferLinkRoute
   TelecallerScriptRoute: typeof TelecallerScriptRoute
+  TelecallerSearchRoute: typeof TelecallerSearchRoute
   TelecallerIndexRoute: typeof TelecallerIndexRoute
   TelecallerLeadLeadIdRoute: typeof TelecallerLeadLeadIdRoute
   TelecallerPersonSubscriptionIdRoute: typeof TelecallerPersonSubscriptionIdRoute
@@ -2671,6 +2711,7 @@ const TelecallerRouteChildren: TelecallerRouteChildren = {
   TelecallerQueuesRoute: TelecallerQueuesRoute,
   TelecallerReferLinkRoute: TelecallerReferLinkRoute,
   TelecallerScriptRoute: TelecallerScriptRoute,
+  TelecallerSearchRoute: TelecallerSearchRoute,
   TelecallerIndexRoute: TelecallerIndexRoute,
   TelecallerLeadLeadIdRoute: TelecallerLeadLeadIdRoute,
   TelecallerPersonSubscriptionIdRoute: TelecallerPersonSubscriptionIdRoute,
@@ -2747,6 +2788,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTelecallerProofResendRoute: ApiTelecallerProofResendRoute,
   ApiTelecallerQueuesRoute: ApiTelecallerQueuesRoute,
   ApiTelecallerReferralLinkRoute: ApiTelecallerReferralLinkRoute,
+  ApiTelecallerSearchRoute: ApiTelecallerSearchRoute,
   ApiTelecallerSendPaymentLinkRoute: ApiTelecallerSendPaymentLinkRoute,
   ApiAdminAuditLogFiltersRoute: ApiAdminAuditLogFiltersRoute,
   ApiAdminAuditLogListRoute: ApiAdminAuditLogListRoute,

@@ -3,9 +3,16 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarClock, Flame, Loader2, PhoneCall, RefreshCw } from "lucide-react";
 import { callAdminApi } from "@/lib/admin-api";
-import { QUEUE_META, TELECALLER_QUEUE_KEYS, type QueuesResponse } from "@/lib/telecaller-logic";
+import {
+  QUEUE_META,
+  QUEUE_URGENCY,
+  TELECALLER_QUEUE_KEYS,
+  type QueuesResponse,
+} from "@/lib/telecaller-logic";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/telecaller/PageHeader";
+import { UrgencyChip } from "@/components/telecaller/UrgencyChip";
 
 export const Route = createFileRoute("/telecaller/queues")({
   component: TelecallerQueuesPage,
@@ -62,31 +69,33 @@ function TelecallerQueuesPage() {
   const firstBusy = data?.queues.find((q) => q.count > 0) ?? null;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <PhoneCall className="w-5 h-5 text-indigo-700" />
-            Call Queues
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Sabse upar wali queue sabse zaroori hai — ek click, aur dialling shuru.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={load} variant="outline" size="sm" disabled={loading} className="gap-1.5">
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          {firstBusy && (
-            <Button asChild size="sm" className="bg-indigo-700 hover:bg-indigo-800 gap-1.5">
-              <Link to="/telecaller/queue/$queueKey" params={{ queueKey: firstBusy.key }}>
-                Start Calling <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+    <div className="space-y-4">
+      <PageHeader
+        icon={PhoneCall}
+        title="Call Queues"
+        subtitle="Sabse upar wali queue sabse zaroori hai — ek click, aur dialling shuru."
+        actions={
+          <>
+            <Button
+              onClick={load}
+              variant="outline"
+              size="sm"
+              disabled={loading}
+              className="gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
             </Button>
-          )}
-        </div>
-      </div>
+            {firstBusy && (
+              <Button asChild size="sm" className="bg-indigo-700 hover:bg-indigo-800 gap-1.5">
+                <Link to="/telecaller/queue/$queueKey" params={{ queueKey: firstBusy.key }}>
+                  Start Calling <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Batch cutoff countdown widget (§7.5) */}
       <div className="rounded-2xl border border-indigo-900/10 bg-white shadow-2xs p-4 flex items-center gap-4">
@@ -127,11 +136,9 @@ function TelecallerQueuesPage() {
       )}
 
       {/* The stack itself — priority order = array order. */}
-      <div className="grid gap-2.5">
+      <div className="grid gap-2">
         {loading &&
-          TELECALLER_QUEUE_KEYS.map((k) => (
-            <Skeleton key={k} className="h-[68px] w-full rounded-2xl" />
-          ))}
+          TELECALLER_QUEUE_KEYS.map((k) => <Skeleton key={k} className="h-14 w-full rounded-xl" />)}
         {!loading &&
           data &&
           data.queues.map((q) => (
@@ -139,20 +146,23 @@ function TelecallerQueuesPage() {
               key={q.key}
               to="/telecaller/queue/$queueKey"
               params={{ queueKey: q.key }}
-              className={`block rounded-2xl border border-slate-200 border-l-4 bg-white px-4 py-3 transition-colors shadow-2xs ${
+              className={`block rounded-xl border border-slate-200 border-l-4 bg-white px-3.5 py-2.5 transition-colors shadow-2xs ${
                 QUEUE_ACCENTS[q.key] ?? "hover:bg-slate-50"
-              }`}
+              } ${q.count === 0 ? "opacity-60" : ""}`}
             >
               <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    {q.count > 0 && q.key === "cutoff_risk" && (
-                      <Flame className="w-4 h-4 text-red-500" />
-                    )}
-                    {QUEUE_META[q.key].title}
-                  </div>
-                  <div className="text-xs text-slate-500 truncate mt-0.5">
-                    {QUEUE_META[q.key].why}
+                <div className="min-w-0 flex items-center gap-2.5">
+                  <UrgencyChip urgency={QUEUE_URGENCY[q.key]} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                      {q.count > 0 && q.key === "cutoff_risk" && (
+                        <Flame className="w-4 h-4 text-red-500 flex-none" />
+                      )}
+                      <span className="truncate">{QUEUE_META[q.key].title}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 truncate mt-0.5">
+                      {QUEUE_META[q.key].why}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-none">

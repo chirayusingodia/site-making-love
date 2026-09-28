@@ -133,11 +133,8 @@ function Hero() {
             </>
           )}
         </div>
-        <div className="inline-flex items-center gap-1.5 bg-brand-soft text-brand text-xs font-bold px-3 py-1.5 rounded-full">
-          <ShieldCheck size={13} />
-          {t("trust_years_badge")}
-        </div>
       </div>
+      <TrustSealBanner />
       <p className="mt-3 text-xs font-semibold text-brand tracking-wide uppercase">
         {t("hero_sub")}
       </p>
@@ -158,6 +155,46 @@ function Hero() {
         {t("hero_cta")} <ArrowRight size={18} />
       </Link>
     </section>
+  );
+}
+
+function TrustSealBanner() {
+  const { t } = useTranslation();
+  return (
+    <div className="mt-3 relative flex items-center gap-3.5 overflow-hidden rounded-[20px] border border-[#B8460F]/20 p-3.5 shadow-[0_10px_28px_rgba(139,79,40,0.14)]" style={{ background: "linear-gradient(135deg,#FFF4EA 0%,#FDE0C4 100%)" }}>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[20px]">
+        <div className="absolute -top-10 -left-16 w-16 h-56 trust-seal-shine" style={{ background: "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 100%)" }} />
+      </div>
+
+      <div className="relative w-[68px] h-[68px] shrink-0">
+        <svg width="68" height="68" viewBox="0 0 90 90" className="absolute inset-0">
+          <defs>
+            <linearGradient id="trustSealGrad" x1="0" y1="0" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#F5A742" />
+              <stop offset="1" stopColor="#B8460F" />
+            </linearGradient>
+          </defs>
+          <polygon
+            points="45,0 59.92,8.97 76.82,13.18 81.03,30.08 90,45 81.03,59.92 76.82,76.82 59.92,81.03 45,90 30.08,81.03 13.18,76.82 8.97,59.92 0,45 8.97,30.08 13.18,13.18 30.08,8.97"
+            fill="url(#trustSealGrad)"
+          />
+          <circle cx="45" cy="45" r="31" fill="#FFF8F0" stroke="#B8460F" strokeWidth="2" />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+          <div className="font-scripture font-bold text-2xl text-[#B8460F]">11</div>
+          <div className="text-[8px] font-bold text-[#B8460F] tracking-wide mt-0.5">वर्ष</div>
+        </div>
+      </div>
+
+      <div className="relative flex flex-col gap-0.5 min-w-0">
+        <div className="flex items-center gap-1.5 text-[#B8460F]">
+          <ShieldCheck size={12} strokeWidth={3} />
+          <span className="text-[10px] font-extrabold uppercase tracking-wider">{t("trust_seal_eyebrow")}</span>
+        </div>
+        <div className="text-[17px] font-extrabold text-[#5B1A1A] leading-tight">{t("trust_seal_heading")}</div>
+        <div className="text-xs text-[#8A5A3F] leading-snug">{t("trust_seal_subline")}</div>
+      </div>
+    </div>
   );
 }
 
