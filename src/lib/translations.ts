@@ -18,6 +18,9 @@ export const translations = {
     trust_years_badge: "11 साल का विश्वास",
     trust_years_line: "पिछले 11 वर्षों से पुण्यता आपकी सेवा में है — एक संगठित सेवा, आपके भरोसे पर बनी।",
     trust_years_footer: "11 साल का विश्वास · भारत का पुण्य बैंक",
+    trust_seal_eyebrow: "प्रामाणिक व सुरक्षित",
+    trust_seal_heading: "11 वर्षों से अटूट विश्वास",
+    trust_seal_subline: "हर संकल्प अधिकृत आचार्यों द्वारा, पूर्ण वैदिक विधि से",
 
     // Homepage Hero
     hero_badge: "1,200+ परिवार इस सेवा से जुड़े हैं",
@@ -307,6 +310,9 @@ export const translations = {
     trust_years_badge: "11 Years of Trust",
     trust_years_line: "For the past 11 years, Punyata has been in your service — an organized seva, built on your trust.",
     trust_years_footer: "11 Years of Trust · Bharat Ka Punya Bank",
+    trust_seal_eyebrow: "Authentic & Verified",
+    trust_seal_heading: "11 Years of Unbroken Trust",
+    trust_seal_subline: "Every sankalp performed by authorized acharyas, full Vedic vidhi-vidhaan",
 
     // Homepage Hero
     hero_badge: "1,200+ Families Connected With Us",
