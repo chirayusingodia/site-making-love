@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { verifyRazorpayWebhookSignature, normalizeRazorpayStatus } from "@/lib/gateways/razorpay";
+import { reportSubscribeConversion } from "@/lib/meta-capi-subscribe.server";
 import { findMandateByGatewayId, promoteMandate, recordMandateCycle } from "@/lib/mandates.server";
 
 // ─────────────────────────────────────────────────────────────
@@ -924,6 +925,23 @@ export async function processWebhookEvent(
         : {}),
     },
   });
+
+  // ── Meta Conversions API (first successful payment only) ──
+  // LAST on purpose: state, payment ledger and audit are all committed, so
+  // nothing Meta does can affect them. The helper never throws, is
+  // idempotent (meta_capi_sent_at claim) and is inert without META_* env.
+  // Gated on action so a stale/CAS-lost delivery that changed nothing can't
+  // report; the paid_count<=1 check inside excludes renewals.
+  if (action === "activated" || action === "charged") {
+    await reportSubscribeConversion(db, {
+      subscriptionId: sub.id,
+      userId: sub.user_id,
+      // Same source as the ledger row (capturedPaymentRow): the charged amount.
+      amountPaise: ctx.payment?.amount ?? null,
+      paidCount: ctx.subscription?.paid_count ?? null,
+      paymentTimeUnix: ctx.payment?.created_at ?? null,
+    });
+  }
 
   return { handled: true, action, subscriptionId: sub.id, consecutiveFailures };
 }

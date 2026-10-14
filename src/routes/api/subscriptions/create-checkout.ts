@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, getServiceClient, requireUser } from "@/lib/supabase-admin.server";
 import { createCheckoutForUser, CheckoutError } from "@/lib/subscriptions-checkout.server";
+import { clientIpFromHeaders, sanitizeMarketingContext } from "@/lib/meta-capi-context";
 
 // POST /api/subscriptions/create-checkout
 // Auth: Bearer <supabase access token> (end user — post-login buy step)
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
           coupon_code?: unknown;
           att?: unknown;
           marketing?: unknown;
+          metaContext?: unknown;
         };
         try {
           body = await request.json();
@@ -118,6 +120,13 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
           };
         }
 
+        // Meta CAPI matching context. Untrusted body → validated/capped; the
+        // client IP and UA come from request headers, never from the body.
+        const marketingContext = sanitizeMarketingContext(body?.metaContext, {
+          clientIp: clientIpFromHeaders(request.headers),
+          headerUserAgent: request.headers.get("user-agent"),
+        });
+
         try {
           const outcome = await createCheckoutForUser({
             adminDb: getServiceClient(),
@@ -127,6 +136,7 @@ export const Route = createFileRoute("/api/subscriptions/create-checkout")({
             ...(telecallerId ? { telecallerId } : {}),
             ...(sourcingAgentId ? { salesAgentId: sourcingAgentId } : {}),
             ...(marketing ? { marketing } : {}),
+            marketingContext: { ...marketingContext },
           });
           // The gateway's publishable key rides inside `outcome`
           // (gatewayPublicKey), resolved from whichever provider

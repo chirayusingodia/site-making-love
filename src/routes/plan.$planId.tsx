@@ -15,6 +15,8 @@ import { ComparisonTable } from "@/components/ComparisonTable";
 import { motion } from "framer-motion";
 import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
 import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
+import { trackViewContent } from "@/lib/meta-pixel";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/plan/$planId")({
   head: async ({ params }) => {
@@ -127,6 +129,13 @@ function PlanDetailPage() {
 function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] }) {
   const { t, lang } = useTranslation();
   const plan = localizePlan(rawPlan, lang);
+  useEffect(() => {
+    trackViewContent({
+      contentId: rawPlan.slug,
+      contentName: rawPlan.name,
+      value: rawPlan.priceNumeric || undefined,
+    });
+  }, [rawPlan.slug, rawPlan.name, rawPlan.priceNumeric]);
   const slides: Slide[] = plan.slides.map((s) => ({
     image: s.image,
     alt: s.title,

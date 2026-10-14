@@ -8,6 +8,9 @@
 // which credits a SALES AGENT/telecaller on a payment link — this module
 // answers "which ad/platform" instead of "which staff member".
 
+import { buildFbc } from "@/lib/meta-ids";
+import { getMarketingConsent, hasMarketingConsent } from "@/lib/meta-pixel";
+
 const STORAGE_KEY = "punyata_attribution_v1";
 
 export interface StoredAttribution {
@@ -21,6 +24,89 @@ export interface StoredAttribution {
   fbclid: string | null;
   landingPath: string;
   firstSeenAt: string;
+  /** Meta browser ids — optional so records stored before this field
+   *  existed still parse (missing = null/undefined). Only populated with
+   *  marketing consent. */
+  fbp?: string | null;
+  fbc?: string | null;
+}
+
+function readCookie(name: string): string | null {
+  try {
+    for (const part of document.cookie.split(";")) {
+      const eq = part.indexOf("=");
+      if (eq > 0 && part.slice(0, eq).trim() === name) {
+        return decodeURIComponent(part.slice(eq + 1).trim());
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Current Meta browser ids: `_fbp`/`_fbc` cookies, with `_fbc` rebuilt from
+ * a `fbclid` in the URL (or the first-touch record) when the cookie is
+ * absent. Returns nulls without marketing consent.
+ */
+export function readMetaBrowserIds(): { fbp: string | null; fbc: string | null } {
+  if (typeof window === "undefined" || !hasMarketingConsent()) return { fbp: null, fbc: null };
+  const fbp = readCookie("_fbp");
+  let fbc = readCookie("_fbc");
+  if (!fbc) {
+    let fbclid: string | null = null;
+    try {
+      fbclid = new URLSearchParams(window.location.search).get("fbclid");
+    } catch {
+      fbclid = null;
+    }
+    if (fbclid) {
+      fbc = buildFbc(fbclid, Date.now());
+    } else {
+      const stored = getStoredAttribution();
+      if (stored?.fbc) fbc = stored.fbc;
+      else if (stored?.fbclid) fbc = buildFbc(stored.fbclid, Date.parse(stored.firstSeenAt) || Date.now());
+    }
+  }
+  return { fbp, fbc };
+}
+
+/** Refresh fbp/fbc on the stored record (the Pixel may set them after first touch). */
+export function refreshStoredMetaIds(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const rec = JSON.parse(raw) as StoredAttribution;
+    const { fbp, fbc } = readMetaBrowserIds();
+    if (!fbp && !fbc) return;
+    rec.fbp = fbp ?? rec.fbp ?? null;
+    rec.fbc = fbc ?? rec.fbc ?? null;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(rec));
+  } catch {
+    /* nice-to-have */
+  }
+}
+
+/** Matching context sent to create-checkout (server validates + adds IP). */
+export function getMetaCheckoutContext(): {
+  fbp: string | null;
+  fbc: string | null;
+  eventSourceUrl: string;
+  userAgent: string;
+  consent: "granted" | "declined" | "unset";
+} {
+  refreshStoredMetaIds();
+  const { fbp, fbc } = readMetaBrowserIds();
+  return {
+    fbp,
+    fbc,
+    eventSourceUrl: typeof window !== "undefined" ? window.location.href.split("#")[0] : "",
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    // Effective state, so opt_out-mode visitors who never chose still read as granted.
+    consent: hasMarketingConsent() ? "granted" : getMarketingConsent(),
+  };
 }
 
 function resolveChannel(params: {

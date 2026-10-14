@@ -19,7 +19,8 @@ import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
 import { normalizePhoneE164 } from "@/lib/phone";
 import { useTranslation } from "@/lib/translations";
-import { captureAttributionOnce, getStoredAttribution } from "@/lib/attribution";
+import { captureAttributionOnce, getStoredAttribution, getMetaCheckoutContext } from "@/lib/attribution";
+import { trackInitiateCheckout } from "@/lib/meta-pixel";
 import { supabase } from "@/lib/supabase";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 import { UpsellPremiumDialog } from "@/components/UpsellPremiumDialog";
@@ -550,6 +551,7 @@ function CheckoutPage() {
         ...(couponApplied ? { coupon_code: couponApplied } : {}),
         ...(attToken ? { att: attToken } : {}),
         ...(attribution ? { marketing: attribution } : {}),
+        metaContext: getMetaCheckoutContext(),
       });
 
       // Redirect-style gateways: hand the customer straight to the
@@ -572,6 +574,13 @@ function CheckoutPage() {
       if (!res.gatewayPublicKey) throw new Error(t("checkout_keys_error"));
 
       setPayState("checkout");
+      // Checkout genuinely begins here: the mandate exists and the gateway
+      // sheet is about to open (not on mere page view).
+      trackInitiateCheckout({
+        contentId: plan.slug,
+        contentName: plan.name,
+        value: plan.priceNumeric || undefined,
+      });
       const rzp = new window.Razorpay({
         key: res.gatewayPublicKey,
         subscription_id: res.gatewayMandateId,
