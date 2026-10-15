@@ -51,27 +51,37 @@ export interface SevaDate {
  *        the month's last Saturday (Premium / Premium Annual).
  */
 export function nextSevaDate(hasLastSaturday: boolean): SevaDate {
+  // Always resolves — next-month candidates guarantee a future date.
+  return upcomingSevaDates(hasLastSaturday, 1)[0];
+}
+
+/**
+ * The next `count` scheduled seva dates at/after today, soonest first
+ * (e.g. the "next seva" and the one after it on the checkout page).
+ * Looks three months ahead, which always covers two upcoming dates
+ * even for a plan with only the 2nd-Tuesday cadence.
+ */
+export function upcomingSevaDates(hasLastSaturday: boolean, count: number): SevaDate[] {
   const today = istToday();
   const y = today.getFullYear();
   const m = today.getMonth();
 
   const candidates: SevaDate[] = [];
-  for (const [yy, mm] of [
-    [y, m],
-    [y, m + 1],
-  ] as const) {
+  for (const offset of [0, 1, 2]) {
+    // `new Date(y, m + offset, …)` rolls the year over for us.
+    const base = new Date(y, m + offset, 1);
+    const yy = base.getFullYear();
+    const mm = base.getMonth();
     candidates.push({ date: nthWeekday(yy, mm, 2 /* Tue */, 2), labelKey: "sd_2nd_tuesday" });
     if (hasLastSaturday) {
       candidates.push({ date: lastWeekday(yy, mm, 6 /* Sat */), labelKey: "sd_last_saturday" });
     }
   }
 
-  const future = candidates
+  return candidates
     .filter((c) => c.date.getTime() >= today.getTime())
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  // Always resolves — next-month candidates guarantee a future date.
-  return future[0] ?? candidates.sort((a, b) => a.date.getTime() - b.date.getTime())[0];
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .slice(0, count);
 }
 
 /**
