@@ -9,221 +9,141 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
-import { Route as TelecallerRouteImport } from './routes/telecaller'
-import { Route as SubscriptionSuccessRouteImport } from './routes/subscription-success'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as SevasRouteImport } from './routes/sevas'
-import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
-import { Route as ReviewsRouteImport } from './routes/reviews'
-import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as PlansRouteImport } from './routes/plans'
-import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as FaqRouteImport } from './routes/faq'
-import { Route as CompleteProfileRouteImport } from './routes/complete-profile'
-import { Route as BlogRouteImport } from './routes/blog'
-import { Route as AgentRouteImport } from './routes/agent'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TelecallerIndexRouteImport } from './routes/telecaller.index'
-import { Route as AgentIndexRouteImport } from './routes/agent.index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AgentRouteImport } from './routes/agent'
+import { Route as BlogRouteImport } from './routes/blog'
+import { Route as CompleteProfileRouteImport } from './routes/complete-profile'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
+import { Route as PlansRouteImport } from './routes/plans'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as ReviewsRouteImport } from './routes/reviews'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SevasRouteImport } from './routes/sevas'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SubscriptionSuccessRouteImport } from './routes/subscription-success'
+import { Route as TelecallerRouteImport } from './routes/telecaller'
+import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as TelecallerSearchRouteImport } from './routes/telecaller.search'
-import { Route as TelecallerScriptRouteImport } from './routes/telecaller.script'
-import { Route as TelecallerReferLinkRouteImport } from './routes/telecaller.refer-link'
-import { Route as TelecallerQueuesRouteImport } from './routes/telecaller.queues'
-import { Route as TelecallerNewRouteImport } from './routes/telecaller.new'
-import { Route as TelecallerMyDayRouteImport } from './routes/telecaller.my-day'
-import { Route as TelecallerEarningsRouteImport } from './routes/telecaller.earnings'
-import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
-import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
-import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as AgentMyLeadsRouteImport } from './routes/agent.my-leads'
-import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
-import { Route as AdminStaffRouteImport } from './routes/admin.staff'
-import { Route as AdminSignupsRouteImport } from './routes/admin.signups'
-import { Route as AdminSeoRouteImport } from './routes/admin.seo'
-import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-lists'
-import { Route as AdminRoutingRouteImport } from './routes/admin.routing'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
-import { Route as AdminProofUploadRouteImport } from './routes/admin.proof-upload'
-import { Route as AdminPlansSevasRouteImport } from './routes/admin.plans-sevas'
-import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
-import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
-import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
-import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
-import { Route as AdminImagesRouteImport } from './routes/admin.images'
-import { Route as AdminContentStudioRouteImport } from './routes/admin.content-studio'
-import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
-import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminAshirwadPatraRouteImport } from './routes/admin.ashirwad-patra'
-import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller.queue.$queueKey'
-import { Route as TelecallerPersonSubscriptionIdRouteImport } from './routes/telecaller.person.$subscriptionId'
-import { Route as TelecallerLeadLeadIdRouteImport } from './routes/telecaller.lead.$leadId'
-import { Route as ApiTelecallerSendPaymentLinkRouteImport } from './routes/api/telecaller/send-payment-link'
-import { Route as ApiTelecallerSearchRouteImport } from './routes/api/telecaller/search'
-import { Route as ApiTelecallerReferralLinkRouteImport } from './routes/api/telecaller/referral-link'
-import { Route as ApiTelecallerQueuesRouteImport } from './routes/api/telecaller/queues'
-import { Route as ApiTelecallerProofResendRouteImport } from './routes/api/telecaller/proof-resend'
-import { Route as ApiTelecallerProfileRouteImport } from './routes/api/telecaller/profile'
-import { Route as ApiTelecallerPlansRouteImport } from './routes/api/telecaller/plans'
-import { Route as ApiTelecallerPersonRouteImport } from './routes/api/telecaller/person'
-import { Route as ApiTelecallerMyDayRouteImport } from './routes/api/telecaller/my-day'
-import { Route as ApiTelecallerMarkSevaDoneRouteImport } from './routes/api/telecaller/mark-seva-done'
-import { Route as ApiTelecallerLogCallRouteImport } from './routes/api/telecaller/log-call'
-import { Route as ApiTelecallerLeadRouteImport } from './routes/api/telecaller/lead'
-import { Route as ApiTelecallerFamilyMembersRouteImport } from './routes/api/telecaller/family-members'
-import { Route as ApiTelecallerEarningsRouteImport } from './routes/api/telecaller/earnings'
-import { Route as ApiTelecallerCreateLeadRouteImport } from './routes/api/telecaller/create-lead'
-import { Route as ApiTelecallerAgentsRouteImport } from './routes/api/telecaller/agents'
-import { Route as ApiSubscriptionsCreateCheckoutRouteImport } from './routes/api/subscriptions/create-checkout'
-import { Route as ApiSankalpGenerateBatchRouteImport } from './routes/api/sankalp/generate-batch'
-import { Route as ApiProfileUpsertIdentityRouteImport } from './routes/api/profile/upsert-identity'
-import { Route as ApiProfileIdentityRouteImport } from './routes/api/profile/identity'
-import { Route as ApiProfileFamilyMembersRouteImport } from './routes/api/profile/family-members'
-import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/address'
-import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
-import { Route as ApiCronSendNotificationsRouteImport } from './routes/api/cron/send-notifications'
-import { Route as ApiCronRetryMetaCapiRouteImport } from './routes/api/cron/retry-meta-capi'
-import { Route as ApiCronRenewMandatesRouteImport } from './routes/api/cron/renew-mandates'
-import { Route as ApiCronPublishContentRouteImport } from './routes/api/cron/publish-content'
-import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
-import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
-import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
-import { Route as ApiAuthReconcileProfileRouteImport } from './routes/api/auth/reconcile-profile'
-import { Route as ApiAuthCompleteGoogleProfileRouteImport } from './routes/api/auth/complete-google-profile'
-import { Route as ApiAgentMyLeadsRouteImport } from './routes/api/agent/my-leads'
-import { Route as ApiAdminSignupsListRouteImport } from './routes/api/admin/signups-list'
-import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
-import { Route as ApiAdminLoginMethodCountsRouteImport } from './routes/api/admin/login-method-counts'
+import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
+import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
+import { Route as AdminContentStudioRouteImport } from './routes/admin.content-studio'
+import { Route as AdminImagesRouteImport } from './routes/admin.images'
+import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
+import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
+import { Route as AdminPlansSevasRouteImport } from './routes/admin.plans-sevas'
+import { Route as AdminProofUploadRouteImport } from './routes/admin.proof-upload'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminRoutingRouteImport } from './routes/admin.routing'
+import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-lists'
+import { Route as AdminSeoRouteImport } from './routes/admin.seo'
+import { Route as AdminSignupsRouteImport } from './routes/admin.signups'
+import { Route as AdminStaffRouteImport } from './routes/admin.staff'
+import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
+import { Route as AgentIndexRouteImport } from './routes/agent.index'
+import { Route as AgentMyLeadsRouteImport } from './routes/agent.my-leads'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as CheckoutPlanIdRouteImport } from './routes/checkout.$planId'
+import { Route as PlanPlanIdRouteImport } from './routes/plan.$planId'
+import { Route as TelecallerIndexRouteImport } from './routes/telecaller.index'
+import { Route as TelecallerEarningsRouteImport } from './routes/telecaller.earnings'
+import { Route as TelecallerMyDayRouteImport } from './routes/telecaller.my-day'
+import { Route as TelecallerNewRouteImport } from './routes/telecaller.new'
+import { Route as TelecallerQueuesRouteImport } from './routes/telecaller.queues'
+import { Route as TelecallerReferLinkRouteImport } from './routes/telecaller.refer-link'
+import { Route as TelecallerScriptRouteImport } from './routes/telecaller.script'
+import { Route as TelecallerSearchRouteImport } from './routes/telecaller.search'
 import { Route as AdminPanditBatchIdRouteImport } from './routes/admin.pandit.$batchId'
-import { Route as ApiWhatsappWebhookSecretRouteImport } from './routes/api/whatsapp/webhook.$secret'
-import { Route as ApiTelecallerQueueListRouteImport } from './routes/api/telecaller/queue/list'
-import { Route as ApiTelecallerLeadUpdateRouteImport } from './routes/api/telecaller/lead/update'
-import { Route as ApiAgentLeadsUploadRouteImport } from './routes/api/agent/leads/upload'
-import { Route as ApiAdminSubscriptionsResumeRouteImport } from './routes/api/admin/subscriptions/resume'
-import { Route as ApiAdminSubscriptionsReissueLinkRouteImport } from './routes/api/admin/subscriptions/reissue-link'
-import { Route as ApiAdminStaffSetRoleRouteImport } from './routes/api/admin/staff/set-role'
-import { Route as ApiAdminStaffListRouteImport } from './routes/api/admin/staff/list'
-import { Route as ApiAdminStaffCreateStaffRouteImport } from './routes/api/admin/staff/create-staff'
-import { Route as ApiAdminSalesAgentsListRouteImport } from './routes/api/admin/sales-agents/list'
-import { Route as ApiAdminSalesAgentsCreateRouteImport } from './routes/api/admin/sales-agents/create'
-import { Route as ApiAdminReportsSubscribersByChannelRouteImport } from './routes/api/admin/reports/subscribers-by-channel'
-import { Route as ApiAdminReportsPendingSevasRouteImport } from './routes/api/admin/reports/pending-sevas'
-import { Route as ApiAdminReportsMonthlyRouteImport } from './routes/api/admin/reports/monthly'
-import { Route as ApiAdminReportsExportRouteImport } from './routes/api/admin/reports/export'
-import { Route as ApiAdminPerformanceTelecallersRouteImport } from './routes/api/admin/performance/telecallers'
-import { Route as ApiAdminPerformanceHospitalsRouteImport } from './routes/api/admin/performance/hospitals'
-import { Route as ApiAdminPerformanceAgentsRouteImport } from './routes/api/admin/performance/agents'
-import { Route as ApiAdminPaymentsRefundRouteImport } from './routes/api/admin/payments/refund'
-import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/payments/list'
-import { Route as ApiAdminLeadsUploadRouteImport } from './routes/api/admin/leads/upload'
-import { Route as ApiAdminLeadsSweepRouteImport } from './routes/api/admin/leads/sweep'
-import { Route as ApiAdminLeadsRoutingRouteImport } from './routes/api/admin/leads/routing'
-import { Route as ApiAdminLeadsFreeSewaPendingCountRouteImport } from './routes/api/admin/leads/free-sewa-pending-count'
-import { Route as ApiAdminLeadsAssignRouteImport } from './routes/api/admin/leads/assign'
-import { Route as ApiAdminHospitalsReallotRouteImport } from './routes/api/admin/hospitals/reallot'
-import { Route as ApiAdminHospitalsListRouteImport } from './routes/api/admin/hospitals/list'
-import { Route as ApiAdminHospitalsCreateRouteImport } from './routes/api/admin/hospitals/create'
-import { Route as ApiAdminContentUpdateStatusRouteImport } from './routes/api/admin/content/update-status'
-import { Route as ApiAdminContentStrategyRouteImport } from './routes/api/admin/content/strategy'
-import { Route as ApiAdminContentSetImageRouteImport } from './routes/api/admin/content/set-image'
-import { Route as ApiAdminContentSaveRouteImport } from './routes/api/admin/content/save'
-import { Route as ApiAdminContentPublishRouteImport } from './routes/api/admin/content/publish'
-import { Route as ApiAdminContentListRouteImport } from './routes/api/admin/content/list'
-import { Route as ApiAdminContentGenerateRouteImport } from './routes/api/admin/content/generate'
-import { Route as ApiAdminContentAnalyzeRouteImport } from './routes/api/admin/content/analyze'
-import { Route as ApiAdminCommissionsReconcileRouteImport } from './routes/api/admin/commissions/reconcile'
-import { Route as ApiAdminCommissionsLockRouteImport } from './routes/api/admin/commissions/lock'
-import { Route as ApiAdminAuditLogListRouteImport } from './routes/api/admin/audit-log/list'
+import { Route as ApiAdminLoginMethodCountsRouteImport } from './routes/api/admin/login-method-counts'
+import { Route as ApiAdminOverviewFinancialsRouteImport } from './routes/api/admin/overview-financials'
+import { Route as ApiAdminSignupsListRouteImport } from './routes/api/admin/signups-list'
+import { Route as ApiAgentMyLeadsRouteImport } from './routes/api/agent/my-leads'
+import { Route as ApiAuthCompleteGoogleProfileRouteImport } from './routes/api/auth/complete-google-profile'
+import { Route as ApiAuthReconcileProfileRouteImport } from './routes/api/auth/reconcile-profile'
+import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
+import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
+import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
+import { Route as ApiCronPublishContentRouteImport } from './routes/api/cron/publish-content'
+import { Route as ApiCronRenewMandatesRouteImport } from './routes/api/cron/renew-mandates'
+import { Route as ApiCronRetryMetaCapiRouteImport } from './routes/api/cron/retry-meta-capi'
+import { Route as ApiCronSendNotificationsRouteImport } from './routes/api/cron/send-notifications'
+import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
+import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/address'
+import { Route as ApiProfileFamilyMembersRouteImport } from './routes/api/profile/family-members'
+import { Route as ApiProfileIdentityRouteImport } from './routes/api/profile/identity'
+import { Route as ApiProfileUpsertIdentityRouteImport } from './routes/api/profile/upsert-identity'
+import { Route as ApiSankalpGenerateBatchRouteImport } from './routes/api/sankalp/generate-batch'
+import { Route as ApiSubscriptionsCreateCheckoutRouteImport } from './routes/api/subscriptions/create-checkout'
+import { Route as ApiTelecallerAgentsRouteImport } from './routes/api/telecaller/agents'
+import { Route as ApiTelecallerCreateLeadRouteImport } from './routes/api/telecaller/create-lead'
+import { Route as ApiTelecallerEarningsRouteImport } from './routes/api/telecaller/earnings'
+import { Route as ApiTelecallerFamilyMembersRouteImport } from './routes/api/telecaller/family-members'
+import { Route as ApiTelecallerLeadRouteImport } from './routes/api/telecaller/lead'
+import { Route as ApiTelecallerLogCallRouteImport } from './routes/api/telecaller/log-call'
+import { Route as ApiTelecallerMarkSevaDoneRouteImport } from './routes/api/telecaller/mark-seva-done'
+import { Route as ApiTelecallerMyDayRouteImport } from './routes/api/telecaller/my-day'
+import { Route as ApiTelecallerPersonRouteImport } from './routes/api/telecaller/person'
+import { Route as ApiTelecallerPlansRouteImport } from './routes/api/telecaller/plans'
+import { Route as ApiTelecallerProfileRouteImport } from './routes/api/telecaller/profile'
+import { Route as ApiTelecallerProofResendRouteImport } from './routes/api/telecaller/proof-resend'
+import { Route as ApiTelecallerQueuesRouteImport } from './routes/api/telecaller/queues'
+import { Route as ApiTelecallerReferralLinkRouteImport } from './routes/api/telecaller/referral-link'
+import { Route as ApiTelecallerSearchRouteImport } from './routes/api/telecaller/search'
+import { Route as ApiTelecallerSendPaymentLinkRouteImport } from './routes/api/telecaller/send-payment-link'
+import { Route as TelecallerLeadLeadIdRouteImport } from './routes/telecaller.lead.$leadId'
+import { Route as TelecallerPersonSubscriptionIdRouteImport } from './routes/telecaller.person.$subscriptionId'
+import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller.queue.$queueKey'
 import { Route as ApiAdminAuditLogFiltersRouteImport } from './routes/api/admin/audit-log/filters'
+import { Route as ApiAdminAuditLogListRouteImport } from './routes/api/admin/audit-log/list'
+import { Route as ApiAdminCommissionsLockRouteImport } from './routes/api/admin/commissions/lock'
+import { Route as ApiAdminCommissionsReconcileRouteImport } from './routes/api/admin/commissions/reconcile'
+import { Route as ApiAdminContentAnalyzeRouteImport } from './routes/api/admin/content/analyze'
+import { Route as ApiAdminContentGenerateRouteImport } from './routes/api/admin/content/generate'
+import { Route as ApiAdminContentListRouteImport } from './routes/api/admin/content/list'
+import { Route as ApiAdminContentPublishRouteImport } from './routes/api/admin/content/publish'
+import { Route as ApiAdminContentSaveRouteImport } from './routes/api/admin/content/save'
+import { Route as ApiAdminContentSetImageRouteImport } from './routes/api/admin/content/set-image'
+import { Route as ApiAdminContentStrategyRouteImport } from './routes/api/admin/content/strategy'
+import { Route as ApiAdminContentUpdateStatusRouteImport } from './routes/api/admin/content/update-status'
+import { Route as ApiAdminHospitalsCreateRouteImport } from './routes/api/admin/hospitals/create'
+import { Route as ApiAdminHospitalsListRouteImport } from './routes/api/admin/hospitals/list'
+import { Route as ApiAdminHospitalsReallotRouteImport } from './routes/api/admin/hospitals/reallot'
+import { Route as ApiAdminLeadsAssignRouteImport } from './routes/api/admin/leads/assign'
+import { Route as ApiAdminLeadsFreeSewaPendingCountRouteImport } from './routes/api/admin/leads/free-sewa-pending-count'
+import { Route as ApiAdminLeadsRoutingRouteImport } from './routes/api/admin/leads/routing'
+import { Route as ApiAdminLeadsSweepRouteImport } from './routes/api/admin/leads/sweep'
+import { Route as ApiAdminLeadsUploadRouteImport } from './routes/api/admin/leads/upload'
+import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/payments/list'
+import { Route as ApiAdminPaymentsRefundRouteImport } from './routes/api/admin/payments/refund'
+import { Route as ApiAdminPerformanceAgentsRouteImport } from './routes/api/admin/performance/agents'
+import { Route as ApiAdminPerformanceHospitalsRouteImport } from './routes/api/admin/performance/hospitals'
+import { Route as ApiAdminPerformanceTelecallersRouteImport } from './routes/api/admin/performance/telecallers'
+import { Route as ApiAdminReportsExportRouteImport } from './routes/api/admin/reports/export'
+import { Route as ApiAdminReportsMonthlyRouteImport } from './routes/api/admin/reports/monthly'
+import { Route as ApiAdminReportsPendingSevasRouteImport } from './routes/api/admin/reports/pending-sevas'
+import { Route as ApiAdminReportsSubscribersByChannelRouteImport } from './routes/api/admin/reports/subscribers-by-channel'
+import { Route as ApiAdminSalesAgentsCreateRouteImport } from './routes/api/admin/sales-agents/create'
+import { Route as ApiAdminSalesAgentsListRouteImport } from './routes/api/admin/sales-agents/list'
+import { Route as ApiAdminStaffCreateStaffRouteImport } from './routes/api/admin/staff/create-staff'
+import { Route as ApiAdminStaffListRouteImport } from './routes/api/admin/staff/list'
+import { Route as ApiAdminStaffSetRoleRouteImport } from './routes/api/admin/staff/set-role'
+import { Route as ApiAdminSubscriptionsReissueLinkRouteImport } from './routes/api/admin/subscriptions/reissue-link'
+import { Route as ApiAdminSubscriptionsResumeRouteImport } from './routes/api/admin/subscriptions/resume'
+import { Route as ApiAgentLeadsUploadRouteImport } from './routes/api/agent/leads/upload'
+import { Route as ApiTelecallerLeadUpdateRouteImport } from './routes/api/telecaller/lead/update'
+import { Route as ApiTelecallerQueueListRouteImport } from './routes/api/telecaller/queue/list'
+import { Route as ApiWhatsappWebhookSecretRouteImport } from './routes/api/whatsapp/webhook.$secret'
 
-const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
-  id: '/terms-and-conditions',
-  path: '/terms-and-conditions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TelecallerRoute = TelecallerRouteImport.update({
-  id: '/telecaller',
-  path: '/telecaller',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SubscriptionSuccessRoute = SubscriptionSuccessRouteImport.update({
-  id: '/subscription-success',
-  path: '/subscription-success',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SevasRoute = SevasRouteImport.update({
-  id: '/sevas',
-  path: '/sevas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
-  id: '/robots.txt',
-  path: '/robots.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReviewsRoute = ReviewsRouteImport.update({
-  id: '/reviews',
-  path: '/reviews',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RefundPolicyRoute = RefundPolicyRouteImport.update({
-  id: '/refund-policy',
-  path: '/refund-policy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlansRoute = PlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MySubscriptionRoute = MySubscriptionRouteImport.update({
-  id: '/my-subscription',
-  path: '/my-subscription',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FaqRoute = FaqRouteImport.update({
-  id: '/faq',
-  path: '/faq',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompleteProfileRoute = CompleteProfileRouteImport.update({
-  id: '/complete-profile',
-  path: '/complete-profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentRoute = AgentRouteImport.update({
-  id: '/agent',
-  path: '/agent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -231,164 +151,94 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TelecallerIndexRoute = TelecallerIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => TelecallerRoute,
+const AgentRoute = AgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AgentIndexRoute = AgentIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AgentRoute,
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompleteProfileRoute = CompleteProfileRouteImport.update({
+  id: '/complete-profile',
+  path: '/complete-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MySubscriptionRoute = MySubscriptionRouteImport.update({
+  id: '/my-subscription',
+  path: '/my-subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlansRoute = PlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SevasRoute = SevasRouteImport.update({
+  id: '/sevas',
+  path: '/sevas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscriptionSuccessRoute = SubscriptionSuccessRouteImport.update({
+  id: '/subscription-success',
+  path: '/subscription-success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelecallerRoute = TelecallerRouteImport.update({
+  id: '/telecaller',
+  path: '/telecaller',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
+  id: '/terms-and-conditions',
+  path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const TelecallerSearchRoute = TelecallerSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => TelecallerRoute,
-} as any)
-const TelecallerScriptRoute = TelecallerScriptRouteImport.update({
-  id: '/script',
-  path: '/script',
-  getParentRoute: () => TelecallerRoute,
-} as any)
-const TelecallerReferLinkRoute = TelecallerReferLinkRouteImport.update({
-  id: '/refer-link',
-  path: '/refer-link',
-  getParentRoute: () => TelecallerRoute,
-} as any)
-const TelecallerQueuesRoute = TelecallerQueuesRouteImport.update({
-  id: '/queues',
-  path: '/queues',
-  getParentRoute: () => TelecallerRoute,
-} as any)
-const TelecallerNewRoute = TelecallerNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => TelecallerRoute,
-} as any)
-const TelecallerMyDayRoute = TelecallerMyDayRouteImport.update({
-  id: '/my-day',
-  path: '/my-day',
-  getParentRoute: () => TelecallerRoute,
-} as any)
-const TelecallerEarningsRoute = TelecallerEarningsRouteImport.update({
-  id: '/earnings',
-  path: '/earnings',
-  getParentRoute: () => TelecallerRoute,
-} as any)
-const PlanPlanIdRoute = PlanPlanIdRouteImport.update({
-  id: '/plan/$planId',
-  path: '/plan/$planId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutPlanIdRoute = CheckoutPlanIdRouteImport.update({
-  id: '/checkout/$planId',
-  path: '/checkout/$planId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => BlogRoute,
-} as any)
-const AgentMyLeadsRoute = AgentMyLeadsRouteImport.update({
-  id: '/my-leads',
-  path: '/my-leads',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
-  id: '/subscribers',
-  path: '/subscribers',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminStaffRoute = AdminStaffRouteImport.update({
-  id: '/staff',
-  path: '/staff',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSignupsRoute = AdminSignupsRouteImport.update({
-  id: '/signups',
-  path: '/signups',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSeoRoute = AdminSeoRouteImport.update({
-  id: '/seo',
-  path: '/seo',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSankalpListsRoute = AdminSankalpListsRouteImport.update({
-  id: '/sankalp-lists',
-  path: '/sankalp-lists',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminRoutingRoute = AdminRoutingRouteImport.update({
-  id: '/routing',
-  path: '/routing',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminProofUploadRoute = AdminProofUploadRouteImport.update({
-  id: '/proof-upload',
-  path: '/proof-upload',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPlansSevasRoute = AdminPlansSevasRouteImport.update({
-  id: '/plans-sevas',
-  path: '/plans-sevas',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPerformanceRoute = AdminPerformanceRouteImport.update({
-  id: '/performance',
-  path: '/performance',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
-  id: '/payments',
-  path: '/payments',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminOverviewRoute = AdminOverviewRouteImport.update({
-  id: '/overview',
-  path: '/overview',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminLeadsRoute = AdminLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminImagesRoute = AdminImagesRouteImport.update({
-  id: '/images',
-  path: '/images',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminContentStudioRoute = AdminContentStudioRouteImport.update({
-  id: '/content-studio',
-  path: '/content-studio',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
-  id: '/commissions',
-  path: '/commissions',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
-  id: '/audit-log',
-  path: '/audit-log',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAshirwadPatraRoute = AdminAshirwadPatraRouteImport.update({
@@ -396,183 +246,181 @@ const AdminAshirwadPatraRoute = AdminAshirwadPatraRouteImport.update({
   path: '/ashirwad-patra',
   getParentRoute: () => AdminRoute,
 } as any)
-const TelecallerQueueQueueKeyRoute = TelecallerQueueQueueKeyRouteImport.update({
-  id: '/queue/$queueKey',
-  path: '/queue/$queueKey',
+const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
+  id: '/audit-log',
+  path: '/audit-log',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
+  id: '/commissions',
+  path: '/commissions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminContentStudioRoute = AdminContentStudioRouteImport.update({
+  id: '/content-studio',
+  path: '/content-studio',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminImagesRoute = AdminImagesRouteImport.update({
+  id: '/images',
+  path: '/images',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLeadsRoute = AdminLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOverviewRoute = AdminOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPerformanceRoute = AdminPerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlansSevasRoute = AdminPlansSevasRouteImport.update({
+  id: '/plans-sevas',
+  path: '/plans-sevas',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProofUploadRoute = AdminProofUploadRouteImport.update({
+  id: '/proof-upload',
+  path: '/proof-upload',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRoutingRoute = AdminRoutingRouteImport.update({
+  id: '/routing',
+  path: '/routing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSankalpListsRoute = AdminSankalpListsRouteImport.update({
+  id: '/sankalp-lists',
+  path: '/sankalp-lists',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSeoRoute = AdminSeoRouteImport.update({
+  id: '/seo',
+  path: '/seo',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSignupsRoute = AdminSignupsRouteImport.update({
+  id: '/signups',
+  path: '/signups',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStaffRoute = AdminStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
+  id: '/subscribers',
+  path: '/subscribers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AgentIndexRoute = AgentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentMyLeadsRoute = AgentMyLeadsRouteImport.update({
+  id: '/my-leads',
+  path: '/my-leads',
+  getParentRoute: () => AgentRoute,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
+} as any)
+const CheckoutPlanIdRoute = CheckoutPlanIdRouteImport.update({
+  id: '/checkout/$planId',
+  path: '/checkout/$planId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanPlanIdRoute = PlanPlanIdRouteImport.update({
+  id: '/plan/$planId',
+  path: '/plan/$planId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelecallerIndexRoute = TelecallerIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => TelecallerRoute,
 } as any)
-const TelecallerPersonSubscriptionIdRoute =
-  TelecallerPersonSubscriptionIdRouteImport.update({
-    id: '/person/$subscriptionId',
-    path: '/person/$subscriptionId',
-    getParentRoute: () => TelecallerRoute,
-  } as any)
-const TelecallerLeadLeadIdRoute = TelecallerLeadLeadIdRouteImport.update({
-  id: '/lead/$leadId',
-  path: '/lead/$leadId',
+const TelecallerEarningsRoute = TelecallerEarningsRouteImport.update({
+  id: '/earnings',
+  path: '/earnings',
   getParentRoute: () => TelecallerRoute,
 } as any)
-const ApiTelecallerSendPaymentLinkRoute =
-  ApiTelecallerSendPaymentLinkRouteImport.update({
-    id: '/api/telecaller/send-payment-link',
-    path: '/api/telecaller/send-payment-link',
+const TelecallerMyDayRoute = TelecallerMyDayRouteImport.update({
+  id: '/my-day',
+  path: '/my-day',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerNewRoute = TelecallerNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerQueuesRoute = TelecallerQueuesRouteImport.update({
+  id: '/queues',
+  path: '/queues',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerReferLinkRoute = TelecallerReferLinkRouteImport.update({
+  id: '/refer-link',
+  path: '/refer-link',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerScriptRoute = TelecallerScriptRouteImport.update({
+  id: '/script',
+  path: '/script',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerSearchRoute = TelecallerSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const AdminPanditBatchIdRoute = AdminPanditBatchIdRouteImport.update({
+  id: '/pandit/$batchId',
+  path: '/pandit/$batchId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ApiAdminLoginMethodCountsRoute =
+  ApiAdminLoginMethodCountsRouteImport.update({
+    id: '/api/admin/login-method-counts',
+    path: '/api/admin/login-method-counts',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiTelecallerSearchRoute = ApiTelecallerSearchRouteImport.update({
-  id: '/api/telecaller/search',
-  path: '/api/telecaller/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerReferralLinkRoute =
-  ApiTelecallerReferralLinkRouteImport.update({
-    id: '/api/telecaller/referral-link',
-    path: '/api/telecaller/referral-link',
+const ApiAdminOverviewFinancialsRoute =
+  ApiAdminOverviewFinancialsRouteImport.update({
+    id: '/api/admin/overview-financials',
+    path: '/api/admin/overview-financials',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiTelecallerQueuesRoute = ApiTelecallerQueuesRouteImport.update({
-  id: '/api/telecaller/queues',
-  path: '/api/telecaller/queues',
+const ApiAdminSignupsListRoute = ApiAdminSignupsListRouteImport.update({
+  id: '/api/admin/signups-list',
+  path: '/api/admin/signups-list',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTelecallerProofResendRoute =
-  ApiTelecallerProofResendRouteImport.update({
-    id: '/api/telecaller/proof-resend',
-    path: '/api/telecaller/proof-resend',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiTelecallerProfileRoute = ApiTelecallerProfileRouteImport.update({
-  id: '/api/telecaller/profile',
-  path: '/api/telecaller/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerPlansRoute = ApiTelecallerPlansRouteImport.update({
-  id: '/api/telecaller/plans',
-  path: '/api/telecaller/plans',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerPersonRoute = ApiTelecallerPersonRouteImport.update({
-  id: '/api/telecaller/person',
-  path: '/api/telecaller/person',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerMyDayRoute = ApiTelecallerMyDayRouteImport.update({
-  id: '/api/telecaller/my-day',
-  path: '/api/telecaller/my-day',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerMarkSevaDoneRoute =
-  ApiTelecallerMarkSevaDoneRouteImport.update({
-    id: '/api/telecaller/mark-seva-done',
-    path: '/api/telecaller/mark-seva-done',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiTelecallerLogCallRoute = ApiTelecallerLogCallRouteImport.update({
-  id: '/api/telecaller/log-call',
-  path: '/api/telecaller/log-call',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerLeadRoute = ApiTelecallerLeadRouteImport.update({
-  id: '/api/telecaller/lead',
-  path: '/api/telecaller/lead',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerFamilyMembersRoute =
-  ApiTelecallerFamilyMembersRouteImport.update({
-    id: '/api/telecaller/family-members',
-    path: '/api/telecaller/family-members',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiTelecallerEarningsRoute = ApiTelecallerEarningsRouteImport.update({
-  id: '/api/telecaller/earnings',
-  path: '/api/telecaller/earnings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerCreateLeadRoute = ApiTelecallerCreateLeadRouteImport.update({
-  id: '/api/telecaller/create-lead',
-  path: '/api/telecaller/create-lead',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTelecallerAgentsRoute = ApiTelecallerAgentsRouteImport.update({
-  id: '/api/telecaller/agents',
-  path: '/api/telecaller/agents',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSubscriptionsCreateCheckoutRoute =
-  ApiSubscriptionsCreateCheckoutRouteImport.update({
-    id: '/api/subscriptions/create-checkout',
-    path: '/api/subscriptions/create-checkout',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiSankalpGenerateBatchRoute = ApiSankalpGenerateBatchRouteImport.update({
-  id: '/api/sankalp/generate-batch',
-  path: '/api/sankalp/generate-batch',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiProfileUpsertIdentityRoute =
-  ApiProfileUpsertIdentityRouteImport.update({
-    id: '/api/profile/upsert-identity',
-    path: '/api/profile/upsert-identity',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiProfileIdentityRoute = ApiProfileIdentityRouteImport.update({
-  id: '/api/profile/identity',
-  path: '/api/profile/identity',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiProfileFamilyMembersRoute = ApiProfileFamilyMembersRouteImport.update({
-  id: '/api/profile/family-members',
-  path: '/api/profile/family-members',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiProfileAddressRoute = ApiProfileAddressRouteImport.update({
-  id: '/api/profile/address',
-  path: '/api/profile/address',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPaymentsWebhookRoute = ApiPaymentsWebhookRouteImport.update({
-  id: '/api/payments/webhook',
-  path: '/api/payments/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCronSendNotificationsRoute =
-  ApiCronSendNotificationsRouteImport.update({
-    id: '/api/cron/send-notifications',
-    path: '/api/cron/send-notifications',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiCronRetryMetaCapiRoute = ApiCronRetryMetaCapiRouteImport.update({
-  id: '/api/cron/retry-meta-capi',
-  path: '/api/cron/retry-meta-capi',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCronRenewMandatesRoute = ApiCronRenewMandatesRouteImport.update({
-  id: '/api/cron/renew-mandates',
-  path: '/api/cron/renew-mandates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCronPublishContentRoute = ApiCronPublishContentRouteImport.update({
-  id: '/api/cron/publish-content',
-  path: '/api/cron/publish-content',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCouponsValidateRoute = ApiCouponsValidateRouteImport.update({
-  id: '/api/coupons/validate',
-  path: '/api/coupons/validate',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCloudinarySignUploadRoute = ApiCloudinarySignUploadRouteImport.update({
-  id: '/api/cloudinary/sign-upload',
-  path: '/api/cloudinary/sign-upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthRequestOtpRoute = ApiAuthRequestOtpRouteImport.update({
-  id: '/api/auth/request-otp',
-  path: '/api/auth/request-otp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthReconcileProfileRoute = ApiAuthReconcileProfileRouteImport.update({
-  id: '/api/auth/reconcile-profile',
-  path: '/api/auth/reconcile-profile',
+const ApiAgentMyLeadsRoute = ApiAgentMyLeadsRouteImport.update({
+  id: '/api/agent/my-leads',
+  path: '/api/agent/my-leads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthCompleteGoogleProfileRoute =
@@ -581,224 +429,198 @@ const ApiAuthCompleteGoogleProfileRoute =
     path: '/api/auth/complete-google-profile',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAgentMyLeadsRoute = ApiAgentMyLeadsRouteImport.update({
-  id: '/api/agent/my-leads',
-  path: '/api/agent/my-leads',
+const ApiAuthReconcileProfileRoute = ApiAuthReconcileProfileRouteImport.update({
+  id: '/api/auth/reconcile-profile',
+  path: '/api/auth/reconcile-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminSignupsListRoute = ApiAdminSignupsListRouteImport.update({
-  id: '/api/admin/signups-list',
-  path: '/api/admin/signups-list',
+const ApiAuthRequestOtpRoute = ApiAuthRequestOtpRouteImport.update({
+  id: '/api/auth/request-otp',
+  path: '/api/auth/request-otp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminOverviewFinancialsRoute =
-  ApiAdminOverviewFinancialsRouteImport.update({
-    id: '/api/admin/overview-financials',
-    path: '/api/admin/overview-financials',
+const ApiCloudinarySignUploadRoute = ApiCloudinarySignUploadRouteImport.update({
+  id: '/api/cloudinary/sign-upload',
+  path: '/api/cloudinary/sign-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCouponsValidateRoute = ApiCouponsValidateRouteImport.update({
+  id: '/api/coupons/validate',
+  path: '/api/coupons/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronPublishContentRoute = ApiCronPublishContentRouteImport.update({
+  id: '/api/cron/publish-content',
+  path: '/api/cron/publish-content',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronRenewMandatesRoute = ApiCronRenewMandatesRouteImport.update({
+  id: '/api/cron/renew-mandates',
+  path: '/api/cron/renew-mandates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronRetryMetaCapiRoute = ApiCronRetryMetaCapiRouteImport.update({
+  id: '/api/cron/retry-meta-capi',
+  path: '/api/cron/retry-meta-capi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronSendNotificationsRoute =
+  ApiCronSendNotificationsRouteImport.update({
+    id: '/api/cron/send-notifications',
+    path: '/api/cron/send-notifications',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminLoginMethodCountsRoute =
-  ApiAdminLoginMethodCountsRouteImport.update({
-    id: '/api/admin/login-method-counts',
-    path: '/api/admin/login-method-counts',
+const ApiPaymentsWebhookRoute = ApiPaymentsWebhookRouteImport.update({
+  id: '/api/payments/webhook',
+  path: '/api/payments/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileAddressRoute = ApiProfileAddressRouteImport.update({
+  id: '/api/profile/address',
+  path: '/api/profile/address',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileFamilyMembersRoute = ApiProfileFamilyMembersRouteImport.update({
+  id: '/api/profile/family-members',
+  path: '/api/profile/family-members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileIdentityRoute = ApiProfileIdentityRouteImport.update({
+  id: '/api/profile/identity',
+  path: '/api/profile/identity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileUpsertIdentityRoute =
+  ApiProfileUpsertIdentityRouteImport.update({
+    id: '/api/profile/upsert-identity',
+    path: '/api/profile/upsert-identity',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AdminPanditBatchIdRoute = AdminPanditBatchIdRouteImport.update({
-  id: '/pandit/$batchId',
-  path: '/pandit/$batchId',
-  getParentRoute: () => AdminRoute,
+const ApiSankalpGenerateBatchRoute = ApiSankalpGenerateBatchRouteImport.update({
+  id: '/api/sankalp/generate-batch',
+  path: '/api/sankalp/generate-batch',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWhatsappWebhookSecretRoute =
-  ApiWhatsappWebhookSecretRouteImport.update({
-    id: '/api/whatsapp/webhook/$secret',
-    path: '/api/whatsapp/webhook/$secret',
+const ApiSubscriptionsCreateCheckoutRoute =
+  ApiSubscriptionsCreateCheckoutRouteImport.update({
+    id: '/api/subscriptions/create-checkout',
+    path: '/api/subscriptions/create-checkout',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiTelecallerQueueListRoute = ApiTelecallerQueueListRouteImport.update({
-  id: '/api/telecaller/queue/list',
-  path: '/api/telecaller/queue/list',
+const ApiTelecallerAgentsRoute = ApiTelecallerAgentsRouteImport.update({
+  id: '/api/telecaller/agents',
+  path: '/api/telecaller/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTelecallerLeadUpdateRoute = ApiTelecallerLeadUpdateRouteImport.update({
-  id: '/update',
-  path: '/update',
-  getParentRoute: () => ApiTelecallerLeadRoute,
-} as any)
-const ApiAgentLeadsUploadRoute = ApiAgentLeadsUploadRouteImport.update({
-  id: '/api/agent/leads/upload',
-  path: '/api/agent/leads/upload',
+const ApiTelecallerCreateLeadRoute = ApiTelecallerCreateLeadRouteImport.update({
+  id: '/api/telecaller/create-lead',
+  path: '/api/telecaller/create-lead',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminSubscriptionsResumeRoute =
-  ApiAdminSubscriptionsResumeRouteImport.update({
-    id: '/api/admin/subscriptions/resume',
-    path: '/api/admin/subscriptions/resume',
+const ApiTelecallerEarningsRoute = ApiTelecallerEarningsRouteImport.update({
+  id: '/api/telecaller/earnings',
+  path: '/api/telecaller/earnings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerFamilyMembersRoute =
+  ApiTelecallerFamilyMembersRouteImport.update({
+    id: '/api/telecaller/family-members',
+    path: '/api/telecaller/family-members',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminSubscriptionsReissueLinkRoute =
-  ApiAdminSubscriptionsReissueLinkRouteImport.update({
-    id: '/api/admin/subscriptions/reissue-link',
-    path: '/api/admin/subscriptions/reissue-link',
+const ApiTelecallerLeadRoute = ApiTelecallerLeadRouteImport.update({
+  id: '/api/telecaller/lead',
+  path: '/api/telecaller/lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerLogCallRoute = ApiTelecallerLogCallRouteImport.update({
+  id: '/api/telecaller/log-call',
+  path: '/api/telecaller/log-call',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerMarkSevaDoneRoute =
+  ApiTelecallerMarkSevaDoneRouteImport.update({
+    id: '/api/telecaller/mark-seva-done',
+    path: '/api/telecaller/mark-seva-done',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminStaffSetRoleRoute = ApiAdminStaffSetRoleRouteImport.update({
-  id: '/api/admin/staff/set-role',
-  path: '/api/admin/staff/set-role',
+const ApiTelecallerMyDayRoute = ApiTelecallerMyDayRouteImport.update({
+  id: '/api/telecaller/my-day',
+  path: '/api/telecaller/my-day',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminStaffListRoute = ApiAdminStaffListRouteImport.update({
-  id: '/api/admin/staff/list',
-  path: '/api/admin/staff/list',
+const ApiTelecallerPersonRoute = ApiTelecallerPersonRouteImport.update({
+  id: '/api/telecaller/person',
+  path: '/api/telecaller/person',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminStaffCreateStaffRoute =
-  ApiAdminStaffCreateStaffRouteImport.update({
-    id: '/api/admin/staff/create-staff',
-    path: '/api/admin/staff/create-staff',
+const ApiTelecallerPlansRoute = ApiTelecallerPlansRouteImport.update({
+  id: '/api/telecaller/plans',
+  path: '/api/telecaller/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerProfileRoute = ApiTelecallerProfileRouteImport.update({
+  id: '/api/telecaller/profile',
+  path: '/api/telecaller/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerProofResendRoute =
+  ApiTelecallerProofResendRouteImport.update({
+    id: '/api/telecaller/proof-resend',
+    path: '/api/telecaller/proof-resend',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminSalesAgentsListRoute = ApiAdminSalesAgentsListRouteImport.update({
-  id: '/api/admin/sales-agents/list',
-  path: '/api/admin/sales-agents/list',
+const ApiTelecallerQueuesRoute = ApiTelecallerQueuesRouteImport.update({
+  id: '/api/telecaller/queues',
+  path: '/api/telecaller/queues',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminSalesAgentsCreateRoute =
-  ApiAdminSalesAgentsCreateRouteImport.update({
-    id: '/api/admin/sales-agents/create',
-    path: '/api/admin/sales-agents/create',
+const ApiTelecallerReferralLinkRoute =
+  ApiTelecallerReferralLinkRouteImport.update({
+    id: '/api/telecaller/referral-link',
+    path: '/api/telecaller/referral-link',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminReportsSubscribersByChannelRoute =
-  ApiAdminReportsSubscribersByChannelRouteImport.update({
-    id: '/api/admin/reports/subscribers-by-channel',
-    path: '/api/admin/reports/subscribers-by-channel',
+const ApiTelecallerSearchRoute = ApiTelecallerSearchRouteImport.update({
+  id: '/api/telecaller/search',
+  path: '/api/telecaller/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerSendPaymentLinkRoute =
+  ApiTelecallerSendPaymentLinkRouteImport.update({
+    id: '/api/telecaller/send-payment-link',
+    path: '/api/telecaller/send-payment-link',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminReportsPendingSevasRoute =
-  ApiAdminReportsPendingSevasRouteImport.update({
-    id: '/api/admin/reports/pending-sevas',
-    path: '/api/admin/reports/pending-sevas',
-    getParentRoute: () => rootRouteImport,
+const TelecallerLeadLeadIdRoute = TelecallerLeadLeadIdRouteImport.update({
+  id: '/lead/$leadId',
+  path: '/lead/$leadId',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const TelecallerPersonSubscriptionIdRoute =
+  TelecallerPersonSubscriptionIdRouteImport.update({
+    id: '/person/$subscriptionId',
+    path: '/person/$subscriptionId',
+    getParentRoute: () => TelecallerRoute,
   } as any)
-const ApiAdminReportsMonthlyRoute = ApiAdminReportsMonthlyRouteImport.update({
-  id: '/api/admin/reports/monthly',
-  path: '/api/admin/reports/monthly',
+const TelecallerQueueQueueKeyRoute = TelecallerQueueQueueKeyRouteImport.update({
+  id: '/queue/$queueKey',
+  path: '/queue/$queueKey',
+  getParentRoute: () => TelecallerRoute,
+} as any)
+const ApiAdminAuditLogFiltersRoute = ApiAdminAuditLogFiltersRouteImport.update({
+  id: '/api/admin/audit-log/filters',
+  path: '/api/admin/audit-log/filters',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminReportsExportRoute = ApiAdminReportsExportRouteImport.update({
-  id: '/api/admin/reports/export',
-  path: '/api/admin/reports/export',
+const ApiAdminAuditLogListRoute = ApiAdminAuditLogListRouteImport.update({
+  id: '/api/admin/audit-log/list',
+  path: '/api/admin/audit-log/list',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminPerformanceTelecallersRoute =
-  ApiAdminPerformanceTelecallersRouteImport.update({
-    id: '/api/admin/performance/telecallers',
-    path: '/api/admin/performance/telecallers',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiAdminPerformanceHospitalsRoute =
-  ApiAdminPerformanceHospitalsRouteImport.update({
-    id: '/api/admin/performance/hospitals',
-    path: '/api/admin/performance/hospitals',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiAdminPerformanceAgentsRoute =
-  ApiAdminPerformanceAgentsRouteImport.update({
-    id: '/api/admin/performance/agents',
-    path: '/api/admin/performance/agents',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiAdminPaymentsRefundRoute = ApiAdminPaymentsRefundRouteImport.update({
-  id: '/api/admin/payments/refund',
-  path: '/api/admin/payments/refund',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminPaymentsListRoute = ApiAdminPaymentsListRouteImport.update({
-  id: '/api/admin/payments/list',
-  path: '/api/admin/payments/list',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminLeadsUploadRoute = ApiAdminLeadsUploadRouteImport.update({
-  id: '/api/admin/leads/upload',
-  path: '/api/admin/leads/upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminLeadsSweepRoute = ApiAdminLeadsSweepRouteImport.update({
-  id: '/api/admin/leads/sweep',
-  path: '/api/admin/leads/sweep',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminLeadsRoutingRoute = ApiAdminLeadsRoutingRouteImport.update({
-  id: '/api/admin/leads/routing',
-  path: '/api/admin/leads/routing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminLeadsFreeSewaPendingCountRoute =
-  ApiAdminLeadsFreeSewaPendingCountRouteImport.update({
-    id: '/api/admin/leads/free-sewa-pending-count',
-    path: '/api/admin/leads/free-sewa-pending-count',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiAdminLeadsAssignRoute = ApiAdminLeadsAssignRouteImport.update({
-  id: '/api/admin/leads/assign',
-  path: '/api/admin/leads/assign',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminHospitalsReallotRoute =
-  ApiAdminHospitalsReallotRouteImport.update({
-    id: '/api/admin/hospitals/reallot',
-    path: '/api/admin/hospitals/reallot',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiAdminHospitalsListRoute = ApiAdminHospitalsListRouteImport.update({
-  id: '/api/admin/hospitals/list',
-  path: '/api/admin/hospitals/list',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminHospitalsCreateRoute = ApiAdminHospitalsCreateRouteImport.update({
-  id: '/api/admin/hospitals/create',
-  path: '/api/admin/hospitals/create',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminContentUpdateStatusRoute =
-  ApiAdminContentUpdateStatusRouteImport.update({
-    id: '/api/admin/content/update-status',
-    path: '/api/admin/content/update-status',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiAdminContentStrategyRoute = ApiAdminContentStrategyRouteImport.update({
-  id: '/api/admin/content/strategy',
-  path: '/api/admin/content/strategy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminContentSetImageRoute = ApiAdminContentSetImageRouteImport.update({
-  id: '/api/admin/content/set-image',
-  path: '/api/admin/content/set-image',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminContentSaveRoute = ApiAdminContentSaveRouteImport.update({
-  id: '/api/admin/content/save',
-  path: '/api/admin/content/save',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminContentPublishRoute = ApiAdminContentPublishRouteImport.update({
-  id: '/api/admin/content/publish',
-  path: '/api/admin/content/publish',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminContentListRoute = ApiAdminContentListRouteImport.update({
-  id: '/api/admin/content/list',
-  path: '/api/admin/content/list',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminContentGenerateRoute = ApiAdminContentGenerateRouteImport.update({
-  id: '/api/admin/content/generate',
-  path: '/api/admin/content/generate',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminContentAnalyzeRoute = ApiAdminContentAnalyzeRouteImport.update({
-  id: '/api/admin/content/analyze',
-  path: '/api/admin/content/analyze',
+const ApiAdminCommissionsLockRoute = ApiAdminCommissionsLockRouteImport.update({
+  id: '/api/admin/commissions/lock',
+  path: '/api/admin/commissions/lock',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminCommissionsReconcileRoute =
@@ -807,21 +629,199 @@ const ApiAdminCommissionsReconcileRoute =
     path: '/api/admin/commissions/reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminCommissionsLockRoute = ApiAdminCommissionsLockRouteImport.update({
-  id: '/api/admin/commissions/lock',
-  path: '/api/admin/commissions/lock',
+const ApiAdminContentAnalyzeRoute = ApiAdminContentAnalyzeRouteImport.update({
+  id: '/api/admin/content/analyze',
+  path: '/api/admin/content/analyze',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminAuditLogListRoute = ApiAdminAuditLogListRouteImport.update({
-  id: '/api/admin/audit-log/list',
-  path: '/api/admin/audit-log/list',
+const ApiAdminContentGenerateRoute = ApiAdminContentGenerateRouteImport.update({
+  id: '/api/admin/content/generate',
+  path: '/api/admin/content/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminAuditLogFiltersRoute = ApiAdminAuditLogFiltersRouteImport.update({
-  id: '/api/admin/audit-log/filters',
-  path: '/api/admin/audit-log/filters',
+const ApiAdminContentListRoute = ApiAdminContentListRouteImport.update({
+  id: '/api/admin/content/list',
+  path: '/api/admin/content/list',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminContentPublishRoute = ApiAdminContentPublishRouteImport.update({
+  id: '/api/admin/content/publish',
+  path: '/api/admin/content/publish',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentSaveRoute = ApiAdminContentSaveRouteImport.update({
+  id: '/api/admin/content/save',
+  path: '/api/admin/content/save',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentSetImageRoute = ApiAdminContentSetImageRouteImport.update({
+  id: '/api/admin/content/set-image',
+  path: '/api/admin/content/set-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentStrategyRoute = ApiAdminContentStrategyRouteImport.update({
+  id: '/api/admin/content/strategy',
+  path: '/api/admin/content/strategy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminContentUpdateStatusRoute =
+  ApiAdminContentUpdateStatusRouteImport.update({
+    id: '/api/admin/content/update-status',
+    path: '/api/admin/content/update-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminHospitalsCreateRoute = ApiAdminHospitalsCreateRouteImport.update({
+  id: '/api/admin/hospitals/create',
+  path: '/api/admin/hospitals/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminHospitalsListRoute = ApiAdminHospitalsListRouteImport.update({
+  id: '/api/admin/hospitals/list',
+  path: '/api/admin/hospitals/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminHospitalsReallotRoute =
+  ApiAdminHospitalsReallotRouteImport.update({
+    id: '/api/admin/hospitals/reallot',
+    path: '/api/admin/hospitals/reallot',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminLeadsAssignRoute = ApiAdminLeadsAssignRouteImport.update({
+  id: '/api/admin/leads/assign',
+  path: '/api/admin/leads/assign',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLeadsFreeSewaPendingCountRoute =
+  ApiAdminLeadsFreeSewaPendingCountRouteImport.update({
+    id: '/api/admin/leads/free-sewa-pending-count',
+    path: '/api/admin/leads/free-sewa-pending-count',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminLeadsRoutingRoute = ApiAdminLeadsRoutingRouteImport.update({
+  id: '/api/admin/leads/routing',
+  path: '/api/admin/leads/routing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLeadsSweepRoute = ApiAdminLeadsSweepRouteImport.update({
+  id: '/api/admin/leads/sweep',
+  path: '/api/admin/leads/sweep',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLeadsUploadRoute = ApiAdminLeadsUploadRouteImport.update({
+  id: '/api/admin/leads/upload',
+  path: '/api/admin/leads/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPaymentsListRoute = ApiAdminPaymentsListRouteImport.update({
+  id: '/api/admin/payments/list',
+  path: '/api/admin/payments/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPaymentsRefundRoute = ApiAdminPaymentsRefundRouteImport.update({
+  id: '/api/admin/payments/refund',
+  path: '/api/admin/payments/refund',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPerformanceAgentsRoute =
+  ApiAdminPerformanceAgentsRouteImport.update({
+    id: '/api/admin/performance/agents',
+    path: '/api/admin/performance/agents',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminPerformanceHospitalsRoute =
+  ApiAdminPerformanceHospitalsRouteImport.update({
+    id: '/api/admin/performance/hospitals',
+    path: '/api/admin/performance/hospitals',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminPerformanceTelecallersRoute =
+  ApiAdminPerformanceTelecallersRouteImport.update({
+    id: '/api/admin/performance/telecallers',
+    path: '/api/admin/performance/telecallers',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminReportsExportRoute = ApiAdminReportsExportRouteImport.update({
+  id: '/api/admin/reports/export',
+  path: '/api/admin/reports/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminReportsMonthlyRoute = ApiAdminReportsMonthlyRouteImport.update({
+  id: '/api/admin/reports/monthly',
+  path: '/api/admin/reports/monthly',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminReportsPendingSevasRoute =
+  ApiAdminReportsPendingSevasRouteImport.update({
+    id: '/api/admin/reports/pending-sevas',
+    path: '/api/admin/reports/pending-sevas',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminReportsSubscribersByChannelRoute =
+  ApiAdminReportsSubscribersByChannelRouteImport.update({
+    id: '/api/admin/reports/subscribers-by-channel',
+    path: '/api/admin/reports/subscribers-by-channel',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminSalesAgentsCreateRoute =
+  ApiAdminSalesAgentsCreateRouteImport.update({
+    id: '/api/admin/sales-agents/create',
+    path: '/api/admin/sales-agents/create',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminSalesAgentsListRoute = ApiAdminSalesAgentsListRouteImport.update({
+  id: '/api/admin/sales-agents/list',
+  path: '/api/admin/sales-agents/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminStaffCreateStaffRoute =
+  ApiAdminStaffCreateStaffRouteImport.update({
+    id: '/api/admin/staff/create-staff',
+    path: '/api/admin/staff/create-staff',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminStaffListRoute = ApiAdminStaffListRouteImport.update({
+  id: '/api/admin/staff/list',
+  path: '/api/admin/staff/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminStaffSetRoleRoute = ApiAdminStaffSetRoleRouteImport.update({
+  id: '/api/admin/staff/set-role',
+  path: '/api/admin/staff/set-role',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminSubscriptionsReissueLinkRoute =
+  ApiAdminSubscriptionsReissueLinkRouteImport.update({
+    id: '/api/admin/subscriptions/reissue-link',
+    path: '/api/admin/subscriptions/reissue-link',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminSubscriptionsResumeRoute =
+  ApiAdminSubscriptionsResumeRouteImport.update({
+    id: '/api/admin/subscriptions/resume',
+    path: '/api/admin/subscriptions/resume',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAgentLeadsUploadRoute = ApiAgentLeadsUploadRouteImport.update({
+  id: '/api/agent/leads/upload',
+  path: '/api/agent/leads/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelecallerLeadUpdateRoute = ApiTelecallerLeadUpdateRouteImport.update({
+  id: '/update',
+  path: '/update',
+  getParentRoute: () => ApiTelecallerLeadRoute,
+} as any)
+const ApiTelecallerQueueListRoute = ApiTelecallerQueueListRouteImport.update({
+  id: '/api/telecaller/queue/list',
+  path: '/api/telecaller/queue/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappWebhookSecretRoute =
+  ApiWhatsappWebhookSecretRouteImport.update({
+    id: '/api/whatsapp/webhook/$secret',
+    path: '/api/whatsapp/webhook/$secret',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1720,123 +1720,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms-and-conditions': {
-      id: '/terms-and-conditions'
-      path: '/terms-and-conditions'
-      fullPath: '/terms-and-conditions'
-      preLoaderRoute: typeof TermsAndConditionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/telecaller': {
-      id: '/telecaller'
-      path: '/telecaller'
-      fullPath: '/telecaller'
-      preLoaderRoute: typeof TelecallerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/subscription-success': {
-      id: '/subscription-success'
-      path: '/subscription-success'
-      fullPath: '/subscription-success'
-      preLoaderRoute: typeof SubscriptionSuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sevas': {
-      id: '/sevas'
-      path: '/sevas'
-      fullPath: '/sevas'
-      preLoaderRoute: typeof SevasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/robots.txt': {
-      id: '/robots.txt'
-      path: '/robots.txt'
-      fullPath: '/robots.txt'
-      preLoaderRoute: typeof RobotsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reviews': {
-      id: '/reviews'
-      path: '/reviews'
-      fullPath: '/reviews'
-      preLoaderRoute: typeof ReviewsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/refund-policy': {
-      id: '/refund-policy'
-      path: '/refund-policy'
-      fullPath: '/refund-policy'
-      preLoaderRoute: typeof RefundPolicyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plans': {
-      id: '/plans'
-      path: '/plans'
-      fullPath: '/plans'
-      preLoaderRoute: typeof PlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-subscription': {
-      id: '/my-subscription'
-      path: '/my-subscription'
-      fullPath: '/my-subscription'
-      preLoaderRoute: typeof MySubscriptionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faq': {
-      id: '/faq'
-      path: '/faq'
-      fullPath: '/faq'
-      preLoaderRoute: typeof FaqRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/complete-profile': {
-      id: '/complete-profile'
-      path: '/complete-profile'
-      fullPath: '/complete-profile'
-      preLoaderRoute: typeof CompleteProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agent': {
-      id: '/agent'
-      path: '/agent'
-      fullPath: '/agent'
-      preLoaderRoute: typeof AgentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -1846,228 +1734,130 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/telecaller/': {
-      id: '/telecaller/'
-      path: '/'
-      fullPath: '/telecaller/'
-      preLoaderRoute: typeof TelecallerIndexRouteImport
-      parentRoute: typeof TelecallerRoute
+    '/agent': {
+      id: '/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AgentRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/agent/': {
-      id: '/agent/'
-      path: '/'
-      fullPath: '/agent/'
-      preLoaderRoute: typeof AgentIndexRouteImport
-      parentRoute: typeof AgentRoute
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/complete-profile': {
+      id: '/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof CompleteProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-subscription': {
+      id: '/my-subscription'
+      path: '/my-subscription'
+      fullPath: '/my-subscription'
+      preLoaderRoute: typeof MySubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plans': {
+      id: '/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sevas': {
+      id: '/sevas'
+      path: '/sevas'
+      fullPath: '/sevas'
+      preLoaderRoute: typeof SevasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscription-success': {
+      id: '/subscription-success'
+      path: '/subscription-success'
+      fullPath: '/subscription-success'
+      preLoaderRoute: typeof SubscriptionSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telecaller': {
+      id: '/telecaller'
+      path: '/telecaller'
+      fullPath: '/telecaller'
+      preLoaderRoute: typeof TelecallerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-and-conditions': {
+      id: '/terms-and-conditions'
+      path: '/terms-and-conditions'
+      fullPath: '/terms-and-conditions'
+      preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/telecaller/search': {
-      id: '/telecaller/search'
-      path: '/search'
-      fullPath: '/telecaller/search'
-      preLoaderRoute: typeof TelecallerSearchRouteImport
-      parentRoute: typeof TelecallerRoute
-    }
-    '/telecaller/script': {
-      id: '/telecaller/script'
-      path: '/script'
-      fullPath: '/telecaller/script'
-      preLoaderRoute: typeof TelecallerScriptRouteImport
-      parentRoute: typeof TelecallerRoute
-    }
-    '/telecaller/refer-link': {
-      id: '/telecaller/refer-link'
-      path: '/refer-link'
-      fullPath: '/telecaller/refer-link'
-      preLoaderRoute: typeof TelecallerReferLinkRouteImport
-      parentRoute: typeof TelecallerRoute
-    }
-    '/telecaller/queues': {
-      id: '/telecaller/queues'
-      path: '/queues'
-      fullPath: '/telecaller/queues'
-      preLoaderRoute: typeof TelecallerQueuesRouteImport
-      parentRoute: typeof TelecallerRoute
-    }
-    '/telecaller/new': {
-      id: '/telecaller/new'
-      path: '/new'
-      fullPath: '/telecaller/new'
-      preLoaderRoute: typeof TelecallerNewRouteImport
-      parentRoute: typeof TelecallerRoute
-    }
-    '/telecaller/my-day': {
-      id: '/telecaller/my-day'
-      path: '/my-day'
-      fullPath: '/telecaller/my-day'
-      preLoaderRoute: typeof TelecallerMyDayRouteImport
-      parentRoute: typeof TelecallerRoute
-    }
-    '/telecaller/earnings': {
-      id: '/telecaller/earnings'
-      path: '/earnings'
-      fullPath: '/telecaller/earnings'
-      preLoaderRoute: typeof TelecallerEarningsRouteImport
-      parentRoute: typeof TelecallerRoute
-    }
-    '/plan/$planId': {
-      id: '/plan/$planId'
-      path: '/plan/$planId'
-      fullPath: '/plan/$planId'
-      preLoaderRoute: typeof PlanPlanIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout/$planId': {
-      id: '/checkout/$planId'
-      path: '/checkout/$planId'
-      fullPath: '/checkout/$planId'
-      preLoaderRoute: typeof CheckoutPlanIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog/$slug': {
-      id: '/blog/$slug'
-      path: '/$slug'
-      fullPath: '/blog/$slug'
-      preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof BlogRoute
-    }
-    '/agent/my-leads': {
-      id: '/agent/my-leads'
-      path: '/my-leads'
-      fullPath: '/agent/my-leads'
-      preLoaderRoute: typeof AgentMyLeadsRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/admin/subscribers': {
-      id: '/admin/subscribers'
-      path: '/subscribers'
-      fullPath: '/admin/subscribers'
-      preLoaderRoute: typeof AdminSubscribersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/staff': {
-      id: '/admin/staff'
-      path: '/staff'
-      fullPath: '/admin/staff'
-      preLoaderRoute: typeof AdminStaffRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/signups': {
-      id: '/admin/signups'
-      path: '/signups'
-      fullPath: '/admin/signups'
-      preLoaderRoute: typeof AdminSignupsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/seo': {
-      id: '/admin/seo'
-      path: '/seo'
-      fullPath: '/admin/seo'
-      preLoaderRoute: typeof AdminSeoRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/sankalp-lists': {
-      id: '/admin/sankalp-lists'
-      path: '/sankalp-lists'
-      fullPath: '/admin/sankalp-lists'
-      preLoaderRoute: typeof AdminSankalpListsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/routing': {
-      id: '/admin/routing'
-      path: '/routing'
-      fullPath: '/admin/routing'
-      preLoaderRoute: typeof AdminRoutingRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/proof-upload': {
-      id: '/admin/proof-upload'
-      path: '/proof-upload'
-      fullPath: '/admin/proof-upload'
-      preLoaderRoute: typeof AdminProofUploadRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/plans-sevas': {
-      id: '/admin/plans-sevas'
-      path: '/plans-sevas'
-      fullPath: '/admin/plans-sevas'
-      preLoaderRoute: typeof AdminPlansSevasRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/performance': {
-      id: '/admin/performance'
-      path: '/performance'
-      fullPath: '/admin/performance'
-      preLoaderRoute: typeof AdminPerformanceRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/payments': {
-      id: '/admin/payments'
-      path: '/payments'
-      fullPath: '/admin/payments'
-      preLoaderRoute: typeof AdminPaymentsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/overview': {
-      id: '/admin/overview'
-      path: '/overview'
-      fullPath: '/admin/overview'
-      preLoaderRoute: typeof AdminOverviewRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/leads': {
-      id: '/admin/leads'
-      path: '/leads'
-      fullPath: '/admin/leads'
-      preLoaderRoute: typeof AdminLeadsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/images': {
-      id: '/admin/images'
-      path: '/images'
-      fullPath: '/admin/images'
-      preLoaderRoute: typeof AdminImagesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/content-studio': {
-      id: '/admin/content-studio'
-      path: '/content-studio'
-      fullPath: '/admin/content-studio'
-      preLoaderRoute: typeof AdminContentStudioRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/commissions': {
-      id: '/admin/commissions'
-      path: '/commissions'
-      fullPath: '/admin/commissions'
-      preLoaderRoute: typeof AdminCommissionsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/audit-log': {
-      id: '/admin/audit-log'
-      path: '/audit-log'
-      fullPath: '/admin/audit-log'
-      preLoaderRoute: typeof AdminAuditLogRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/ashirwad-patra': {
@@ -2077,263 +1867,228 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAshirwadPatraRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/telecaller/queue/$queueKey': {
-      id: '/telecaller/queue/$queueKey'
-      path: '/queue/$queueKey'
-      fullPath: '/telecaller/queue/$queueKey'
-      preLoaderRoute: typeof TelecallerQueueQueueKeyRouteImport
+    '/admin/audit-log': {
+      id: '/admin/audit-log'
+      path: '/audit-log'
+      fullPath: '/admin/audit-log'
+      preLoaderRoute: typeof AdminAuditLogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/commissions': {
+      id: '/admin/commissions'
+      path: '/commissions'
+      fullPath: '/admin/commissions'
+      preLoaderRoute: typeof AdminCommissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/content-studio': {
+      id: '/admin/content-studio'
+      path: '/content-studio'
+      fullPath: '/admin/content-studio'
+      preLoaderRoute: typeof AdminContentStudioRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/images': {
+      id: '/admin/images'
+      path: '/images'
+      fullPath: '/admin/images'
+      preLoaderRoute: typeof AdminImagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/leads': {
+      id: '/admin/leads'
+      path: '/leads'
+      fullPath: '/admin/leads'
+      preLoaderRoute: typeof AdminLeadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/overview': {
+      id: '/admin/overview'
+      path: '/overview'
+      fullPath: '/admin/overview'
+      preLoaderRoute: typeof AdminOverviewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/performance': {
+      id: '/admin/performance'
+      path: '/performance'
+      fullPath: '/admin/performance'
+      preLoaderRoute: typeof AdminPerformanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/plans-sevas': {
+      id: '/admin/plans-sevas'
+      path: '/plans-sevas'
+      fullPath: '/admin/plans-sevas'
+      preLoaderRoute: typeof AdminPlansSevasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/proof-upload': {
+      id: '/admin/proof-upload'
+      path: '/proof-upload'
+      fullPath: '/admin/proof-upload'
+      preLoaderRoute: typeof AdminProofUploadRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/routing': {
+      id: '/admin/routing'
+      path: '/routing'
+      fullPath: '/admin/routing'
+      preLoaderRoute: typeof AdminRoutingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sankalp-lists': {
+      id: '/admin/sankalp-lists'
+      path: '/sankalp-lists'
+      fullPath: '/admin/sankalp-lists'
+      preLoaderRoute: typeof AdminSankalpListsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/seo': {
+      id: '/admin/seo'
+      path: '/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AdminSeoRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/signups': {
+      id: '/admin/signups'
+      path: '/signups'
+      fullPath: '/admin/signups'
+      preLoaderRoute: typeof AdminSignupsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/staff': {
+      id: '/admin/staff'
+      path: '/staff'
+      fullPath: '/admin/staff'
+      preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/subscribers': {
+      id: '/admin/subscribers'
+      path: '/subscribers'
+      fullPath: '/admin/subscribers'
+      preLoaderRoute: typeof AdminSubscribersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/agent/': {
+      id: '/agent/'
+      path: '/'
+      fullPath: '/agent/'
+      preLoaderRoute: typeof AgentIndexRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/my-leads': {
+      id: '/agent/my-leads'
+      path: '/my-leads'
+      fullPath: '/agent/my-leads'
+      preLoaderRoute: typeof AgentMyLeadsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/checkout/$planId': {
+      id: '/checkout/$planId'
+      path: '/checkout/$planId'
+      fullPath: '/checkout/$planId'
+      preLoaderRoute: typeof CheckoutPlanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan/$planId': {
+      id: '/plan/$planId'
+      path: '/plan/$planId'
+      fullPath: '/plan/$planId'
+      preLoaderRoute: typeof PlanPlanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telecaller/': {
+      id: '/telecaller/'
+      path: '/'
+      fullPath: '/telecaller/'
+      preLoaderRoute: typeof TelecallerIndexRouteImport
       parentRoute: typeof TelecallerRoute
     }
-    '/telecaller/person/$subscriptionId': {
-      id: '/telecaller/person/$subscriptionId'
-      path: '/person/$subscriptionId'
-      fullPath: '/telecaller/person/$subscriptionId'
-      preLoaderRoute: typeof TelecallerPersonSubscriptionIdRouteImport
+    '/telecaller/earnings': {
+      id: '/telecaller/earnings'
+      path: '/earnings'
+      fullPath: '/telecaller/earnings'
+      preLoaderRoute: typeof TelecallerEarningsRouteImport
       parentRoute: typeof TelecallerRoute
     }
-    '/telecaller/lead/$leadId': {
-      id: '/telecaller/lead/$leadId'
-      path: '/lead/$leadId'
-      fullPath: '/telecaller/lead/$leadId'
-      preLoaderRoute: typeof TelecallerLeadLeadIdRouteImport
+    '/telecaller/my-day': {
+      id: '/telecaller/my-day'
+      path: '/my-day'
+      fullPath: '/telecaller/my-day'
+      preLoaderRoute: typeof TelecallerMyDayRouteImport
       parentRoute: typeof TelecallerRoute
     }
-    '/api/telecaller/send-payment-link': {
-      id: '/api/telecaller/send-payment-link'
-      path: '/api/telecaller/send-payment-link'
-      fullPath: '/api/telecaller/send-payment-link'
-      preLoaderRoute: typeof ApiTelecallerSendPaymentLinkRouteImport
-      parentRoute: typeof rootRouteImport
+    '/telecaller/new': {
+      id: '/telecaller/new'
+      path: '/new'
+      fullPath: '/telecaller/new'
+      preLoaderRoute: typeof TelecallerNewRouteImport
+      parentRoute: typeof TelecallerRoute
     }
-    '/api/telecaller/search': {
-      id: '/api/telecaller/search'
-      path: '/api/telecaller/search'
-      fullPath: '/api/telecaller/search'
-      preLoaderRoute: typeof ApiTelecallerSearchRouteImport
-      parentRoute: typeof rootRouteImport
+    '/telecaller/queues': {
+      id: '/telecaller/queues'
+      path: '/queues'
+      fullPath: '/telecaller/queues'
+      preLoaderRoute: typeof TelecallerQueuesRouteImport
+      parentRoute: typeof TelecallerRoute
     }
-    '/api/telecaller/referral-link': {
-      id: '/api/telecaller/referral-link'
-      path: '/api/telecaller/referral-link'
-      fullPath: '/api/telecaller/referral-link'
-      preLoaderRoute: typeof ApiTelecallerReferralLinkRouteImport
-      parentRoute: typeof rootRouteImport
+    '/telecaller/refer-link': {
+      id: '/telecaller/refer-link'
+      path: '/refer-link'
+      fullPath: '/telecaller/refer-link'
+      preLoaderRoute: typeof TelecallerReferLinkRouteImport
+      parentRoute: typeof TelecallerRoute
     }
-    '/api/telecaller/queues': {
-      id: '/api/telecaller/queues'
-      path: '/api/telecaller/queues'
-      fullPath: '/api/telecaller/queues'
-      preLoaderRoute: typeof ApiTelecallerQueuesRouteImport
-      parentRoute: typeof rootRouteImport
+    '/telecaller/script': {
+      id: '/telecaller/script'
+      path: '/script'
+      fullPath: '/telecaller/script'
+      preLoaderRoute: typeof TelecallerScriptRouteImport
+      parentRoute: typeof TelecallerRoute
     }
-    '/api/telecaller/proof-resend': {
-      id: '/api/telecaller/proof-resend'
-      path: '/api/telecaller/proof-resend'
-      fullPath: '/api/telecaller/proof-resend'
-      preLoaderRoute: typeof ApiTelecallerProofResendRouteImport
-      parentRoute: typeof rootRouteImport
+    '/telecaller/search': {
+      id: '/telecaller/search'
+      path: '/search'
+      fullPath: '/telecaller/search'
+      preLoaderRoute: typeof TelecallerSearchRouteImport
+      parentRoute: typeof TelecallerRoute
     }
-    '/api/telecaller/profile': {
-      id: '/api/telecaller/profile'
-      path: '/api/telecaller/profile'
-      fullPath: '/api/telecaller/profile'
-      preLoaderRoute: typeof ApiTelecallerProfileRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/pandit/$batchId': {
+      id: '/admin/pandit/$batchId'
+      path: '/pandit/$batchId'
+      fullPath: '/admin/pandit/$batchId'
+      preLoaderRoute: typeof AdminPanditBatchIdRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/api/telecaller/plans': {
-      id: '/api/telecaller/plans'
-      path: '/api/telecaller/plans'
-      fullPath: '/api/telecaller/plans'
-      preLoaderRoute: typeof ApiTelecallerPlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/person': {
-      id: '/api/telecaller/person'
-      path: '/api/telecaller/person'
-      fullPath: '/api/telecaller/person'
-      preLoaderRoute: typeof ApiTelecallerPersonRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/my-day': {
-      id: '/api/telecaller/my-day'
-      path: '/api/telecaller/my-day'
-      fullPath: '/api/telecaller/my-day'
-      preLoaderRoute: typeof ApiTelecallerMyDayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/mark-seva-done': {
-      id: '/api/telecaller/mark-seva-done'
-      path: '/api/telecaller/mark-seva-done'
-      fullPath: '/api/telecaller/mark-seva-done'
-      preLoaderRoute: typeof ApiTelecallerMarkSevaDoneRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/log-call': {
-      id: '/api/telecaller/log-call'
-      path: '/api/telecaller/log-call'
-      fullPath: '/api/telecaller/log-call'
-      preLoaderRoute: typeof ApiTelecallerLogCallRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/lead': {
-      id: '/api/telecaller/lead'
-      path: '/api/telecaller/lead'
-      fullPath: '/api/telecaller/lead'
-      preLoaderRoute: typeof ApiTelecallerLeadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/family-members': {
-      id: '/api/telecaller/family-members'
-      path: '/api/telecaller/family-members'
-      fullPath: '/api/telecaller/family-members'
-      preLoaderRoute: typeof ApiTelecallerFamilyMembersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/earnings': {
-      id: '/api/telecaller/earnings'
-      path: '/api/telecaller/earnings'
-      fullPath: '/api/telecaller/earnings'
-      preLoaderRoute: typeof ApiTelecallerEarningsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/create-lead': {
-      id: '/api/telecaller/create-lead'
-      path: '/api/telecaller/create-lead'
-      fullPath: '/api/telecaller/create-lead'
-      preLoaderRoute: typeof ApiTelecallerCreateLeadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/telecaller/agents': {
-      id: '/api/telecaller/agents'
-      path: '/api/telecaller/agents'
-      fullPath: '/api/telecaller/agents'
-      preLoaderRoute: typeof ApiTelecallerAgentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/subscriptions/create-checkout': {
-      id: '/api/subscriptions/create-checkout'
-      path: '/api/subscriptions/create-checkout'
-      fullPath: '/api/subscriptions/create-checkout'
-      preLoaderRoute: typeof ApiSubscriptionsCreateCheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/sankalp/generate-batch': {
-      id: '/api/sankalp/generate-batch'
-      path: '/api/sankalp/generate-batch'
-      fullPath: '/api/sankalp/generate-batch'
-      preLoaderRoute: typeof ApiSankalpGenerateBatchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/profile/upsert-identity': {
-      id: '/api/profile/upsert-identity'
-      path: '/api/profile/upsert-identity'
-      fullPath: '/api/profile/upsert-identity'
-      preLoaderRoute: typeof ApiProfileUpsertIdentityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/profile/identity': {
-      id: '/api/profile/identity'
-      path: '/api/profile/identity'
-      fullPath: '/api/profile/identity'
-      preLoaderRoute: typeof ApiProfileIdentityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/profile/family-members': {
-      id: '/api/profile/family-members'
-      path: '/api/profile/family-members'
-      fullPath: '/api/profile/family-members'
-      preLoaderRoute: typeof ApiProfileFamilyMembersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/profile/address': {
-      id: '/api/profile/address'
-      path: '/api/profile/address'
-      fullPath: '/api/profile/address'
-      preLoaderRoute: typeof ApiProfileAddressRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/payments/webhook': {
-      id: '/api/payments/webhook'
-      path: '/api/payments/webhook'
-      fullPath: '/api/payments/webhook'
-      preLoaderRoute: typeof ApiPaymentsWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/cron/send-notifications': {
-      id: '/api/cron/send-notifications'
-      path: '/api/cron/send-notifications'
-      fullPath: '/api/cron/send-notifications'
-      preLoaderRoute: typeof ApiCronSendNotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/cron/retry-meta-capi': {
-      id: '/api/cron/retry-meta-capi'
-      path: '/api/cron/retry-meta-capi'
-      fullPath: '/api/cron/retry-meta-capi'
-      preLoaderRoute: typeof ApiCronRetryMetaCapiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/cron/renew-mandates': {
-      id: '/api/cron/renew-mandates'
-      path: '/api/cron/renew-mandates'
-      fullPath: '/api/cron/renew-mandates'
-      preLoaderRoute: typeof ApiCronRenewMandatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/cron/publish-content': {
-      id: '/api/cron/publish-content'
-      path: '/api/cron/publish-content'
-      fullPath: '/api/cron/publish-content'
-      preLoaderRoute: typeof ApiCronPublishContentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/coupons/validate': {
-      id: '/api/coupons/validate'
-      path: '/api/coupons/validate'
-      fullPath: '/api/coupons/validate'
-      preLoaderRoute: typeof ApiCouponsValidateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/cloudinary/sign-upload': {
-      id: '/api/cloudinary/sign-upload'
-      path: '/api/cloudinary/sign-upload'
-      fullPath: '/api/cloudinary/sign-upload'
-      preLoaderRoute: typeof ApiCloudinarySignUploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/request-otp': {
-      id: '/api/auth/request-otp'
-      path: '/api/auth/request-otp'
-      fullPath: '/api/auth/request-otp'
-      preLoaderRoute: typeof ApiAuthRequestOtpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/reconcile-profile': {
-      id: '/api/auth/reconcile-profile'
-      path: '/api/auth/reconcile-profile'
-      fullPath: '/api/auth/reconcile-profile'
-      preLoaderRoute: typeof ApiAuthReconcileProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/complete-google-profile': {
-      id: '/api/auth/complete-google-profile'
-      path: '/api/auth/complete-google-profile'
-      fullPath: '/api/auth/complete-google-profile'
-      preLoaderRoute: typeof ApiAuthCompleteGoogleProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/agent/my-leads': {
-      id: '/api/agent/my-leads'
-      path: '/api/agent/my-leads'
-      fullPath: '/api/agent/my-leads'
-      preLoaderRoute: typeof ApiAgentMyLeadsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/signups-list': {
-      id: '/api/admin/signups-list'
-      path: '/api/admin/signups-list'
-      fullPath: '/api/admin/signups-list'
-      preLoaderRoute: typeof ApiAdminSignupsListRouteImport
+    '/api/admin/login-method-counts': {
+      id: '/api/admin/login-method-counts'
+      path: '/api/admin/login-method-counts'
+      fullPath: '/api/admin/login-method-counts'
+      preLoaderRoute: typeof ApiAdminLoginMethodCountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/overview-financials': {
@@ -2343,284 +2098,270 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminOverviewFinancialsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/login-method-counts': {
-      id: '/api/admin/login-method-counts'
-      path: '/api/admin/login-method-counts'
-      fullPath: '/api/admin/login-method-counts'
-      preLoaderRoute: typeof ApiAdminLoginMethodCountsRouteImport
+    '/api/admin/signups-list': {
+      id: '/api/admin/signups-list'
+      path: '/api/admin/signups-list'
+      fullPath: '/api/admin/signups-list'
+      preLoaderRoute: typeof ApiAdminSignupsListRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/pandit/$batchId': {
-      id: '/admin/pandit/$batchId'
-      path: '/pandit/$batchId'
-      fullPath: '/admin/pandit/$batchId'
-      preLoaderRoute: typeof AdminPanditBatchIdRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/api/whatsapp/webhook/$secret': {
-      id: '/api/whatsapp/webhook/$secret'
-      path: '/api/whatsapp/webhook/$secret'
-      fullPath: '/api/whatsapp/webhook/$secret'
-      preLoaderRoute: typeof ApiWhatsappWebhookSecretRouteImport
+    '/api/agent/my-leads': {
+      id: '/api/agent/my-leads'
+      path: '/api/agent/my-leads'
+      fullPath: '/api/agent/my-leads'
+      preLoaderRoute: typeof ApiAgentMyLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/telecaller/queue/list': {
-      id: '/api/telecaller/queue/list'
-      path: '/api/telecaller/queue/list'
-      fullPath: '/api/telecaller/queue/list'
-      preLoaderRoute: typeof ApiTelecallerQueueListRouteImport
+    '/api/auth/complete-google-profile': {
+      id: '/api/auth/complete-google-profile'
+      path: '/api/auth/complete-google-profile'
+      fullPath: '/api/auth/complete-google-profile'
+      preLoaderRoute: typeof ApiAuthCompleteGoogleProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/telecaller/lead/update': {
-      id: '/api/telecaller/lead/update'
-      path: '/update'
-      fullPath: '/api/telecaller/lead/update'
-      preLoaderRoute: typeof ApiTelecallerLeadUpdateRouteImport
-      parentRoute: typeof ApiTelecallerLeadRoute
-    }
-    '/api/agent/leads/upload': {
-      id: '/api/agent/leads/upload'
-      path: '/api/agent/leads/upload'
-      fullPath: '/api/agent/leads/upload'
-      preLoaderRoute: typeof ApiAgentLeadsUploadRouteImport
+    '/api/auth/reconcile-profile': {
+      id: '/api/auth/reconcile-profile'
+      path: '/api/auth/reconcile-profile'
+      fullPath: '/api/auth/reconcile-profile'
+      preLoaderRoute: typeof ApiAuthReconcileProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/subscriptions/resume': {
-      id: '/api/admin/subscriptions/resume'
-      path: '/api/admin/subscriptions/resume'
-      fullPath: '/api/admin/subscriptions/resume'
-      preLoaderRoute: typeof ApiAdminSubscriptionsResumeRouteImport
+    '/api/auth/request-otp': {
+      id: '/api/auth/request-otp'
+      path: '/api/auth/request-otp'
+      fullPath: '/api/auth/request-otp'
+      preLoaderRoute: typeof ApiAuthRequestOtpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/subscriptions/reissue-link': {
-      id: '/api/admin/subscriptions/reissue-link'
-      path: '/api/admin/subscriptions/reissue-link'
-      fullPath: '/api/admin/subscriptions/reissue-link'
-      preLoaderRoute: typeof ApiAdminSubscriptionsReissueLinkRouteImport
+    '/api/cloudinary/sign-upload': {
+      id: '/api/cloudinary/sign-upload'
+      path: '/api/cloudinary/sign-upload'
+      fullPath: '/api/cloudinary/sign-upload'
+      preLoaderRoute: typeof ApiCloudinarySignUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/staff/set-role': {
-      id: '/api/admin/staff/set-role'
-      path: '/api/admin/staff/set-role'
-      fullPath: '/api/admin/staff/set-role'
-      preLoaderRoute: typeof ApiAdminStaffSetRoleRouteImport
+    '/api/coupons/validate': {
+      id: '/api/coupons/validate'
+      path: '/api/coupons/validate'
+      fullPath: '/api/coupons/validate'
+      preLoaderRoute: typeof ApiCouponsValidateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/staff/list': {
-      id: '/api/admin/staff/list'
-      path: '/api/admin/staff/list'
-      fullPath: '/api/admin/staff/list'
-      preLoaderRoute: typeof ApiAdminStaffListRouteImport
+    '/api/cron/publish-content': {
+      id: '/api/cron/publish-content'
+      path: '/api/cron/publish-content'
+      fullPath: '/api/cron/publish-content'
+      preLoaderRoute: typeof ApiCronPublishContentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/staff/create-staff': {
-      id: '/api/admin/staff/create-staff'
-      path: '/api/admin/staff/create-staff'
-      fullPath: '/api/admin/staff/create-staff'
-      preLoaderRoute: typeof ApiAdminStaffCreateStaffRouteImport
+    '/api/cron/renew-mandates': {
+      id: '/api/cron/renew-mandates'
+      path: '/api/cron/renew-mandates'
+      fullPath: '/api/cron/renew-mandates'
+      preLoaderRoute: typeof ApiCronRenewMandatesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/sales-agents/list': {
-      id: '/api/admin/sales-agents/list'
-      path: '/api/admin/sales-agents/list'
-      fullPath: '/api/admin/sales-agents/list'
-      preLoaderRoute: typeof ApiAdminSalesAgentsListRouteImport
+    '/api/cron/retry-meta-capi': {
+      id: '/api/cron/retry-meta-capi'
+      path: '/api/cron/retry-meta-capi'
+      fullPath: '/api/cron/retry-meta-capi'
+      preLoaderRoute: typeof ApiCronRetryMetaCapiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/sales-agents/create': {
-      id: '/api/admin/sales-agents/create'
-      path: '/api/admin/sales-agents/create'
-      fullPath: '/api/admin/sales-agents/create'
-      preLoaderRoute: typeof ApiAdminSalesAgentsCreateRouteImport
+    '/api/cron/send-notifications': {
+      id: '/api/cron/send-notifications'
+      path: '/api/cron/send-notifications'
+      fullPath: '/api/cron/send-notifications'
+      preLoaderRoute: typeof ApiCronSendNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/reports/subscribers-by-channel': {
-      id: '/api/admin/reports/subscribers-by-channel'
-      path: '/api/admin/reports/subscribers-by-channel'
-      fullPath: '/api/admin/reports/subscribers-by-channel'
-      preLoaderRoute: typeof ApiAdminReportsSubscribersByChannelRouteImport
+    '/api/payments/webhook': {
+      id: '/api/payments/webhook'
+      path: '/api/payments/webhook'
+      fullPath: '/api/payments/webhook'
+      preLoaderRoute: typeof ApiPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/reports/pending-sevas': {
-      id: '/api/admin/reports/pending-sevas'
-      path: '/api/admin/reports/pending-sevas'
-      fullPath: '/api/admin/reports/pending-sevas'
-      preLoaderRoute: typeof ApiAdminReportsPendingSevasRouteImport
+    '/api/profile/address': {
+      id: '/api/profile/address'
+      path: '/api/profile/address'
+      fullPath: '/api/profile/address'
+      preLoaderRoute: typeof ApiProfileAddressRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/reports/monthly': {
-      id: '/api/admin/reports/monthly'
-      path: '/api/admin/reports/monthly'
-      fullPath: '/api/admin/reports/monthly'
-      preLoaderRoute: typeof ApiAdminReportsMonthlyRouteImport
+    '/api/profile/family-members': {
+      id: '/api/profile/family-members'
+      path: '/api/profile/family-members'
+      fullPath: '/api/profile/family-members'
+      preLoaderRoute: typeof ApiProfileFamilyMembersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/reports/export': {
-      id: '/api/admin/reports/export'
-      path: '/api/admin/reports/export'
-      fullPath: '/api/admin/reports/export'
-      preLoaderRoute: typeof ApiAdminReportsExportRouteImport
+    '/api/profile/identity': {
+      id: '/api/profile/identity'
+      path: '/api/profile/identity'
+      fullPath: '/api/profile/identity'
+      preLoaderRoute: typeof ApiProfileIdentityRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/performance/telecallers': {
-      id: '/api/admin/performance/telecallers'
-      path: '/api/admin/performance/telecallers'
-      fullPath: '/api/admin/performance/telecallers'
-      preLoaderRoute: typeof ApiAdminPerformanceTelecallersRouteImport
+    '/api/profile/upsert-identity': {
+      id: '/api/profile/upsert-identity'
+      path: '/api/profile/upsert-identity'
+      fullPath: '/api/profile/upsert-identity'
+      preLoaderRoute: typeof ApiProfileUpsertIdentityRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/performance/hospitals': {
-      id: '/api/admin/performance/hospitals'
-      path: '/api/admin/performance/hospitals'
-      fullPath: '/api/admin/performance/hospitals'
-      preLoaderRoute: typeof ApiAdminPerformanceHospitalsRouteImport
+    '/api/sankalp/generate-batch': {
+      id: '/api/sankalp/generate-batch'
+      path: '/api/sankalp/generate-batch'
+      fullPath: '/api/sankalp/generate-batch'
+      preLoaderRoute: typeof ApiSankalpGenerateBatchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/performance/agents': {
-      id: '/api/admin/performance/agents'
-      path: '/api/admin/performance/agents'
-      fullPath: '/api/admin/performance/agents'
-      preLoaderRoute: typeof ApiAdminPerformanceAgentsRouteImport
+    '/api/subscriptions/create-checkout': {
+      id: '/api/subscriptions/create-checkout'
+      path: '/api/subscriptions/create-checkout'
+      fullPath: '/api/subscriptions/create-checkout'
+      preLoaderRoute: typeof ApiSubscriptionsCreateCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/payments/refund': {
-      id: '/api/admin/payments/refund'
-      path: '/api/admin/payments/refund'
-      fullPath: '/api/admin/payments/refund'
-      preLoaderRoute: typeof ApiAdminPaymentsRefundRouteImport
+    '/api/telecaller/agents': {
+      id: '/api/telecaller/agents'
+      path: '/api/telecaller/agents'
+      fullPath: '/api/telecaller/agents'
+      preLoaderRoute: typeof ApiTelecallerAgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/payments/list': {
-      id: '/api/admin/payments/list'
-      path: '/api/admin/payments/list'
-      fullPath: '/api/admin/payments/list'
-      preLoaderRoute: typeof ApiAdminPaymentsListRouteImport
+    '/api/telecaller/create-lead': {
+      id: '/api/telecaller/create-lead'
+      path: '/api/telecaller/create-lead'
+      fullPath: '/api/telecaller/create-lead'
+      preLoaderRoute: typeof ApiTelecallerCreateLeadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/leads/upload': {
-      id: '/api/admin/leads/upload'
-      path: '/api/admin/leads/upload'
-      fullPath: '/api/admin/leads/upload'
-      preLoaderRoute: typeof ApiAdminLeadsUploadRouteImport
+    '/api/telecaller/earnings': {
+      id: '/api/telecaller/earnings'
+      path: '/api/telecaller/earnings'
+      fullPath: '/api/telecaller/earnings'
+      preLoaderRoute: typeof ApiTelecallerEarningsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/leads/sweep': {
-      id: '/api/admin/leads/sweep'
-      path: '/api/admin/leads/sweep'
-      fullPath: '/api/admin/leads/sweep'
-      preLoaderRoute: typeof ApiAdminLeadsSweepRouteImport
+    '/api/telecaller/family-members': {
+      id: '/api/telecaller/family-members'
+      path: '/api/telecaller/family-members'
+      fullPath: '/api/telecaller/family-members'
+      preLoaderRoute: typeof ApiTelecallerFamilyMembersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/leads/routing': {
-      id: '/api/admin/leads/routing'
-      path: '/api/admin/leads/routing'
-      fullPath: '/api/admin/leads/routing'
-      preLoaderRoute: typeof ApiAdminLeadsRoutingRouteImport
+    '/api/telecaller/lead': {
+      id: '/api/telecaller/lead'
+      path: '/api/telecaller/lead'
+      fullPath: '/api/telecaller/lead'
+      preLoaderRoute: typeof ApiTelecallerLeadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/leads/free-sewa-pending-count': {
-      id: '/api/admin/leads/free-sewa-pending-count'
-      path: '/api/admin/leads/free-sewa-pending-count'
-      fullPath: '/api/admin/leads/free-sewa-pending-count'
-      preLoaderRoute: typeof ApiAdminLeadsFreeSewaPendingCountRouteImport
+    '/api/telecaller/log-call': {
+      id: '/api/telecaller/log-call'
+      path: '/api/telecaller/log-call'
+      fullPath: '/api/telecaller/log-call'
+      preLoaderRoute: typeof ApiTelecallerLogCallRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/leads/assign': {
-      id: '/api/admin/leads/assign'
-      path: '/api/admin/leads/assign'
-      fullPath: '/api/admin/leads/assign'
-      preLoaderRoute: typeof ApiAdminLeadsAssignRouteImport
+    '/api/telecaller/mark-seva-done': {
+      id: '/api/telecaller/mark-seva-done'
+      path: '/api/telecaller/mark-seva-done'
+      fullPath: '/api/telecaller/mark-seva-done'
+      preLoaderRoute: typeof ApiTelecallerMarkSevaDoneRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/hospitals/reallot': {
-      id: '/api/admin/hospitals/reallot'
-      path: '/api/admin/hospitals/reallot'
-      fullPath: '/api/admin/hospitals/reallot'
-      preLoaderRoute: typeof ApiAdminHospitalsReallotRouteImport
+    '/api/telecaller/my-day': {
+      id: '/api/telecaller/my-day'
+      path: '/api/telecaller/my-day'
+      fullPath: '/api/telecaller/my-day'
+      preLoaderRoute: typeof ApiTelecallerMyDayRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/hospitals/list': {
-      id: '/api/admin/hospitals/list'
-      path: '/api/admin/hospitals/list'
-      fullPath: '/api/admin/hospitals/list'
-      preLoaderRoute: typeof ApiAdminHospitalsListRouteImport
+    '/api/telecaller/person': {
+      id: '/api/telecaller/person'
+      path: '/api/telecaller/person'
+      fullPath: '/api/telecaller/person'
+      preLoaderRoute: typeof ApiTelecallerPersonRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/hospitals/create': {
-      id: '/api/admin/hospitals/create'
-      path: '/api/admin/hospitals/create'
-      fullPath: '/api/admin/hospitals/create'
-      preLoaderRoute: typeof ApiAdminHospitalsCreateRouteImport
+    '/api/telecaller/plans': {
+      id: '/api/telecaller/plans'
+      path: '/api/telecaller/plans'
+      fullPath: '/api/telecaller/plans'
+      preLoaderRoute: typeof ApiTelecallerPlansRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/content/update-status': {
-      id: '/api/admin/content/update-status'
-      path: '/api/admin/content/update-status'
-      fullPath: '/api/admin/content/update-status'
-      preLoaderRoute: typeof ApiAdminContentUpdateStatusRouteImport
+    '/api/telecaller/profile': {
+      id: '/api/telecaller/profile'
+      path: '/api/telecaller/profile'
+      fullPath: '/api/telecaller/profile'
+      preLoaderRoute: typeof ApiTelecallerProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/content/strategy': {
-      id: '/api/admin/content/strategy'
-      path: '/api/admin/content/strategy'
-      fullPath: '/api/admin/content/strategy'
-      preLoaderRoute: typeof ApiAdminContentStrategyRouteImport
+    '/api/telecaller/proof-resend': {
+      id: '/api/telecaller/proof-resend'
+      path: '/api/telecaller/proof-resend'
+      fullPath: '/api/telecaller/proof-resend'
+      preLoaderRoute: typeof ApiTelecallerProofResendRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/content/set-image': {
-      id: '/api/admin/content/set-image'
-      path: '/api/admin/content/set-image'
-      fullPath: '/api/admin/content/set-image'
-      preLoaderRoute: typeof ApiAdminContentSetImageRouteImport
+    '/api/telecaller/queues': {
+      id: '/api/telecaller/queues'
+      path: '/api/telecaller/queues'
+      fullPath: '/api/telecaller/queues'
+      preLoaderRoute: typeof ApiTelecallerQueuesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/content/save': {
-      id: '/api/admin/content/save'
-      path: '/api/admin/content/save'
-      fullPath: '/api/admin/content/save'
-      preLoaderRoute: typeof ApiAdminContentSaveRouteImport
+    '/api/telecaller/referral-link': {
+      id: '/api/telecaller/referral-link'
+      path: '/api/telecaller/referral-link'
+      fullPath: '/api/telecaller/referral-link'
+      preLoaderRoute: typeof ApiTelecallerReferralLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/content/publish': {
-      id: '/api/admin/content/publish'
-      path: '/api/admin/content/publish'
-      fullPath: '/api/admin/content/publish'
-      preLoaderRoute: typeof ApiAdminContentPublishRouteImport
+    '/api/telecaller/search': {
+      id: '/api/telecaller/search'
+      path: '/api/telecaller/search'
+      fullPath: '/api/telecaller/search'
+      preLoaderRoute: typeof ApiTelecallerSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/content/list': {
-      id: '/api/admin/content/list'
-      path: '/api/admin/content/list'
-      fullPath: '/api/admin/content/list'
-      preLoaderRoute: typeof ApiAdminContentListRouteImport
+    '/api/telecaller/send-payment-link': {
+      id: '/api/telecaller/send-payment-link'
+      path: '/api/telecaller/send-payment-link'
+      fullPath: '/api/telecaller/send-payment-link'
+      preLoaderRoute: typeof ApiTelecallerSendPaymentLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/content/generate': {
-      id: '/api/admin/content/generate'
-      path: '/api/admin/content/generate'
-      fullPath: '/api/admin/content/generate'
-      preLoaderRoute: typeof ApiAdminContentGenerateRouteImport
-      parentRoute: typeof rootRouteImport
+    '/telecaller/lead/$leadId': {
+      id: '/telecaller/lead/$leadId'
+      path: '/lead/$leadId'
+      fullPath: '/telecaller/lead/$leadId'
+      preLoaderRoute: typeof TelecallerLeadLeadIdRouteImport
+      parentRoute: typeof TelecallerRoute
     }
-    '/api/admin/content/analyze': {
-      id: '/api/admin/content/analyze'
-      path: '/api/admin/content/analyze'
-      fullPath: '/api/admin/content/analyze'
-      preLoaderRoute: typeof ApiAdminContentAnalyzeRouteImport
-      parentRoute: typeof rootRouteImport
+    '/telecaller/person/$subscriptionId': {
+      id: '/telecaller/person/$subscriptionId'
+      path: '/person/$subscriptionId'
+      fullPath: '/telecaller/person/$subscriptionId'
+      preLoaderRoute: typeof TelecallerPersonSubscriptionIdRouteImport
+      parentRoute: typeof TelecallerRoute
     }
-    '/api/admin/commissions/reconcile': {
-      id: '/api/admin/commissions/reconcile'
-      path: '/api/admin/commissions/reconcile'
-      fullPath: '/api/admin/commissions/reconcile'
-      preLoaderRoute: typeof ApiAdminCommissionsReconcileRouteImport
-      parentRoute: typeof rootRouteImport
+    '/telecaller/queue/$queueKey': {
+      id: '/telecaller/queue/$queueKey'
+      path: '/queue/$queueKey'
+      fullPath: '/telecaller/queue/$queueKey'
+      preLoaderRoute: typeof TelecallerQueueQueueKeyRouteImport
+      parentRoute: typeof TelecallerRoute
     }
-    '/api/admin/commissions/lock': {
-      id: '/api/admin/commissions/lock'
-      path: '/api/admin/commissions/lock'
-      fullPath: '/api/admin/commissions/lock'
-      preLoaderRoute: typeof ApiAdminCommissionsLockRouteImport
+    '/api/admin/audit-log/filters': {
+      id: '/api/admin/audit-log/filters'
+      path: '/api/admin/audit-log/filters'
+      fullPath: '/api/admin/audit-log/filters'
+      preLoaderRoute: typeof ApiAdminAuditLogFiltersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/audit-log/list': {
@@ -2630,11 +2371,270 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAuditLogListRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/audit-log/filters': {
-      id: '/api/admin/audit-log/filters'
-      path: '/api/admin/audit-log/filters'
-      fullPath: '/api/admin/audit-log/filters'
-      preLoaderRoute: typeof ApiAdminAuditLogFiltersRouteImport
+    '/api/admin/commissions/lock': {
+      id: '/api/admin/commissions/lock'
+      path: '/api/admin/commissions/lock'
+      fullPath: '/api/admin/commissions/lock'
+      preLoaderRoute: typeof ApiAdminCommissionsLockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/commissions/reconcile': {
+      id: '/api/admin/commissions/reconcile'
+      path: '/api/admin/commissions/reconcile'
+      fullPath: '/api/admin/commissions/reconcile'
+      preLoaderRoute: typeof ApiAdminCommissionsReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/analyze': {
+      id: '/api/admin/content/analyze'
+      path: '/api/admin/content/analyze'
+      fullPath: '/api/admin/content/analyze'
+      preLoaderRoute: typeof ApiAdminContentAnalyzeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/generate': {
+      id: '/api/admin/content/generate'
+      path: '/api/admin/content/generate'
+      fullPath: '/api/admin/content/generate'
+      preLoaderRoute: typeof ApiAdminContentGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/list': {
+      id: '/api/admin/content/list'
+      path: '/api/admin/content/list'
+      fullPath: '/api/admin/content/list'
+      preLoaderRoute: typeof ApiAdminContentListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/publish': {
+      id: '/api/admin/content/publish'
+      path: '/api/admin/content/publish'
+      fullPath: '/api/admin/content/publish'
+      preLoaderRoute: typeof ApiAdminContentPublishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/save': {
+      id: '/api/admin/content/save'
+      path: '/api/admin/content/save'
+      fullPath: '/api/admin/content/save'
+      preLoaderRoute: typeof ApiAdminContentSaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/set-image': {
+      id: '/api/admin/content/set-image'
+      path: '/api/admin/content/set-image'
+      fullPath: '/api/admin/content/set-image'
+      preLoaderRoute: typeof ApiAdminContentSetImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/strategy': {
+      id: '/api/admin/content/strategy'
+      path: '/api/admin/content/strategy'
+      fullPath: '/api/admin/content/strategy'
+      preLoaderRoute: typeof ApiAdminContentStrategyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/content/update-status': {
+      id: '/api/admin/content/update-status'
+      path: '/api/admin/content/update-status'
+      fullPath: '/api/admin/content/update-status'
+      preLoaderRoute: typeof ApiAdminContentUpdateStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/hospitals/create': {
+      id: '/api/admin/hospitals/create'
+      path: '/api/admin/hospitals/create'
+      fullPath: '/api/admin/hospitals/create'
+      preLoaderRoute: typeof ApiAdminHospitalsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/hospitals/list': {
+      id: '/api/admin/hospitals/list'
+      path: '/api/admin/hospitals/list'
+      fullPath: '/api/admin/hospitals/list'
+      preLoaderRoute: typeof ApiAdminHospitalsListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/hospitals/reallot': {
+      id: '/api/admin/hospitals/reallot'
+      path: '/api/admin/hospitals/reallot'
+      fullPath: '/api/admin/hospitals/reallot'
+      preLoaderRoute: typeof ApiAdminHospitalsReallotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads/assign': {
+      id: '/api/admin/leads/assign'
+      path: '/api/admin/leads/assign'
+      fullPath: '/api/admin/leads/assign'
+      preLoaderRoute: typeof ApiAdminLeadsAssignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads/free-sewa-pending-count': {
+      id: '/api/admin/leads/free-sewa-pending-count'
+      path: '/api/admin/leads/free-sewa-pending-count'
+      fullPath: '/api/admin/leads/free-sewa-pending-count'
+      preLoaderRoute: typeof ApiAdminLeadsFreeSewaPendingCountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads/routing': {
+      id: '/api/admin/leads/routing'
+      path: '/api/admin/leads/routing'
+      fullPath: '/api/admin/leads/routing'
+      preLoaderRoute: typeof ApiAdminLeadsRoutingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads/sweep': {
+      id: '/api/admin/leads/sweep'
+      path: '/api/admin/leads/sweep'
+      fullPath: '/api/admin/leads/sweep'
+      preLoaderRoute: typeof ApiAdminLeadsSweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads/upload': {
+      id: '/api/admin/leads/upload'
+      path: '/api/admin/leads/upload'
+      fullPath: '/api/admin/leads/upload'
+      preLoaderRoute: typeof ApiAdminLeadsUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/payments/list': {
+      id: '/api/admin/payments/list'
+      path: '/api/admin/payments/list'
+      fullPath: '/api/admin/payments/list'
+      preLoaderRoute: typeof ApiAdminPaymentsListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/payments/refund': {
+      id: '/api/admin/payments/refund'
+      path: '/api/admin/payments/refund'
+      fullPath: '/api/admin/payments/refund'
+      preLoaderRoute: typeof ApiAdminPaymentsRefundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/performance/agents': {
+      id: '/api/admin/performance/agents'
+      path: '/api/admin/performance/agents'
+      fullPath: '/api/admin/performance/agents'
+      preLoaderRoute: typeof ApiAdminPerformanceAgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/performance/hospitals': {
+      id: '/api/admin/performance/hospitals'
+      path: '/api/admin/performance/hospitals'
+      fullPath: '/api/admin/performance/hospitals'
+      preLoaderRoute: typeof ApiAdminPerformanceHospitalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/performance/telecallers': {
+      id: '/api/admin/performance/telecallers'
+      path: '/api/admin/performance/telecallers'
+      fullPath: '/api/admin/performance/telecallers'
+      preLoaderRoute: typeof ApiAdminPerformanceTelecallersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reports/export': {
+      id: '/api/admin/reports/export'
+      path: '/api/admin/reports/export'
+      fullPath: '/api/admin/reports/export'
+      preLoaderRoute: typeof ApiAdminReportsExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reports/monthly': {
+      id: '/api/admin/reports/monthly'
+      path: '/api/admin/reports/monthly'
+      fullPath: '/api/admin/reports/monthly'
+      preLoaderRoute: typeof ApiAdminReportsMonthlyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reports/pending-sevas': {
+      id: '/api/admin/reports/pending-sevas'
+      path: '/api/admin/reports/pending-sevas'
+      fullPath: '/api/admin/reports/pending-sevas'
+      preLoaderRoute: typeof ApiAdminReportsPendingSevasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reports/subscribers-by-channel': {
+      id: '/api/admin/reports/subscribers-by-channel'
+      path: '/api/admin/reports/subscribers-by-channel'
+      fullPath: '/api/admin/reports/subscribers-by-channel'
+      preLoaderRoute: typeof ApiAdminReportsSubscribersByChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/sales-agents/create': {
+      id: '/api/admin/sales-agents/create'
+      path: '/api/admin/sales-agents/create'
+      fullPath: '/api/admin/sales-agents/create'
+      preLoaderRoute: typeof ApiAdminSalesAgentsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/sales-agents/list': {
+      id: '/api/admin/sales-agents/list'
+      path: '/api/admin/sales-agents/list'
+      fullPath: '/api/admin/sales-agents/list'
+      preLoaderRoute: typeof ApiAdminSalesAgentsListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/staff/create-staff': {
+      id: '/api/admin/staff/create-staff'
+      path: '/api/admin/staff/create-staff'
+      fullPath: '/api/admin/staff/create-staff'
+      preLoaderRoute: typeof ApiAdminStaffCreateStaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/staff/list': {
+      id: '/api/admin/staff/list'
+      path: '/api/admin/staff/list'
+      fullPath: '/api/admin/staff/list'
+      preLoaderRoute: typeof ApiAdminStaffListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/staff/set-role': {
+      id: '/api/admin/staff/set-role'
+      path: '/api/admin/staff/set-role'
+      fullPath: '/api/admin/staff/set-role'
+      preLoaderRoute: typeof ApiAdminStaffSetRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/subscriptions/reissue-link': {
+      id: '/api/admin/subscriptions/reissue-link'
+      path: '/api/admin/subscriptions/reissue-link'
+      fullPath: '/api/admin/subscriptions/reissue-link'
+      preLoaderRoute: typeof ApiAdminSubscriptionsReissueLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/subscriptions/resume': {
+      id: '/api/admin/subscriptions/resume'
+      path: '/api/admin/subscriptions/resume'
+      fullPath: '/api/admin/subscriptions/resume'
+      preLoaderRoute: typeof ApiAdminSubscriptionsResumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/agent/leads/upload': {
+      id: '/api/agent/leads/upload'
+      path: '/api/agent/leads/upload'
+      fullPath: '/api/agent/leads/upload'
+      preLoaderRoute: typeof ApiAgentLeadsUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telecaller/lead/update': {
+      id: '/api/telecaller/lead/update'
+      path: '/update'
+      fullPath: '/api/telecaller/lead/update'
+      preLoaderRoute: typeof ApiTelecallerLeadUpdateRouteImport
+      parentRoute: typeof ApiTelecallerLeadRoute
+    }
+    '/api/telecaller/queue/list': {
+      id: '/api/telecaller/queue/list'
+      path: '/api/telecaller/queue/list'
+      fullPath: '/api/telecaller/queue/list'
+      preLoaderRoute: typeof ApiTelecallerQueueListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp/webhook/$secret': {
+      id: '/api/whatsapp/webhook/$secret'
+      path: '/api/whatsapp/webhook/$secret'
+      fullPath: '/api/whatsapp/webhook/$secret'
+      preLoaderRoute: typeof ApiWhatsappWebhookSecretRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
