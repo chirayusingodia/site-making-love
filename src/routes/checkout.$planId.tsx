@@ -19,7 +19,10 @@ import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
 import { normalizePhoneE164 } from "@/lib/phone";
 import { useTranslation } from "@/lib/translations";
-import { captureAttributionOnce, getStoredAttribution } from "@/lib/attribution";
+import { upcomingSevaDates, fmtSevaDate } from "@/lib/seva-dates";
+import { isHawanSeva } from "@/lib/plans-schedule";
+import { captureAttributionOnce, getStoredAttribution, getMetaCheckoutContext } from "@/lib/attribution";
+import { trackInitiateCheckout } from "@/lib/meta-pixel";
 import { supabase } from "@/lib/supabase";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 import { UpsellPremiumDialog } from "@/components/UpsellPremiumDialog";
@@ -128,7 +131,7 @@ function CheckoutPage() {
   const { planId } = Route.useParams();
   const { att: attToken } = Route.useSearch();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = usePublicPlans();
   const {
     userId,
@@ -230,6 +233,10 @@ function CheckoutPage() {
   const [payState, setPayState] = useState<PayState>("idle");
   const [payError, setPayError] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  // Flips on the first Pay tap — from then on every missing field
+  // (naam, mobile, terms box) is outlined + pulses so the visitor sees
+  // exactly what is left to fill, instead of a silently dead button.
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   // ₹399 upsell — anyone landing on checkout for the ₹251 (basic) plan
   // sees this once, before they pay, nudging them toward premium. Fires
@@ -368,6 +375,37 @@ function CheckoutPage() {
     );
   }
 
+  // "Next seva" + the one after it, with the sevas that run on each date
+  // (a seva's cadence is its schedule `days`: "2nd Tuesday" / "Last Saturday").
+  const sevaNameOf = (s: { name: string; nameEn: string | null }) =>
+    lang === "english" && s.nameEn ? s.nameEn : s.name;
+  const upcoming = upcomingSevaDates(plan.includedSevas.some(isHawanSeva), 2).map((u) => {
+    const cadence = u.labelKey === "sd_2nd_tuesday" ? "2nd Tuesday" : "Last Saturday";
+    return {
+      key: `${u.labelKey}-${u.date.getTime()}`,
+      when: fmtSevaDate(u.date, lang),
+      sevas: plan.includedSevas.filter((s) => s.days.includes(cadence)).map(sevaNameOf),
+    };
+  });
+  const upcomingBlock = upcoming.length > 0 && (
+    <div className="rounded-xl bg-success/10 border border-success/20 px-3.5 py-3 space-y-2">
+      <div className="text-xs font-bold text-success uppercase tracking-wide">
+        {t("checkout_upcoming_title")}
+      </div>
+      {upcoming.map((u, i) => (
+        <div key={u.key} className="text-[13px] leading-snug">
+          <div className="font-bold text-foreground">
+            {i === 0 ? t("checkout_next_seva") : t("checkout_after_that")}: {u.when}
+          </div>
+          {u.sevas.length > 0 && (
+            <div className="text-[11.5px] text-muted-foreground">{u.sevas.join(" · ")}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+  const planFeatures = lang === "english" ? plan.featuresEn : plan.features;
+
   const premiumUpsellPlan = plan.slug === "basic" ? getPlanById(data.plans, "premium") : undefined;
   const upsellDialog = premiumUpsellPlan && (
     <UpsellPremiumDialog
@@ -447,8 +485,9 @@ function CheckoutPage() {
                   {plan.strikePrice}
                 </div>
               )}
+              {upcomingBlock}
               <div className="space-y-2">
-                {plan.features.map((f) => (
+                {planFeatures.map((f) => (
                   <div key={f} className="flex items-start gap-2.5 text-sm">
                     <div className="mt-0.5 w-4 h-4 rounded-full bg-success/15 flex items-center justify-center shrink-0">
                       <Check size={11} className="text-success" strokeWidth={3} />
@@ -520,14 +559,22 @@ function CheckoutPage() {
 
   const startPayment = async () => {
     setPayError(null);
+    setSubmitAttempted(true);
     // Naam/mobile are mandatory before payment — required either
-    // already on the profile or freshly typed here.
-    if (!nameInput.trim()) {
-      setIdentityError(t("checkout_name_required"));
-      return;
-    }
-    if (!normalizePhoneE164(phoneInput.replace(/\D/g, ""))) {
-      setIdentityError(t("checkout_phone_required"));
+    // already on the profile or freshly typed here. Whichever of
+    // naam / mobile / terms box is still missing gets highlighted and
+    // scrolled into view (first missing one wins).
+    const nameMissing = !nameInput.trim();
+    const phoneMissing = !normalizePhoneE164(phoneInput.replace(/\D/g, ""));
+    if (nameMissing || phoneMissing || !agreedToTerms) {
+      const firstMissing = nameMissing
+        ? "checkout-name"
+        : phoneMissing
+          ? "checkout-phone"
+          : "checkout-terms";
+      document
+        .getElementById(firstMissing)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     // Make sure a just-typed name/number correction is not left
@@ -550,6 +597,7 @@ function CheckoutPage() {
         ...(couponApplied ? { coupon_code: couponApplied } : {}),
         ...(attToken ? { att: attToken } : {}),
         ...(attribution ? { marketing: attribution } : {}),
+        metaContext: getMetaCheckoutContext(),
       });
 
       // Redirect-style gateways: hand the customer straight to the
@@ -572,6 +620,13 @@ function CheckoutPage() {
       if (!res.gatewayPublicKey) throw new Error(t("checkout_keys_error"));
 
       setPayState("checkout");
+      // Checkout genuinely begins here: the mandate exists and the gateway
+      // sheet is about to open (not on mere page view).
+      trackInitiateCheckout({
+        contentId: plan.slug,
+        contentName: plan.name,
+        value: plan.priceNumeric || undefined,
+      });
       const rzp = new window.Razorpay({
         key: res.gatewayPublicKey,
         subscription_id: res.gatewayMandateId,
@@ -628,7 +683,14 @@ function CheckoutPage() {
   }
 
   const paying = payState === "creating" || payState === "checkout";
-  const identityMissing = !nameInput.trim() || !normalizePhoneE164(phoneInput.replace(/\D/g, ""));
+  const nameMissing = !nameInput.trim();
+  const phoneMissing = !normalizePhoneE164(phoneInput.replace(/\D/g, ""));
+  // Highlight flags — only after the first Pay tap, and they clear on
+  // their own the moment the field becomes valid.
+  const nameBad = submitAttempted && nameMissing;
+  const phoneBad = submitAttempted && phoneMissing;
+  const termsBad = submitAttempted && !agreedToTerms;
+  const badRing = "border-destructive ring-2 ring-destructive/40 animate-pulse";
 
   return (
     <div className="min-h-screen bg-background">
@@ -687,8 +749,9 @@ function CheckoutPage() {
                 {plan.strikePrice}
               </div>
             )}
+            {upcomingBlock}
             <div className="space-y-2">
-              {plan.features.map((f) => (
+              {planFeatures.map((f) => (
                 <div key={f} className="flex items-start gap-2.5 text-sm">
                   <div className="mt-0.5 w-4 h-4 rounded-full bg-success/15 flex items-center justify-center shrink-0">
                     <Check size={11} className="text-success" strokeWidth={3} />
@@ -715,28 +778,48 @@ function CheckoutPage() {
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">{t("checkout_name_label")}</label>
             <input
+              id="checkout-name"
               type="text"
               value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
+              onChange={(e) => {
+                setNameInput(e.target.value);
+                setIdentityError(null);
+              }}
               onBlur={saveIdentity}
               placeholder={t("checkout_name_placeholder")}
-              className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground"
+              aria-invalid={nameBad}
+              className={`w-full px-3 py-2 rounded-xl border focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground ${
+                nameBad ? badRing : "border-black/10"
+              }`}
             />
+            {nameBad && (
+              <p className="text-[11px] font-bold text-destructive">{t("checkout_name_required")}</p>
+            )}
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">{t("checkout_phone_label")}</label>
             <input
+              id="checkout-phone"
               type="tel"
               inputMode="numeric"
               value={phoneInput}
               onChange={(e) => {
                 setPhoneInput(e.target.value.replace(/[^\d]/g, "").slice(0, 10));
                 setPhoneTaken(false);
+                setIdentityError(null);
               }}
               onBlur={saveIdentity}
               placeholder={t("checkout_phone_placeholder")}
-              className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground"
+              aria-invalid={phoneBad}
+              className={`w-full px-3 py-2 rounded-xl border focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground ${
+                phoneBad ? badRing : "border-black/10"
+              }`}
             />
+            {phoneBad && (
+              <p className="text-[11px] font-bold text-destructive">
+                {t("checkout_phone_required")}
+              </p>
+            )}
           </div>
           {identitySaving && (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -828,7 +911,12 @@ function CheckoutPage() {
         {payError && <p className="text-xs text-destructive text-center">{payError}</p>}
 
         {/* Mandatory terms acknowledgment — required before payment starts */}
-        <label className="flex items-start gap-2.5 px-3.5 py-3 rounded-2xl bg-secondary/60 border border-black/5 cursor-pointer select-none">
+        <label
+          id="checkout-terms"
+          className={`flex items-start gap-2.5 px-3.5 py-3 rounded-2xl bg-secondary/60 border cursor-pointer select-none ${
+            termsBad ? badRing : "border-black/5"
+          }`}
+        >
           <input
             type="checkbox"
             checked={agreedToTerms}
@@ -857,21 +945,11 @@ function CheckoutPage() {
             {t("checkout_terms_read")}
           </span>
         </label>
-
-        <button
-          onClick={startPayment}
-          disabled={paying || !agreedToTerms || identityMissing}
-          className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors shadow-[0_8px_24px_rgba(216,90,48,0.25)] ${
-            paying
-              ? "bg-brand/70 text-white cursor-wait shadow-none"
-              : !agreedToTerms || identityMissing
-                ? "bg-brand/40 text-white cursor-not-allowed shadow-none"
-                : "bg-brand text-white hover:bg-brand-deep"
-          }`}
-        >
-          {paying ? <Loader2 size={18} className="animate-spin" /> : <Lock size={16} />}
-          {paying ? t("checkout_opening_gateway") : `${t("checkout_pay_button")} ${plan.price}`}
-        </button>
+        {termsBad && (
+          <p className="-mt-3 px-1 text-xs font-bold text-destructive">
+            {t("checkout_terms_required")}
+          </p>
+        )}
 
         <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
           <ShieldCheck size={12} className="text-success" /> {t("checkout_secure_footer")}
@@ -880,6 +958,26 @@ function CheckoutPage() {
           <ShieldCheck size={12} /> {t("trust_years_badge")}
         </div>
       </main>
+
+      {/* Sticky Pay bar — always one tap away, however far down the
+          page the visitor has scrolled. Never disabled for missing
+          fields: tapping it highlights whatever is still empty. */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-black/10 bg-white/95 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-6px_20px_rgba(0,0,0,0.08)]">
+        <button
+          onClick={startPayment}
+          disabled={paying}
+          className={`max-w-md mx-auto w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-full transition-colors shadow-[0_8px_24px_rgba(216,90,48,0.25)] ${
+            paying
+              ? "bg-brand/70 text-white cursor-wait shadow-none"
+              : "bg-brand text-white hover:bg-brand-deep"
+          }`}
+        >
+          {paying ? <Loader2 size={18} className="animate-spin" /> : <Lock size={16} />}
+          {paying
+            ? t("checkout_opening_gateway")
+            : `${plan.name} ${plan.price}${plan.cycle} — ${t("checkout_pay_button")}`}
+        </button>
+      </div>
       <WhatsAppFloat />
       {upsellDialog}
     </div>

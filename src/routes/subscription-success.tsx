@@ -10,6 +10,26 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useSessionProfile } from "@/hooks/use-session";
 import { fireSubscribeConversion } from "@/lib/ad-conversions";
+import { subscribeEventId } from "@/lib/meta-ids";
+
+// The ref above only survives a re-render; a browser refresh or revisit of
+// /subscription-success would re-fire the GA4 conversion (Meta dedups on
+// eventID, GA4 does not). Persist a per-subscription flag so it fires once.
+const CONVERSION_FLAG_PREFIX = "punyata_conv_fired_";
+function conversionAlreadyFired(subId: string): boolean {
+  try {
+    return window.localStorage.getItem(CONVERSION_FLAG_PREFIX + subId) === "1";
+  } catch {
+    return false;
+  }
+}
+function markConversionFired(subId: string): void {
+  try {
+    window.localStorage.setItem(CONVERSION_FLAG_PREFIX + subId, "1");
+  } catch {
+    /* storage blocked — worst case a refresh re-fires */
+  }
+}
 
 export const Route = createFileRoute("/subscription-success")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -69,13 +89,16 @@ function SubscriptionSuccessPage() {
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (owned && !conversionFired.current) {
+      if (owned && !conversionFired.current && !conversionAlreadyFired(ref)) {
         conversionFired.current = true;
+        markConversionFired(ref);
         const plan = (owned as unknown as { plans: { name: string; price_paise: number } | null })
           .plans;
         fireSubscribeConversion({
           valuePaise: plan?.price_paise ?? 0,
           planName: plan?.name,
+          // Same id the Razorpay webhook sends to Meta CAPI → Meta dedups.
+          eventId: subscribeEventId(ref),
         });
       }
 

@@ -178,6 +178,9 @@ export async function createCheckoutForUser(input: {
    *  above. `channel` feeds the existing acquisition_channel column
    *  (same precedence as telecall/coupon); the rest are raw signal kept
    *  for reporting and future ad-platform conversion matching. */
+  /** Validated Meta CAPI matching context (fbp/fbc/ip/UA/url/consent) —
+   *  stored on subscriptions.marketing_context (migration 041). */
+  marketingContext?: Record<string, unknown> | null;
   marketing?: {
     channel?: string;
     utmSource?: string | null;
@@ -319,6 +322,15 @@ export async function createCheckoutForUser(input: {
       if (Object.keys(backfill).length > 1) {
         await adminDb.from("subscriptions").update(backfill).eq("id", existingPending.id);
       }
+      // Refresh the Meta matching context on reuse (the visitor may have
+      // gained fbp/fbc since). Separate best-effort write so a missing
+      // migration-041 column can never take the attribution backfill down.
+      if (input.marketingContext) {
+        await adminDb
+          .from("subscriptions")
+          .update({ marketing_context: input.marketingContext })
+          .eq("id", existingPending.id);
+      }
       return outcomeFromExistingMandate({
         subscriptionDbId: existingPending.id,
         mandate: existingMandate,
@@ -438,6 +450,9 @@ export async function createCheckoutForUser(input: {
         landing_path: input.marketing.landingPath ?? null,
       }
     : {};
+  const marketingContextColumns = input.marketingContext
+    ? { marketing_context: input.marketingContext }
+    : {};
   const newSubRowCore = {
     user_id: userId,
     plan_id: plan.id,
@@ -462,12 +477,12 @@ export async function createCheckoutForUser(input: {
   // attached immediately after, before checkout opens.
   let { data: subRow, error: insErr } = await adminDb
     .from("subscriptions")
-    .insert({ ...newSubRowCore, ...marketingColumns })
+    .insert({ ...newSubRowCore, ...marketingColumns, ...marketingContextColumns })
     .select("id")
     .single();
   if (
     insErr &&
-    Object.keys(marketingColumns).length > 0 &&
+    Object.keys({ ...marketingColumns, ...marketingContextColumns }).length > 0 &&
     /column .* does not exist/i.test(insErr.message)
   ) {
     // Migration 029 lagging behind the deploy — never let checkout 500

@@ -87,6 +87,7 @@ import { Route as ApiProfileFamilyMembersRouteImport } from './routes/api/profil
 import { Route as ApiProfileAddressRouteImport } from './routes/api/profile/address'
 import { Route as ApiPaymentsWebhookRouteImport } from './routes/api/payments/webhook'
 import { Route as ApiCronSendNotificationsRouteImport } from './routes/api/cron/send-notifications'
+import { Route as ApiCronRetryMetaCapiRouteImport } from './routes/api/cron/retry-meta-capi'
 import { Route as ApiCronRenewMandatesRouteImport } from './routes/api/cron/renew-mandates'
 import { Route as ApiCronPublishContentRouteImport } from './routes/api/cron/publish-content'
 import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
@@ -539,6 +540,11 @@ const ApiCronSendNotificationsRoute =
     path: '/api/cron/send-notifications',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCronRetryMetaCapiRoute = ApiCronRetryMetaCapiRouteImport.update({
+  id: '/api/cron/retry-meta-capi',
+  path: '/api/cron/retry-meta-capi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronRenewMandatesRoute = ApiCronRenewMandatesRouteImport.update({
   id: '/api/cron/renew-mandates',
   path: '/api/cron/renew-mandates',
@@ -881,6 +887,7 @@ export interface FileRoutesByFullPath {
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
+  '/api/cron/retry-meta-capi': typeof ApiCronRetryMetaCapiRoute
   '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
@@ -1010,6 +1017,7 @@ export interface FileRoutesByTo {
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
+  '/api/cron/retry-meta-capi': typeof ApiCronRetryMetaCapiRoute
   '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
@@ -1143,6 +1151,7 @@ export interface FileRoutesById {
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
   '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
+  '/api/cron/retry-meta-capi': typeof ApiCronRetryMetaCapiRoute
   '/api/cron/send-notifications': typeof ApiCronSendNotificationsRoute
   '/api/payments/webhook': typeof ApiPaymentsWebhookRoute
   '/api/profile/address': typeof ApiProfileAddressRoute
@@ -1277,6 +1286,7 @@ export interface FileRouteTypes {
     | '/api/coupons/validate'
     | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
+    | '/api/cron/retry-meta-capi'
     | '/api/cron/send-notifications'
     | '/api/payments/webhook'
     | '/api/profile/address'
@@ -1406,6 +1416,7 @@ export interface FileRouteTypes {
     | '/api/coupons/validate'
     | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
+    | '/api/cron/retry-meta-capi'
     | '/api/cron/send-notifications'
     | '/api/payments/webhook'
     | '/api/profile/address'
@@ -1538,6 +1549,7 @@ export interface FileRouteTypes {
     | '/api/coupons/validate'
     | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
+    | '/api/cron/retry-meta-capi'
     | '/api/cron/send-notifications'
     | '/api/payments/webhook'
     | '/api/profile/address'
@@ -1640,6 +1652,7 @@ export interface RootRouteChildren {
   ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
   ApiCronPublishContentRoute: typeof ApiCronPublishContentRoute
   ApiCronRenewMandatesRoute: typeof ApiCronRenewMandatesRoute
+  ApiCronRetryMetaCapiRoute: typeof ApiCronRetryMetaCapiRoute
   ApiCronSendNotificationsRoute: typeof ApiCronSendNotificationsRoute
   ApiPaymentsWebhookRoute: typeof ApiPaymentsWebhookRoute
   ApiProfileAddressRoute: typeof ApiProfileAddressRoute
@@ -2253,6 +2266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronSendNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/retry-meta-capi': {
+      id: '/api/cron/retry-meta-capi'
+      path: '/api/cron/retry-meta-capi'
+      fullPath: '/api/cron/retry-meta-capi'
+      preLoaderRoute: typeof ApiCronRetryMetaCapiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/renew-mandates': {
       id: '/api/cron/renew-mandates'
       path: '/api/cron/renew-mandates'
@@ -2766,6 +2786,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCouponsValidateRoute: ApiCouponsValidateRoute,
   ApiCronPublishContentRoute: ApiCronPublishContentRoute,
   ApiCronRenewMandatesRoute: ApiCronRenewMandatesRoute,
+  ApiCronRetryMetaCapiRoute: ApiCronRetryMetaCapiRoute,
   ApiCronSendNotificationsRoute: ApiCronSendNotificationsRoute,
   ApiPaymentsWebhookRoute: ApiPaymentsWebhookRoute,
   ApiProfileAddressRoute: ApiProfileAddressRoute,

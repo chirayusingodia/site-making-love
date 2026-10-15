@@ -12,6 +12,9 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { loadAndApplySiteImageOverrides } from "../lib/site-image-overrides";
+import { captureAttributionOnce } from "../lib/attribution";
+import { loadMetaPixel, trackPageView } from "../lib/meta-pixel";
+import { MarketingConsentBanner } from "../components/marketing-consent-banner";
 
 function NotFoundComponent() {
   return (
@@ -135,11 +138,12 @@ const WEBSITE_JSON_LD = {
 // Ad-platform tags — OFF unless the corresponding env var is set, so a
 // dev/preview build never fires pixels. Get these from your own accounts:
 //   VITE_META_PIXEL_ID       — Meta Events Manager → Data Sources → your Pixel
+//                              (injected client-side by src/lib/meta-pixel.ts,
+//                              and only after the visitor accepts consent)
 //   VITE_GA4_MEASUREMENT_ID  — Google Analytics → Admin → Data Streams (G-XXXXXXX)
 // Neither requires an ad campaign to exist first; both are free to create.
 // Firing a subscribe/conversion event on activation is wired in
 // subscription-success.tsx.
-const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
 const GA4_MEASUREMENT_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
 
 function RootShell({ children }: { children: ReactNode }) {
@@ -159,13 +163,6 @@ function RootShell({ children }: { children: ReactNode }) {
               }}
             />
           </>
-        )}
-        {META_PIXEL_ID && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`,
-            }}
-          />
         )}
       </head>
       <body>
@@ -214,6 +211,23 @@ function RootComponent() {
     };
   }, []);
 
+  // Marketing attribution + Meta Pixel. The Pixel loads only with stored
+  // consent (and VITE_META_PIXEL_ID); loadMetaPixel fires the first
+  // PageView itself, so this subscription reports pathname CHANGES only,
+  // never the initial load — no double counting.
+  const router = useRouter();
+  useEffect(() => {
+    captureAttributionOnce();
+    loadMetaPixel();
+    let lastPath = window.location.pathname;
+    return router.subscribe("onResolved", (evt) => {
+      const next = evt.toLocation.pathname;
+      if (next === lastPath) return;
+      lastPath = next;
+      trackPageView();
+    });
+  }, [router]);
+
   useEffect(() => {
     let cancelled = false;
     loadAndApplySiteImageOverrides().then(() => {
@@ -234,6 +248,7 @@ function RootComponent() {
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </div>
+      <MarketingConsentBanner />
     </QueryClientProvider>
   );
 }
