@@ -12,6 +12,7 @@ import {
   CalendarX,
   BadgeCheck,
   MapPin,
+  Sparkles,
 } from "lucide-react";
 import { usePublicPlans, getPlanById } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
@@ -21,6 +22,7 @@ import { normalizePhoneE164 } from "@/lib/phone";
 import { useTranslation } from "@/lib/translations";
 import { upcomingSevaDates, fmtSevaDate } from "@/lib/seva-dates";
 import { isHawanSeva } from "@/lib/plans-schedule";
+import { specialDayItems } from "@/lib/special-days";
 import { captureAttributionOnce, getStoredAttribution, getMetaCheckoutContext } from "@/lib/attribution";
 import { trackInitiateCheckout } from "@/lib/meta-pixel";
 import { supabase } from "@/lib/supabase";
@@ -385,6 +387,8 @@ function CheckoutPage() {
       key: `${u.labelKey}-${u.date.getTime()}`,
       when: fmtSevaDate(u.date, lang),
       sevas: plan.includedSevas.filter((s) => s.days.includes(cadence)).map(sevaNameOf),
+      // What makes that day special — festival / tithi / weekday deity.
+      special: specialDayItems(u.date).map((i) => (lang === "english" ? i.en : i.hi)),
     };
   });
   const upcomingBlock = upcoming.length > 0 && (
@@ -397,6 +401,12 @@ function CheckoutPage() {
           <div className="font-bold text-foreground">
             {i === 0 ? t("checkout_next_seva") : t("checkout_after_that")}: {u.when}
           </div>
+          {u.special.length > 0 && (
+            <div className="flex items-start gap-1 text-[12px] font-semibold text-brand-deep">
+              <Sparkles size={12} className="mt-0.5 shrink-0" />
+              <span>{u.special.join(" · ")}</span>
+            </div>
+          )}
           {u.sevas.length > 0 && (
             <div className="text-[11.5px] text-muted-foreground">{u.sevas.join(" · ")}</div>
           )}
