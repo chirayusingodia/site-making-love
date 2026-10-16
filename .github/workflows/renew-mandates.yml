@@ -1,0 +1,42 @@
+# Scheduler for /api/cron/renew-mandates (raises replacement payment
+# mandates before the current ones run out). The sweep is idempotent and
+# works on a multi-day lookahead window, so once a day is enough.
+# 03:30 UTC = 09:00 IST.
+#
+# SETUP (once): repo → Settings → Secrets and variables → Actions →
+# repository secret CRON_SECRET = the SAME value as the CRON_SECRET env
+# var in the hosting environment. Runs only from the default branch (main).
+# Manual run: Actions → "Renew mandates" → Run workflow.
+
+name: Renew mandates
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renew-mandates
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call renew-mandates
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET repository secret is not set" >&2
+            exit 1
+          fi
+          curl --silent --show-error --fail-with-body --max-time 120 \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://www.punyata.com/api/cron/renew-mandates"
+          echo
