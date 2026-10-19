@@ -219,6 +219,7 @@ function PlanDetail({ plan: rawPlan, allPlans }: { plan: Plan; allPlans: Plan[] 
           <NextPoojaCountdown
             hasLastSaturday={plan.includedSevas.some(isHawanSeva)}
             variant="hero"
+            sevas={plan.includedSevas}
           />
         </div>
 

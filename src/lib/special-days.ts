@@ -19,33 +19,37 @@
 // ─────────────────────────────────────────────────────────────
 
 export interface SpecialItem {
-  /** Hindi + English label shown on the checkout card. */
+  /** Title — Hindi + English. */
   hi: string;
   en: string;
+  /** One-line "why is this day special" — Hindi + English. */
+  descHi: string;
+  descEn: string;
+  kind: "festival" | "tithi" | "weekday";
 }
 
 // ── Curated festivals (YYYY-MM-DD, IST) ──────────────────────────
 // Only dates where independent panchang sources agree. Extend yearly.
 const FESTIVALS: Record<string, SpecialItem> = {
-  "2026-10-11": { hi: "शारदीय नवरात्रि प्रारम्भ", en: "Sharad Navratri begins" },
-  "2026-10-12": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri" },
-  "2026-10-13": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri" },
-  "2026-10-14": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri" },
-  "2026-10-15": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri" },
-  "2026-10-16": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri" },
-  "2026-10-17": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri" },
-  "2026-10-18": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri" },
-  "2026-10-19": { hi: "दुर्गा अष्टमी / महानवमी", en: "Durga Ashtami / Maha Navami" },
-  "2026-10-20": { hi: "विजयादशमी (दशहरा)", en: "Vijayadashami (Dussehra)" },
-  "2026-10-25": { hi: "शरद पूर्णिमा", en: "Sharad Purnima" },
-  "2026-10-29": { hi: "करवा चौथ", en: "Karwa Chauth" },
-  "2026-11-06": { hi: "धनतेरस", en: "Dhanteras" },
-  "2026-11-08": { hi: "दीपावली", en: "Diwali" },
-  "2026-11-10": { hi: "गोवर्धन पूजा", en: "Govardhan Puja" },
-  "2026-11-11": { hi: "भाई दूज", en: "Bhai Dooj" },
-  "2026-11-24": { hi: "कार्तिक पूर्णिमा / देव दीपावली", en: "Kartik Purnima / Dev Deepawali" },
-  "2026-12-20": { hi: "मोक्षदा एकादशी / गीता जयंती", en: "Mokshada Ekadashi / Gita Jayanti" },
-  "2026-12-23": { hi: "दत्तात्रेय जयंती", en: "Dattatreya Jayanti" },
+  "2026-10-11": { hi: "शारदीय नवरात्रि प्रारम्भ", en: "Sharad Navratri begins", descHi: "माँ दुर्गा की नौ दिन की उपासना का पहला दिन — घटस्थापना।", descEn: "First day of the nine-day worship of Maa Durga — Ghatasthapana.", kind: "festival" },
+  "2026-10-12": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri", descHi: "माँ दुर्गा के नौ स्वरूपों की उपासना के नौ पावन दिन।", descEn: "Nine sacred days of worship of Maa Durga's nine forms.", kind: "festival" },
+  "2026-10-13": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri", descHi: "माँ दुर्गा के नौ स्वरूपों की उपासना के नौ पावन दिन।", descEn: "Nine sacred days of worship of Maa Durga's nine forms.", kind: "festival" },
+  "2026-10-14": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri", descHi: "माँ दुर्गा के नौ स्वरूपों की उपासना के नौ पावन दिन।", descEn: "Nine sacred days of worship of Maa Durga's nine forms.", kind: "festival" },
+  "2026-10-15": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri", descHi: "माँ दुर्गा के नौ स्वरूपों की उपासना के नौ पावन दिन।", descEn: "Nine sacred days of worship of Maa Durga's nine forms.", kind: "festival" },
+  "2026-10-16": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri", descHi: "माँ दुर्गा के नौ स्वरूपों की उपासना के नौ पावन दिन।", descEn: "Nine sacred days of worship of Maa Durga's nine forms.", kind: "festival" },
+  "2026-10-17": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri", descHi: "माँ दुर्गा के नौ स्वरूपों की उपासना के नौ पावन दिन।", descEn: "Nine sacred days of worship of Maa Durga's nine forms.", kind: "festival" },
+  "2026-10-18": { hi: "शारदीय नवरात्रि", en: "Sharad Navratri", descHi: "माँ दुर्गा के नौ स्वरूपों की उपासना के नौ पावन दिन।", descEn: "Nine sacred days of worship of Maa Durga's nine forms.", kind: "festival" },
+  "2026-10-19": { hi: "दुर्गा अष्टमी / महानवमी", en: "Durga Ashtami / Maha Navami", descHi: "नवरात्रि के सबसे शुभ दिन — कन्या पूजन और माँ की विशेष आराधना।", descEn: "The most auspicious days of Navratri — Kanya Pujan and special worship of the Goddess.", kind: "festival" },
+  "2026-10-20": { hi: "विजयादशमी (दशहरा)", en: "Vijayadashami (Dussehra)", descHi: "बुराई पर अच्छाई की जीत का पर्व — श्री राम की रावण पर विजय।", descEn: "The festival of good over evil — Shri Ram's victory over Ravana.", kind: "festival" },
+  "2026-10-25": { hi: "शरद पूर्णिमा", en: "Sharad Purnima", descHi: "चंद्रमा की सोलह कलाओं का दिन — माँ लक्ष्मी की कृपा और अमृत वर्षा की मान्यता।", descEn: "The moon shines with all sixteen kalas — a day associated with Maa Lakshmi's blessings.", kind: "festival" },
+  "2026-10-29": { hi: "करवा चौथ", en: "Karwa Chauth", descHi: "सुहागिनों का निर्जला व्रत — पति की लंबी आयु की कामना।", descEn: "The fast observed by married women for their husbands' long life.", kind: "festival" },
+  "2026-11-06": { hi: "धनतेरस", en: "Dhanteras", descHi: "दीपावली का आरंभ — धन्वंतरि जयंती और माँ लक्ष्मी-कुबेर की पूजा।", descEn: "The start of Diwali — Dhanvantari Jayanti and worship of Maa Lakshmi and Kubera.", kind: "festival" },
+  "2026-11-08": { hi: "दीपावली", en: "Diwali", descHi: "माँ लक्ष्मी और श्री गणेश की पूजा का पर्व — अंधकार पर प्रकाश की विजय।", descEn: "The festival of lights — worship of Maa Lakshmi and Shri Ganesh.", kind: "festival" },
+  "2026-11-10": { hi: "गोवर्धन पूजा", en: "Govardhan Puja", descHi: "श्रीकृष्ण द्वारा गोवर्धन धारण की स्मृति — गौ-पूजन और अन्नकूट का दिन।", descEn: "In memory of Shri Krishna lifting Govardhan — a day of cow worship and Annakut.", kind: "festival" },
+  "2026-11-11": { hi: "भाई दूज", en: "Bhai Dooj", descHi: "भाई-बहन के पवित्र स्नेह का पर्व।", descEn: "The festival of the sacred bond between brothers and sisters.", kind: "festival" },
+  "2026-11-24": { hi: "कार्तिक पूर्णिमा / देव दीपावली", en: "Kartik Purnima / Dev Deepawali", descHi: "देवताओं की दीपावली — गंगा स्नान, दीपदान और दान-पुण्य का महापर्व।", descEn: "The Diwali of the gods — holy dip, lamp offering and charity.", kind: "festival" },
+  "2026-12-20": { hi: "मोक्षदा एकादशी / गीता जयंती", en: "Mokshada Ekadashi / Gita Jayanti", descHi: "मोक्ष देने वाली एकादशी — इसी दिन श्रीमद्भगवद्गीता का उपदेश हुआ।", descEn: "The Ekadashi that grants moksha — the day the Bhagavad Gita was spoken.", kind: "festival" },
+  "2026-12-23": { hi: "दत्तात्रेय जयंती", en: "Dattatreya Jayanti", descHi: "भगवान दत्तात्रेय का प्राकट्य दिवस — गुरु तत्व की उपासना।", descEn: "Birth day of Lord Dattatreya — worship of the Guru principle.", kind: "festival" },
 };
 
 // ── Astronomy ────────────────────────────────────────────────────
@@ -137,6 +141,9 @@ export function specialDayItems(date: Date): SpecialItem[] {
   const festival = FESTIVALS[iso];
   if (festival) out.push(festival);
 
+  const tithiItem = (hi: string, en: string, descHi: string, descEn: string): SpecialItem => ({
+    hi, en, descHi, descEn, kind: "tithi",
+  });
   // Don't repeat what the festival already says (Purnima / Ekadashi names).
   const say = (item: SpecialItem) => {
     if (festival && (festival.hi.includes(item.hi) || festival.en.includes(item.en))) return;
@@ -145,25 +152,60 @@ export function specialDayItems(date: Date): SpecialItem[] {
 
   const paksha = tithi <= 15 ? "shukla" : "krishna";
   const n = tithi <= 15 ? tithi : tithi - 15; // 1–15 within the paksha
+  // A weekday-flavoured Amavasya has its own well-known name; it replaces
+  // the plain "Amavasya" + weekday pair so the day reads as ONE highlight.
+  let weekdayCovered = false;
   if (uncertain) {
     // Tithi flips near sunrise — skip the label rather than risk a wrong one.
-  } else if (tithi === 15) say({ hi: "पूर्णिमा", en: "Purnima" });
-  else if (tithi === 30) say({ hi: "अमावस्या", en: "Amavasya" });
-  else if (n === 11) say({ hi: "एकादशी", en: "Ekadashi" });
-  else if (n === 13) say({ hi: "प्रदोष व्रत", en: "Pradosh Vrat" });
-  else if (n === 4 && paksha === "krishna" && wd === 2) {
-    say({ hi: "अंगारकी संकष्टी चतुर्थी", en: "Angarki Sankashti Chaturthi" });
+  } else if (tithi === 30 && wd === 2) {
+    say(tithiItem("भौमवती अमावस्या", "Bhaumvati Amavasya",
+      "मंगलवार को पड़ने वाली अमावस्या। मान्यता है कि इस दिन हनुमान जी की पूजा और पितरों के निमित्त दान विशेष फलदायी होता है।",
+      "An Amavasya that falls on a Tuesday. Worship of Hanuman ji and charity for the ancestors are believed to be especially fruitful today."));
+    weekdayCovered = true;
+  } else if (tithi === 30 && wd === 6) {
+    say(tithiItem("शनि अमावस्या", "Shani Amavasya",
+      "शनिवार को पड़ने वाली अमावस्या। मान्यता है कि इस दिन शनि देव की उपासना और दान से शनि पीड़ा में राहत मिलती है।",
+      "An Amavasya that falls on a Saturday. Worship of Shani Dev and charity today are believed to ease Shani's afflictions."));
+    weekdayCovered = true;
+  } else if (tithi === 15) {
+    say(tithiItem("पूर्णिमा", "Purnima",
+      "पूर्ण चंद्रमा की तिथि — दान, स्नान और सत्यनारायण पूजा के लिए शुभ मानी जाती है।",
+      "The full-moon day — considered auspicious for charity, holy bathing and Satyanarayan puja."));
+  } else if (tithi === 30) {
+    say(tithiItem("अमावस्या", "Amavasya",
+      "पितरों की तृप्ति और दान-पुण्य की तिथि मानी जाती है।",
+      "A tithi associated with satisfying the ancestors and with charity."));
+  } else if (n === 11) {
+    say(tithiItem("एकादशी", "Ekadashi",
+      "भगवान विष्णु की प्रिय तिथि — व्रत, पूजा और दान का विशेष महत्व।",
+      "Lord Vishnu's favourite tithi — fasting, worship and charity carry special merit."));
+  } else if (n === 13) {
+    say(tithiItem("प्रदोष व्रत", "Pradosh Vrat",
+      "भगवान शिव की आराधना की तिथि — संध्या के प्रदोष काल में पूजा का महत्व।",
+      "A tithi for worshipping Lord Shiva — especially in the evening Pradosh Kaal."));
+  } else if (n === 4 && paksha === "krishna" && wd === 2) {
+    say(tithiItem("अंगारकी संकष्टी चतुर्थी", "Angarki Sankashti Chaturthi",
+      "मंगलवार को पड़ने वाली संकष्टी — गणेश जी की उपासना से विघ्न दूर होने की मान्यता।",
+      "A Sankashti that falls on a Tuesday — worship of Ganesh ji is believed to remove obstacles."));
   } else if (n === 4) {
-    say(
-      paksha === "krishna"
-        ? { hi: "संकष्टी चतुर्थी", en: "Sankashti Chaturthi" }
-        : { hi: "विनायक चतुर्थी", en: "Vinayaka Chaturthi" },
-    );
+    say(paksha === "krishna"
+      ? tithiItem("संकष्टी चतुर्थी", "Sankashti Chaturthi",
+          "गणेश जी का व्रत-दिवस — संकटों को हरने वाली चतुर्थी।",
+          "Ganesh ji's fasting day — the Chaturthi that removes troubles.")
+      : tithiItem("विनायक चतुर्थी", "Vinayaka Chaturthi",
+          "गणेश जी की उपासना का दिन — शुभ कार्यों में विघ्न दूर होने की मान्यता।",
+          "A day to worship Ganesh ji — believed to remove obstacles from auspicious work."));
   }
 
-  if (wd === 2) out.push({ hi: "मंगलवार — हनुमान जी का दिन", en: "Tuesday — Hanuman ji's day" });
-  if (wd === 6) {
-    out.push({ hi: "शनिवार — शनि देव एवं हनुमान जी का दिन", en: "Saturday — Shani Dev & Hanuman ji's day" });
+  if (wd === 2 && !weekdayCovered) {
+    out.push({ hi: "मंगलवार", en: "Tuesday", kind: "weekday",
+      descHi: "हनुमान जी को समर्पित दिन — बल, साहस और संकट निवारण की मान्यता।",
+      descEn: "A day dedicated to Hanuman ji — associated with strength, courage and relief from troubles." });
+  }
+  if (wd === 6 && !weekdayCovered) {
+    out.push({ hi: "शनिवार", en: "Saturday", kind: "weekday",
+      descHi: "शनि देव एवं हनुमान जी का दिन — शनि पीड़ा में राहत की मान्यता।",
+      descEn: "The day of Shani Dev and Hanuman ji — believed to ease Shani's afflictions." });
   }
   return out;
 }

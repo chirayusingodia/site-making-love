@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { nextSevaDate, nextSevaDateTime, fmtSevaDate } from "@/lib/seva-dates";
 import { useTranslation } from "@/lib/translations";
+import type { LiveSeva } from "@/lib/plans-schedule";
+import { UpcomingPoojaCards } from "@/components/UpcomingPoojaCards";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -42,9 +44,13 @@ function useCountdown(target: Date) {
 export function NextPoojaCountdown({
   hasLastSaturday,
   variant = "hero",
+  sevas,
 }: {
   hasLastSaturday: boolean;
   variant?: "hero" | "compact";
+  /** When given (hero only), the next two poojas — with what is special
+   *  about each day — are merged into this card under the countdown. */
+  sevas?: LiveSeva[];
 }) {
   const { t, lang } = useTranslation();
   const next = nextSevaDate(hasLastSaturday);
@@ -52,6 +58,8 @@ export function NextPoojaCountdown({
   const countdown = useCountdown(target);
   const dateLabel = fmtSevaDate(next.date, lang);
   const cadenceLabel = t(next.labelKey);
+  // Merged plan-page card (sevas given) uses the light palette.
+  const light = !!sevas;
 
   const fmt = (n: number | undefined) => (n === undefined ? "--" : pad(n));
   const units = [
@@ -107,22 +115,30 @@ export function NextPoojaCountdown({
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl p-5 text-[#FFF3EA] shadow-[0_14px_36px_rgba(122,42,16,0.35)]"
+      className={`relative overflow-hidden rounded-3xl p-5 ${
+        light
+          ? "text-foreground border border-brand/15 shadow-[0_10px_28px_rgba(216,90,48,0.14)]"
+          : "text-[#FFF3EA] shadow-[0_14px_36px_rgba(122,42,16,0.35)]"
+      }`}
       style={{
-        background: "radial-gradient(120% 120% at 85% 0%, #E85D1F 0%, #C0451A 45%, #7A2A10 100%)",
+        background: light
+          ? "linear-gradient(135deg, #FFF7EA 0%, #FDEBD7 100%)"
+          : "radial-gradient(120% 120% at 85% 0%, #E85D1F 0%, #C0451A 45%, #7A2A10 100%)",
       }}
     >
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{ background: "repeating-linear-gradient(180deg, transparent 0 27px, #fff 27px 28px)" }}
-      />
+      {!light && (
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{ background: "repeating-linear-gradient(180deg, transparent 0 27px, #fff 27px 28px)" }}
+        />
+      )}
       <svg
-        className="absolute -right-7 -top-7 opacity-[0.18]"
+        className={`absolute -right-7 -top-7 ${light ? "opacity-[0.10]" : "opacity-[0.18]"}`}
         width="150"
         height="150"
         viewBox="0 0 100 100"
         fill="none"
-        stroke="#FFE7B8"
+        stroke={light ? "#E8651F" : "#FFE7B8"}
         strokeWidth="1"
         aria-hidden="true"
       >
@@ -133,15 +149,15 @@ export function NextPoojaCountdown({
       <div className="relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE7B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={light ? "#C8501A" : "#FFE7B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 2c-1.5 3-1.5 5 0 7 1.5-2 1.5-4 0-7z" />
               <path d="M7 21h10a2 2 0 0 0 2-2c0-3-2-4-2-8a5 5 0 0 0-10 0c0 4-2 5-2 8a2 2 0 0 0 2 2z" />
             </svg>
-            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#FFE7B8]">
+            <span className={`text-[11px] font-bold uppercase tracking-[0.1em] ${light ? "text-brand-deep" : "text-[#FFE7B8]"}`}>
               {t("cd_next_pooja")}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-[#FFE7B8]">
+          <div className={`flex items-center gap-1.5 text-[10.5px] font-bold ${light ? "text-success" : "text-[#FFE7B8]"}`}>
             <span className="relative flex w-1.5 h-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#7CE38B] opacity-75 animate-ping" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#7CE38B]" />
@@ -154,32 +170,46 @@ export function NextPoojaCountdown({
           {units.map((u, i) => (
             <div key={u.label} className="flex items-center">
               <div className="flex flex-col items-center gap-1">
-                <div className="w-[58px] h-[58px] rounded-2xl bg-white/[0.13] border border-white/20 backdrop-blur-sm flex items-center justify-center text-[26px] font-extrabold text-white tabular-nums">
+                <div className={`w-[58px] h-[58px] rounded-2xl flex items-center justify-center text-[26px] font-extrabold tabular-nums ${light ? "bg-white border border-brand/15 text-[#5B1A1A] shadow-sm" : "bg-white/[0.13] border border-white/20 backdrop-blur-sm text-white"}`}>
                   {u.value}
                 </div>
-                <div className="text-[9.5px] font-bold uppercase tracking-wider text-[#FFE7B8]">
+                <div className={`text-[9.5px] font-bold uppercase tracking-wider ${light ? "text-muted-foreground" : "text-[#FFE7B8]"}`}>
                   {u.label}
                 </div>
               </div>
               {i < units.length - 1 && (
-                <div className="text-[22px] font-bold text-[#FFE7B8]/55 mx-2 -mt-[18px]">:</div>
+                <div className={`text-[22px] font-bold mx-2 -mt-[18px] ${light ? "text-brand/35" : "text-[#FFE7B8]/55"}`}>:</div>
               )}
             </div>
           ))}
         </div>
 
-        <div className="pt-3 border-t border-[#FFE7B8]/25 space-y-1">
-          <div className="flex items-center gap-1.5 text-sm font-bold text-white">
-            <MapPin size={14} className="text-[#FFE7B8] shrink-0" />
+        <div className={`pt-3 border-t space-y-1 ${light ? "border-brand/15" : "border-[#FFE7B8]/25"}`}>
+          <div className={`flex items-center gap-1.5 text-sm font-bold ${light ? "text-foreground" : "text-white"}`}>
+            <MapPin size={14} className={`shrink-0 ${light ? "text-brand" : "text-[#FFE7B8]"}`} />
             {t("cd_temple_name")}
           </div>
-          <div className="text-[11px] italic text-[#FFE7B8]/75 leading-snug pl-[21px]">
+          <div className={`text-[11px] italic leading-snug pl-[21px] ${light ? "text-muted-foreground" : "text-[#FFE7B8]/75"}`}>
             {t("cd_temple_significance")}
           </div>
-          <div className="text-xs text-[#FFF3EA]/80 pl-[21px]">
-            {dateLabel} · {cadenceLabel}
-          </div>
+          {!sevas && (
+            <div className="text-xs text-[#FFF3EA]/80 pl-[21px]">
+              {dateLabel} · {cadenceLabel}
+            </div>
+          )}
         </div>
+
+        {sevas && sevas.length > 0 && (
+          <div className={`mt-4 pt-4 border-t space-y-3 ${light ? "border-brand/15" : "border-[#FFE7B8]/25"}`}>
+            <div className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] ${light ? "text-brand-deep" : "text-[#FFE7B8]"}`}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="3" /><path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              {t("checkout_upcoming_title")}
+            </div>
+            <UpcomingPoojaCards sevas={sevas} />
+          </div>
+        )}
       </div>
     </div>
   );
