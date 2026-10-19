@@ -12,6 +12,7 @@ import {
   CalendarX,
   BadgeCheck,
   MapPin,
+  CalendarDays,
 } from "lucide-react";
 import { usePublicPlans, getPlanById } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
@@ -19,8 +20,7 @@ import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
 import { normalizePhoneE164 } from "@/lib/phone";
 import { useTranslation } from "@/lib/translations";
-import { upcomingSevaDates, fmtSevaDate } from "@/lib/seva-dates";
-import { isHawanSeva } from "@/lib/plans-schedule";
+import { UpcomingPoojaCards } from "@/components/UpcomingPoojaCards";
 import { captureAttributionOnce, getStoredAttribution, getMetaCheckoutContext } from "@/lib/attribution";
 import { trackInitiateCheckout } from "@/lib/meta-pixel";
 import { supabase } from "@/lib/supabase";
@@ -375,33 +375,15 @@ function CheckoutPage() {
     );
   }
 
-  // "Next seva" + the one after it, with the sevas that run on each date
-  // (a seva's cadence is its schedule `days`: "2nd Tuesday" / "Last Saturday").
-  const sevaNameOf = (s: { name: string; nameEn: string | null }) =>
-    lang === "english" && s.nameEn ? s.nameEn : s.name;
-  const upcoming = upcomingSevaDates(plan.includedSevas.some(isHawanSeva), 2).map((u) => {
-    const cadence = u.labelKey === "sd_2nd_tuesday" ? "2nd Tuesday" : "Last Saturday";
-    return {
-      key: `${u.labelKey}-${u.date.getTime()}`,
-      when: fmtSevaDate(u.date, lang),
-      sevas: plan.includedSevas.filter((s) => s.days.includes(cadence)).map(sevaNameOf),
-    };
-  });
-  const upcomingBlock = upcoming.length > 0 && (
-    <div className="rounded-xl bg-success/10 border border-success/20 px-3.5 py-3 space-y-2">
-      <div className="text-xs font-bold text-success uppercase tracking-wide">
+  const upcomingBlock = (
+    <div className="rounded-2xl border border-brand/15 bg-gradient-to-br from-[#FFF7EA] to-[#FDEBD7] p-3.5 space-y-3">
+      <div className="flex items-center gap-2 text-[13px] font-bold text-brand-deep">
+        <span className="w-6 h-6 rounded-full bg-brand/15 text-brand flex items-center justify-center">
+          <CalendarDays size={13} />
+        </span>
         {t("checkout_upcoming_title")}
       </div>
-      {upcoming.map((u, i) => (
-        <div key={u.key} className="text-[13px] leading-snug">
-          <div className="font-bold text-foreground">
-            {i === 0 ? t("checkout_next_seva") : t("checkout_after_that")}: {u.when}
-          </div>
-          {u.sevas.length > 0 && (
-            <div className="text-[11.5px] text-muted-foreground">{u.sevas.join(" · ")}</div>
-          )}
-        </div>
-      ))}
+      <UpcomingPoojaCards sevas={plan.includedSevas} />
     </div>
   );
   const planFeatures = lang === "english" ? plan.featuresEn : plan.features;
