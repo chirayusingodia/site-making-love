@@ -47,11 +47,20 @@ type SevaLike = { title: string; titleEn: string | null };
  * component was given, so the grid only goes to 2 columns once there's
  * genuinely enough room, in either layout, without a mode prop to keep in sync.
  */
-export function SevaBenefitGrid({ sevas, lang }: { sevas: SevaLike[]; lang: "hindi" | "english" }) {
+export function SevaBenefitGrid({
+  sevas,
+  lang,
+  twoUp = false,
+}: {
+  sevas: SevaLike[];
+  lang: "hindi" | "english";
+  /** Always two boxes per row (used where the layout is a known narrow mobile column). */
+  twoUp?: boolean;
+}) {
   if (sevas.length === 0) return null;
   return (
     <div className="@container">
-      <div className="grid grid-cols-1 @[26rem]:grid-cols-2 gap-2">
+      <div className={`grid gap-2 ${twoUp ? "grid-cols-2" : "grid-cols-1 @[26rem]:grid-cols-2"}`}>
         {sevas.map((s, i) => {
           const benefit = SEVA_MAIN_BENEFIT[s.titleEn ?? s.title];
           return (
@@ -59,7 +68,10 @@ export function SevaBenefitGrid({ sevas, lang }: { sevas: SevaLike[]; lang: "hin
               key={s.title}
               className="flex items-start gap-2 bg-brand-soft border border-brand/20 rounded-xl px-3 py-2.5"
             >
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand text-white text-xs font-extrabold shrink-0 mt-0.5">
+              <span
+                aria-hidden="true"
+                className="flex items-center justify-center w-[30px] h-[30px] rounded-[10px] bg-gradient-to-br from-[#F5A742] to-brand text-white text-sm font-bold shadow-[0_2px_6px_rgba(232,101,31,0.35)] shrink-0"
+              >
                 {i + 1}
               </span>
               <span className="leading-tight">
