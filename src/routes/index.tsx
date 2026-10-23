@@ -29,7 +29,6 @@ import whatsapp from "@/assets/lottie/whatsapp.json";
 import lockSecure from "@/assets/lottie/lock-secure.json";
 import { SITE_IMAGES } from "@/lib/site-images";
 import { CldImage, IMAGE_SIZES } from "@/components/CldImage";
-import punyataStaticLogo from "@/assets/punyata-logo.svg";
 import { fetchPageSeo, pageSeoMeta } from "@/lib/page-seo";
 
 // Homepage-scoped LocalBusiness schema — richer location/contact detail
@@ -110,7 +109,6 @@ function HomePage() {
         <KaliyugShloks />
         <FamilySection />
         <FaqSection />
-        <ContactFooter />
       </main>
     </SiteChrome>
   );
@@ -537,30 +535,6 @@ function FaqSection() {
         })}
       </div>
     </section>
-  );
-}
-
-function ContactFooter() {
-  const { t } = useTranslation();
-  return (
-    <footer className="pt-4 pb-4 text-center space-y-2 text-sm text-muted-foreground">
-      <div className="flex flex-col items-center justify-center gap-1.5">
-        <img src={punyataStaticLogo} alt="Punyata Logo" className="w-10 h-10" />
-        <div className="font-bold text-brand text-base leading-none">पुण्यता</div>
-      </div>
-      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand">
-        <ShieldCheck size={12} /> {t("trust_years_footer")}
-      </div>
-      <div>तीर्थ गुरु पुष्करराज, राजस्थान — 305022</div>
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs pt-2">
-        <Link to="/about" className="hover:text-brand">About</Link>
-        <Link to="/plans" className="hover:text-brand">Sadasyata</Link>
-        <Link to="/reviews" className="hover:text-brand">Reviews</Link>
-        <Link to="/terms-and-conditions" className="hover:text-brand">Terms & Conditions</Link>
-        <Link to="/refund-policy" className="hover:text-brand">Refund Policy</Link>
-      </div>
-      <div className="text-xs">© 2026 पुण्यता · सर्वाधिकार सुरक्षित</div>
-    </footer>
   );
 }
 

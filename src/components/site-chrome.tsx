@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { User, Home, Sparkles, MessageSquareText, Info } from "lucide-react";
+import { User, Home, Sparkles, MessageSquareText, Info, Lock } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
 import { useMySubscription } from "@/hooks/use-my-subscription";
 import { useLanguage, useTranslation, LANG_KEY, type Lang } from "@/lib/translations";
 import { captureAttributionOnce } from "@/lib/attribution";
+import { SiteFooter } from "@/components/SiteFooter";
+import { AnnouncementBar, BackToTop, DiyaScrollProgress, SkipToContent } from "@/components/SiteExtras";
 
 const WHATSAPP_RAW = "917014098548";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(
@@ -149,6 +151,37 @@ export function Header() {
   );
 }
 
+// Distraction-free header for the buy step — logo, a "secure checkout"
+// cue and the language toggle only. No site nav, so nothing pulls the
+// visitor away mid-payment.
+export function CheckoutHeader() {
+  const lang = useLanguage();
+  return (
+    <header className="sticky top-0 z-40 bg-[#FDF1EC]/90 backdrop-blur-lg border-b border-black/5">
+      <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-2.5 gap-2">
+        <Link to="/" className="flex items-center gap-2 shrink-0">
+          <PunyataLogo className="w-10 h-10 md:w-11 md:h-11" />
+          <span
+            className="font-extrabold text-brand tracking-tight leading-none text-2xl md:text-3xl"
+            style={{ fontFamily: "'Noto Sans Devanagari', system-ui, sans-serif" }}
+          >
+            पुण्यता
+          </span>
+        </Link>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success">
+            <Lock size={13} />
+            <span className="hidden sm:inline">
+              {lang === "english" ? "Secure Checkout" : "सुरक्षित चेकआउट"}
+            </span>
+          </span>
+          <LanguageToggle />
+        </div>
+      </div>
+    </header>
+  );
+}
+
 const BOTTOM_TABS = [
   { to: "/", label: "Home", Icon: Home, exact: true },
   { to: "/my-subscription", label: "My Subscription", Icon: Sparkles, exact: false },
@@ -208,9 +241,16 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
+      <SkipToContent />
+      <DiyaScrollProgress />
+      <AnnouncementBar />
       <Header />
-      {children}
+      <div id="main-content" tabIndex={-1} className="outline-none">
+        {children}
+      </div>
+      <SiteFooter />
       <WhatsAppFloat />
+      <BackToTop />
       <BottomNav />
     </div>
   );

@@ -15,10 +15,12 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as CompleteProfileRouteImport } from './routes/complete-profile'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MySubscriptionRouteImport } from './routes/my-subscription'
 import { Route as PlansRouteImport } from './routes/plans'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as ReviewsRouteImport } from './routes/reviews'
@@ -171,6 +173,11 @@ const CompleteProfileRoute = CompleteProfileRouteImport.update({
   path: '/complete-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
@@ -189,6 +196,11 @@ const MySubscriptionRoute = MySubscriptionRouteImport.update({
 const PlansRoute = PlansRouteImport.update({
   id: '/plans',
   path: '/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -830,10 +842,12 @@ export interface FileRoutesByFullPath {
   '/agent': typeof AgentRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/complete-profile': typeof CompleteProfileRoute
+  '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
@@ -961,10 +975,12 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/blog': typeof BlogRouteWithChildren
   '/complete-profile': typeof CompleteProfileRoute
+  '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
@@ -1094,10 +1110,12 @@ export interface FileRoutesById {
   '/agent': typeof AgentRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/complete-profile': typeof CompleteProfileRoute
+  '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/my-subscription': typeof MySubscriptionRoute
   '/plans': typeof PlansRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/reviews': typeof ReviewsRoute
@@ -1229,10 +1247,12 @@ export interface FileRouteTypes {
     | '/agent'
     | '/blog'
     | '/complete-profile'
+    | '/contact'
     | '/faq'
     | '/login'
     | '/my-subscription'
     | '/plans'
+    | '/privacy-policy'
     | '/profile'
     | '/refund-policy'
     | '/reviews'
@@ -1360,10 +1380,12 @@ export interface FileRouteTypes {
     | '/about'
     | '/blog'
     | '/complete-profile'
+    | '/contact'
     | '/faq'
     | '/login'
     | '/my-subscription'
     | '/plans'
+    | '/privacy-policy'
     | '/profile'
     | '/refund-policy'
     | '/reviews'
@@ -1492,10 +1514,12 @@ export interface FileRouteTypes {
     | '/agent'
     | '/blog'
     | '/complete-profile'
+    | '/contact'
     | '/faq'
     | '/login'
     | '/my-subscription'
     | '/plans'
+    | '/privacy-policy'
     | '/profile'
     | '/refund-policy'
     | '/reviews'
@@ -1626,10 +1650,12 @@ export interface RootRouteChildren {
   AgentRoute: typeof AgentRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
   CompleteProfileRoute: typeof CompleteProfileRoute
+  ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   MySubscriptionRoute: typeof MySubscriptionRoute
   PlansRoute: typeof PlansRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   ProfileRoute: typeof ProfileRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
   ReviewsRoute: typeof ReviewsRoute
@@ -1762,6 +1788,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompleteProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/faq': {
       id: '/faq'
       path: '/faq'
@@ -1788,6 +1821,13 @@ declare module '@tanstack/react-router' {
       path: '/plans'
       fullPath: '/plans'
       preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -2760,10 +2800,12 @@ const rootRouteChildren: RootRouteChildren = {
   AgentRoute: AgentRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
   CompleteProfileRoute: CompleteProfileRoute,
+  ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   MySubscriptionRoute: MySubscriptionRoute,
   PlansRoute: PlansRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   ProfileRoute: ProfileRoute,
   RefundPolicyRoute: RefundPolicyRoute,
   ReviewsRoute: ReviewsRoute,

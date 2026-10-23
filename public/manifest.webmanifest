@@ -1,0 +1,16 @@
+{
+  "name": "पुण्यता — मासिक सेवा",
+  "short_name": "पुण्यता",
+  "description": "तीर्थ गुरु पुष्करराज से आपके नाम एवं गोत्र से मासिक सेवा।",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FDF1EC",
+  "theme_color": "#E85D1F",
+  "lang": "hi",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.png", "sizes": "any", "type": "image/png", "purpose": "any" },
+    { "src": "/punyata-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
