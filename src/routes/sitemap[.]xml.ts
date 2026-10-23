@@ -17,6 +17,8 @@ const STATIC_ROUTES: Array<{ path: string; priority: string; changefreq: string 
   { path: "/about", priority: "0.6", changefreq: "monthly" },
   { path: "/faq", priority: "0.6", changefreq: "monthly" },
   { path: "/blog", priority: "0.7", changefreq: "weekly" },
+  { path: "/contact", priority: "0.5", changefreq: "yearly" },
+  { path: "/privacy-policy", priority: "0.3", changefreq: "yearly" },
 ];
 
 function xmlEscape(s: string): string {
