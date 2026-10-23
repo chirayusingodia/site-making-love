@@ -60,16 +60,30 @@ function AboutPage() {
       </div>
       <main className="max-w-3xl mx-auto px-4 pb-24 md:pb-16 pt-8 space-y-14">
         {/* Hero */}
-        <section className="text-center space-y-3 animate-fade-up">
-          <div className="text-xs font-bold uppercase tracking-widest text-brand">पुण्यता — About Us</div>
-          <h1 className="text-4xl font-bold text-brand leading-tight">भारत का पुण्य बैंक</h1>
-          <p className="text-lg font-semibold text-foreground/80">भारत का पुण्य साथी</p>
-          <div className="inline-flex items-center gap-1.5 bg-brand-soft text-brand text-xs font-bold px-3 py-1.5 rounded-full">
+        {/* One unified lockup: eyebrow → title → ornament → tagline → badge,
+            all in the same saffron/maroon family so it reads as a single
+            statement instead of five separate headings. */}
+        <section
+          className="relative overflow-hidden rounded-3xl border border-brand/15 px-5 py-8 text-center animate-fade-up"
+          style={{ background: "linear-gradient(160deg,#FFF6EE 0%,#FDE3CC 100%)" }}
+        >
+          <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-brand">
+            पुण्यता · About Us
+          </div>
+          <h1 className="mt-3 text-[34px] md:text-5xl font-extrabold leading-tight text-[#5B1A1A]">
+            भारत का <span className="text-brand">पुण्य</span> बैंक
+          </h1>
+          <svg width="96" height="12" viewBox="0 0 88 12" fill="none" aria-hidden="true" className="mx-auto my-3 text-[#F5A742]">
+            <path d="M2 6h28M58 6h28" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" opacity="0.6" />
+            <path d="M44 1.5 48.5 6 44 10.5 39.5 6z" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
+          </svg>
+          <p className="text-lg md:text-xl font-semibold leading-snug text-[#8A3A12]">
+            भारत का पुण्य साथी —{" "}
+            <span className="whitespace-nowrap">अब भारत करेगा पुण्यता।</span>
+          </p>
+          <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-xs font-bold text-brand shadow-sm">
             <ShieldCheck size={13} /> 11 साल का विश्वास
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-[#5B1A1A] pt-3">
-            अब भारत करेगा पुण्यता।
-          </p>
         </section>
 
         {/* 11 years of trust */}

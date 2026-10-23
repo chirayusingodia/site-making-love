@@ -69,7 +69,9 @@ import aboutStory3Img from "@/assets/about/story_3.png";
 import aboutStory4Img from "@/assets/about/story_4.png";
 
 // Standalone location & proof-gallery stills
-import pushkarGhatImg from "@/assets/pushkar-ghat.jpg";
+// pushkar-ghat.jpg is only clouds/sky, so the location + proof-ghat slots
+// reuse the real ghat-and-diyas hero photo until a better one is uploaded.
+const pushkarGhatImg = heroPushkarGhatsImg;
 import proofHavanImg from "@/assets/havan.jpg";
 import proofGauImg from "@/assets/gau-seva.jpg";
 
