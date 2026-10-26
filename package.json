@@ -9,10 +9,12 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "npm run test:schedule && npm run test:webhook && npm run test:meta-capi",
+    "test": "npm run test:schedule && npm run test:webhook && npm run test:meta-capi && npm run test:offline && npm run test:finance",
     "test:schedule": "node scratch/run_schedule_tests.mjs",
     "test:webhook": "node --import ./scratch/ts-aliases.mjs scratch/verify_webhook.ts",
     "test:meta-capi": "node --import ./scratch/ts-aliases.mjs scratch/verify_meta_capi.ts",
+    "test:offline": "node --import ./scratch/ts-aliases.mjs scratch/verify_offline_logic.ts",
+    "test:finance": "node --import ./scratch/ts-aliases.mjs scratch/verify_finance_logic.ts",
     "format": "prettier --write ."
   },
   "dependencies": {

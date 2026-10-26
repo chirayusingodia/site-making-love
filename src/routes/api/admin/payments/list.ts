@@ -37,7 +37,7 @@ const MAX_PAGE_SIZE = 200;
 const EXPORT_CAP = 10000;
 
 const SELECT_COLS = `
-  id, subscription_id, razorpay_payment_id, razorpay_order_id,
+  id, subscription_id, razorpay_payment_id, razorpay_order_id, gateway,
   amount_paise, status, method, cycle_number, paid_at, failure_reason, created_at,
   subscription:subscriptions!inner(
     id, plan_id,

@@ -1,0 +1,42 @@
+# Scheduler for /api/cron/offline-dues (moves offline QR subscribers who
+# are more than 7 days past their due date to `halted`, which drops them
+# out of Sankalp batches). Idempotent: a second run lapses nobody.
+# 03:45 UTC = 09:15 IST, right after renew-mandates.
+#
+# SETUP: uses the SAME CRON_SECRET repository secret as renew-mandates
+# (must equal the CRON_SECRET env var in the hosting environment). Runs
+# only from the default branch (main).
+# Manual run: Actions -> "Offline dues (QR lapse sweep)" -> Run workflow.
+
+name: Offline dues (QR lapse sweep)
+
+on:
+  schedule:
+    - cron: "45 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: offline-dues
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call offline-dues
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET repository secret is not set" >&2
+            exit 1
+          fi
+          curl --silent --show-error --fail-with-body --max-time 120 \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://www.punyata.com/api/cron/offline-dues"
+          echo

@@ -17,7 +17,11 @@ import { fetchAllRows } from "@/lib/supabase";
 //
 // Responses:
 //   200 — { mrrPaise, monthlyPlansActiveCount, yearlyPlansActiveCount,
-//           capturedRevenuePaise, capturedPaymentsCount, month }
+//           capturedRevenuePaise, capturedPaymentsCount,
+//           qrMrrPaise, qrCapturedRevenuePaise, month }
+//         (qr* = the offline QR/cash/bank slice of the same two figures,
+//          computed by the SAME computeMrr / sumCapturedPayments on the
+//          payment_mode / gateway = offline_qr rows — no second formula)
 //   401 — no/invalid token, or not staff
 //   403 — authenticated staff but not owner ("Owner access required")
 
@@ -40,18 +44,19 @@ export const Route = createFileRoute("/api/admin/overview-financials")({
           // silently under-report past a thousand subscribers.
           const [subsAll, capturedAll] = await Promise.all([
             fetchAllRows<{
+              payment_mode: string | null;
               plans: { price_paise?: number; billing_period?: string } | null;
             }>((from, to) =>
               db
                 .from("subscriptions")
-                .select("id, plans(price_paise, billing_period)")
+                .select("id, payment_mode, plans(price_paise, billing_period)")
                 .eq("status", "active")
                 .range(from, to),
             ),
-            fetchAllRows<{ amount_paise: number | null }>((from, to) =>
+            fetchAllRows<{ amount_paise: number | null; gateway: string | null }>((from, to) =>
               db
                 .from("payments")
-                .select("amount_paise")
+                .select("amount_paise, gateway")
                 .eq("status", "captured")
                 .gte("paid_at", monthStart)
                 .lte("paid_at", monthEnd)
@@ -70,15 +75,22 @@ export const Route = createFileRoute("/api/admin/overview-financials")({
             return {
               plan_price_paise: plan?.price_paise ?? null,
               plan_billing_period: plan?.billing_period ?? null,
+              isQr: row.payment_mode === "offline_qr",
             };
           });
 
           const mrr = computeMrr(activeSubs);
           const captured = sumCapturedPayments(capturedAll.data);
+          const qrMrr = computeMrr(activeSubs.filter((s) => s.isQr));
+          const qrCaptured = sumCapturedPayments(
+            capturedAll.data.filter((p) => p.gateway === "offline_qr"),
+          );
 
           return json({
             ...mrr,
             ...captured,
+            qrMrrPaise: qrMrr.mrrPaise,
+            qrCapturedRevenuePaise: qrCaptured.capturedRevenuePaise,
             month,
           });
         } catch (err) {

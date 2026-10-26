@@ -31,10 +31,12 @@ import { Route as SubscriptionSuccessRouteImport } from './routes/subscription-s
 import { Route as TelecallerRouteImport } from './routes/telecaller'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAshirwadPatraRouteImport } from './routes/admin.ashirwad-patra'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminCommissionsRouteImport } from './routes/admin.commissions'
 import { Route as AdminContentStudioRouteImport } from './routes/admin.content-studio'
+import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminImagesRouteImport } from './routes/admin.images'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminOverviewRouteImport } from './routes/admin.overview'
@@ -42,6 +44,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
 import { Route as AdminPlansSevasRouteImport } from './routes/admin.plans-sevas'
 import { Route as AdminProofUploadRouteImport } from './routes/admin.proof-upload'
+import { Route as AdminQrCollectionsRouteImport } from './routes/admin.qr-collections'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRoutingRouteImport } from './routes/admin.routing'
 import { Route as AdminSankalpListsRouteImport } from './routes/admin.sankalp-lists'
@@ -72,6 +75,7 @@ import { Route as ApiAuthReconcileProfileRouteImport } from './routes/api/auth/r
 import { Route as ApiAuthRequestOtpRouteImport } from './routes/api/auth/request-otp'
 import { Route as ApiCloudinarySignUploadRouteImport } from './routes/api/cloudinary/sign-upload'
 import { Route as ApiCouponsValidateRouteImport } from './routes/api/coupons/validate'
+import { Route as ApiCronOfflineDuesRouteImport } from './routes/api/cron/offline-dues'
 import { Route as ApiCronPublishContentRouteImport } from './routes/api/cron/publish-content'
 import { Route as ApiCronRenewMandatesRouteImport } from './routes/api/cron/renew-mandates'
 import { Route as ApiCronRetryMetaCapiRouteImport } from './routes/api/cron/retry-meta-capi'
@@ -114,6 +118,12 @@ import { Route as ApiAdminContentSaveRouteImport } from './routes/api/admin/cont
 import { Route as ApiAdminContentSetImageRouteImport } from './routes/api/admin/content/set-image'
 import { Route as ApiAdminContentStrategyRouteImport } from './routes/api/admin/content/strategy'
 import { Route as ApiAdminContentUpdateStatusRouteImport } from './routes/api/admin/content/update-status'
+import { Route as ApiAdminFinanceCategoriesRouteImport } from './routes/api/admin/finance/categories'
+import { Route as ApiAdminFinanceEntriesDeleteRouteImport } from './routes/api/admin/finance/entries-delete'
+import { Route as ApiAdminFinanceEntriesListRouteImport } from './routes/api/admin/finance/entries-list'
+import { Route as ApiAdminFinanceEntriesUpsertRouteImport } from './routes/api/admin/finance/entries-upsert'
+import { Route as ApiAdminFinanceExportRouteImport } from './routes/api/admin/finance/export'
+import { Route as ApiAdminFinancePnlRouteImport } from './routes/api/admin/finance/pnl'
 import { Route as ApiAdminHospitalsCreateRouteImport } from './routes/api/admin/hospitals/create'
 import { Route as ApiAdminHospitalsListRouteImport } from './routes/api/admin/hospitals/list'
 import { Route as ApiAdminHospitalsReallotRouteImport } from './routes/api/admin/hospitals/reallot'
@@ -122,6 +132,13 @@ import { Route as ApiAdminLeadsFreeSewaPendingCountRouteImport } from './routes/
 import { Route as ApiAdminLeadsRoutingRouteImport } from './routes/api/admin/leads/routing'
 import { Route as ApiAdminLeadsSweepRouteImport } from './routes/api/admin/leads/sweep'
 import { Route as ApiAdminLeadsUploadRouteImport } from './routes/api/admin/leads/upload'
+import { Route as ApiAdminOfflineCancelRouteImport } from './routes/api/admin/offline/cancel'
+import { Route as ApiAdminOfflineCreateRouteImport } from './routes/api/admin/offline/create'
+import { Route as ApiAdminOfflineHistoryRouteImport } from './routes/api/admin/offline/history'
+import { Route as ApiAdminOfflineRecordPaymentRouteImport } from './routes/api/admin/offline/record-payment'
+import { Route as ApiAdminOfflineRegisterRouteImport } from './routes/api/admin/offline/register'
+import { Route as ApiAdminOfflineUpdatePaymentRouteImport } from './routes/api/admin/offline/update-payment'
+import { Route as ApiAdminOfflineVoidPaymentRouteImport } from './routes/api/admin/offline/void-payment'
 import { Route as ApiAdminPaymentsListRouteImport } from './routes/api/admin/payments/list'
 import { Route as ApiAdminPaymentsRefundRouteImport } from './routes/api/admin/payments/refund'
 import { Route as ApiAdminPerformanceAgentsRouteImport } from './routes/api/admin/performance/agents'
@@ -136,6 +153,7 @@ import { Route as ApiAdminSalesAgentsListRouteImport } from './routes/api/admin/
 import { Route as ApiAdminStaffCreateStaffRouteImport } from './routes/api/admin/staff/create-staff'
 import { Route as ApiAdminStaffListRouteImport } from './routes/api/admin/staff/list'
 import { Route as ApiAdminStaffSetRoleRouteImport } from './routes/api/admin/staff/set-role'
+import { Route as ApiAdminSubscribersTrendRouteImport } from './routes/api/admin/subscribers/trend'
 import { Route as ApiAdminSubscriptionsReissueLinkRouteImport } from './routes/api/admin/subscriptions/reissue-link'
 import { Route as ApiAdminSubscriptionsResumeRouteImport } from './routes/api/admin/subscriptions/resume'
 import { Route as ApiAgentLeadsUploadRouteImport } from './routes/api/agent/leads/upload'
@@ -253,6 +271,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAshirwadPatraRoute = AdminAshirwadPatraRouteImport.update({
   id: '/ashirwad-patra',
   path: '/ashirwad-patra',
@@ -271,6 +294,11 @@ const AdminCommissionsRoute = AdminCommissionsRouteImport.update({
 const AdminContentStudioRoute = AdminContentStudioRouteImport.update({
   id: '/content-studio',
   path: '/content-studio',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminImagesRoute = AdminImagesRouteImport.update({
@@ -306,6 +334,11 @@ const AdminPlansSevasRoute = AdminPlansSevasRouteImport.update({
 const AdminProofUploadRoute = AdminProofUploadRouteImport.update({
   id: '/proof-upload',
   path: '/proof-upload',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQrCollectionsRoute = AdminQrCollectionsRouteImport.update({
+  id: '/qr-collections',
+  path: '/qr-collections',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
@@ -459,6 +492,11 @@ const ApiCloudinarySignUploadRoute = ApiCloudinarySignUploadRouteImport.update({
 const ApiCouponsValidateRoute = ApiCouponsValidateRouteImport.update({
   id: '/api/coupons/validate',
   path: '/api/coupons/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronOfflineDuesRoute = ApiCronOfflineDuesRouteImport.update({
+  id: '/api/cron/offline-dues',
+  path: '/api/cron/offline-dues',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronPublishContentRoute = ApiCronPublishContentRouteImport.update({
@@ -682,6 +720,40 @@ const ApiAdminContentUpdateStatusRoute =
     path: '/api/admin/content/update-status',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminFinanceCategoriesRoute =
+  ApiAdminFinanceCategoriesRouteImport.update({
+    id: '/api/admin/finance/categories',
+    path: '/api/admin/finance/categories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminFinanceEntriesDeleteRoute =
+  ApiAdminFinanceEntriesDeleteRouteImport.update({
+    id: '/api/admin/finance/entries-delete',
+    path: '/api/admin/finance/entries-delete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminFinanceEntriesListRoute =
+  ApiAdminFinanceEntriesListRouteImport.update({
+    id: '/api/admin/finance/entries-list',
+    path: '/api/admin/finance/entries-list',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminFinanceEntriesUpsertRoute =
+  ApiAdminFinanceEntriesUpsertRouteImport.update({
+    id: '/api/admin/finance/entries-upsert',
+    path: '/api/admin/finance/entries-upsert',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminFinanceExportRoute = ApiAdminFinanceExportRouteImport.update({
+  id: '/api/admin/finance/export',
+  path: '/api/admin/finance/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminFinancePnlRoute = ApiAdminFinancePnlRouteImport.update({
+  id: '/api/admin/finance/pnl',
+  path: '/api/admin/finance/pnl',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminHospitalsCreateRoute = ApiAdminHospitalsCreateRouteImport.update({
   id: '/api/admin/hospitals/create',
   path: '/api/admin/hospitals/create',
@@ -724,6 +796,44 @@ const ApiAdminLeadsUploadRoute = ApiAdminLeadsUploadRouteImport.update({
   path: '/api/admin/leads/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminOfflineCancelRoute = ApiAdminOfflineCancelRouteImport.update({
+  id: '/api/admin/offline/cancel',
+  path: '/api/admin/offline/cancel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOfflineCreateRoute = ApiAdminOfflineCreateRouteImport.update({
+  id: '/api/admin/offline/create',
+  path: '/api/admin/offline/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOfflineHistoryRoute = ApiAdminOfflineHistoryRouteImport.update({
+  id: '/api/admin/offline/history',
+  path: '/api/admin/offline/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOfflineRecordPaymentRoute =
+  ApiAdminOfflineRecordPaymentRouteImport.update({
+    id: '/api/admin/offline/record-payment',
+    path: '/api/admin/offline/record-payment',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminOfflineRegisterRoute = ApiAdminOfflineRegisterRouteImport.update({
+  id: '/api/admin/offline/register',
+  path: '/api/admin/offline/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOfflineUpdatePaymentRoute =
+  ApiAdminOfflineUpdatePaymentRouteImport.update({
+    id: '/api/admin/offline/update-payment',
+    path: '/api/admin/offline/update-payment',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminOfflineVoidPaymentRoute =
+  ApiAdminOfflineVoidPaymentRouteImport.update({
+    id: '/api/admin/offline/void-payment',
+    path: '/api/admin/offline/void-payment',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminPaymentsListRoute = ApiAdminPaymentsListRouteImport.update({
   id: '/api/admin/payments/list',
   path: '/api/admin/payments/list',
@@ -801,6 +911,12 @@ const ApiAdminStaffSetRoleRoute = ApiAdminStaffSetRoleRouteImport.update({
   path: '/api/admin/staff/set-role',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminSubscribersTrendRoute =
+  ApiAdminSubscribersTrendRouteImport.update({
+    id: '/api/admin/subscribers/trend',
+    path: '/api/admin/subscribers/trend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminSubscriptionsReissueLinkRoute =
   ApiAdminSubscriptionsReissueLinkRouteImport.update({
     id: '/api/admin/subscriptions/reissue-link',
@@ -857,10 +973,12 @@ export interface FileRoutesByFullPath {
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/content-studio': typeof AdminContentStudioRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -868,6 +986,7 @@ export interface FileRoutesByFullPath {
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
+  '/admin/qr-collections': typeof AdminQrCollectionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
@@ -899,6 +1018,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/offline-dues': typeof ApiCronOfflineDuesRoute
   '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/cron/retry-meta-capi': typeof ApiCronRetryMetaCapiRoute
@@ -941,6 +1061,12 @@ export interface FileRoutesByFullPath {
   '/api/admin/content/set-image': typeof ApiAdminContentSetImageRoute
   '/api/admin/content/strategy': typeof ApiAdminContentStrategyRoute
   '/api/admin/content/update-status': typeof ApiAdminContentUpdateStatusRoute
+  '/api/admin/finance/categories': typeof ApiAdminFinanceCategoriesRoute
+  '/api/admin/finance/entries-delete': typeof ApiAdminFinanceEntriesDeleteRoute
+  '/api/admin/finance/entries-list': typeof ApiAdminFinanceEntriesListRoute
+  '/api/admin/finance/entries-upsert': typeof ApiAdminFinanceEntriesUpsertRoute
+  '/api/admin/finance/export': typeof ApiAdminFinanceExportRoute
+  '/api/admin/finance/pnl': typeof ApiAdminFinancePnlRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
@@ -949,6 +1075,13 @@ export interface FileRoutesByFullPath {
   '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
+  '/api/admin/offline/cancel': typeof ApiAdminOfflineCancelRoute
+  '/api/admin/offline/create': typeof ApiAdminOfflineCreateRoute
+  '/api/admin/offline/history': typeof ApiAdminOfflineHistoryRoute
+  '/api/admin/offline/record-payment': typeof ApiAdminOfflineRecordPaymentRoute
+  '/api/admin/offline/register': typeof ApiAdminOfflineRegisterRoute
+  '/api/admin/offline/update-payment': typeof ApiAdminOfflineUpdatePaymentRoute
+  '/api/admin/offline/void-payment': typeof ApiAdminOfflineVoidPaymentRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
   '/api/admin/payments/refund': typeof ApiAdminPaymentsRefundRoute
   '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
@@ -963,6 +1096,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
   '/api/admin/staff/list': typeof ApiAdminStaffListRoute
   '/api/admin/staff/set-role': typeof ApiAdminStaffSetRoleRoute
+  '/api/admin/subscribers/trend': typeof ApiAdminSubscribersTrendRoute
   '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
   '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
   '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
@@ -989,10 +1123,12 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/content-studio': typeof AdminContentStudioRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -1000,6 +1136,7 @@ export interface FileRoutesByTo {
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
+  '/admin/qr-collections': typeof AdminQrCollectionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
@@ -1031,6 +1168,7 @@ export interface FileRoutesByTo {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/offline-dues': typeof ApiCronOfflineDuesRoute
   '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/cron/retry-meta-capi': typeof ApiCronRetryMetaCapiRoute
@@ -1073,6 +1211,12 @@ export interface FileRoutesByTo {
   '/api/admin/content/set-image': typeof ApiAdminContentSetImageRoute
   '/api/admin/content/strategy': typeof ApiAdminContentStrategyRoute
   '/api/admin/content/update-status': typeof ApiAdminContentUpdateStatusRoute
+  '/api/admin/finance/categories': typeof ApiAdminFinanceCategoriesRoute
+  '/api/admin/finance/entries-delete': typeof ApiAdminFinanceEntriesDeleteRoute
+  '/api/admin/finance/entries-list': typeof ApiAdminFinanceEntriesListRoute
+  '/api/admin/finance/entries-upsert': typeof ApiAdminFinanceEntriesUpsertRoute
+  '/api/admin/finance/export': typeof ApiAdminFinanceExportRoute
+  '/api/admin/finance/pnl': typeof ApiAdminFinancePnlRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
@@ -1081,6 +1225,13 @@ export interface FileRoutesByTo {
   '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
+  '/api/admin/offline/cancel': typeof ApiAdminOfflineCancelRoute
+  '/api/admin/offline/create': typeof ApiAdminOfflineCreateRoute
+  '/api/admin/offline/history': typeof ApiAdminOfflineHistoryRoute
+  '/api/admin/offline/record-payment': typeof ApiAdminOfflineRecordPaymentRoute
+  '/api/admin/offline/register': typeof ApiAdminOfflineRegisterRoute
+  '/api/admin/offline/update-payment': typeof ApiAdminOfflineUpdatePaymentRoute
+  '/api/admin/offline/void-payment': typeof ApiAdminOfflineVoidPaymentRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
   '/api/admin/payments/refund': typeof ApiAdminPaymentsRefundRoute
   '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
@@ -1095,6 +1246,7 @@ export interface FileRoutesByTo {
   '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
   '/api/admin/staff/list': typeof ApiAdminStaffListRoute
   '/api/admin/staff/set-role': typeof ApiAdminStaffSetRoleRoute
+  '/api/admin/subscribers/trend': typeof ApiAdminSubscribersTrendRoute
   '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
   '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
   '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
@@ -1125,10 +1277,12 @@ export interface FileRoutesById {
   '/subscription-success': typeof SubscriptionSuccessRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/ashirwad-patra': typeof AdminAshirwadPatraRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/commissions': typeof AdminCommissionsRoute
   '/admin/content-studio': typeof AdminContentStudioRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/images': typeof AdminImagesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/overview': typeof AdminOverviewRoute
@@ -1136,6 +1290,7 @@ export interface FileRoutesById {
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/plans-sevas': typeof AdminPlansSevasRoute
   '/admin/proof-upload': typeof AdminProofUploadRoute
+  '/admin/qr-collections': typeof AdminQrCollectionsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/routing': typeof AdminRoutingRoute
   '/admin/sankalp-lists': typeof AdminSankalpListsRoute
@@ -1167,6 +1322,7 @@ export interface FileRoutesById {
   '/api/auth/request-otp': typeof ApiAuthRequestOtpRoute
   '/api/cloudinary/sign-upload': typeof ApiCloudinarySignUploadRoute
   '/api/coupons/validate': typeof ApiCouponsValidateRoute
+  '/api/cron/offline-dues': typeof ApiCronOfflineDuesRoute
   '/api/cron/publish-content': typeof ApiCronPublishContentRoute
   '/api/cron/renew-mandates': typeof ApiCronRenewMandatesRoute
   '/api/cron/retry-meta-capi': typeof ApiCronRetryMetaCapiRoute
@@ -1209,6 +1365,12 @@ export interface FileRoutesById {
   '/api/admin/content/set-image': typeof ApiAdminContentSetImageRoute
   '/api/admin/content/strategy': typeof ApiAdminContentStrategyRoute
   '/api/admin/content/update-status': typeof ApiAdminContentUpdateStatusRoute
+  '/api/admin/finance/categories': typeof ApiAdminFinanceCategoriesRoute
+  '/api/admin/finance/entries-delete': typeof ApiAdminFinanceEntriesDeleteRoute
+  '/api/admin/finance/entries-list': typeof ApiAdminFinanceEntriesListRoute
+  '/api/admin/finance/entries-upsert': typeof ApiAdminFinanceEntriesUpsertRoute
+  '/api/admin/finance/export': typeof ApiAdminFinanceExportRoute
+  '/api/admin/finance/pnl': typeof ApiAdminFinancePnlRoute
   '/api/admin/hospitals/create': typeof ApiAdminHospitalsCreateRoute
   '/api/admin/hospitals/list': typeof ApiAdminHospitalsListRoute
   '/api/admin/hospitals/reallot': typeof ApiAdminHospitalsReallotRoute
@@ -1217,6 +1379,13 @@ export interface FileRoutesById {
   '/api/admin/leads/routing': typeof ApiAdminLeadsRoutingRoute
   '/api/admin/leads/sweep': typeof ApiAdminLeadsSweepRoute
   '/api/admin/leads/upload': typeof ApiAdminLeadsUploadRoute
+  '/api/admin/offline/cancel': typeof ApiAdminOfflineCancelRoute
+  '/api/admin/offline/create': typeof ApiAdminOfflineCreateRoute
+  '/api/admin/offline/history': typeof ApiAdminOfflineHistoryRoute
+  '/api/admin/offline/record-payment': typeof ApiAdminOfflineRecordPaymentRoute
+  '/api/admin/offline/register': typeof ApiAdminOfflineRegisterRoute
+  '/api/admin/offline/update-payment': typeof ApiAdminOfflineUpdatePaymentRoute
+  '/api/admin/offline/void-payment': typeof ApiAdminOfflineVoidPaymentRoute
   '/api/admin/payments/list': typeof ApiAdminPaymentsListRoute
   '/api/admin/payments/refund': typeof ApiAdminPaymentsRefundRoute
   '/api/admin/performance/agents': typeof ApiAdminPerformanceAgentsRoute
@@ -1231,6 +1400,7 @@ export interface FileRoutesById {
   '/api/admin/staff/create-staff': typeof ApiAdminStaffCreateStaffRoute
   '/api/admin/staff/list': typeof ApiAdminStaffListRoute
   '/api/admin/staff/set-role': typeof ApiAdminStaffSetRoleRoute
+  '/api/admin/subscribers/trend': typeof ApiAdminSubscribersTrendRoute
   '/api/admin/subscriptions/reissue-link': typeof ApiAdminSubscriptionsReissueLinkRoute
   '/api/admin/subscriptions/resume': typeof ApiAdminSubscriptionsResumeRoute
   '/api/agent/leads/upload': typeof ApiAgentLeadsUploadRoute
@@ -1262,10 +1432,12 @@ export interface FileRouteTypes {
     | '/subscription-success'
     | '/telecaller'
     | '/terms-and-conditions'
+    | '/admin/analytics'
     | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/content-studio'
+    | '/admin/finance'
     | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
@@ -1273,6 +1445,7 @@ export interface FileRouteTypes {
     | '/admin/performance'
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
+    | '/admin/qr-collections'
     | '/admin/reports'
     | '/admin/routing'
     | '/admin/sankalp-lists'
@@ -1304,6 +1477,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/offline-dues'
     | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
     | '/api/cron/retry-meta-capi'
@@ -1346,6 +1520,12 @@ export interface FileRouteTypes {
     | '/api/admin/content/set-image'
     | '/api/admin/content/strategy'
     | '/api/admin/content/update-status'
+    | '/api/admin/finance/categories'
+    | '/api/admin/finance/entries-delete'
+    | '/api/admin/finance/entries-list'
+    | '/api/admin/finance/entries-upsert'
+    | '/api/admin/finance/export'
+    | '/api/admin/finance/pnl'
     | '/api/admin/hospitals/create'
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
@@ -1354,6 +1534,13 @@ export interface FileRouteTypes {
     | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
+    | '/api/admin/offline/cancel'
+    | '/api/admin/offline/create'
+    | '/api/admin/offline/history'
+    | '/api/admin/offline/record-payment'
+    | '/api/admin/offline/register'
+    | '/api/admin/offline/update-payment'
+    | '/api/admin/offline/void-payment'
     | '/api/admin/payments/list'
     | '/api/admin/payments/refund'
     | '/api/admin/performance/agents'
@@ -1368,6 +1555,7 @@ export interface FileRouteTypes {
     | '/api/admin/staff/create-staff'
     | '/api/admin/staff/list'
     | '/api/admin/staff/set-role'
+    | '/api/admin/subscribers/trend'
     | '/api/admin/subscriptions/reissue-link'
     | '/api/admin/subscriptions/resume'
     | '/api/agent/leads/upload'
@@ -1394,10 +1582,12 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/subscription-success'
     | '/terms-and-conditions'
+    | '/admin/analytics'
     | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/content-studio'
+    | '/admin/finance'
     | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
@@ -1405,6 +1595,7 @@ export interface FileRouteTypes {
     | '/admin/performance'
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
+    | '/admin/qr-collections'
     | '/admin/reports'
     | '/admin/routing'
     | '/admin/sankalp-lists'
@@ -1436,6 +1627,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/offline-dues'
     | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
     | '/api/cron/retry-meta-capi'
@@ -1478,6 +1670,12 @@ export interface FileRouteTypes {
     | '/api/admin/content/set-image'
     | '/api/admin/content/strategy'
     | '/api/admin/content/update-status'
+    | '/api/admin/finance/categories'
+    | '/api/admin/finance/entries-delete'
+    | '/api/admin/finance/entries-list'
+    | '/api/admin/finance/entries-upsert'
+    | '/api/admin/finance/export'
+    | '/api/admin/finance/pnl'
     | '/api/admin/hospitals/create'
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
@@ -1486,6 +1684,13 @@ export interface FileRouteTypes {
     | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
+    | '/api/admin/offline/cancel'
+    | '/api/admin/offline/create'
+    | '/api/admin/offline/history'
+    | '/api/admin/offline/record-payment'
+    | '/api/admin/offline/register'
+    | '/api/admin/offline/update-payment'
+    | '/api/admin/offline/void-payment'
     | '/api/admin/payments/list'
     | '/api/admin/payments/refund'
     | '/api/admin/performance/agents'
@@ -1500,6 +1705,7 @@ export interface FileRouteTypes {
     | '/api/admin/staff/create-staff'
     | '/api/admin/staff/list'
     | '/api/admin/staff/set-role'
+    | '/api/admin/subscribers/trend'
     | '/api/admin/subscriptions/reissue-link'
     | '/api/admin/subscriptions/resume'
     | '/api/agent/leads/upload'
@@ -1529,10 +1735,12 @@ export interface FileRouteTypes {
     | '/subscription-success'
     | '/telecaller'
     | '/terms-and-conditions'
+    | '/admin/analytics'
     | '/admin/ashirwad-patra'
     | '/admin/audit-log'
     | '/admin/commissions'
     | '/admin/content-studio'
+    | '/admin/finance'
     | '/admin/images'
     | '/admin/leads'
     | '/admin/overview'
@@ -1540,6 +1748,7 @@ export interface FileRouteTypes {
     | '/admin/performance'
     | '/admin/plans-sevas'
     | '/admin/proof-upload'
+    | '/admin/qr-collections'
     | '/admin/reports'
     | '/admin/routing'
     | '/admin/sankalp-lists'
@@ -1571,6 +1780,7 @@ export interface FileRouteTypes {
     | '/api/auth/request-otp'
     | '/api/cloudinary/sign-upload'
     | '/api/coupons/validate'
+    | '/api/cron/offline-dues'
     | '/api/cron/publish-content'
     | '/api/cron/renew-mandates'
     | '/api/cron/retry-meta-capi'
@@ -1613,6 +1823,12 @@ export interface FileRouteTypes {
     | '/api/admin/content/set-image'
     | '/api/admin/content/strategy'
     | '/api/admin/content/update-status'
+    | '/api/admin/finance/categories'
+    | '/api/admin/finance/entries-delete'
+    | '/api/admin/finance/entries-list'
+    | '/api/admin/finance/entries-upsert'
+    | '/api/admin/finance/export'
+    | '/api/admin/finance/pnl'
     | '/api/admin/hospitals/create'
     | '/api/admin/hospitals/list'
     | '/api/admin/hospitals/reallot'
@@ -1621,6 +1837,13 @@ export interface FileRouteTypes {
     | '/api/admin/leads/routing'
     | '/api/admin/leads/sweep'
     | '/api/admin/leads/upload'
+    | '/api/admin/offline/cancel'
+    | '/api/admin/offline/create'
+    | '/api/admin/offline/history'
+    | '/api/admin/offline/record-payment'
+    | '/api/admin/offline/register'
+    | '/api/admin/offline/update-payment'
+    | '/api/admin/offline/void-payment'
     | '/api/admin/payments/list'
     | '/api/admin/payments/refund'
     | '/api/admin/performance/agents'
@@ -1635,6 +1858,7 @@ export interface FileRouteTypes {
     | '/api/admin/staff/create-staff'
     | '/api/admin/staff/list'
     | '/api/admin/staff/set-role'
+    | '/api/admin/subscribers/trend'
     | '/api/admin/subscriptions/reissue-link'
     | '/api/admin/subscriptions/resume'
     | '/api/agent/leads/upload'
@@ -1676,6 +1900,7 @@ export interface RootRouteChildren {
   ApiAuthRequestOtpRoute: typeof ApiAuthRequestOtpRoute
   ApiCloudinarySignUploadRoute: typeof ApiCloudinarySignUploadRoute
   ApiCouponsValidateRoute: typeof ApiCouponsValidateRoute
+  ApiCronOfflineDuesRoute: typeof ApiCronOfflineDuesRoute
   ApiCronPublishContentRoute: typeof ApiCronPublishContentRoute
   ApiCronRenewMandatesRoute: typeof ApiCronRenewMandatesRoute
   ApiCronRetryMetaCapiRoute: typeof ApiCronRetryMetaCapiRoute
@@ -1715,6 +1940,12 @@ export interface RootRouteChildren {
   ApiAdminContentSetImageRoute: typeof ApiAdminContentSetImageRoute
   ApiAdminContentStrategyRoute: typeof ApiAdminContentStrategyRoute
   ApiAdminContentUpdateStatusRoute: typeof ApiAdminContentUpdateStatusRoute
+  ApiAdminFinanceCategoriesRoute: typeof ApiAdminFinanceCategoriesRoute
+  ApiAdminFinanceEntriesDeleteRoute: typeof ApiAdminFinanceEntriesDeleteRoute
+  ApiAdminFinanceEntriesListRoute: typeof ApiAdminFinanceEntriesListRoute
+  ApiAdminFinanceEntriesUpsertRoute: typeof ApiAdminFinanceEntriesUpsertRoute
+  ApiAdminFinanceExportRoute: typeof ApiAdminFinanceExportRoute
+  ApiAdminFinancePnlRoute: typeof ApiAdminFinancePnlRoute
   ApiAdminHospitalsCreateRoute: typeof ApiAdminHospitalsCreateRoute
   ApiAdminHospitalsListRoute: typeof ApiAdminHospitalsListRoute
   ApiAdminHospitalsReallotRoute: typeof ApiAdminHospitalsReallotRoute
@@ -1723,6 +1954,13 @@ export interface RootRouteChildren {
   ApiAdminLeadsRoutingRoute: typeof ApiAdminLeadsRoutingRoute
   ApiAdminLeadsSweepRoute: typeof ApiAdminLeadsSweepRoute
   ApiAdminLeadsUploadRoute: typeof ApiAdminLeadsUploadRoute
+  ApiAdminOfflineCancelRoute: typeof ApiAdminOfflineCancelRoute
+  ApiAdminOfflineCreateRoute: typeof ApiAdminOfflineCreateRoute
+  ApiAdminOfflineHistoryRoute: typeof ApiAdminOfflineHistoryRoute
+  ApiAdminOfflineRecordPaymentRoute: typeof ApiAdminOfflineRecordPaymentRoute
+  ApiAdminOfflineRegisterRoute: typeof ApiAdminOfflineRegisterRoute
+  ApiAdminOfflineUpdatePaymentRoute: typeof ApiAdminOfflineUpdatePaymentRoute
+  ApiAdminOfflineVoidPaymentRoute: typeof ApiAdminOfflineVoidPaymentRoute
   ApiAdminPaymentsListRoute: typeof ApiAdminPaymentsListRoute
   ApiAdminPaymentsRefundRoute: typeof ApiAdminPaymentsRefundRoute
   ApiAdminPerformanceAgentsRoute: typeof ApiAdminPerformanceAgentsRoute
@@ -1737,6 +1975,7 @@ export interface RootRouteChildren {
   ApiAdminStaffCreateStaffRoute: typeof ApiAdminStaffCreateStaffRoute
   ApiAdminStaffListRoute: typeof ApiAdminStaffListRoute
   ApiAdminStaffSetRoleRoute: typeof ApiAdminStaffSetRoleRoute
+  ApiAdminSubscribersTrendRoute: typeof ApiAdminSubscribersTrendRoute
   ApiAdminSubscriptionsReissueLinkRoute: typeof ApiAdminSubscriptionsReissueLinkRoute
   ApiAdminSubscriptionsResumeRoute: typeof ApiAdminSubscriptionsResumeRoute
   ApiAgentLeadsUploadRoute: typeof ApiAgentLeadsUploadRoute
@@ -1900,6 +2139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/ashirwad-patra': {
       id: '/admin/ashirwad-patra'
       path: '/ashirwad-patra'
@@ -1926,6 +2172,13 @@ declare module '@tanstack/react-router' {
       path: '/content-studio'
       fullPath: '/admin/content-studio'
       preLoaderRoute: typeof AdminContentStudioRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/images': {
@@ -1975,6 +2228,13 @@ declare module '@tanstack/react-router' {
       path: '/proof-upload'
       fullPath: '/admin/proof-upload'
       preLoaderRoute: typeof AdminProofUploadRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/qr-collections': {
+      id: '/admin/qr-collections'
+      path: '/qr-collections'
+      fullPath: '/admin/qr-collections'
+      preLoaderRoute: typeof AdminQrCollectionsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/reports': {
@@ -2185,6 +2445,13 @@ declare module '@tanstack/react-router' {
       path: '/api/coupons/validate'
       fullPath: '/api/coupons/validate'
       preLoaderRoute: typeof ApiCouponsValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/offline-dues': {
+      id: '/api/cron/offline-dues'
+      path: '/api/cron/offline-dues'
+      fullPath: '/api/cron/offline-dues'
+      preLoaderRoute: typeof ApiCronOfflineDuesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/publish-content': {
@@ -2481,6 +2748,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminContentUpdateStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/finance/categories': {
+      id: '/api/admin/finance/categories'
+      path: '/api/admin/finance/categories'
+      fullPath: '/api/admin/finance/categories'
+      preLoaderRoute: typeof ApiAdminFinanceCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/finance/entries-delete': {
+      id: '/api/admin/finance/entries-delete'
+      path: '/api/admin/finance/entries-delete'
+      fullPath: '/api/admin/finance/entries-delete'
+      preLoaderRoute: typeof ApiAdminFinanceEntriesDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/finance/entries-list': {
+      id: '/api/admin/finance/entries-list'
+      path: '/api/admin/finance/entries-list'
+      fullPath: '/api/admin/finance/entries-list'
+      preLoaderRoute: typeof ApiAdminFinanceEntriesListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/finance/entries-upsert': {
+      id: '/api/admin/finance/entries-upsert'
+      path: '/api/admin/finance/entries-upsert'
+      fullPath: '/api/admin/finance/entries-upsert'
+      preLoaderRoute: typeof ApiAdminFinanceEntriesUpsertRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/finance/export': {
+      id: '/api/admin/finance/export'
+      path: '/api/admin/finance/export'
+      fullPath: '/api/admin/finance/export'
+      preLoaderRoute: typeof ApiAdminFinanceExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/finance/pnl': {
+      id: '/api/admin/finance/pnl'
+      path: '/api/admin/finance/pnl'
+      fullPath: '/api/admin/finance/pnl'
+      preLoaderRoute: typeof ApiAdminFinancePnlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/hospitals/create': {
       id: '/api/admin/hospitals/create'
       path: '/api/admin/hospitals/create'
@@ -2535,6 +2844,55 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/leads/upload'
       fullPath: '/api/admin/leads/upload'
       preLoaderRoute: typeof ApiAdminLeadsUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/offline/cancel': {
+      id: '/api/admin/offline/cancel'
+      path: '/api/admin/offline/cancel'
+      fullPath: '/api/admin/offline/cancel'
+      preLoaderRoute: typeof ApiAdminOfflineCancelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/offline/create': {
+      id: '/api/admin/offline/create'
+      path: '/api/admin/offline/create'
+      fullPath: '/api/admin/offline/create'
+      preLoaderRoute: typeof ApiAdminOfflineCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/offline/history': {
+      id: '/api/admin/offline/history'
+      path: '/api/admin/offline/history'
+      fullPath: '/api/admin/offline/history'
+      preLoaderRoute: typeof ApiAdminOfflineHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/offline/record-payment': {
+      id: '/api/admin/offline/record-payment'
+      path: '/api/admin/offline/record-payment'
+      fullPath: '/api/admin/offline/record-payment'
+      preLoaderRoute: typeof ApiAdminOfflineRecordPaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/offline/register': {
+      id: '/api/admin/offline/register'
+      path: '/api/admin/offline/register'
+      fullPath: '/api/admin/offline/register'
+      preLoaderRoute: typeof ApiAdminOfflineRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/offline/update-payment': {
+      id: '/api/admin/offline/update-payment'
+      path: '/api/admin/offline/update-payment'
+      fullPath: '/api/admin/offline/update-payment'
+      preLoaderRoute: typeof ApiAdminOfflineUpdatePaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/offline/void-payment': {
+      id: '/api/admin/offline/void-payment'
+      path: '/api/admin/offline/void-payment'
+      fullPath: '/api/admin/offline/void-payment'
+      preLoaderRoute: typeof ApiAdminOfflineVoidPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/payments/list': {
@@ -2635,6 +2993,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminStaffSetRoleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/subscribers/trend': {
+      id: '/api/admin/subscribers/trend'
+      path: '/api/admin/subscribers/trend'
+      fullPath: '/api/admin/subscribers/trend'
+      preLoaderRoute: typeof ApiAdminSubscribersTrendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/subscriptions/reissue-link': {
       id: '/api/admin/subscriptions/reissue-link'
       path: '/api/admin/subscriptions/reissue-link'
@@ -2681,10 +3046,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAshirwadPatraRoute: typeof AdminAshirwadPatraRoute
   AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminCommissionsRoute: typeof AdminCommissionsRoute
   AdminContentStudioRoute: typeof AdminContentStudioRoute
+  AdminFinanceRoute: typeof AdminFinanceRoute
   AdminImagesRoute: typeof AdminImagesRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminOverviewRoute: typeof AdminOverviewRoute
@@ -2692,6 +3059,7 @@ interface AdminRouteChildren {
   AdminPerformanceRoute: typeof AdminPerformanceRoute
   AdminPlansSevasRoute: typeof AdminPlansSevasRoute
   AdminProofUploadRoute: typeof AdminProofUploadRoute
+  AdminQrCollectionsRoute: typeof AdminQrCollectionsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminRoutingRoute: typeof AdminRoutingRoute
   AdminSankalpListsRoute: typeof AdminSankalpListsRoute
@@ -2704,10 +3072,12 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAshirwadPatraRoute: AdminAshirwadPatraRoute,
   AdminAuditLogRoute: AdminAuditLogRoute,
   AdminCommissionsRoute: AdminCommissionsRoute,
   AdminContentStudioRoute: AdminContentStudioRoute,
+  AdminFinanceRoute: AdminFinanceRoute,
   AdminImagesRoute: AdminImagesRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminOverviewRoute: AdminOverviewRoute,
@@ -2715,6 +3085,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPerformanceRoute: AdminPerformanceRoute,
   AdminPlansSevasRoute: AdminPlansSevasRoute,
   AdminProofUploadRoute: AdminProofUploadRoute,
+  AdminQrCollectionsRoute: AdminQrCollectionsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminRoutingRoute: AdminRoutingRoute,
   AdminSankalpListsRoute: AdminSankalpListsRoute,
@@ -2826,6 +3197,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthRequestOtpRoute: ApiAuthRequestOtpRoute,
   ApiCloudinarySignUploadRoute: ApiCloudinarySignUploadRoute,
   ApiCouponsValidateRoute: ApiCouponsValidateRoute,
+  ApiCronOfflineDuesRoute: ApiCronOfflineDuesRoute,
   ApiCronPublishContentRoute: ApiCronPublishContentRoute,
   ApiCronRenewMandatesRoute: ApiCronRenewMandatesRoute,
   ApiCronRetryMetaCapiRoute: ApiCronRetryMetaCapiRoute,
@@ -2865,6 +3237,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminContentSetImageRoute: ApiAdminContentSetImageRoute,
   ApiAdminContentStrategyRoute: ApiAdminContentStrategyRoute,
   ApiAdminContentUpdateStatusRoute: ApiAdminContentUpdateStatusRoute,
+  ApiAdminFinanceCategoriesRoute: ApiAdminFinanceCategoriesRoute,
+  ApiAdminFinanceEntriesDeleteRoute: ApiAdminFinanceEntriesDeleteRoute,
+  ApiAdminFinanceEntriesListRoute: ApiAdminFinanceEntriesListRoute,
+  ApiAdminFinanceEntriesUpsertRoute: ApiAdminFinanceEntriesUpsertRoute,
+  ApiAdminFinanceExportRoute: ApiAdminFinanceExportRoute,
+  ApiAdminFinancePnlRoute: ApiAdminFinancePnlRoute,
   ApiAdminHospitalsCreateRoute: ApiAdminHospitalsCreateRoute,
   ApiAdminHospitalsListRoute: ApiAdminHospitalsListRoute,
   ApiAdminHospitalsReallotRoute: ApiAdminHospitalsReallotRoute,
@@ -2874,6 +3252,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLeadsRoutingRoute: ApiAdminLeadsRoutingRoute,
   ApiAdminLeadsSweepRoute: ApiAdminLeadsSweepRoute,
   ApiAdminLeadsUploadRoute: ApiAdminLeadsUploadRoute,
+  ApiAdminOfflineCancelRoute: ApiAdminOfflineCancelRoute,
+  ApiAdminOfflineCreateRoute: ApiAdminOfflineCreateRoute,
+  ApiAdminOfflineHistoryRoute: ApiAdminOfflineHistoryRoute,
+  ApiAdminOfflineRecordPaymentRoute: ApiAdminOfflineRecordPaymentRoute,
+  ApiAdminOfflineRegisterRoute: ApiAdminOfflineRegisterRoute,
+  ApiAdminOfflineUpdatePaymentRoute: ApiAdminOfflineUpdatePaymentRoute,
+  ApiAdminOfflineVoidPaymentRoute: ApiAdminOfflineVoidPaymentRoute,
   ApiAdminPaymentsListRoute: ApiAdminPaymentsListRoute,
   ApiAdminPaymentsRefundRoute: ApiAdminPaymentsRefundRoute,
   ApiAdminPerformanceAgentsRoute: ApiAdminPerformanceAgentsRoute,
@@ -2889,6 +3274,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminStaffCreateStaffRoute: ApiAdminStaffCreateStaffRoute,
   ApiAdminStaffListRoute: ApiAdminStaffListRoute,
   ApiAdminStaffSetRoleRoute: ApiAdminStaffSetRoleRoute,
+  ApiAdminSubscribersTrendRoute: ApiAdminSubscribersTrendRoute,
   ApiAdminSubscriptionsReissueLinkRoute: ApiAdminSubscriptionsReissueLinkRoute,
   ApiAdminSubscriptionsResumeRoute: ApiAdminSubscriptionsResumeRoute,
   ApiAgentLeadsUploadRoute: ApiAgentLeadsUploadRoute,

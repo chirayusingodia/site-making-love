@@ -55,11 +55,16 @@ export const Route = createFileRoute("/api/admin/subscriptions/reissue-link")({
         try {
           const { data: oldSub, error: subErr } = await auth.db
             .from("subscriptions")
-            .select("id,user_id,status,plan_id")
+            .select("id,user_id,status,plan_id,payment_mode")
             .eq("id", oldSubscriptionId)
             .maybeSingle();
           if (subErr) return json({ error: subErr.message }, 500);
           if (!oldSub) return json({ error: "Subscription not found" }, 404);
+          // Switching a QR subscriber to autopay is out of scope (it would
+          // leave two live subscriptions); the team handles it manually.
+          if (oldSub.payment_mode === "offline_qr") {
+            return json({ error: "QR subscription — payment record karein, nayi payment link nahi" }, 409);
+          }
           if (oldSub.status !== "halted") {
             return json(
               { error: `Sirf halted subscriptions reissue hote hain (current: ${oldSub.status})` },

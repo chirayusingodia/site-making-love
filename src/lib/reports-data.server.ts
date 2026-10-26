@@ -42,11 +42,13 @@ export async function fetchMonthlyReportData(
         .lte("paid_at", monthEnd)
         .range(from, to),
     ),
-    // Reactivations = webhook 'resumed' events (pause → active).
+    // Reactivations = webhook 'resumed' events (pause → active) PLUS an
+    // offline (QR) subscriber coming back from a lapse when their next
+    // payment is recorded.
     db
       .from("audit_logs")
       .select("id", { count: "exact", head: true })
-      .eq("action", "razorpay.subscription.resumed")
+      .in("action", ["razorpay.subscription.resumed", "offline.subscription.reactivated"])
       .gte("created_at", monthStart)
       .lte("created_at", monthEnd),
     db

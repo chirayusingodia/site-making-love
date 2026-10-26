@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { callAdminApi } from "@/lib/admin-api";
 import {
   buildPaymentsCsv,
+  paymentSource,
   type PaymentListRow,
   type PaymentsListResponse,
 } from "@/lib/payments-logic";
@@ -470,7 +471,7 @@ function AdminPaymentsPage() {
                   Status
                 </th>
                 <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Method / Cycle
+                  Source / Cycle
                 </th>
                 <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
                   Razorpay ID
@@ -549,7 +550,15 @@ function AdminPaymentsPage() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-xs text-slate-600">
-                      <div className="capitalize">{p.method || "—"}</div>
+                      {p.gateway === "offline_qr" ? (
+                        <div>
+                          <span className="inline-block rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-800">
+                            {paymentSource(p)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="capitalize">{p.method || "—"}</div>
+                      )}
                       {p.cycle_number != null && (
                         <div className="text-[10px] text-slate-400">cycle {p.cycle_number}</div>
                       )}

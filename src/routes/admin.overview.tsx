@@ -68,6 +68,9 @@ interface OwnerFinancials {
   yearlyPlansActiveCount: number;
   capturedRevenuePaise: number;
   capturedPaymentsCount: number;
+  /** The offline QR/cash/bank slice of mrrPaise / capturedRevenuePaise. */
+  qrMrrPaise: number;
+  qrCapturedRevenuePaise: number;
 }
 
 // Maps raw acquisition_channel values (see src/lib/attribution.ts and
@@ -349,6 +352,8 @@ function AdminOverviewPage() {
             yearlyPlansActiveCount: number;
             capturedRevenuePaise: number;
             capturedPaymentsCount: number;
+            qrMrrPaise: number;
+            qrCapturedRevenuePaise: number;
           }>("/api/admin/overview-financials");
           setFinancials({
             mrrPaise: fin.mrrPaise,
@@ -356,6 +361,8 @@ function AdminOverviewPage() {
             yearlyPlansActiveCount: fin.yearlyPlansActiveCount,
             capturedRevenuePaise: fin.capturedRevenuePaise,
             capturedPaymentsCount: fin.capturedPaymentsCount,
+            qrMrrPaise: fin.qrMrrPaise ?? 0,
+            qrCapturedRevenuePaise: fin.qrCapturedRevenuePaise ?? 0,
           });
         } catch (finErr) {
           console.error("overview-financials fetch failed:", finErr);
@@ -512,7 +519,9 @@ function AdminOverviewPage() {
           <MetricCard
             title="Monthly Recurring Revenue (MRR)"
             value={financials ? formatINR(financials.mrrPaise) : "₹0"}
-            subtitle="Yearly plans normalized to monthly equivalent (÷12)"
+            subtitle={`Yearly plans normalized to monthly equivalent (÷12)${
+              financials && financials.qrMrrPaise > 0 ? ` • of which QR: ${formatINR(financials.qrMrrPaise)}` : ""
+            }`}
             badge={{ text: "Normalized MRR", variant: "outline" }}
             icon={IndianRupee}
             iconBg="bg-amber-100"
@@ -528,7 +537,11 @@ function AdminOverviewPage() {
           <MetricCard
             title={`Captured Revenue (${currentMonthName})`}
             value={financials ? formatINR(financials.capturedRevenuePaise) : "₹0"}
-            subtitle={`${financials?.capturedPaymentsCount || 0} successful payments captured`}
+            subtitle={`${financials?.capturedPaymentsCount || 0} successful payments captured${
+              financials && financials.qrCapturedRevenuePaise > 0
+                ? ` • of which QR: ${formatINR(financials.qrCapturedRevenuePaise)}`
+                : ""
+            }`}
             badge={{ text: "Captured", variant: "secondary" }}
             icon={TrendingUp}
             iconBg="bg-blue-100"

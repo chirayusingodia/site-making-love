@@ -414,7 +414,7 @@ function AdminReportsPage() {
           >
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
               <StatCard
-                label="Gross revenue (captured)"
+                label="Gross revenue (captured, incl. QR)"
                 value={fmtINR(revenueReport.gross)}
                 tone="emerald"
               />

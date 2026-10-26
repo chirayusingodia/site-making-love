@@ -6,11 +6,12 @@
 // file is a named, exported, dependency-free function — no
 // Supabase client, no env, no hidden Date.now(). Callers pass
 // data in (nowMs included); results come out. This is what makes
-// the thirteen work queues and the ₹ masking unit-testable
+// the fourteen work queues and the ₹ masking unit-testable
 // (scratch/verify_telecaller_panel.ts).
 //
-// ONLY import allowed: ./sankalp-logic — itself zero-import — so
-// this module stays runnable by a plain `node scratch/*.ts`.
+// ONLY imports allowed: ./sankalp-logic and ./offline-subscriptions-logic
+// (which itself imports only sankalp-logic) — so this module stays
+// runnable by a plain `node scratch/*.ts`.
 //
 // SECURITY POSTURE (SESSION_TELECALLER_PANEL_PROMPT.md §4):
 //   The telecaller sees STATUS WORDS and DATES only — never a ₹
@@ -29,6 +30,7 @@
 // reports-logic.ts) so this module loads under plain-node scratch
 // verification harnesses — no alias/bundler resolution available there.
 import { type BatchKind, lastSaturdayOf, secondTuesdayOf, toISODate } from "./sankalp-logic.ts";
+import { dueState, todayIST } from "./offline-subscriptions-logic.ts";
 
 // ─── Tunable constants — ONE place, never inline literals ────
 
@@ -52,6 +54,9 @@ export const RECENT_CANCELLED_DAYS = 30;
 
 /** Warn-before-the-debit window for yearly renewals. */
 export const RENEWAL_AHEAD_DAYS = 14;
+
+/** A lapsed (halted) QR subscriber stays in QR Payment Due this long. */
+export const QR_LAPSED_CALL_WINDOW_DAYS = 30;
 
 /** Max leads one telecaller may create per day (fraud/fat-finger brake). */
 export const LEAD_CREATE_DAILY_LIMIT = 30;
@@ -100,6 +105,7 @@ export const TELECALLER_QUEUE_KEYS = [
   "aaj_ke_leads",
   "cutoff_risk",
   "payment_failed",
+  "qr_payment_due",
   "abandoned_checkout",
   "never_bought",
   "paused",
@@ -130,6 +136,10 @@ export const QUEUE_META: Record<TelecallerQueueKey, { title: string; why: string
   payment_failed: {
     title: "Payment Failed",
     why: "Payment fail ho gaya hai — seva band hone se pehle baat karein",
+  },
+  qr_payment_due: {
+    title: "QR Payment Due",
+    why: "QR se monthly payment aana hai / ruk gaya hai — yaad dilayein taaki seva band na ho",
   },
   abandoned_checkout: {
     title: "Abandoned Checkout",
@@ -186,6 +196,7 @@ export const QUEUE_URGENCY: Record<TelecallerQueueKey, TelecallerQueueUrgency> =
   aaj_ke_leads: "high",
   cutoff_risk: "critical",
   payment_failed: "critical",
+  qr_payment_due: "critical",
   abandoned_checkout: "high",
   never_bought: "normal",
   paused: "normal",
@@ -310,6 +321,9 @@ export interface TelecallerQueueRow {
   pausedAt: string | null;
   cancelledAt: string | null;
   cancelReason: string | null;
+  /** "autopay" | "offline_qr" (null for bare leads). Never an amount. */
+  paymentMode: string | null;
+  haltedAt: string | null;
 
   // Plan: NAME + CADENCE ONLY — never price
   planName: string | null;
@@ -484,6 +498,33 @@ export function matchesPaymentFailed(row: TelecallerQueueRow): boolean {
   );
 }
 
+/**
+ * QR Payment Due — an OFFLINE (QR) subscriber whose monthly payment is
+ * about to fall due / is overdue, or who lapsed in the last 30 days.
+ * dueState() is the ONE definition of due/overdue/lapsed (shared with
+ * the owner register and the nightly cron); this never re-derives it.
+ * Shows NO amount anywhere: the row carries none.
+ */
+export function matchesQrPaymentDue(row: TelecallerQueueRow, nowMs: number): boolean {
+  if (row.doNotCall || row.paymentMode !== "offline_qr" || row.subscriptionStatus === null) {
+    return false;
+  }
+  const state = dueState({
+    status: row.subscriptionStatus,
+    paymentMode: row.paymentMode,
+    nextBillingDate: row.nextBillingDate,
+    today: todayIST(new Date(nowMs)),
+  });
+  if (row.subscriptionStatus === "active") {
+    return state === "due_soon" || state === "overdue_grace" || state === "lapsed";
+  }
+  if (row.subscriptionStatus === "halted") {
+    const halted = ms(row.haltedAt);
+    return halted !== null && nowMs - halted <= QR_LAPSED_CALL_WINDOW_DAYS * DAY_MS;
+  }
+  return false;
+}
+
 export function matchesAbandonedCheckout(
   row: TelecallerQueueRow,
   nowMs: number,
@@ -551,6 +592,8 @@ export function matchesWelcomeCall(
 export function matchesRenewalAhead(row: TelecallerQueueRow, nowMs: number): boolean {
   if (row.doNotCall || row.subscriptionStatus !== "active") return false;
   if (row.planBillingPeriod !== "yearly") return false;
+  // The copy talks about an auto-debit; a QR subscriber has none.
+  if (row.paymentMode === "offline_qr") return false;
   const billing = ms(row.nextBillingDate);
   if (billing === null) return false;
   const delta = billing - nowMs;
@@ -664,6 +707,7 @@ export function assignQueues(input: {
     // and welcome-call (which requires zero contact anyway).
     if (matchesCutoffRisk(row, batch.cutoffAtMs, nowMs) && !cooled) out.cutoff_risk.push(row);
     if (matchesPaymentFailed(row) && !cooled) out.payment_failed.push(row);
+    if (matchesQrPaymentDue(row, nowMs) && !cooled) out.qr_payment_due.push(row);
     if (matchesAbandonedCheckout(row, nowMs, convertedProfileIds) && !cooled)
       out.abandoned_checkout.push(row);
     if (matchesNeverBought(row, nowMs) && !cooled) out.never_bought.push(row);
@@ -681,6 +725,8 @@ export function assignQueues(input: {
   out.cutoff_risk.sort(ascendingBy((r) => ms(r.startDate ?? r.subscriptionCreatedAt)));
   // Money is silently leaking — longest-broken first.
   out.payment_failed.sort(ascendingBy((r) => ms(r.latestPaymentPaidAt ?? r.cancelledAt)));
+  // Most overdue first — the oldest due date is the closest to losing seva.
+  out.qr_payment_due.sort(ascendingBy((r) => ms(r.nextBillingDate)));
   // Freshest intent first — abandonment goes cold in hours.
   out.abandoned_checkout.sort(descendingBy((r) => ms(r.subscriptionCreatedAt)));
   out.never_bought.sort(ascendingBy((r) => ms(r.profileCreatedAt)));
@@ -861,6 +907,12 @@ export function bannerForQueue(key: TelecallerQueueKey, row: TelecallerQueueRow)
       return `Payment fail ho gaya hai${
         row.latestPaymentMethod ? ` (${row.latestPaymentMethod})` : ""
       }${row.latestPaymentFailureReason ? ` — karan: ${row.latestPaymentFailureReason}` : ""}`;
+    case "qr_payment_due":
+      return row.subscriptionStatus === "halted"
+        ? "QR payment ruk gaya hai aur seva band ho gayi hai — payment karwa kar dobara shuru karein"
+        : `QR payment ${
+            row.nextBillingDate ? `${row.nextBillingDate} ko` : "jald"
+          } due hai — yaad dilayein taaki seva band na ho`;
     case "abandoned_checkout":
       return "Aapne plan chuna tha par payment adhoora reh gaya — thodi madad chahiye?";
     case "never_bought":

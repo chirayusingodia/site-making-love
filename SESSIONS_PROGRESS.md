@@ -407,6 +407,22 @@ middle of a select list. After applying, confirm `plan_gateway_refs` has a row p
 
 ---
 
+## ✅ Session — Offline (QR) Subscribers + Expenses & P&L (2026-10-25) — NOT COMMITTED, migration 042 NOT APPLIED
+
+Brief: `SESSION_OFFLINE_QR_AND_FINANCE_PROMPT.md`. Owner decisions (locked): offline subscribers are FULL subscribers; money/finance screens are OWNER-ONLY; recording a QR payment is owner-only.
+
+**Part A — Offline (QR) subscribers.** `subscriptions.payment_mode` (`autopay` | `offline_qr`) + `offline_anchor_day`; gateway row `offline_qr` (both flags false → never selectable at checkout); trigger blocks any mandate on an offline sub; `offline_payment_details` (owner-only UTR / screenshot / note / undo snapshot). Five SECURITY DEFINER RPCs (create / record / void / cancel / lapse), each with explicit `REVOKE EXECUTE … FROM public, anon, authenticated` and a `p_actor` re-checked as owner. Date + coverage maths lives ONLY in `src/lib/offline-subscriptions-logic.ts` (anchored months, grace 7 days, `dueState`). Pages: `/admin/qr-collections`; Subscribers gets a Payment-mode filter, QR badge, owner-only Add / Record / Void / Stop. Telecaller queue `qr_payment_due` (no amounts). Checkout guard blocks an offline subscriber from buying online. Commission: offline subs are pre-stamped `attribution_source='manual'` so the call-window fallback can never credit a telecaller.
+
+**Part B — Expenses & P&L.** `finance_categories` (seeded 20) + `finance_entries` (soft delete); `src/lib/finance-logic.ts` (Cash vs Normalised, refunds, coverage-based paying-subscriber counts, compare + movers, FY presets); `/admin/finance` (Overview · Compare · Ledger · Categories, `.xlsx` export via the new `src/lib/xlsx-write.ts`).
+
+**Tests:** `npm run test:offline`, `npm run test:finance` (both in `npm test`).
+
+**Before anything works:** apply `supabase/migrations/20261025_042_offline_qr_and_finance.sql` (staging first). GitHub already needs `CRON_SECRET` for renew-mandates — the new `offline-dues.yml` reuses it. Optional env: `OFFLINE_UPI_VPA`.
+
+**Follow-ups (out of scope):** offline → autopay conversion, automatic WhatsApp reminders, GST / TDS / vendor master, Razorpay fee import, commissions on offline subs, bank-statement reconciliation.
+
+---
+
 ## ⏳ NOT DONE YET — Remaining Scope
 
 ### Session 5 — Sales Agents & Coupons Manager ⚠️
