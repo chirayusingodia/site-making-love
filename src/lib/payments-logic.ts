@@ -29,6 +29,8 @@ export interface PaymentListRow {
   subscription_id: string;
   razorpay_payment_id: string | null;
   razorpay_order_id: string | null;
+  /** 'razorpay' | … | 'offline_qr' (QR / cash / bank, recorded by the owner) */
+  gateway?: string | null;
   amount_paise: number | null;
   status: string; // captured | failed | refunded | pending
   method: string | null;
@@ -41,6 +43,14 @@ export interface PaymentListRow {
     plan_id: string;
     plans: { name: string; billing_period: string } | null;
   } | null;
+}
+
+/** Where the money came from: gateway autopay, or an offline (QR) entry by method. */
+export function paymentSource(row: Pick<PaymentListRow, "gateway" | "method">): "Autopay" | "QR" | "Cash" | "Bank" {
+  if (row.gateway !== "offline_qr") return "Autopay";
+  if (row.method === "cash") return "Cash";
+  if (row.method === "bank_transfer") return "Bank";
+  return "QR";
 }
 
 export interface PaymentAggregates {

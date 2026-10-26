@@ -68,6 +68,7 @@ interface SubRow {
   status: string;
   start_date: string | null;
   next_billing_date: string | null;
+  payment_mode: string | null;
   created_at: string;
   plans: {
     name: string;
@@ -193,7 +194,7 @@ function MySubscriptionPage() {
         .select(
           // plans(*) so a not-yet-migrated DB (no plans.name_en) still
           // returns rows; name_en lights up once migration 035 lands.
-          "id,status,start_date,next_billing_date,created_at,plans(*)",
+          "id,status,start_date,next_billing_date,payment_mode,created_at,plans(*)",
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
@@ -315,6 +316,8 @@ function MySubscriptionPage() {
   const members = membersBySub[current.id] ?? [];
   const plan = current.plans;
   const isActive = current.status === "active";
+  // QR / offline subscribers pay by scanning a QR — no mandate, no auto-renew.
+  const isOfflineQr = current.payment_mode === "offline_qr";
 
   // [Bug B] one honest read of "what kind of non-active is this?"
   const pendingStale = current.status === "pending" && pendingCheckoutIsStale(current.created_at);
@@ -332,7 +335,9 @@ function MySubscriptionPage() {
         : current.status === "expired"
           ? "Yeh sadasyata expire ho gayi hai — naya Sadasyata chunein."
           : current.status === "halted"
-            ? "Payment ki samasya ki wajah se seva ruki hai — hamari team aapse sampark karegi."
+            ? current.payment_mode === "offline_qr"
+              ? "Aapka QR payment pending hai — seva dobara shuru karne ke liye payment karke team ko screenshot bhejein."
+              : "Payment ki samasya ki wajah se seva ruki hai — hamari team aapse sampark karegi."
             : null;
 
   // Live plan composition for "kya-kya" — never hardcoded.
@@ -448,7 +453,11 @@ function MySubscriptionPage() {
               </div>
               <div className="text-sm font-bold mt-1">{fmtDate(current.next_billing_date)}</div>
               <div className="text-[11px] text-muted-foreground">
-                {t("ms_auto_renew")}{plan ? ` · ${priceLabel}` : ""}
+                {isOfflineQr
+                  ? lang === "english"
+                    ? "Payment: QR / offline · Next payment due on this date"
+                    : "Payment: QR / offline · Agla payment isi tareekh tak"
+                  : `${t("ms_auto_renew")}${plan ? ` · ${priceLabel}` : ""}`}
               </div>
             </div>
           )}

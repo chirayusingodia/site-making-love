@@ -47,11 +47,17 @@ export const Route = createFileRoute("/api/admin/subscriptions/resume")({
 
         const { data: sub, error: subErr } = await auth.db
           .from("subscriptions")
-          .select("id,status,user_id")
+          .select("id,status,user_id,payment_mode")
           .eq("id", subscriptionId)
           .maybeSingle();
         if (subErr) return json({ error: subErr.message }, 500);
         if (!sub) return json({ error: "Subscription not found" }, 404);
+
+        // QR subscriptions have no mandate to resume — a halted one comes
+        // back when the owner records its next payment.
+        if (sub.payment_mode === "offline_qr") {
+          return json({ error: "QR subscription — payment record karein, resume nahi" }, 409);
+        }
 
         // Not a general "make active" button — only Razorpay's own
         // halted state may be resumed through here.

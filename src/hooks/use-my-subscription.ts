@@ -21,6 +21,7 @@ export interface CurrentSubscription {
   status: string;
   start_date: string | null;
   next_billing_date: string | null;
+  payment_mode: string | null;
   created_at: string;
   plan: {
     name: string;
@@ -36,6 +37,7 @@ interface SubRow {
   status: string;
   start_date: string | null;
   next_billing_date: string | null;
+  payment_mode: string | null;
   created_at: string;
   plans: {
     name: string;
@@ -52,7 +54,7 @@ async function fetchCurrentSubscription(userId: string): Promise<CurrentSubscrip
     // plans(*) — not an explicit column list — so this keeps working
     // whether or not plans.name_en exists yet (migration 035). name_en
     // is simply absent (→ null) until the column is added.
-    .select("id,status,start_date,next_billing_date,created_at,plans(*)")
+    .select("id,status,start_date,next_billing_date,payment_mode,created_at,plans(*)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   const rows = (res.data as unknown as SubRow[]) ?? [];
@@ -66,6 +68,7 @@ async function fetchCurrentSubscription(userId: string): Promise<CurrentSubscrip
     status: row.status,
     start_date: row.start_date,
     next_billing_date: row.next_billing_date,
+    payment_mode: row.payment_mode,
     created_at: row.created_at,
     plan: row.plans,
   };

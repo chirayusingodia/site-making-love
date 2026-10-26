@@ -41,8 +41,18 @@ export const Route = createFileRoute("/api/cloudinary/sign-upload")({
         // `punyata-site/*`     = marketing site photography (image).
         // `punyata-ashirwad/*` = rendered Ashirwad Patra images.
         // `punyata-content/*`  = Content Studio quote-card PNGs.
-        if (!folder || !/^punyata-(proofs|site|ashirwad|content)\/[\w\-/]+$/.test(folder)) {
+        // `punyata-finance/*`  = expense receipts + QR payment screenshots
+        //                        (OWNER ONLY — they sit next to ₹ figures).
+        const isFinanceFolder =
+          !!folder && /^punyata-finance\/(receipts|qr-proofs)(\/[\w\-/]+)?$/.test(folder);
+        if (
+          !folder ||
+          (!isFinanceFolder && !/^punyata-(proofs|site|ashirwad|content)\/[\w\-/]+$/.test(folder))
+        ) {
           return json({ error: "Invalid folder" }, 400);
+        }
+        if (isFinanceFolder && auth.role !== "owner") {
+          return json({ error: "Owner access required" }, 403);
         }
 
         const cloudName = process.env.CLOUDINARY_CLOUD_NAME;

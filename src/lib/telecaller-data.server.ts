@@ -59,6 +59,8 @@ interface ViewRow {
   paused_at: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
+  payment_mode: string | null;
+  halted_at: string | null;
   sub_created_at: string;
   plan_id: string | null;
   plan_name: string | null;
@@ -148,6 +150,8 @@ function buildRow(
     pausedAt: v?.paused_at ?? null,
     cancelledAt: v?.cancelled_at ?? null,
     cancelReason: v?.cancel_reason ?? null,
+    paymentMode: v?.payment_mode ?? null,
+    haltedAt: v?.halted_at ?? null,
 
     planName: v?.plan_name ?? null,
     planBillingPeriod: v?.plan_billing_period ?? null,
@@ -189,7 +193,7 @@ export async function loadTelecallerDataset(db: SupabaseClient): Promise<{
           // selected.
           .select(
             "subscription_id,user_id,status,start_date,next_billing_date,paused_at," +
-              "cancelled_at,cancel_reason,sub_created_at,plan_id,plan_name,plan_billing_period",
+              "cancelled_at,cancel_reason,payment_mode,halted_at,sub_created_at,plan_id,plan_name,plan_billing_period",
           )
           .range(from, to),
       ),
@@ -654,6 +658,8 @@ export interface SubscriptionStatusLite {
   paused_at: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
+  payment_mode: string | null;
+  halted_at: string | null;
   created_at: string;
   plan_name: string | null;
   plan_billing_period: string | null;
@@ -745,6 +751,8 @@ export async function fetchPersonCard(
         paused_at: s.paused_at,
         cancelled_at: s.cancelled_at,
         cancel_reason: s.cancel_reason,
+        payment_mode: s.payment_mode,
+        halted_at: s.halted_at,
         created_at: s.created_at,
         plan_name: s.plans?.name ?? null,
         plan_billing_period: s.plans?.billing_period ?? null,
@@ -771,6 +779,8 @@ export async function fetchPersonCard(
       paused_at: s.paused_at,
       cancelled_at: s.cancelled_at,
       cancel_reason: s.cancel_reason,
+      payment_mode: s.payment_mode,
+      halted_at: s.halted_at,
       created_at: s.created_at,
       plan_name: s.plans?.name ?? null,
       plan_billing_period: s.plans?.billing_period ?? null,
@@ -913,6 +923,8 @@ export async function fetchPersonCard(
         paused_at: primary.paused_at,
         cancelled_at: primary.cancelled_at,
         cancel_reason: primary.cancel_reason,
+        payment_mode: primary.payment_mode,
+        halted_at: primary.halted_at,
         sub_created_at: primary.created_at,
         plan_id: primary.plan_id,
         plan_name: primary.plan_name,

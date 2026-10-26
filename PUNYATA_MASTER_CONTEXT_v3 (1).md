@@ -842,6 +842,8 @@ Nav is defined in `src/routes/admin.tsx`. Actual items, role-gated as shown:
 | Leads | `/admin/leads` | admin/owner | Built — lead pipeline, hospital assignment/reallotment |
 | Commissions | `/admin/commissions` | **owner only** | Built — reconcile trigger, payout period lock |
 | Performance | `/admin/performance` | **owner only** | Built — three-lens leaderboard, §12 |
+| QR Collections | `/admin/qr-collections` | **owner only** | Built (2026-10-25, migration 042 NOT yet applied) — offline (QR / cash / bank) subscribers: register with Paid / Due soon / Overdue / Lapsed / Cancelled, Record payment, Void last, Stop, WhatsApp reminder, payment history. Offline subs are FULL subscribers (`subscriptions.payment_mode='offline_qr'`, no mandate ever); money lands in `payments` as `gateway='offline_qr'`, so MRR / Reports / P&L include it. 7-day grace after `next_billing_date`, then the nightly cron halts them (drops out of Sankalp lists); recording a payment reactivates. Admins see the QR badge + due state in Subscribers but NO amounts and no money buttons |
+| Finance & P&L | `/admin/finance` | **owner only** | Built (2026-10-25, migration 042 NOT yet applied) — expense / other-income ledger (soft delete, receipts, optional amortisation), categories (direct / operating / other income), P&L with Cash vs Normalised basis, period compare + top movers, `.xlsx` export. Pure maths in `src/lib/finance-logic.ts` |
 
 **Not built (see §22 for the full "described but absent" list):** Sales Agents Manager UI, Coupons
 Manager UI, Locations & Teams Manager UI, SEO & Content Editor, Audit Log Viewer (table receives rows
@@ -886,6 +888,20 @@ Admin
   GET/POST /api/admin/commissions/{lock,reconcile}.ts
   GET/POST /api/admin/hospitals/{create,list,reallot}.ts
   GET    /api/admin/performance/{agents,hospitals,telecallers}.ts
+
+Offline (QR) subscribers — ALL requireOwner (admin → 403); atomic writes via SECURITY DEFINER RPCs
+  POST   /api/admin/offline/create.ts            → find-or-create user by E.164 phone (no OTP) + create_offline_subscription
+  POST   /api/admin/offline/record-payment.ts    → optimistic concurrency (expectedStatus + expectedNextBillingDate → 409 'stale')
+  POST   /api/admin/offline/void-payment.ts      → undo the LATEST payment only (first payment ⇒ subscription cancelled)
+  POST   /api/admin/offline/cancel.ts
+  POST   /api/admin/offline/register.ts          → QR Collections register + month totals
+  POST   /api/admin/offline/history.ts
+  GET/POST /api/cron/offline-dues.ts             → CRON_SECRET; halts offline subs > 7 days past due; idempotent
+                                                    (.github/workflows/offline-dues.yml, 09:15 IST)
+
+Finance & P&L — ALL requireOwner
+  POST   /api/admin/finance/{categories,entries-list,entries-upsert,entries-delete,pnl,export}.ts
+  POST   /api/cloudinary/sign-upload             → folder punyata-finance/{receipts,qr-proofs}/… is OWNER-only (403 for admin)
 
 Telecaller (all behind requireTelecaller; admin/owner also reach these)
   POST   /api/telecaller/agents.ts

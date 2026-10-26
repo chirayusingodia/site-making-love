@@ -202,6 +202,26 @@ export async function createCheckoutForUser(input: {
   const plan = await resolveActivePlan(adminDb, planIdOrSlug);
   if (!plan) throw new CheckoutError("Plan not found or inactive", 404);
 
+  // An offline (QR) subscriber who logs in must not be able to buy online
+  // on top of it: that would leave TWO live subscriptions and a double
+  // sankalp. Moving them to autopay is a manual team step (out of scope).
+  // Telecaller send-payment-link routes through this function too.
+  const { data: offlineSub, error: offlineErr } = await adminDb
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("payment_mode", "offline_qr")
+    .in("status", ["active", "halted", "paused"])
+    .limit(1)
+    .maybeSingle();
+  if (offlineErr) throw new CheckoutError(`Checkout check failed: ${offlineErr.message}`, 500);
+  if (offlineSub) {
+    throw new CheckoutError(
+      "Aapki QR subscription chal rahi hai — autopay par jaane ke liye team se baat karein",
+      409,
+    );
+  }
+
   // Fail before touching the database — an unsellable plan must not
   // leave a pending subscription row behind.
   await assertPlanIsSellable(adminDb, plan.id);

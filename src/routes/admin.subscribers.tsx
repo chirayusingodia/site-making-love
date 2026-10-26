@@ -30,11 +30,17 @@ import {
   CircleStop,
   Play,
   Copy,
+  QrCode,
+  Plus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { callAdminApi } from "@/lib/admin-api";
+import { callAdminApi, fetchMyRole } from "@/lib/admin-api";
+import { todayIST } from "@/lib/offline-subscriptions-logic";
+import { ymLabel } from "@/lib/finance-ui";
+import { AddOfflineSubscriberDialog } from "@/components/admin/offline-dialogs";
+import { OfflineSubscriberPanel } from "@/components/admin/offline-subscriber-panel";
 
 export const Route = createFileRoute("/admin/subscribers")({
   component: AdminSubscribersPage,
@@ -98,6 +104,8 @@ interface SubscriberListRow {
   // Separate calling number (only set when different from
   // profile_phone, which stays the WhatsApp number).
   profile_alt_phone: string | null;
+  // "autopay" | "offline_qr" (migration 042) — carries no amount, safe for admin.
+  payment_mode: string | null;
 }
 
 /** Filters that are applied server-side before pagination. */
@@ -105,6 +113,10 @@ interface FilterState {
   status: string;
   planId: string;
   agentId: string;
+  /** all | autopay | offline_qr */
+  paymentMode: string;
+  /** all | before_this_month (already a member last month) | this_month */
+  joined: string;
   search: string;
   dateFrom: string;
   dateTo: string;
@@ -127,6 +139,8 @@ const DEFAULT_FILTERS: FilterState = {
   status: "all",
   planId: "all",
   agentId: "all",
+  paymentMode: "all",
+  joined: "all",
   search: "",
   dateFrom: "",
   dateTo: "",
@@ -207,6 +221,7 @@ interface Subscription360 {
   profile_phone: string | null;
   profile_email: string | null;
   profile_alt_phone: string | null;
+  payment_mode: string | null;
   family_members: FamilyMember[];
   payments?: Payment[];
   seva_proofs?: SevaProof[];
@@ -316,6 +331,16 @@ function applyFilters(query: any, filters: FilterState): any {
   }
   if (filters.planId !== "all") query = query.eq("plan_id", filters.planId);
   if (filters.agentId !== "all") query = query.eq("agent_id", filters.agentId);
+  if (filters.paymentMode !== "all") query = query.eq("payment_mode", filters.paymentMode);
+  if (filters.joined !== "all") {
+    // Start date vs the first of the current IST month. With Status = Active this
+    // is "active last month AND still active" (before_this_month) or "new this month".
+    const monthStart = `${todayIST(new Date()).slice(0, 7)}-01`;
+    query =
+      filters.joined === "this_month"
+        ? query.gte("start_date", monthStart)
+        : query.lt("start_date", monthStart);
+  }
   if (filters.dateFrom) query = query.gte("start_date", filters.dateFrom);
   if (filters.dateTo) query = query.lte("start_date", filters.dateTo);
   if (filters.sankalpPending) {
@@ -435,7 +460,17 @@ async function exportCSVServerSide(filters: FilterState, setExporting: (v: boole
 // UNTOUCHED from Session 2 — still queries real tables directly,
 // scoped to a single subscription_id. Already fast.
 
-function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: () => void }) {
+function Subscriber360Modal({
+  sub,
+  onClose,
+  isOwner,
+  onChanged,
+}: {
+  sub: Subscription360;
+  onClose: () => void;
+  isOwner: boolean;
+  onChanged: () => void;
+}) {
   const [payments, setPayments] = useState<Payment[] | null>(null);
   const [sevaProofs, setSevaProofs] = useState<SevaProof[] | null>(null);
   const [planHistory, setPlanHistory] = useState<PlanHistoryEntry[] | null>(null);
@@ -516,6 +551,9 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
   }, [sub.subscription_id]);
 
   const primary = sub.family_members.find((m) => m.is_primary) || sub.family_members[0];
+  // QR / offline subscribers have no mandate and no gateway link, so the
+  // mandate-only actions (Resume, Send New Payment Link) never apply.
+  const isOfflineQr = sub.payment_mode === "offline_qr";
 
   async function resumeSubscription() {
     setResumeBusy(true);
@@ -642,23 +680,31 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
                     label="Billing"
                     value={sub.plan_billing_period === "yearly" ? "Annual" : "Monthly"}
                   />
-                  <Detail
-                    label="Price"
-                    value={sub.plan_price_paise != null ? fmtINR(sub.plan_price_paise) : "—"}
-                  />
+                  {(!isOfflineQr || isOwner) && (
+                    <Detail
+                      label="Price"
+                      value={sub.plan_price_paise != null ? fmtINR(sub.plan_price_paise) : "—"}
+                    />
+                  )}
                   <Detail label="Status" value={<StatusBadge status={sub.status} />} />
                   <Detail label="Start Date" value={fmtDate(sub.start_date)} />
                   <Detail label="Next Billing" value={fmtDate(sub.next_billing_date)} />
-                  <Detail
-                    label="Mandate ID"
-                    value={
-                      sub.mandate_gateway_id
-                        ? `${sub.mandate_gateway_id}${sub.mandate_gateway ? ` (${sub.mandate_gateway})` : ""}`
-                        : "Not linked"
-                    }
-                    mono
-                  />
-                  <Detail label="Mandate Status" value={sub.mandate_status || "—"} />
+                  {isOfflineQr ? (
+                    <Detail label="Payment Mode" value="QR / Offline" />
+                  ) : (
+                    <>
+                      <Detail
+                        label="Mandate ID"
+                        value={
+                          sub.mandate_gateway_id
+                            ? `${sub.mandate_gateway_id}${sub.mandate_gateway ? ` (${sub.mandate_gateway})` : ""}`
+                            : "Not linked"
+                        }
+                        mono
+                      />
+                      <Detail label="Mandate Status" value={sub.mandate_status || "—"} />
+                    </>
+                  )}
                   <Detail label="Channel" value={sub.acquisition_channel || "—"} />
                   {sub.status === "paused" && (
                     <Detail label="Paused At" value={fmtDate(sub.paused_at)} />
@@ -694,7 +740,22 @@ function Subscriber360Modal({ sub, onClose }: { sub: Subscription360; onClose: (
               {/* Halted recovery — Razorpay exhausted its own retries
                   (~3 days). Resume pokes the mandate; if the mandate
                   itself is dead, re-issue a fresh organic link. */}
-              {sub.status === "halted" && (
+              {isOfflineQr && (
+                <Section title="QR / Offline Payment" icon={QrCode}>
+                  <OfflineSubscriberPanel
+                    subscriptionId={sub.subscription_id}
+                    name={primary?.full_name || sub.profile_full_name || null}
+                    status={sub.status}
+                    nextBillingDate={sub.next_billing_date}
+                    planPricePaise={sub.plan_price_paise}
+                    planBillingPeriod={sub.plan_billing_period}
+                    isOwner={isOwner}
+                    onChanged={onChanged}
+                  />
+                </Section>
+              )}
+
+              {sub.status === "halted" && !isOfflineQr && (
                 <Section title="Halted — Recovery Actions" icon={CircleStop}>
                   <div className="rounded-xl border border-red-200 bg-red-50/60 px-4 py-3 text-xs text-red-900">
                     Razorpay ne retries exhaust kar diye hain. Resume se wahi mandate dobara charge
@@ -1022,6 +1083,13 @@ function AdminSubscribersPage() {
   const [loading360Open, setLoad360Open] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  // Owner-only extras: Add offline subscriber, QR money buttons, QR amounts.
+  const [isOwner, setIsOwner] = useState(false);
+  const [addingOffline, setAddingOffline] = useState(false);
+  useEffect(() => {
+    void fetchMyRole().then((r) => setIsOwner(r === "owner"));
+  }, []);
+
   // ── Load filter option lists once on mount ──
   useEffect(() => {
     const loadOptions = async () => {
@@ -1103,6 +1171,8 @@ function AdminSubscribersPage() {
     filters.status !== "all" ||
     filters.planId !== "all" ||
     filters.agentId !== "all" ||
+    filters.paymentMode !== "all" ||
+    filters.joined !== "all" ||
     filters.dateFrom ||
     filters.dateTo ||
     filters.search ||
@@ -1144,6 +1214,7 @@ function AdminSubscribersPage() {
       profile_phone: row.profile_phone,
       profile_email: row.profile_email,
       profile_alt_phone: row.profile_alt_phone,
+      payment_mode: row.payment_mode,
       family_members: (fm || []) as FamilyMember[],
     });
     setLoad360Open(false);
@@ -1155,7 +1226,25 @@ function AdminSubscribersPage() {
   return (
     <div className="space-y-5">
       {/* 360 Modal */}
-      {selected360 && <Subscriber360Modal sub={selected360} onClose={() => set360(null)} />}
+      {selected360 && (
+        <Subscriber360Modal
+          sub={selected360}
+          onClose={() => set360(null)}
+          isOwner={isOwner}
+          onChanged={() => {
+            set360(null);
+            void fetchPage(page, filters);
+          }}
+        />
+      )}
+
+      {isOwner && (
+        <AddOfflineSubscriberDialog
+          open={addingOffline}
+          onClose={() => setAddingOffline(false)}
+          onDone={() => void fetchPage(page, filters)}
+        />
+      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-5 rounded-2xl border border-amber-900/10 shadow-2xs">
@@ -1168,6 +1257,17 @@ function AdminSubscribersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {isOwner && (
+            <Button
+              onClick={() => setAddingOffline(true)}
+              size="sm"
+              variant="outline"
+              className="border-violet-300 bg-violet-50 text-violet-900 gap-1.5 text-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add offline subscriber
+            </Button>
+          )}
           <Button
             onClick={() => fetchPage(page, filters)}
             disabled={loading}
@@ -1204,6 +1304,8 @@ function AdminSubscribersPage() {
           {errorMsg}
         </div>
       )}
+
+      <SubscriberCounts />
 
       {/* Filters */}
       <Card className="border border-amber-900/10 bg-white">
@@ -1286,6 +1388,31 @@ function AdminSubscribersPage() {
                   {a.full_name}
                 </option>
               ))}
+            </select>
+
+            {/* Payment mode — autopay (mandate) vs QR / offline */}
+            <select
+              id="sub-filter-payment-mode"
+              value={pendingFilters.paymentMode}
+              onChange={(e) => setPending((p) => ({ ...p, paymentMode: e.target.value }))}
+              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
+            >
+              <option value="all">All Payment Modes</option>
+              <option value="autopay">Autopay</option>
+              <option value="offline_qr">QR / Offline</option>
+            </select>
+
+            {/* Joined — "active last month" / "new this month" */}
+            <select
+              id="sub-filter-joined"
+              value={pendingFilters.joined}
+              onChange={(e) => setPending((p) => ({ ...p, joined: e.target.value }))}
+              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
+              title="Pair with Status = Active to see who was active last month and still is"
+            >
+              <option value="all">Joined: any time</option>
+              <option value="before_this_month">Member before this month</option>
+              <option value="this_month">New this month</option>
             </select>
 
             {/* Details Incomplete call queue (0 family members) */}
@@ -1456,7 +1583,10 @@ function AdminSubscribersPage() {
                         <td className="py-3 px-4">
                           <div className="font-medium text-slate-800">{row.plan_name || "—"}</div>
                           <div className="text-[11px] text-slate-400">
-                            {row.plan_price_paise != null ? fmtINR(row.plan_price_paise) : ""}
+                            {row.plan_price_paise != null &&
+                            (isOwner || row.payment_mode !== "offline_qr")
+                              ? fmtINR(row.plan_price_paise)
+                              : ""}
                             {row.plan_billing_period === "yearly" && (
                               <span className="ml-1 text-sky-600 font-semibold">Annual</span>
                             )}
@@ -1467,6 +1597,12 @@ function AdminSubscribersPage() {
                         <td className="py-3 px-4">
                           <div className="flex flex-col items-start gap-1">
                             <StatusBadge status={row.status} />
+                            {row.payment_mode === "offline_qr" && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-violet-50 text-violet-800 border-violet-200">
+                                <QrCode className="w-3 h-3" />
+                                QR
+                              </span>
+                            )}
                             {row.family_member_count === 0 && row.status === "active" && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-rose-50 text-rose-700 border-rose-200">
                                 <PhoneCall className="w-3 h-3" />
@@ -1669,5 +1805,57 @@ function ExpandedMembersRow({ subscriptionId }: { subscriptionId: string }) {
         )}
       </td>
     </tr>
+  );
+}
+
+
+// ─── Counts strip: active now, last month vs this month ──────
+// Counts only (no ₹) → served to admins too. "Paying" = a payment covers that
+// month; "Active now" is the live status.
+interface TrendResponse {
+  toYm: string;
+  activeNow: number;
+  months: { ym: string; paying: number; newSubs: number; cancelled: number; lapsed: number }[];
+}
+
+function SubscriberCounts() {
+  const [data, setData] = useState<TrendResponse | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    callAdminApi<TrendResponse>("/api/admin/subscribers/trend", { months: 2 })
+      .then(setData)
+      .catch(() => setFailed(true));
+  }, []);
+  if (failed) return null;
+  const cur = data?.months[1];
+  const prev = data?.months[0];
+  const tile = (label: string, value: number | undefined, sub: string) => (
+    <div className="rounded-xl border border-amber-900/10 bg-white p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/60">{label}</div>
+      <div className="text-xl font-bold text-slate-900 mt-1">{value ?? "—"}</div>
+      <div className="text-[11px] text-slate-500">{sub}</div>
+    </div>
+  );
+  const delta = cur && prev ? cur.paying - prev.paying : null;
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      {tile("Active now", data?.activeNow, "status = active")}
+      {tile(
+        `Paying · ${prev ? ymLabel(prev.ym) : "last month"}`,
+        prev?.paying,
+        "a payment covers that month",
+      )}
+      {tile(
+        `Paying · ${cur ? ymLabel(cur.ym) : "this month"}`,
+        cur?.paying,
+        delta === null ? "" : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta)} vs last month`,
+      )}
+      {tile(`New · ${prev ? ymLabel(prev.ym) : "last month"}`, prev?.newSubs, "joined that month")}
+      {tile(
+        `Cancelled · ${prev ? ymLabel(prev.ym) : "last month"}`,
+        prev?.cancelled,
+        prev ? `+ ${prev.lapsed} lapsed` : "",
+      )}
+    </div>
   );
 }

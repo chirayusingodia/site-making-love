@@ -24,6 +24,9 @@ import {
   Image as ImageIcon,
   PenSquare,
   Mail,
+  QrCode,
+  IndianRupee,
+  LineChart,
   type LucideIcon,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
@@ -109,6 +112,12 @@ function AdminLayout() {
             icon: TrendingUp,
             badge: "Owner",
           },
+          // Offline (QR) subscribers + expenses / P&L — both show ₹, so
+          // owner-only with the same three layers (nav here, beforeLoad on
+          // the route, requireOwner on the API).
+          { label: "QR Collections", href: "/admin/qr-collections", icon: QrCode, badge: "Owner" },
+          { label: "Analytics", href: "/admin/analytics", icon: LineChart, badge: "Owner" },
+          { label: "Finance & P&L", href: "/admin/finance", icon: IndianRupee, badge: "Owner" },
           // Staff role management (make/remove admin) — owner-only,
           // same three-layer discipline as Commissions/Performance.
           { label: "Staff Roles", href: "/admin/staff", icon: UserCog, badge: "Owner" },

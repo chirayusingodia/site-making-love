@@ -76,6 +76,18 @@ export const Route = createFileRoute("/api/admin/payments/refund")({
         if (payErr) return json({ error: payErr.message }, 500);
         if (!pay) return json({ error: "Payment not found" }, 404);
 
+        // Offline (QR / cash / bank) money never went through a gateway,
+        // so there is nothing to refund through one. A mistaken entry is
+        // undone with Void on QR Collections.
+        if (pay.gateway === "offline_qr") {
+          return json(
+            {
+              error:
+                "Offline payment ka refund gateway se nahi hota — galat entry ho to QR Collections se Void karein",
+            },
+            409,
+          );
+        }
         if (!pay.razorpay_payment_id) {
           return json({ error: "Payment gateway se linked nahi hai" }, 400);
         }
