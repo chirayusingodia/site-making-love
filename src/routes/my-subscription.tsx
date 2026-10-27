@@ -24,6 +24,8 @@ import {
   MessageCircle,
   Plus,
   Play,
+  Share2,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { SiteChrome } from "@/components/site-chrome";
@@ -32,7 +34,10 @@ import { supabase } from "@/lib/supabase";
 import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 import { usePublicPlans, getPlanById, formatINR } from "@/lib/plans";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
-import { nextSevaDate, fmtSevaDate, monthsActive } from "@/lib/seva-dates";
+import { nextSevaDate, fmtSevaDate, monthsActive, elapsedSevaDates } from "@/lib/seva-dates";
+import { specialDayItems } from "@/lib/special-days";
+import { computeImpact, SADHU_PER_POOJA, COWS_PER_POOJA, type PunyaImpact } from "@/lib/punya-impact";
+import { renderPunyaCard, sharePunyaCard } from "@/lib/punya-card-render";
 import { useTranslation, localizedName, type Lang } from "@/lib/translations";
 import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
 
@@ -350,6 +355,22 @@ function MySubscriptionPage() {
   const months = monthsActive(current.start_date ?? current.created_at);
   const patraCount = patras.length;
 
+  // Impact — calendar poojas that have come around since she joined
+  // (Premium: 2nd Tue + last Sat), × the fixed per-pooja daan.
+  const pastPoojas = elapsedSevaDates(current.start_date ?? current.created_at, hasLastSaturday);
+  const impact = computeImpact(Math.max(pastPoojas.length, sevasCompleted), members.length, includedSevas.length);
+  // Completed sevas follow the joining date: every scheduled pooja since
+  // she joined counts. Recorded proofs/manual marks can only raise it.
+  const completedCount = Math.max(pastPoojas.length, sevasCompleted);
+  const latestPooja = pastPoojas.length > 0 ? pastPoojas[pastPoojas.length - 1] : null;
+  const latestSpecial = latestPooja ? specialDayItems(latestPooja.date)[0] : undefined;
+  const latestCard = latestPooja
+    ? {
+        dateLabel: fmtSevaDate(latestPooja.date, lang),
+        occasion: latestSpecial ? (lang === "english" ? latestSpecial.en : latestSpecial.hi) : t(latestPooja.labelKey),
+      }
+    : null;
+
   // Next scheduled seva (cadence hint) — only meaningful while active.
   const next = isActive ? nextSevaDate(hasLastSaturday) : null;
 
@@ -384,9 +405,9 @@ function MySubscriptionPage() {
               <span className="text-[11px] text-[#FFE7B8]/85">{t("ms_joined")} · {joinLabel}</span>
             </div>
 
-            {sevasCompleted > 0 ? (
+            {completedCount > 0 ? (
               <div className="mt-4 flex items-end gap-2.5">
-                <div className="font-display text-[52px] font-extrabold leading-[0.9] text-white">{sevasCompleted}</div>
+                <div className="font-display text-[52px] font-extrabold leading-[0.9] text-white">{completedCount}</div>
                 <div className="pb-1.5">
                   <div className="text-[15px] font-bold text-white">{t("ms_sevas_done")}</div>
                   <div className="text-xs text-[#FFF3EA]/80">{t("ms_in_name_gotra")}</div>
@@ -405,8 +426,8 @@ function MySubscriptionPage() {
 
             <div className="mt-4 flex gap-2">
               <PunyaStat value={months > 0 ? `${months} ${t("unit_months")}` : t("ms_new")} label={t("ms_active_membership")} />
-              <PunyaStat value={`${patraCount}`} label={t("ms_patra")} />
-              <PunyaStat value={`${sevasCompleted}`} label={t("ms_completed_sevas")} />
+              <PunyaStat value={`${impact.sadhuFed}`} label={lang === "english" ? "Sadhu-Santo fed" : "साधु-संत भोजन"} />
+              <PunyaStat value={`${completedCount}`} label={t("ms_completed_sevas")} />
             </div>
 
             <div className="mt-3.5 pt-3 border-t border-[#FFE7B8]/25 flex items-center gap-2">
@@ -415,6 +436,17 @@ function MySubscriptionPage() {
             </div>
           </div>
         </section>
+
+        {/* ═══ YOUR IMPACT — daan done through your membership, shareable ═══ */}
+        {isActive && (
+          <ImpactCard
+            impact={impact}
+            months={months}
+            patraCount={patraCount}
+            latestCard={latestCard}
+            lang={lang}
+          />
+        )}
 
         {/* ═══ ACTIVE MEMBERSHIP ═══ */}
         <div className="card-soft p-5">
@@ -561,6 +593,12 @@ function MySubscriptionPage() {
             <ul className="mt-3">
               {patras.map((p) => {
                 const dm = fmtDayMonth(p.batch_date, lang);
+                // Auspicious day the pooja fell on (festival / tithi / weekday deity).
+                const bd = p.batch_date.slice(0, 10).split("-").map(Number);
+                const special =
+                  bd.length === 3 && !bd.some(isNaN)
+                    ? specialDayItems(new Date(bd[0], bd[1] - 1, bd[2]))[0]
+                    : undefined;
                 return (
                   <li key={p.id} className="flex items-center gap-3 py-2.5 border-b border-black/5 last:border-0">
                     <div className="w-10 text-center shrink-0">
@@ -569,6 +607,11 @@ function MySubscriptionPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13.5px] font-bold truncate">{p.occasion_label}</div>
+                      {special && (
+                        <div className="text-[11px] font-semibold text-brand truncate">
+                          ✦ {lang === "english" ? special.en : special.hi}
+                        </div>
+                      )}
                       <div className="text-[11px] text-muted-foreground">{t("ms_patra")} {p.patra_no}</div>
                     </div>
                     {p.image_url ? (
@@ -690,6 +733,102 @@ function MySubscriptionPage() {
         </Link>
       </main>
     </SiteChrome>
+  );
+}
+
+function ImpactCard({
+  impact,
+  months,
+  patraCount,
+  latestCard,
+  lang,
+}: {
+  impact: PunyaImpact;
+  months: number;
+  patraCount: number;
+  latestCard: { dateLabel: string; occasion: string } | null;
+  lang: Lang;
+}) {
+  const en = lang === "english";
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const tiles = [
+    { v: impact.sadhuFed, l: en ? "Sadhu-Santo fed" : "साधु-संतों को भोजन", s: en ? `${SADHU_PER_POOJA} per pooja` : `प्रति पूजा ${SADHU_PER_POOJA} संत`, icon: Users },
+    { v: impact.cowsFed, l: en ? "Cows given fodder" : "गौ-माताओं को चारा", s: en ? `${COWS_PER_POOJA} per pooja` : `प्रति पूजा ${COWS_PER_POOJA} गौ`, icon: Leaf },
+    { v: impact.sankalps, l: en ? "Sankalps for your family" : "परिवार के संकल्प", s: en ? "name & gotra each time" : "नाम व गोत्र सहित", icon: Heart },
+    { v: patraCount, l: en ? "Ashirwad Patras" : "आशीर्वाद पत्र", s: en ? "one after each pooja" : "हर पूजा के बाद", icon: ScrollText },
+  ];
+
+  async function onShare() {
+    setBusy(true);
+    setNote(null);
+    try {
+      const blob = await renderPunyaCard({ lang, months, impact, lastPooja: latestCard });
+      const msg = en
+        ? "My Punya Bank on Punyata — sevas done in my family's name at Tirth Guru Pushkarraj 🙏 punyata.com"
+        : "पुण्यता पर मेरा पुण्य खाता — तीर्थ गुरु पुष्करराज में परिवार के नाम से सेवा 🙏 punyata.com";
+      const res = await sharePunyaCard(blob, msg);
+      if (res === "downloaded") setNote(en ? "Image saved — share it from your gallery." : "तस्वीर सेव हो गई — गैलरी से शेयर करें।");
+    } catch {
+      setNote(en ? "Couldn't create the image. Please try again." : "तस्वीर नहीं बन सकी, फिर कोशिश करें।");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="card-soft p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.09em] text-brand">
+            {en ? "Your impact" : "आपका पुण्य प्रभाव"}
+          </div>
+          <h3 className="text-[17px] mt-0.5">
+            {impact.poojas > 0
+              ? en
+                ? `${impact.poojas} poojas in your name`
+                : `आपके नाम से ${impact.poojas} पूजाएँ`
+              : en
+                ? "Your first pooja is coming"
+                : "आपकी पहली पूजा आने वाली है"}
+          </h3>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 mt-3.5">
+        {tiles.map((x) => {
+          const Icon = x.icon;
+          return (
+            <div key={x.l} className="rounded-2xl bg-[#FFF7F1] border border-brand/10 p-3">
+              <Icon size={18} className="text-brand" />
+              <div className="font-display text-2xl font-extrabold leading-none mt-1.5">{x.v}</div>
+              <div className="text-[12.5px] font-bold leading-tight mt-1">{x.l}</div>
+              <div className="text-[10.5px] text-muted-foreground leading-tight">{x.s}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {latestCard && (
+        <div className="mt-3 rounded-2xl bg-brand-soft/40 px-3 py-2.5 text-[12px]">
+          <span className="font-bold text-brand-deep">{en ? "Latest pooja: " : "अंतिम पूजा: "}</span>
+          <span className="font-semibold">{latestCard.occasion}</span>
+          <span className="text-muted-foreground"> · {latestCard.dateLabel}</span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onShare}
+        disabled={busy}
+        className="mt-3.5 w-full inline-flex items-center justify-center gap-2 bg-[#25D366] text-white font-bold py-3 rounded-full disabled:opacity-60"
+      >
+        {busy ? <Loader2 size={17} className="animate-spin" /> : <Share2 size={17} />}
+        {en ? "Share my Punya" : "अपना पुण्य शेयर करें"}
+      </button>
+      {note && <p className="text-[11px] text-muted-foreground text-center mt-2">{note}</p>}
+    </div>
   );
 }
 

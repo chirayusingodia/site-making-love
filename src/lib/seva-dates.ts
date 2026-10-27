@@ -85,6 +85,37 @@ export function upcomingSevaDates(hasLastSaturday: boolean, count: number): Seva
 }
 
 /**
+ * Scheduled seva dates from a subscription's start up to and including
+ * today (IST), oldest first — the calendar cadence that has already
+ * come around since she joined. Used for impact totals; it says which
+ * poojas were SCHEDULED, not that a proof row exists for each.
+ */
+export function elapsedSevaDates(startISO: string | null, hasLastSaturday: boolean): SevaDate[] {
+  if (!startISO) return [];
+  const iso = startISO.length === 10 ? `${startISO}T00:00:00+05:30` : startISO;
+  const startRaw = new Date(iso);
+  if (isNaN(startRaw.getTime())) return [];
+  const startStr = startRaw.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const start = new Date(`${startStr}T00:00:00`);
+  const today = istToday();
+
+  const out: SevaDate[] = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cursor.getTime() <= today.getTime()) {
+    const yy = cursor.getFullYear();
+    const mm = cursor.getMonth();
+    out.push({ date: nthWeekday(yy, mm, 2, 2), labelKey: "sd_2nd_tuesday" });
+    if (hasLastSaturday) {
+      out.push({ date: lastWeekday(yy, mm, 6), labelKey: "sd_last_saturday" });
+    }
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return out
+    .filter((c) => c.date.getTime() >= start.getTime() && c.date.getTime() <= today.getTime())
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
+/**
  * Same as nextSevaDate(), but with a specific hour of day set — for a
  * live ticking countdown rather than a date-only display. No actual
  * sankalp start time is stored anywhere, so this is a display estimate
