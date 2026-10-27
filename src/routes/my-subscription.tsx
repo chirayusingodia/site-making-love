@@ -36,7 +36,7 @@ import { usePublicPlans, getPlanById, formatINR } from "@/lib/plans";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
 import { nextSevaDate, fmtSevaDate, monthsActive, elapsedSevaDates } from "@/lib/seva-dates";
 import { specialDayItems } from "@/lib/special-days";
-import { computeImpact, SADHU_PER_POOJA, COWS_PER_POOJA, type PunyaImpact } from "@/lib/punya-impact";
+import { computeImpact, impactTiles, type PunyaImpact, type ImpactPlanFlags } from "@/lib/punya-impact";
 import { renderPunyaCard, sharePunyaCard } from "@/lib/punya-card-render";
 import { useTranslation, localizedName, type Lang } from "@/lib/translations";
 import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
@@ -353,12 +353,19 @@ function MySubscriptionPage() {
 
   // Accumulated punya (all real / calendar-derived).
   const months = monthsActive(current.start_date ?? current.created_at);
-  const patraCount = patras.length;
 
   // Impact — calendar poojas that have come around since she joined
   // (Premium: 2nd Tue + last Sat), × the fixed per-pooja daan.
   const pastPoojas = elapsedSevaDates(current.start_date ?? current.created_at, hasLastSaturday);
-  const impact = computeImpact(Math.max(pastPoojas.length, sevasCompleted), members.length, includedSevas.length);
+  const sundarSevas = includedSevas.filter((s) => /sundar|सुंदर|paath|पाठ/i.test(`${s.slug} ${s.name}`));
+  const hawanSevas = includedSevas.filter(isHawanSeva);
+  const flags: ImpactPlanFlags = {
+    hasSundarkand: sundarSevas.length > 0,
+    hasHawan: hawanSevas.length > 0,
+    sundarkandPerMonth: sundarSevas.reduce((a, s) => a + Math.max(s.days.length, 1), 0),
+    hawanPerMonth: hawanSevas.reduce((a, s) => a + Math.max(s.days.length, 1), 0),
+  };
+  const impact = computeImpact(Math.max(pastPoojas.length, sevasCompleted), members.length, flags);
   // Completed sevas follow the joining date: every scheduled pooja since
   // she joined counts. Recorded proofs/manual marks can only raise it.
   const completedCount = Math.max(pastPoojas.length, sevasCompleted);
@@ -442,7 +449,8 @@ function MySubscriptionPage() {
           <ImpactCard
             impact={impact}
             months={months}
-            patraCount={patraCount}
+            flags={flags}
+            names={members.map((m) => m.full_name)}
             latestCard={latestCard}
             lang={lang}
           />
@@ -739,13 +747,15 @@ function MySubscriptionPage() {
 function ImpactCard({
   impact,
   months,
-  patraCount,
+  flags,
+  names,
   latestCard,
   lang,
 }: {
   impact: PunyaImpact;
   months: number;
-  patraCount: number;
+  flags: ImpactPlanFlags;
+  names: string[];
   latestCard: { dateLabel: string; occasion: string } | null;
   lang: Lang;
 }) {
@@ -753,18 +763,13 @@ function ImpactCard({
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
-  const tiles = [
-    { v: impact.sadhuFed, l: en ? "Sadhu-Santo fed" : "साधु-संतों को भोजन", s: en ? `${SADHU_PER_POOJA} per pooja` : `प्रति पूजा ${SADHU_PER_POOJA} संत`, icon: Users },
-    { v: impact.cowsFed, l: en ? "Cows given fodder" : "गौ-माताओं को चारा", s: en ? `${COWS_PER_POOJA} per pooja` : `प्रति पूजा ${COWS_PER_POOJA} गौ`, icon: Leaf },
-    { v: impact.sankalps, l: en ? "Sankalps for your family" : "परिवार के संकल्प", s: en ? "name & gotra each time" : "नाम व गोत्र सहित", icon: Heart },
-    { v: patraCount, l: en ? "Ashirwad Patras" : "आशीर्वाद पत्र", s: en ? "one after each pooja" : "हर पूजा के बाद", icon: ScrollText },
-  ];
+  const tiles = impactTiles(impact, flags, en);
 
   async function onShare() {
     setBusy(true);
     setNote(null);
     try {
-      const blob = await renderPunyaCard({ lang, months, impact, lastPooja: latestCard });
+      const blob = await renderPunyaCard({ lang, months, poojas: impact.poojas, names, tiles, lastPooja: latestCard });
       const msg = en
         ? "My Punya Bank on Punyata — sevas done in my family's name at Tirth Guru Pushkarraj 🙏 punyata.com"
         : "पुण्यता पर मेरा पुण्य खाता — तीर्थ गुरु पुष्करराज में परिवार के नाम से सेवा 🙏 punyata.com";
@@ -797,17 +802,16 @@ function ImpactCard({
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 mt-3.5">
-        {tiles.map((x) => {
-          const Icon = x.icon;
-          return (
-            <div key={x.l} className="rounded-2xl bg-[#FFF7F1] border border-brand/10 p-3">
-              <Icon size={18} className="text-brand" />
-              <div className="font-display text-2xl font-extrabold leading-none mt-1.5">{x.v}</div>
-              <div className="text-[12.5px] font-bold leading-tight mt-1">{x.l}</div>
-              <div className="text-[10.5px] text-muted-foreground leading-tight">{x.s}</div>
+        {tiles.map((x) => (
+          <div key={x.label} className="rounded-2xl bg-[#FFF7F1] border border-brand/10 p-3 flex items-center gap-2.5">
+            <div className="w-10 h-10 shrink-0 rounded-full bg-[#FDE9D6] flex items-center justify-center text-xl">{x.emoji}</div>
+            <div className="min-w-0">
+              <div className="font-display text-[22px] font-extrabold leading-none text-brand">{x.value}</div>
+              <div className="text-[12px] font-bold leading-tight mt-0.5">{x.label}</div>
+              <div className="text-[10px] text-muted-foreground leading-tight">{x.sub}</div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {latestCard && (
