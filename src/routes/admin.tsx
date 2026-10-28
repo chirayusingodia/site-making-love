@@ -1,13 +1,11 @@
 import { createFileRoute, Outlet, Link, redirect, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Users,
   Flame,
-  Video,
   CreditCard,
-  Shield,
   Sparkles,
-  AlertCircle,
   Layers,
   ScrollText,
   BarChart3,
@@ -18,7 +16,6 @@ import {
   TrendingUp,
   Split,
   Menu,
-  ChevronDown,
   Search,
   ClipboardList,
   Image as ImageIcon,
@@ -26,11 +23,11 @@ import {
   Mail,
   QrCode,
   IndianRupee,
-  LineChart,
+  ArrowUpRight,
   type LucideIcon,
 } from "lucide-react";
 import { PunyataLogo } from "@/components/PunyataLogo";
-import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useUserRole } from "@/hooks/use-user-role";
 import { fetchMyRole } from "@/lib/admin-api";
 
@@ -59,135 +56,149 @@ export const Route = createFileRoute("/admin")({
   component: AdminLayout,
 });
 
+type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavGroup = { title?: string; items: NavItem[] };
+
+// Sidebar groups. Owner-only groups are layer 1 of 3 — every owner
+// route also has its own beforeLoad guard, and its API rejects
+// non-owners with 403.
+function buildNav(isOwner: boolean): NavGroup[] {
+  const groups: NavGroup[] = [
+    { items: [{ label: "Overview", href: "/admin/overview", icon: LayoutDashboard }] },
+    {
+      title: "Operations",
+      items: [
+        // Telecaller panel — owner/admin reach it read-write (§0), so
+        // Chirayu can sit in the same queue and check the work.
+        { label: "Call Queue", href: "/telecaller", icon: PhoneCall },
+        { label: "Leads", href: "/admin/leads", icon: UserPlus },
+        { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText },
+        // Proof upload IS the seva-proofs surface (there used to be two
+        // nav items pointing at this same route).
+        { label: "Seva Proofs", href: "/admin/proof-upload", icon: Flame },
+        { label: "Ashirwad Patra", href: "/admin/ashirwad-patra", icon: Sparkles },
+      ],
+    },
+    {
+      title: "Customers",
+      items: [
+        { label: "Subscribers", href: "/admin/subscribers", icon: Users },
+        { label: "Signups", href: "/admin/signups", icon: Mail },
+        { label: "Payments", href: "/admin/payments", icon: CreditCard },
+      ],
+    },
+    {
+      // Admin/owner tier — content editing is lower-sensitivity than
+      // financial reports.
+      title: "Catalog & Content",
+      items: [
+        { label: "Plans & Sevas", href: "/admin/plans-sevas", icon: Layers },
+        { label: "SEO & Content", href: "/admin/seo", icon: Search },
+        { label: "Photos", href: "/admin/images", icon: ImageIcon },
+        { label: "Content Studio", href: "/admin/content-studio", icon: PenSquare },
+      ],
+    },
+  ];
+  if (isOwner) {
+    groups.push(
+      {
+        title: "Finance",
+        items: [
+          // Reports and Analytics are one page with tabs;
+          // /admin/analytics redirects here.
+          { label: "Reports & Analytics", href: "/admin/reports", icon: BarChart3 },
+          { label: "Finance & P&L", href: "/admin/finance", icon: IndianRupee },
+          { label: "QR Collections", href: "/admin/qr-collections", icon: QrCode },
+          { label: "Commissions", href: "/admin/commissions", icon: BadgeIndianRupee },
+          { label: "Performance", href: "/admin/performance", icon: TrendingUp },
+        ],
+      },
+      {
+        title: "Team & Settings",
+        items: [
+          { label: "Staff Roles", href: "/admin/staff", icon: UserCog },
+          // Migration 020 — "kis agent ki lead kis telecaller ke paas".
+          { label: "Lead Routing", href: "/admin/routing", icon: Split },
+          { label: "Audit Log", href: "/admin/audit-log", icon: ClipboardList },
+        ],
+      },
+    );
+  }
+  return groups;
+}
+
+function isActive(href: string, pathname: string) {
+  if (href === "/admin/overview" && (pathname === "/admin" || pathname === "/admin/")) return true;
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
+// Shown only off-production so nobody mistakes staging data for live.
+function envLabel(): string | null {
+  if (typeof window === "undefined") return null;
+  const h = window.location.hostname;
+  if (h === "localhost" || h === "127.0.0.1") return "Local";
+  if (h.includes("staging") || h.includes("preview")) return "Staging";
+  return null;
+}
+
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useUserRole();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const groups = buildNav(role === "owner");
+  const current = groups.flatMap((g) => g.items).find((i) => isActive(i.href, pathname));
+  const env = envLabel();
 
-  const navItems = [
-    { label: "Overview", href: "/admin/overview", icon: LayoutDashboard },
-    // Telecaller panel — owner/admin reach it read-write (§0), so
-    // Chirayu can sit in the same queue and check the work.
-    { label: "Call Queue", href: "/telecaller", icon: PhoneCall, badge: "New" },
-    { label: "Subscribers", href: "/admin/subscribers", icon: Users },
-    { label: "Signups", href: "/admin/signups", icon: Mail, badge: "New" },
-    { label: "Plans & Sevas", href: "/admin/plans-sevas", icon: Layers },
-    { label: "Sankalp Lists", href: "/admin/sankalp-lists", icon: ScrollText, badge: "New" },
-    { label: "Proof Upload", href: "/admin/proof-upload", icon: Flame, badge: "Session 4" },
-    { label: "Ashirwad Patra", href: "/admin/ashirwad-patra", icon: Sparkles, badge: "New" },
-    // [Pass-2 F2] was "/admin/proofs" — a route that never existed;
-    // every click landed on the 404 page. Proof upload IS the seva
-    // proofs surface, so both labels now point there.
-    { label: "Seva Proofs", href: "/admin/proof-upload", icon: Video },
-    { label: "Payments", href: "/admin/payments", icon: CreditCard, badge: "Session 6" },
-    // Admin/owner tier (not owner-only) — content editing is
-    // lower-sensitivity than financial reports, so it sits in the
-    // base list alongside Payments/Plans & Sevas.
-    { label: "SEO & Content", href: "/admin/seo", icon: Search, badge: "New" },
-    { label: "Photos", href: "/admin/images", icon: ImageIcon, badge: "New" },
-    // Content Studio — AI social-post generator (Gemini + immortaltalks
-    // model). Admin/owner tier, same as SEO & Content.
-    { label: "Content Studio", href: "/admin/content-studio", icon: PenSquare, badge: "New" },
-    // Reports is OWNER-ONLY (financial data). Hidden until the role
-    // resolves and confirmed 'owner' — the route itself is also
-    // guarded in beforeLoad, and the API rejects non-owners with 403.
-    ...(role === "owner"
-      ? [{ label: "Reports", href: "/admin/reports", icon: BarChart3, badge: "Owner" }]
-      : []),
-    // Part B — lead pipeline (staff) + commission controls (owner).
-    { label: "Leads", href: "/admin/leads", icon: UserPlus, badge: "Part B" },
-    ...(role === "owner"
-      ? [
-          {
-            label: "Commissions",
-            href: "/admin/commissions",
-            icon: BadgeIndianRupee,
-            badge: "Owner",
-          },
-          // §6.1 (Hospitals session): performance leaderboard is
-          // OWNER-only — nav lives inside this owner block (layer 1);
-          // the route beforeLoad is layer 2 and the API 403 is layer 3.
-          {
-            label: "Performance",
-            href: "/admin/performance",
-            icon: TrendingUp,
-            badge: "Owner",
-          },
-          // Offline (QR) subscribers + expenses / P&L — both show ₹, so
-          // owner-only with the same three layers (nav here, beforeLoad on
-          // the route, requireOwner on the API).
-          { label: "QR Collections", href: "/admin/qr-collections", icon: QrCode, badge: "Owner" },
-          { label: "Analytics", href: "/admin/analytics", icon: LineChart, badge: "Owner" },
-          { label: "Finance & P&L", href: "/admin/finance", icon: IndianRupee, badge: "Owner" },
-          // Staff role management (make/remove admin) — owner-only,
-          // same three-layer discipline as Commissions/Performance.
-          { label: "Staff Roles", href: "/admin/staff", icon: UserCog, badge: "Owner" },
-          // Migration 020 — "kis agent ki lead kis telecaller ke paas":
-          // per-agent → telecaller routing, applied at upload time.
-          { label: "Lead Routing", href: "/admin/routing", icon: Split, badge: "Owner" },
-          // Read-only audit trail — sensitive operational data, same
-          // owner-only tier as Reports/Commissions, not admin-tier.
-          { label: "Audit Log", href: "/admin/audit-log", icon: ClipboardList, badge: "Owner" },
-        ]
-      : []),
-  ];
+  // Close the mobile drawer on every route change.
+  useEffect(() => setMobileOpen(false), [pathname]);
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-slate-900 flex flex-col font-sans">
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 border-b border-amber-900/10 bg-[#FFFDF9]/90 backdrop-blur-md px-4 lg:px-8 py-3 flex items-center justify-between shadow-xs print:hidden">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-2 group">
-            <PunyataLogo className="w-8 h-8 text-amber-600 transition-transform group-hover:scale-105" />
-            <span className="font-extrabold text-xl tracking-tight text-amber-900 font-serif">
-              पुण्यता
-            </span>
-          </Link>
-          <span className="text-amber-900/30">|</span>
-          <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-800 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-500/20">
-            <Shield className="w-3.5 h-3.5 text-amber-600" />
-            Admin Portal
-          </div>
-        </div>
+    <div className="admin-ui min-h-screen text-stone-900">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col border-r border-stone-200 bg-white print:hidden">
+        <SidebarBody groups={groups} pathname={pathname} role={role} env={env} />
+      </aside>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-amber-800/70 bg-amber-100/50 px-3 py-1.5 rounded-md border border-amber-900/5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Staging Environment
-          </div>
-          <Link
-            to="/"
-            className="text-xs font-medium text-amber-900/70 hover:text-amber-900 bg-white hover:bg-amber-50 px-3 py-1.5 rounded-md border border-amber-900/10 transition-colors shadow-2xs"
-          >
-            ← Back to Site
-          </Link>
-        </div>
-      </header>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent
+          side="left"
+          className="admin-ui w-72 max-w-[85vw] p-0 bg-white border-stone-200 flex flex-col gap-0"
+        >
+          <SheetTitle className="sr-only">Admin navigation</SheetTitle>
+          <SidebarBody groups={groups} pathname={pathname} role={role} env={env} />
+        </SheetContent>
+      </Sheet>
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 gap-6">
-        {/* Navigation Sidebar — collapsed accordion below md so the full
-            nav list doesn't push page content off-screen on a phone;
-            plain always-open list at md+ where it sits beside content. */}
-        <aside className="w-full md:w-60 flex-none print:hidden">
-          <details className="md:hidden group rounded-lg border border-amber-900/10 bg-white/70 mb-3">
-            <summary className="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-amber-900 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-              <span className="flex items-center gap-2">
-                <Menu className="w-4 h-4 text-amber-700" />
-                Menu
-              </span>
-              <ChevronDown className="w-4 h-4 text-amber-700 transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="px-2 pb-2">
-              <AdminNavList navItems={navItems} pathname={pathname} />
+      <div className="lg:pl-64 flex flex-col min-h-screen">
+        <header className="sticky top-0 z-20 h-14 border-b border-stone-200 bg-white/90 backdrop-blur print:hidden">
+          <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden -ml-1.5 inline-flex h-9 w-9 items-center justify-center rounded-md text-stone-600 hover:bg-stone-100"
+              aria-label="Open navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="min-w-0 flex-1 truncate text-sm font-medium text-stone-700">
+              {current?.label ?? "Admin"}
             </div>
-          </details>
-          <div className="hidden md:block space-y-1">
-            <AdminNavList navItems={navItems} pathname={pathname} />
+            {env && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-medium text-stone-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                {env}
+              </span>
+            )}
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+            >
+              View site
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-        </aside>
+        </header>
 
-        {/* Content Area */}
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 min-w-0">
           <Outlet />
         </main>
       </div>
@@ -195,57 +206,66 @@ function AdminLayout() {
   );
 }
 
-function AdminNavList({
-  navItems,
+function SidebarBody({
+  groups,
   pathname,
+  role,
+  env,
 }: {
-  navItems: {
-    label: string;
-    href: string;
-    icon: LucideIcon;
-    badge?: string;
-  }[];
+  groups: NavGroup[];
   pathname: string;
+  role: string | null;
+  env: string | null;
 }) {
   return (
     <>
-      <div className="px-3 py-2 text-xs font-bold text-amber-900/50 uppercase tracking-wider">
-        Management
-      </div>
-      <nav className="space-y-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            pathname === item.href || (item.href === "/admin/overview" && pathname === "/admin");
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all min-h-11 ${
-                isActive
-                  ? "bg-amber-700 text-white shadow-sm shadow-amber-900/20"
-                  : "text-amber-900/80 hover:bg-amber-900/5 hover:text-amber-950"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 ${isActive ? "text-amber-200" : "text-amber-700/70"}`} />
-                <span>{item.label}</span>
+      <Link
+        to="/admin/overview"
+        className="h-14 shrink-0 flex items-center gap-2.5 px-5 border-b border-stone-100"
+      >
+        <PunyataLogo className="w-7 h-7 text-orange-600" />
+        <span className="font-bold text-lg tracking-tight text-stone-900">पुण्यता</span>
+        <span className="ml-auto text-[11px] font-semibold uppercase tracking-wider text-stone-400">
+          Admin
+        </span>
+      </Link>
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        {groups.map((g, gi) => (
+          <div key={g.title ?? gi}>
+            {g.title && (
+              <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400">
+                {g.title}
               </div>
-              {item.badge && (
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                    isActive
-                      ? "bg-amber-800 text-amber-100"
-                      : "bg-amber-100 text-amber-800 border border-amber-200"
-                  }`}
-                >
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+            )}
+            <div className="space-y-0.5">
+              {g.items.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href, pathname);
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={`group flex items-center gap-3 rounded-md px-3 h-9 text-sm transition-colors ${
+                      active
+                        ? "bg-orange-50 text-orange-800 font-semibold"
+                        : "text-stone-600 font-medium hover:bg-stone-100 hover:text-stone-900"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 shrink-0 ${active ? "text-orange-600" : "text-stone-400 group-hover:text-stone-600"}`}
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
+      <div className="shrink-0 border-t border-stone-100 px-5 py-3 flex items-center justify-between text-xs text-stone-500">
+        <span className="capitalize">Signed in as {role ?? "…"}</span>
+        {env && <span className="font-medium text-amber-700">{env}</span>}
+      </div>
     </>
   );
 }

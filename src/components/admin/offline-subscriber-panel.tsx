@@ -9,6 +9,7 @@ import {
   VoidPaymentDialog,
   type RecordPaymentTarget,
 } from "@/components/admin/offline-dialogs";
+import { StatusPill, type Tone } from "@/components/admin/admin-ui";
 
 // The offline-subscriber block inside the Subscribers 360 modal.
 //
@@ -26,13 +27,13 @@ const STATE_LABEL: Record<DueState, string> = {
   not_offline: "—",
 };
 
-const STATE_CLS: Record<DueState, string> = {
-  paid: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  due_soon: "bg-amber-50 text-amber-800 border-amber-200",
-  overdue_grace: "bg-red-50 text-red-800 border-red-200",
-  lapsed: "bg-slate-100 text-slate-600 border-slate-200",
-  cancelled: "bg-slate-50 text-slate-400 border-slate-200",
-  not_offline: "bg-slate-50 text-slate-400 border-slate-200",
+const STATE_TONE: Record<DueState, Tone> = {
+  paid: "good",
+  due_soon: "warn",
+  overdue_grace: "bad",
+  lapsed: "neutral",
+  cancelled: "neutral",
+  not_offline: "neutral",
 };
 
 export function OfflineSubscriberPanel({
@@ -84,30 +85,28 @@ export function OfflineSubscriberPanel({
   const label = name || "Subscriber";
 
   return (
-    <div className="rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-3 space-y-3">
-      <div className="flex flex-wrap items-center gap-2 text-sm text-violet-950">
-        <QrCode className="w-4 h-4" />
-        <span className="font-semibold">Paid via QR</span>
-        <span>· Next due {nextBillingDate ? fmtDueDate(nextBillingDate) : "—"}</span>
-        <span
-          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATE_CLS[state]}`}
-        >
-          {STATE_LABEL[state]}
+    <div className="rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 sm:px-4 space-y-3">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-stone-700">
+        <QrCode className="w-4 h-4 text-stone-400" />
+        <span className="font-medium text-stone-900">Paid via QR</span>
+        <span className="text-stone-500">
+          · Next due {nextBillingDate ? fmtDueDate(nextBillingDate) : "—"}
         </span>
+        <StatusPill tone={STATE_TONE[state]}>{STATE_LABEL[state]}</StatusPill>
       </div>
 
       {status === "halted" && (
-        <p className="text-xs text-violet-900/80">
+        <p className="text-xs text-stone-600 leading-relaxed">
           QR subscription mein koi mandate nahi hota — Resume / payment link kaam nahi karte.
           Subscriber ka agla payment record hote hi seva dobara shuru ho jati hai.
         </p>
       )}
 
       {isOwner && live && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            className="h-8 text-xs gap-1 bg-amber-700 hover:bg-amber-800 text-white"
+            className="h-9 sm:h-8 text-xs gap-1 bg-orange-600 hover:bg-orange-700 text-white"
             onClick={() =>
               setRecord({
                 subscriptionId,
@@ -126,7 +125,7 @@ export function OfflineSubscriberPanel({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1"
+              className="h-9 sm:h-8 text-xs gap-1"
               onClick={() => setVoiding(true)}
             >
               <Undo2 className="w-3.5 h-3.5" /> Void last
@@ -135,7 +134,7 @@ export function OfflineSubscriberPanel({
           <Button
             size="sm"
             variant="outline"
-            className="h-8 text-xs gap-1 text-red-700 border-red-200"
+            className="h-9 sm:h-8 text-xs gap-1 text-rose-700 border-rose-200 hover:bg-rose-50 hover:text-rose-800"
             onClick={() => setStopping(true)}
           >
             <XCircle className="w-3.5 h-3.5" /> Stop subscription

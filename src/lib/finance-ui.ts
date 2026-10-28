@@ -69,8 +69,8 @@ export function toneOf(delta: number, goodWhen: "up" | "down"): Tone {
 
 export const TONE_CLS: Record<Tone, string> = {
   good: "text-emerald-700",
-  bad: "text-red-700",
-  flat: "text-slate-500",
+  bad: "text-rose-700",
+  flat: "text-stone-500",
 };
 
 /** Previous period of equal length, immediately before [fromYm, toYm]. */

@@ -36,10 +36,9 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState, Notice, PageHeader, Panel, StatusPill } from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/proof-upload")({
   component: ProofUploadPage,
@@ -94,17 +93,9 @@ interface DeliveryRow {
 
 // ─── Status badge — Done / Pending / Missed ONLY ─────────────
 function StatusBadge({ status }: { status: BatchRow["status"] }) {
-  const map = {
-    done: "bg-emerald-50 text-emerald-800 border-emerald-300",
-    pending: "bg-amber-50 text-amber-900 border-amber-300",
-    missed: "bg-rose-50 text-rose-800 border-rose-300",
-  } as const;
+  const tone = { done: "good", pending: "warn", missed: "bad" } as const;
   const label = { done: "Done", pending: "Pending", missed: "Missed" } as const;
-  return (
-    <Badge variant="outline" className={`${map[status]} text-[10px] font-bold uppercase`}>
-      {label[status]}
-    </Badge>
-  );
+  return <StatusPill tone={tone[status]}>{label[status]}</StatusPill>;
 }
 
 // ─── Page ─────────────────────────────────────────────────────
@@ -165,23 +156,16 @@ function ProofUploadPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-5 rounded-2xl border border-amber-900/10 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <Video className="w-6 h-6 text-amber-700" />
-          Proof Upload &amp; Batch Tracking
-          <Badge
-            variant="outline"
-            className="bg-amber-50 text-amber-900 border-amber-300 font-mono text-[11px]"
-          >
-            Session 4
-          </Badge>
-        </h1>
-        <p className="text-xs text-amber-900/70 mt-1">
-          One combined video per tier-pure segment ({SEGMENT_SIZE_SUBSCRIPTIONS} subscriptions / max{" "}
-          {SEGMENT_MAX_NAMES} names). One WhatsApp message per subscriber. Tuesday and Saturday
-          batches are fully independent. Status labels: Done / Pending / Missed.
-        </p>
-      </div>
+      <PageHeader
+        title="Proof Upload & Batch Tracking"
+        description={
+          <>
+            One combined video per tier-pure segment ({SEGMENT_SIZE_SUBSCRIPTIONS} subscriptions /
+            max {SEGMENT_MAX_NAMES} names). One WhatsApp message per subscriber. Tuesday and
+            Saturday batches are fully independent. Status labels: Done / Pending / Missed.
+          </>
+        }
+      />
 
       <GenerateBar
         onGenerated={async () => {
@@ -190,16 +174,15 @@ function ProofUploadPage() {
       />
 
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl text-xs flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{error}</span>
+        </Notice>
       )}
 
       {loading ? (
-        <Skeleton className="h-56 w-full rounded-2xl bg-amber-100/50" />
+        <Skeleton className="h-56 w-full rounded-xl bg-stone-100" />
       ) : (
-        <div className="grid lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           <BatchColumn
             title="Second Tuesday — List A"
             subtitle="All active subscribers · one batch"
@@ -263,35 +246,36 @@ function GenerateBar({ onGenerated }: { onGenerated: () => Promise<void> }) {
   }
 
   return (
-    <Card className="border border-amber-900/10 bg-white">
-      <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-        <CalendarPlus className="w-5 h-5 text-amber-700 shrink-0" />
-        <div className="text-xs text-amber-900/80 flex-1">
-          <span className="font-bold">Generate batch</span> — pick a Second Tuesday or Last Saturday
-          date. Membership is computed live at generation time.
-        </div>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="border border-amber-900/20 rounded-lg px-3 py-1.5 text-xs bg-white"
-        />
+    <Panel
+      title="Generate batch"
+      description="Pick a Second Tuesday or Last Saturday date. Membership is computed live at generation time."
+      bodyClassName="space-y-3"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-3">
+        <label className="block space-y-1.5 w-full sm:w-56">
+          <span className="text-[13px] font-medium text-stone-700">Batch date</span>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full h-10 border border-stone-200 rounded-md px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
+          />
+        </label>
         <Button
-          size="sm"
           onClick={generate}
           disabled={busy || !date}
-          className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold gap-1.5"
+          className="h-10 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
         >
           {busy ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <CalendarPlus className="w-3.5 h-3.5" />
+            <CalendarPlus className="w-4 h-4" />
           )}
           Generate
         </Button>
-        {msg && <div className="text-[11px] text-slate-600 sm:basis-full">{msg}</div>}
-      </CardContent>
-    </Card>
+      </div>
+      {msg && <p className="text-xs text-stone-600 break-words">{msg}</p>}
+    </Panel>
   );
 }
 
@@ -310,43 +294,35 @@ function BatchColumn({
   onSelect: (id: string) => void;
 }) {
   return (
-    <Card className="border border-amber-900/10 bg-white">
-      <CardHeader className="pb-2 bg-amber-50/60 border-b border-amber-100">
-        <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2">
-          <Flame className="w-4 h-4 text-amber-700" /> {title}
-        </CardTitle>
-        <p className="text-[11px] text-amber-900/60">{subtitle}</p>
-      </CardHeader>
-      <CardContent className="p-3 space-y-2">
-        {batches.length === 0 && (
-          <div className="text-center py-6 text-xs text-slate-400">No batches yet.</div>
-        )}
-        {batches.map((b) => (
-          <button
-            key={b.id}
-            onClick={() => onSelect(b.id)}
-            className={`w-full text-left px-3 py-2.5 rounded-xl border text-xs transition-colors ${
-              selectedId === b.id
-                ? "border-amber-600 bg-amber-50"
-                : "border-amber-900/10 hover:bg-amber-50/50"
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-slate-800">
-                {batchLabel(b.batch_type, b.batch_date)}
-              </span>
-              <StatusBadge status={b.status} />
-            </div>
-            <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
-              <Users className="w-3 h-3" />
-              {b.subscriber_count} subscriber{b.subscriber_count === 1 ? "" : "s"}
-              {b.completed_at &&
-                ` · completed ${new Date(b.completed_at).toLocaleDateString("en-IN")}`}
-            </div>
-          </button>
-        ))}
-      </CardContent>
-    </Card>
+    <Panel title={title} description={subtitle} bodyClassName="p-2 sm:p-3 space-y-2">
+      {batches.length === 0 && <EmptyState icon={Flame} title="No batches yet." className="py-6" />}
+      {batches.map((b) => (
+        <button
+          key={b.id}
+          type="button"
+          onClick={() => onSelect(b.id)}
+          aria-pressed={selectedId === b.id}
+          className={`w-full text-left px-3 py-2.5 min-h-[48px] rounded-lg border transition-colors ${
+            selectedId === b.id
+              ? "border-orange-500 bg-orange-50/60 ring-1 ring-orange-500/20"
+              : "border-stone-200 hover:bg-stone-50"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-[13px] font-medium text-stone-900 leading-snug min-w-0">
+              {batchLabel(b.batch_type, b.batch_date)}
+            </span>
+            <StatusBadge status={b.status} />
+          </div>
+          <div className="text-xs text-stone-500 mt-1 flex items-center gap-1.5 flex-wrap">
+            <Users className="w-3.5 h-3.5 text-stone-400" />
+            {b.subscriber_count} subscriber{b.subscriber_count === 1 ? "" : "s"}
+            {b.completed_at &&
+              ` · completed ${new Date(b.completed_at).toLocaleDateString("en-IN")}`}
+          </div>
+        </button>
+      ))}
+    </Panel>
   );
 }
 
@@ -516,58 +492,51 @@ function BatchDetail({
     return `${names.join(" + ")} · ${sevaCount} sevas${catchups > 0 ? ` · ${catchups} catch-up` : ""}`;
   }
 
-  if (loading) return <Skeleton className="h-64 w-full rounded-2xl bg-amber-100/50" />;
+  if (loading) return <Skeleton className="h-64 w-full rounded-xl bg-stone-100" />;
 
   return (
     <div className="space-y-4">
-      <div className="bg-white p-5 rounded-2xl border-2 border-amber-600/30 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+      <section className="admin-card border-orange-200 ring-1 ring-orange-500/10 p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-stone-500">Selected batch</div>
+            <h2 className="mt-0.5 text-base sm:text-lg font-semibold text-stone-900 flex items-center gap-2 flex-wrap">
               {batchLabel(batch.batch_type, batch.batch_date)}
               <StatusBadge status={batch.status} />
             </h2>
-            <p className="text-xs text-amber-900/70 mt-1">
+            <p className="text-xs text-stone-500 mt-1">
               {sbs.length} subscriber{sbs.length === 1 ? "" : "s"}
               {sbs.some((r) => r.is_catchup) &&
                 ` · ${sbs.filter((r) => r.is_catchup).length} one-time catch-up`}
               {" · "}Actions here affect THIS batch only.
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link to="/admin/pandit/$batchId" params={{ batchId: batch.id }}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-amber-900/20 text-amber-900 hover:bg-amber-50 gap-1.5 text-xs font-semibold"
-              >
-                <Printer className="w-3.5 h-3.5" /> Pandit List
-              </Button>
-            </Link>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={load}
-              className="border-amber-900/20 text-amber-900 hover:bg-amber-50 gap-1.5 text-xs font-semibold"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center shrink-0">
+            <Button asChild variant="outline" className="h-10 sm:h-9 gap-1.5">
+              <Link to="/admin/pandit/$batchId" params={{ batchId: batch.id }}>
+                <Printer className="w-4 h-4" /> Pandit List
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={load} className="h-10 sm:h-9 gap-1.5">
+              <RefreshCw className="w-4 h-4" /> Refresh
             </Button>
             {batch.status !== "done" && (
-              <MarkCompletedButton
-                batchId={batch.id}
-                memberCount={sbs.length}
-                onDone={onBatchChanged}
-              />
+              <div className="col-span-2 sm:col-span-1">
+                <MarkCompletedButton
+                  batchId={batch.id}
+                  memberCount={sbs.length}
+                  onDone={onBatchChanged}
+                />
+              </div>
             )}
           </div>
         </div>
-      </div>
+      </section>
 
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl text-xs flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{error}</span>
+        </Notice>
       )}
 
       <SegmentsCard
@@ -646,24 +615,29 @@ function CloudinaryUploadButton({
         }}
       />
       <Button
-        size="sm"
         onClick={() => inputRef.current?.click()}
         disabled={progress != null}
-        className="bg-amber-700 hover:bg-amber-800 text-white gap-1.5 text-xs font-semibold"
+        className="w-full sm:w-auto h-11 sm:h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
       >
         {progress != null ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
-          <Upload className="w-3.5 h-3.5" />
+          <Upload className="w-4 h-4" />
         )}
         {progress != null ? `Uploading ${progress}%` : label}
       </Button>
       {progress != null && (
-        <div className="w-full h-1.5 bg-amber-100 rounded-full overflow-hidden">
-          <div className="h-full bg-amber-600 transition-all" style={{ width: `${progress}%` }} />
+        <div
+          className="w-full h-2 bg-stone-100 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div className="h-full bg-orange-600 transition-all" style={{ width: `${progress}%` }} />
         </div>
       )}
-      {err && <div className="text-[11px] text-rose-600">{err}</div>}
+      {err && <div className="text-xs text-rose-600 break-words">{err}</div>}
     </div>
   );
 }
@@ -758,96 +732,99 @@ function SegmentsCard({
   }
 
   return (
-    <Card className="border border-amber-900/10 bg-white">
-      <CardHeader className="pb-2 bg-amber-50/60 border-b border-amber-100">
-        <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2">
-          <Scissors className="w-4 h-4 text-amber-700" /> Segments — One Combined Video Each
-        </CardTitle>
-        <p className="text-[11px] text-amber-900/60">
+    <Panel
+      title="Segments — one combined video each"
+      description={
+        <>
           Tier-pure groups of {SEGMENT_SIZE_SUBSCRIPTIONS} subscriptions (max {SEGMENT_MAX_NAMES}{" "}
           names). Each segment's single video already contains its sevas + name-reading.
-        </p>
-      </CardHeader>
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={autoAssign}
-            disabled={busy || sbs.length === 0 || (assignedCount > 0 && hasVideos)}
-            className="border-amber-900/20 text-amber-900 hover:bg-amber-50 gap-1.5 text-xs font-semibold"
-          >
-            {busy ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Scissors className="w-3.5 h-3.5" />
-            )}
-            {assignedCount > 0
-              ? "Re-assign segments"
-              : `Auto-assign (${SEGMENT_SIZE_SUBSCRIPTIONS} subs/segment, tier-pure)`}
-          </Button>
-          <span className="text-[11px] text-slate-500">
-            {assignedCount}/{sbs.length} assigned · {segmentNumbers.length} segment
-            {segmentNumbers.length === 1 ? "" : "s"}
-          </span>
-        </div>
-        {assignedCount > 0 && hasVideos && (
-          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
-            Re-assignment is locked because segment videos already exist for this batch.
-          </div>
-        )}
-        {err && <div className="text-[11px] text-rose-600">{err}</div>}
+        </>
+      }
+      bodyClassName="space-y-3"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:flex-wrap">
+        <Button
+          variant="outline"
+          onClick={autoAssign}
+          disabled={busy || sbs.length === 0 || (assignedCount > 0 && hasVideos)}
+          className="h-auto min-h-10 sm:min-h-9 py-2 gap-1.5 whitespace-normal"
+        >
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Scissors className="w-4 h-4" />}
+          {assignedCount > 0
+            ? "Re-assign segments"
+            : `Auto-assign (${SEGMENT_SIZE_SUBSCRIPTIONS} subs/segment, tier-pure)`}
+        </Button>
+        <span className="text-xs text-stone-500">
+          {assignedCount}/{sbs.length} assigned · {segmentNumbers.length} segment
+          {segmentNumbers.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      {assignedCount > 0 && hasVideos && (
+        <Notice tone="warn" icon={Info}>
+          Re-assignment is locked because segment videos already exist for this batch.
+        </Notice>
+      )}
+      {err && (
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{err}</span>
+        </Notice>
+      )}
 
-        <div className="grid md:grid-cols-2 gap-3">
-          {segmentNumbers.map((n) => {
-            const rows = sbs.filter((r) => r.segment_number === n);
-            const names = rows.reduce(
-              (sum, r) => sum + (memberCounts.get(r.subscription_id) ?? 0),
-              0,
-            );
-            const video = segVideoByNumber.get(n);
-            return (
-              <div key={n} className="border border-amber-900/10 rounded-xl px-3 py-2.5 space-y-2">
-                <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="font-semibold text-slate-800 flex items-center gap-2">
-                    {video ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-amber-500" />
-                    )}
-                    Segment {n}
-                  </span>
-                  {video && (
-                    <a
-                      href={video}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-amber-800 font-semibold flex items-center gap-1"
-                    >
-                      View <ExternalLink className="w-3 h-3" />
-                    </a>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {segmentNumbers.map((n) => {
+          const rows = sbs.filter((r) => r.segment_number === n);
+          const names = rows.reduce(
+            (sum, r) => sum + (memberCounts.get(r.subscription_id) ?? 0),
+            0,
+          );
+          const video = segVideoByNumber.get(n);
+          return (
+            <div
+              key={n}
+              className={`rounded-lg border p-3 space-y-2.5 ${video ? "border-emerald-200 bg-emerald-50/30" : "border-stone-200 bg-white"}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-stone-900 flex items-center gap-2">
+                  {video ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <Circle className="w-4 h-4 text-amber-500" />
                   )}
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  {tierLabelForSegment(n)} · {rows.length} sub{rows.length === 1 ? "" : "s"} ·{" "}
-                  {names}/{SEGMENT_MAX_NAMES} names
-                </div>
-                <CloudinaryUploadButton
-                  folder={cloudinaryFolder(batch, n)}
-                  label={video ? "Replace combined video" : `Upload segment ${n} combined video`}
-                  onUploaded={(url) => saveSegmentVideo(n, url)}
-                />
+                  Segment {n}
+                </span>
+                {video && (
+                  <a
+                    href={video}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 h-9 px-2 -mr-2 rounded-md text-sm font-medium text-orange-700 hover:bg-orange-50"
+                  >
+                    View <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
               </div>
-            );
-          })}
-        </div>
-        {segmentNumbers.length === 0 && (
-          <div className="text-xs text-slate-400 italic">
-            Assign segments first — then upload one combined video per segment.
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              <div className="text-xs text-stone-500 break-words">
+                {tierLabelForSegment(n)} · {rows.length} sub{rows.length === 1 ? "" : "s"} · {names}
+                /{SEGMENT_MAX_NAMES} names
+              </div>
+              <CloudinaryUploadButton
+                folder={cloudinaryFolder(batch, n)}
+                label={video ? "Replace combined video" : `Upload segment ${n} combined video`}
+                onUploaded={(url) => saveSegmentVideo(n, url)}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {segmentNumbers.length === 0 && (
+        <EmptyState
+          icon={Video}
+          title="No segments yet"
+          description="Assign segments first — then upload one combined video per segment."
+          className="py-6"
+        />
+      )}
+    </Panel>
   );
 }
 
@@ -905,29 +882,31 @@ function MarkCompletedButton({
   if (!confirming) {
     return (
       <Button
-        size="sm"
         onClick={() => setConfirming(true)}
-        className="bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 text-xs font-semibold"
+        className="w-full sm:w-auto h-10 sm:h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
       >
-        <CheckCircle2 className="w-3.5 h-3.5" /> Mark Seva Completed
+        <CheckCircle2 className="w-4 h-4" /> Mark Seva Completed
       </Button>
     );
   }
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-[11px] text-slate-600">Mark THIS batch done?</span>
-      <Button
-        size="sm"
-        onClick={complete}
-        disabled={busy}
-        className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold"
-      >
-        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Yes, Done"}
-      </Button>
-      <Button size="sm" variant="outline" onClick={() => setConfirming(false)} className="text-xs">
-        Cancel
-      </Button>
-      {errMsg && <span className="text-[11px] text-rose-600 font-medium">{errMsg}</span>}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:flex-wrap rounded-lg border border-emerald-200 bg-emerald-50/50 p-2">
+      <span className="text-[13px] font-medium text-stone-700 px-1">Mark THIS batch done?</span>
+      <div className="grid grid-cols-2 gap-2 sm:flex">
+        <Button
+          onClick={complete}
+          disabled={busy}
+          className="h-10 sm:h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Yes, Done"}
+        </Button>
+        <Button variant="outline" onClick={() => setConfirming(false)} className="h-10 sm:h-9">
+          Cancel
+        </Button>
+      </div>
+      {errMsg && (
+        <span className="text-xs text-rose-600 font-medium px-1 break-words">{errMsg}</span>
+      )}
     </div>
   );
 }
@@ -1064,165 +1043,183 @@ function DeliveryCard({
   const unassigned = sbs.filter((r) => r.segment_number == null).length;
 
   return (
-    <Card className="border border-amber-900/10 bg-white">
-      <CardHeader className="pb-2 bg-amber-50/60 border-b border-amber-100">
-        <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2">
-          <MessageCircle className="w-4 h-4 text-amber-700" /> WhatsApp Delivery — One Message Per
-          Subscriber
-        </CardTitle>
-        <p className="text-[11px] text-amber-900/60">
-          Each subscriber gets their own segment's combined video. Meta API pending: open the
-          pre-filled wa.me link, attach the video in WhatsApp, send, then mark delivered.
-        </p>
-      </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={prepare}
-            disabled={busy || sbs.length === 0}
-            className="border-amber-900/20 text-amber-900 hover:bg-amber-50 gap-1.5 text-xs font-semibold"
-          >
-            {busy ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <MessageCircle className="w-3.5 h-3.5" />
-            )}
-            {deliveries.length > 0 ? "Refresh delivery list" : "Prepare delivery list"}
-          </Button>
-          {deliveries.length > 0 && (
-            <span className="text-[11px] text-slate-500">
-              {deliveredCount}/{deliveries.length} delivered
-            </span>
+    <Panel
+      title="WhatsApp delivery — one message per subscriber"
+      description="Each subscriber gets their own segment's combined video. Meta API pending: open the pre-filled wa.me link, attach the video in WhatsApp, send, then mark delivered."
+      bodyClassName="space-y-4"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:flex-wrap">
+        <Button
+          variant="outline"
+          onClick={prepare}
+          disabled={busy || sbs.length === 0}
+          className="h-10 sm:h-9 gap-1.5"
+        >
+          {busy ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <MessageCircle className="w-4 h-4" />
           )}
-          {unassigned > 0 && (
-            <span className="text-[11px] text-rose-600">
-              {unassigned} subscriber{unassigned === 1 ? "" : "s"} not assigned to any segment
-            </span>
-          )}
-        </div>
-        {err && <div className="text-[11px] text-rose-600">{err}</div>}
-
-        {skippedNoPhone.length > 0 && (
-          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 space-y-1">
-            <p className="text-[11px] font-semibold text-rose-700">
-              {skippedNoPhone.length} subscriber{skippedNoPhone.length === 1 ? "" : "s"} ka number
-              nahi hai — inko video nahi jayega
-            </p>
-            <ul className="text-[11px] text-rose-600 list-disc pl-4">
-              {skippedNoPhone.map((s) => (
-                <li key={s.subscriptionId}>{s.name}</li>
-              ))}
-            </ul>
-          </div>
+          {deliveries.length > 0 ? "Refresh delivery list" : "Prepare delivery list"}
+        </Button>
+        {deliveries.length > 0 && (
+          <span className="text-xs text-stone-500">
+            {deliveredCount}/{deliveries.length} delivered
+          </span>
         )}
+        {unassigned > 0 && (
+          <span className="text-xs text-rose-600">
+            {unassigned} subscriber{unassigned === 1 ? "" : "s"} not assigned to any segment
+          </span>
+        )}
+      </div>
+      {err && (
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{err}</span>
+        </Notice>
+      )}
 
-        {segmentNumbers.map((n) => {
-          const segDeliveries = deliveries.filter((d) => d.segment_number === n);
-          const segDone = segDeliveries.length > 0 && segDeliveries.every((d) => d.is_delivered);
-          const video = segVideoByNumber.get(n);
-          return (
-            <div key={n} className="border border-amber-900/10 rounded-xl px-3 py-2.5 space-y-2">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="text-xs font-semibold text-slate-800 flex items-center gap-2">
+      {skippedNoPhone.length > 0 && (
+        <Notice tone="bad" icon={AlertTriangle}>
+          <p className="font-medium">
+            {skippedNoPhone.length} subscriber{skippedNoPhone.length === 1 ? "" : "s"} ka number
+            nahi hai — inko video nahi jayega
+          </p>
+          <ul className="mt-1 text-xs list-disc pl-4 space-y-0.5">
+            {skippedNoPhone.map((s) => (
+              <li key={s.subscriptionId} className="break-all">
+                {s.name}
+              </li>
+            ))}
+          </ul>
+        </Notice>
+      )}
+
+      {segmentNumbers.map((n) => {
+        const segDeliveries = deliveries.filter((d) => d.segment_number === n);
+        const segDone = segDeliveries.length > 0 && segDeliveries.every((d) => d.is_delivered);
+        const video = segVideoByNumber.get(n);
+        return (
+          <div key={n} className="rounded-lg border border-stone-200 overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2.5 bg-stone-50 border-b border-stone-200">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-stone-900 flex items-center gap-2">
                   {segDone ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   ) : (
-                    <Circle className="w-4 h-4 text-amber-500" />
+                    <Circle className="w-4 h-4 text-amber-500 shrink-0" />
                   )}
                   Segment {n}
-                  <span className="text-slate-400 font-normal">{tierLabelForSegment(n)}</span>
+                  {video && (
+                    <a
+                      href={video}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-orange-700 hover:underline"
+                    >
+                      Video <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
-                {/* Secondary bypass — visually distinct from the primary
-                    Cloudinary + wa.me flow above. */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => markSentManually(n)}
-                    disabled={manualBusy != null || segDone}
-                    title="Low-volume bypass: video was sent directly from your own WhatsApp, outside the system. No media is stored, so these proofs will NOT appear in the subscriber's Punya Bank gallery."
-                    className="border-slate-300 text-slate-600 hover:bg-slate-50 gap-1.5 text-[11px] font-semibold border-dashed"
-                  >
-                    {manualBusy === n ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Hand className="w-3.5 h-3.5" />
-                    )}
-                    Mark Sent Manually
-                  </Button>
+                <div className="text-xs text-stone-500 mt-0.5 pl-6 break-words">
+                  {tierLabelForSegment(n)}
                 </div>
               </div>
-
-              {segDeliveries.length === 0 && (
-                <div className="text-[11px] text-slate-400 italic">
-                  No delivery rows yet — prepare the list, or use manual bypass after sending
-                  directly.
-                </div>
-              )}
-
-              {segDeliveries.map((d) => {
-                const sub = subs.get(d.subscription_id);
-                const profile = sub ? profiles.get(sub.user_id) : undefined;
-                return (
-                  <div key={d.id} className="flex items-center justify-between gap-2 text-xs pl-6">
-                    <span className="text-slate-600 flex items-center gap-1.5 min-w-0">
-                      {d.is_delivered ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      ) : (
-                        <Circle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      )}
-                      <span className="truncate">
-                        {profile?.full_name ?? "—"}
-                        <span className="text-slate-400 ml-1.5">
-                          {profile?.phone ?? "no phone"}
-                        </span>
-                      </span>
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {d.wa_link && !d.is_delivered && (
-                        <a
-                          href={d.wa_link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-emerald-700 font-semibold flex items-center gap-1 hover:underline"
-                        >
-                          Open WhatsApp <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                      {!d.is_delivered && (
-                        <button
-                          onClick={() => markDelivered(d)}
-                          className="text-amber-800 font-semibold hover:underline"
-                        >
-                          Mark Delivered
-                        </button>
-                      )}
-                      {d.is_delivered && d.delivered_at && (
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(d.delivered_at).toLocaleString("en-IN")}
-                          {!d.wa_link && " · sent manually"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {/* Secondary bypass — visually distinct from the primary
+                    Cloudinary + wa.me flow above. */}
+              <Button
+                variant="outline"
+                onClick={() => markSentManually(n)}
+                disabled={manualBusy != null || segDone}
+                title="Low-volume bypass: video was sent directly from your own WhatsApp, outside the system. No media is stored, so these proofs will NOT appear in the subscriber's Punya Bank gallery."
+                className="h-10 sm:h-8 gap-1.5 text-xs border-dashed border-stone-300 text-stone-600 bg-white shrink-0"
+              >
+                {manualBusy === n ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Hand className="w-3.5 h-3.5" />
+                )}
+                Mark Sent Manually
+              </Button>
             </div>
-          );
-        })}
 
-        <div className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 flex items-start gap-2">
-          <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-          <span>
-            "Mark Sent Manually" is the low-volume bypass: use it when the video was sent directly
-            from your own WhatsApp. No media is stored, so those proofs will NOT appear in the
-            subscriber's Punya Bank gallery — use the Cloudinary upload flow when you want proofs
-            archived.
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+            {segDeliveries.length === 0 && (
+              <p className="px-3 py-3 text-xs text-stone-400 italic">
+                No delivery rows yet — prepare the list, or use manual bypass after sending
+                directly.
+              </p>
+            )}
+
+            {segDeliveries.length > 0 && (
+              <ul className="divide-y divide-stone-100">
+                {segDeliveries.map((d) => {
+                  const sub = subs.get(d.subscription_id);
+                  const profile = sub ? profiles.get(sub.user_id) : undefined;
+                  return (
+                    <li
+                      key={d.id}
+                      className="px-3 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    >
+                      <div className="flex items-start gap-2 min-w-0">
+                        {d.is_delivered ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        ) : (
+                          <Circle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                        )}
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-medium text-stone-900 truncate">
+                            {profile?.full_name ?? "—"}
+                          </div>
+                          <div className="text-xs text-stone-500 tabular-nums">
+                            {profile?.phone ?? "no phone"}
+                          </div>
+                        </div>
+                      </div>
+                      {d.is_delivered ? (
+                        d.delivered_at && (
+                          <span className="text-xs text-stone-400 pl-6 sm:pl-0">
+                            {new Date(d.delivered_at).toLocaleString("en-IN")}
+                            {!d.wa_link && " · sent manually"}
+                          </span>
+                        )
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2 sm:flex shrink-0 pl-6 sm:pl-0">
+                          {d.wa_link && (
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              className="h-10 sm:h-8 gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
+                            >
+                              <a href={d.wa_link} target="_blank" rel="noreferrer">
+                                <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                              </a>
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markDelivered(d)}
+                            className={`h-10 sm:h-8 gap-1.5 ${d.wa_link ? "" : "col-span-2"}`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Mark Delivered
+                          </Button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+
+      <Notice tone="info" icon={Info} className="text-xs">
+        "Mark Sent Manually" is the low-volume bypass: use it when the video was sent directly from
+        your own WhatsApp. No media is stored, so those proofs will NOT appear in the subscriber's
+        Punya Bank gallery — use the Cloudinary upload flow when you want proofs archived.
+      </Notice>
+    </Panel>
   );
 }

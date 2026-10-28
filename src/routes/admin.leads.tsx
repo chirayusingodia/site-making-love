@@ -3,9 +3,18 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { callAdminApi } from "@/lib/admin-api";
 import { DAILY_LEAD_TARGET } from "@/lib/telecaller-logic";
-import { Loader2, RefreshCw, Send, Upload, Users } from "lucide-react";
+import { Info, Loader2, RefreshCw, Send, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  Panel,
+  StatusPill,
+  TableScroll,
+  type Tone,
+} from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/leads")({
   component: AdminLeadsPage,
@@ -52,9 +61,9 @@ function AdminLeadsPage() {
   // Everyone who can appear as assigned_to (telecaller/admin/owner seats)
   // or as assigned_by (the admin who ran the assignment) — see assign.ts,
   // which allows admin/owner as an assignment target too.
-  const [staffDirectory, setStaffDirectory] = useState<
-    { id: string; full_name: string | null }[]
-  >([]);
+  const [staffDirectory, setStaffDirectory] = useState<{ id: string; full_name: string | null }[]>(
+    [],
+  );
   const [telecallerId, setTelecallerId] = useState("");
   const [assignCount, setAssignCount] = useState(DAILY_LEAD_TARGET);
   const [busy, setBusy] = useState<string | null>(null);
@@ -76,7 +85,10 @@ function AdminLeadsPage() {
       await Promise.all([
         supabase.from("sales_agents").select("id,full_name").eq("is_active", true),
         supabase.from("profiles").select("id,full_name").eq("role", "telecaller"),
-        supabase.from("profiles").select("id,full_name").in("role", ["telecaller", "admin", "owner"]),
+        supabase
+          .from("profiles")
+          .select("id,full_name")
+          .in("role", ["telecaller", "admin", "owner"]),
         supabase
           .from("leads")
           .select(
@@ -224,175 +236,198 @@ function AdminLeadsPage() {
     return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
   }
 
+  const inputCls =
+    "h-9 w-full rounded-md border border-stone-300 bg-white px-3 text-sm focus:border-orange-500 focus:outline-none";
+  const thCls = "font-medium px-3 py-2.5";
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-5 h-5 text-amber-700" />
-            Leads Pipeline
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Field agents ke numbers — upload, dedupe, aur roz ka assignment.
-          </p>
-        </div>
-        <Button onClick={loadCatalogues} variant="outline" size="sm" className="gap-1.5">
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Leads pipeline"
+        description="Field agents ke numbers — upload, dedupe, aur roz ka assignment."
+        actions={
+          <Button onClick={loadCatalogues} variant="outline" size="sm" className="gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </Button>
+        }
+      />
 
       {msg && (
-        <div className="rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-900 text-sm px-4 py-3">
-          {msg}
-        </div>
+        <Notice tone="info" icon={Info}>
+          <span className="break-words">{msg}</span>
+        </Notice>
       )}
 
-      {/* Upload */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs p-5 space-y-3">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <Upload className="w-4 h-4 text-amber-700" /> Upload (paste-a-list)
-        </h2>
-        <p className="text-xs text-slate-500">
-          Ek line per lead: <code className="bg-slate-100 px-1 rounded">Naam, Phone, City</code>.
-          Duplicate ya active-subscriber rows automatically mark hongi — chupke se insert nahi hogi.
-        </p>
-        {/* §4.3/§4.4: hospital drives the sourcing agent via allotment */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <select
-            value={hospitalId}
-            onChange={(e) => setHospitalId(e.target.value)}
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
-          >
-            <option value="">Hospital — koi nahi</option>
-            {hospitals
-              .filter((h) => h.is_active)
-              .map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                  {h.city ? ` (${h.city})` : ""}
-                </option>
-              ))}
-          </select>
-          <select
-            value={agentId}
-            onChange={(e) => setAgentId(e.target.value)}
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
-          >
-            <option value="">Source agent — auto from hospital</option>
-            {agents.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.full_name}
-              </option>
-            ))}
-          </select>
-        </div>
-        {hospitalId && (
-          <p className="text-xs text-emerald-700">
-            Is hospital ka agent:{" "}
-            <b>
-              {hospitals.find((h) => h.id === hospitalId)?.currentAgent?.agentName ??
-                "(koi nahi — pehle allot karein)"}
-            </b>{" "}
-            — manual override upar se possible hai.
-          </p>
-        )}
-        <textarea
-          value={pasteText}
-          onChange={(e) => setPasteText(e.target.value)}
-          rows={6}
-          placeholder={"Ramesh Sharma, 9876543210, Jaipur\nSita Devi, 09876543211, Pune"}
-          className="w-full rounded-md border border-slate-300 p-3 text-sm font-mono focus:border-amber-600 focus:outline-none"
-        />
-        <Button
-          onClick={doUpload}
-          disabled={busy !== null}
-          className="gap-2 bg-amber-700 hover:bg-amber-800"
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-6 items-start">
+        {/* Upload */}
+        <Panel
+          title="Upload (paste-a-list)"
+          description={
+            <>
+              Ek line per lead:{" "}
+              <code className="rounded bg-stone-100 px-1 font-mono text-stone-700">
+                Naam, Phone, City
+              </code>
+              . Duplicate ya active-subscriber rows automatically mark hongi — chupke se insert nahi
+              hogi.
+            </>
+          }
+          className="xl:col-span-3"
+          bodyClassName="space-y-3"
         >
-          {busy === "upload" ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Upload className="w-4 h-4" />
-          )}
-          Upload &amp; Dedupe
-        </Button>
-        {result && (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs max-h-48 overflow-auto">
-            <b>{result.inserted} inserted</b>,{" "}
-            {result.results.filter((r) => r.status === "duplicate").length} duplicates,{" "}
-            {result.results.filter((r) => !r.ok).length} errors
-            <ul className="mt-1.5 space-y-0.5">
-              {result.results
-                .filter((r) => !r.ok || r.status === "duplicate")
-                .map((r) => (
-                  <li key={r.index} className={r.ok ? "text-amber-700" : "text-red-700"}>
-                    Row {r.index + 1}: {r.reason}
-                  </li>
+          {/* §4.3/§4.4: hospital drives the sourcing agent via allotment */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-stone-500">Hospital</span>
+              <select
+                value={hospitalId}
+                onChange={(e) => setHospitalId(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Hospital — koi nahi</option>
+                {hospitals
+                  .filter((h) => h.is_active)
+                  .map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.name}
+                      {h.city ? ` (${h.city})` : ""}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-stone-500">Source agent</span>
+              <select
+                value={agentId}
+                onChange={(e) => setAgentId(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Source agent — auto from hospital</option>
+                {agents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.full_name}
+                  </option>
                 ))}
-            </ul>
+              </select>
+            </label>
           </div>
-        )}
-      </section>
-
-      {/* Assign */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs p-5 space-y-3">
-        <h2 className="text-base font-bold text-slate-900">Aaj ka assignment</h2>
-        <div className="flex flex-wrap gap-2 items-center">
-          <select
-            value={telecallerId}
-            onChange={(e) => setTelecallerId(e.target.value)}
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
-          >
-            {telecallers.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.full_name ?? t.id.slice(0, 8)}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            min={1}
-            max={200}
-            value={assignCount}
-            onChange={(e) => setAssignCount(Number(e.target.value))}
-            className="h-9 w-24 rounded-md border border-slate-300 px-3 text-sm"
+          {hospitalId && (
+            <p className="text-xs text-stone-600">
+              Is hospital ka agent:{" "}
+              <span className="font-medium text-stone-900">
+                {hospitals.find((h) => h.id === hospitalId)?.currentAgent?.agentName ??
+                  "(koi nahi — pehle allot karein)"}
+              </span>{" "}
+              — manual override upar se possible hai.
+            </p>
+          )}
+          <textarea
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={6}
+            placeholder={"Ramesh Sharma, 9876543210, Jaipur\nSita Devi, 09876543211, Pune"}
+            className="w-full rounded-md border border-stone-300 bg-white p-3 text-sm font-mono focus:border-orange-500 focus:outline-none"
           />
           <Button
-            onClick={doAssign}
-            disabled={busy !== null || !telecallerId}
-            className="gap-2 bg-amber-700 hover:bg-amber-800"
+            onClick={doUpload}
+            disabled={busy !== null}
+            className="w-full sm:w-auto gap-2 bg-orange-600 hover:bg-orange-700 text-white"
           >
-            {busy === "assign" ? (
+            {busy === "upload" ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Send className="w-4 h-4" />
+              <Upload className="w-4 h-4" />
             )}
-            Assign
+            Upload &amp; Dedupe
           </Button>
-          <Button onClick={doSweep} disabled={busy !== null} variant="outline" size="sm">
-            {busy === "sweep" ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              "Rollover/Expiry sweep"
-            )}
-          </Button>
-        </div>
-      </section>
+          {result && (
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-xs text-stone-700 max-h-48 overflow-auto">
+              <span className="font-semibold text-stone-900">{result.inserted} inserted</span>,{" "}
+              {result.results.filter((r) => r.status === "duplicate").length} duplicates,{" "}
+              {result.results.filter((r) => !r.ok).length} errors
+              <ul className="mt-1.5 space-y-0.5">
+                {result.results
+                  .filter((r) => !r.ok || r.status === "duplicate")
+                  .map((r) => (
+                    <li
+                      key={r.index}
+                      className={`break-words ${r.ok ? "text-amber-700" : "text-rose-700"}`}
+                    >
+                      Row {r.index + 1}: {r.reason}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+        </Panel>
+
+        {/* Assign */}
+        <Panel title="Aaj ka assignment" className="xl:col-span-2" bodyClassName="space-y-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-3">
+            <label className="space-y-1 min-w-0">
+              <span className="text-xs font-medium text-stone-500">Telecaller</span>
+              <select
+                value={telecallerId}
+                onChange={(e) => setTelecallerId(e.target.value)}
+                className={inputCls}
+              >
+                {telecallers.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.full_name ?? t.id.slice(0, 8)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-stone-500">Count</span>
+              <input
+                type="number"
+                min={1}
+                max={200}
+                value={assignCount}
+                onChange={(e) => setAssignCount(Number(e.target.value))}
+                className={inputCls}
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={doAssign}
+              disabled={busy !== null || !telecallerId}
+              className="gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {busy === "assign" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              Assign
+            </Button>
+            <Button onClick={doSweep} disabled={busy !== null} variant="outline">
+              {busy === "sweep" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Rollover/Expiry sweep"
+              )}
+            </Button>
+          </div>
+        </Panel>
+      </div>
 
       {/* §4.4 — Hospitals & allotments */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs p-5 space-y-3">
-        <h2 className="text-base font-bold text-slate-900">Hospitals &amp; Allotments</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_8rem_auto] gap-2">
+      <Panel title="Hospitals & allotments" flush>
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_10rem_auto] gap-2 p-4 sm:px-5 border-b border-stone-100">
           <input
             value={newHospitalName}
             onChange={(e) => setNewHospitalName(e.target.value)}
             placeholder="Naya hospital — naam"
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
+            className={inputCls}
           />
           <input
             value={newHospitalCity}
             onChange={(e) => setNewHospitalCity(e.target.value)}
             placeholder="City"
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
+            className={inputCls}
           />
           <Button
             onClick={async () => {
@@ -414,151 +449,183 @@ function AdminLeadsPage() {
             }}
             disabled={busy !== null || newHospitalName.trim().length < 2}
             variant="outline"
-            size="sm"
+            className="h-9"
           >
             {busy === "hosp-create" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add hospital"}
           </Button>
         </div>
         {!hospitals.length ? (
-          <p className="text-xs text-slate-400">Abhi koi hospital nahi.</p>
+          <EmptyState title="Abhi koi hospital nahi." className="py-8" />
         ) : (
-          <div className="overflow-x-auto -mx-5 px-5">
-          <table className="w-full text-sm min-w-[640px]">
-            <thead>
-              <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
-                <th className="pb-2">Hospital</th>
-                <th className="pb-2">Current agent</th>
-                <th className="pb-2">Since</th>
-                <th className="pb-2">Re-allot to</th>
-                <th className="pb-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {hospitals.map((h) => (
-                <tr key={h.id} className="border-t border-slate-100">
-                  <td className="py-1.5">
-                    {h.name}
-                    {h.city ? <span className="text-slate-400"> · {h.city}</span> : null}
-                    {!h.is_active && (
-                      <span className="ml-1 text-[10px] text-red-600">inactive</span>
-                    )}
-                  </td>
-                  <td className="py-1.5">
-                    {h.currentAgent?.agentName ?? (
-                      <span className="text-slate-400 italic">khali</span>
-                    )}
-                  </td>
-                  <td className="py-1.5 text-xs">{h.currentAgent?.since ?? "—"}</td>
-                  <td className="py-1.5">
-                    <select
-                      value={reallotAgent}
-                      onChange={(e) => setReallotAgent(e.target.value)}
-                      className="h-9 md:h-7 rounded border border-slate-300 px-1.5 text-xs"
-                    >
-                      {agents.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.full_name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-1.5 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-9 md:h-7 text-xs"
-                      disabled={
-                        busy !== null || !reallotAgent || h.currentAgent?.agentId === reallotAgent
-                      }
-                      onClick={async () => {
-                        setBusy(`reallot-${h.id}`);
-                        try {
-                          await callAdminApi("/api/admin/hospitals/reallot", {
-                            hospital_id: h.id,
-                            agent_id: reallotAgent,
-                          });
-                          await loadCatalogues();
-                        } catch (err) {
-                          setMsg(err instanceof Error ? err.message : "Reallot fail");
-                        } finally {
-                          setBusy(null);
-                        }
-                      }}
-                    >
-                      {busy === `reallot-${h.id}` ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        "Allot / Re-allot"
-                      )}
-                    </Button>
-                  </td>
+          <TableScroll>
+            <table className="w-full text-sm admin-table-fixed min-w-[640px]">
+              <thead>
+                <tr className="text-left text-xs text-stone-500 border-b border-stone-100">
+                  <th className="font-medium pl-4 sm:pl-5 pr-3 py-2.5">Hospital</th>
+                  <th className={thCls}>Current agent</th>
+                  <th className={thCls}>Since</th>
+                  <th className={thCls}>Re-allot to</th>
+                  <th className="pr-4 sm:pr-5 py-2.5"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {hospitals.map((h) => (
+                  <tr key={h.id}>
+                    <td className="pl-4 sm:pl-5 pr-3 py-2.5">
+                      <span className="font-medium text-stone-900">{h.name}</span>
+                      {h.city ? <span className="text-stone-500"> · {h.city}</span> : null}
+                      {!h.is_active && (
+                        <span className="ml-1.5">
+                          <StatusPill tone="bad">inactive</StatusPill>
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {h.currentAgent?.agentName ?? (
+                        <span className="text-stone-400 italic">khali</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-stone-500 whitespace-nowrap">
+                      {h.currentAgent?.since ?? "—"}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <select
+                        value={reallotAgent}
+                        onChange={(e) => setReallotAgent(e.target.value)}
+                        className="h-9 md:h-8 w-full max-w-[12rem] rounded-md border border-stone-300 bg-white px-2 text-xs focus:border-orange-500 focus:outline-none"
+                      >
+                        {agents.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.full_name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="pr-4 sm:pr-5 py-2.5 text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-9 md:h-8 text-xs"
+                        disabled={
+                          busy !== null || !reallotAgent || h.currentAgent?.agentId === reallotAgent
+                        }
+                        onClick={async () => {
+                          setBusy(`reallot-${h.id}`);
+                          try {
+                            await callAdminApi("/api/admin/hospitals/reallot", {
+                              hospital_id: h.id,
+                              agent_id: reallotAgent,
+                            });
+                            await loadCatalogues();
+                          } catch (err) {
+                            setMsg(err instanceof Error ? err.message : "Reallot fail");
+                          } finally {
+                            setBusy(null);
+                          }
+                        }}
+                      >
+                        {busy === `reallot-${h.id}` ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          "Allot / Re-allot"
+                        )}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
         )}
-      </section>
+      </Panel>
 
       {/* Recent leads */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">
-        <h2 className="text-base font-bold text-slate-900 mb-3">
-          Recent leads ({leads?.length ?? 0})
-        </h2>
+      <Panel title={`Recent leads (${leads?.length ?? 0})`} flush>
         {!leads ? (
-          <Skeleton className="h-24 w-full" />
-        ) : leads.length === 0 ? (
-          <p className="text-xs text-slate-400">Abhi koi lead nahi.</p>
-        ) : (
-          <div className="overflow-x-auto -mx-5 px-5">
-          <table className="w-full text-sm min-w-[860px]">
-            <thead>
-              <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
-                <th className="pb-2">Name</th>
-                <th className="pb-2">Phone</th>
-                <th className="pb-2">City</th>
-                <th className="pb-2">Hospital</th>
-                <th className="pb-2">Source agent</th>
-                <th className="pb-2">Telecaller</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2">Age (days)</th>
-                <th className="pb-2">Assigned on</th>
-                <th className="pb-2">Assigned by</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map((l) => {
-                const age = daysSince(l.created_at);
-                return (
-                  <tr key={l.id} className="border-t border-slate-100">
-                    <td className="py-1.5">{l.full_name ?? "—"}</td>
-                    <td className="py-1.5 font-mono text-xs">{l.phone}</td>
-                    <td className="py-1.5">{l.city ?? "—"}</td>
-                    <td className="py-1.5">{hospitalName(l.hospital_id)}</td>
-                    <td className="py-1.5">{agentName(l.source_agent_id)}</td>
-                    <td className="py-1.5">
-                      {l.assigned_to ? (
-                        telecallerName(l.assigned_to)
-                      ) : (
-                        <span className="text-slate-400 italic">unassigned</span>
-                      )}
-                    </td>
-                    <td className="py-1.5 text-xs">{l.status}</td>
-                    <td
-                      className={`py-1.5 text-xs ${age >= 3 && l.status !== "converted" ? "text-red-600 font-semibold" : ""}`}
-                    >
-                      {age}
-                    </td>
-                    <td className="py-1.5 text-xs">{formatAssignedWhen(l)}</td>
-                    <td className="py-1.5 text-xs">{assignedByName(l.assigned_by)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="p-4 sm:p-5">
+            <Skeleton className="h-24 w-full" />
           </div>
+        ) : leads.length === 0 ? (
+          <EmptyState title="Abhi koi lead nahi." className="py-8" />
+        ) : (
+          <TableScroll>
+            <table className="w-full text-sm admin-table-fixed min-w-[900px]">
+              <thead>
+                <tr className="text-left text-xs text-stone-500 border-b border-stone-100 whitespace-nowrap">
+                  <th className="font-medium pl-4 sm:pl-5 pr-3 py-2.5">Name</th>
+                  <th className={thCls}>Phone</th>
+                  <th className={thCls}>City</th>
+                  <th className={thCls}>Hospital</th>
+                  <th className={thCls}>Source agent</th>
+                  <th className={thCls}>Telecaller</th>
+                  <th className={thCls}>Status</th>
+                  <th className={thCls}>Age (days)</th>
+                  <th className={thCls}>Assigned on</th>
+                  <th className="font-medium pl-3 pr-4 sm:pr-5 py-2.5">Assigned by</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {leads.map((l) => {
+                  const age = daysSince(l.created_at);
+                  return (
+                    <tr key={l.id}>
+                      <td className="pl-4 sm:pl-5 pr-3 py-2.5 font-medium text-stone-900">
+                        {l.full_name ?? "—"}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">{l.phone}</td>
+                      <td className="px-3 py-2.5">{l.city ?? "—"}</td>
+                      <td className="px-3 py-2.5">{hospitalName(l.hospital_id)}</td>
+                      <td className="px-3 py-2.5">{agentName(l.source_agent_id)}</td>
+                      <td className="px-3 py-2.5">
+                        {l.assigned_to ? (
+                          telecallerName(l.assigned_to)
+                        ) : (
+                          <span className="text-stone-400 italic">unassigned</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <StatusPill tone={leadStatusTone(l.status)}>{l.status}</StatusPill>
+                      </td>
+                      <td
+                        className={`px-3 py-2.5 text-xs tabular-nums ${age >= 3 && l.status !== "converted" ? "text-rose-600 font-semibold" : ""}`}
+                      >
+                        {age}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs whitespace-nowrap">
+                        {formatAssignedWhen(l)}
+                      </td>
+                      <td className="pl-3 pr-4 sm:pr-5 py-2.5 text-xs">
+                        {assignedByName(l.assigned_by)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </TableScroll>
         )}
-      </section>
+      </Panel>
     </div>
   );
+}
+
+/** Presentation-only colour for a lead status pill. */
+function leadStatusTone(status: string): Tone {
+  switch (status) {
+    case "converted":
+      return "good";
+    case "assigned":
+    case "in_progress":
+    case "link_sent":
+      return "info";
+    case "expired":
+    case "wrong_number":
+      return "bad";
+    case "duplicate":
+    case "unreachable":
+    case "not_interested":
+      return "warn";
+    default:
+      return "neutral";
+  }
 }

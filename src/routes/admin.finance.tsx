@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Info, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, Download, Info, Loader2, RefreshCw } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { callAdminApi } from "@/lib/admin-api";
 import { todayIST } from "@/lib/offline-subscriptions-logic";
 import {
@@ -42,6 +42,15 @@ import {
 } from "@/lib/finance-ui";
 import { FinanceLedger, type FinanceCategory } from "@/components/admin/finance-ledger";
 import { FinanceCategories } from "@/components/admin/finance-categories";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  Panel,
+  SegmentedTabs,
+  StatCard,
+  TableScroll,
+} from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/finance")({
   // OWNER-ONLY (every figure here is ₹ — same gate discipline as /admin/commissions).
@@ -77,6 +86,7 @@ interface PnlResponse {
 }
 
 type Preset = PresetKey | "custom";
+type FinanceTab = "overview" | "compare" | "ledger" | "categories";
 
 const PRESETS: { key: Preset; label: string }[] = [
   { key: "this_month", label: "This month" },
@@ -90,7 +100,17 @@ const PRESETS: { key: Preset; label: string }[] = [
 ];
 
 const selectCls =
-  "text-xs border border-amber-200 rounded-md px-2.5 py-2 h-9 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700";
+  "h-9 w-full sm:w-auto rounded-md border border-stone-300 bg-white px-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-orange-600/30";
+
+const thCls = "py-2.5 px-3 text-xs font-medium text-stone-500 whitespace-nowrap";
+
+// Chart text sizing shared by every chart on this page.
+const TICK = { fontSize: 11, fill: "#78716c" };
+const LEGEND_STYLE = { fontSize: 12 };
+const GRID_STROKE = "#e7e5e4";
+
+/** Shorten long category names on the narrow Y-axis of the phone layout. */
+const shortLabel = (max: number) => (v: string) => (v.length > max ? `${v.slice(0, max - 1)}…` : v);
 
 // ─── Small pieces ────────────────────────────────────────────
 
@@ -108,12 +128,12 @@ function Delta({
   const tone = toneOf(delta, goodWhen);
   const pct = prev === 0 ? null : (delta / Math.abs(prev)) * 100;
   return (
-    <div className={`text-[11px] font-semibold ${TONE_CLS[tone]}`}>
+    <span className={`block text-xs font-medium ${TONE_CLS[tone]}`}>
       {delta === 0
         ? "No change"
         : `${delta > 0 ? "▲" : "▼"} ${pct === null ? "new" : `${Math.abs(Math.round(pct))}%`}`}
-      <span className="font-normal text-slate-400"> vs prev period</span>
-    </div>
+      <span className="font-normal text-stone-400"> vs prev period</span>
+    </span>
   );
 }
 
@@ -133,23 +153,30 @@ function Kpi({
   valueCls?: string;
 }) {
   return (
-    <div className="rounded-xl border border-amber-900/10 bg-white p-3.5" title={title}>
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/60">
-        {label}
-      </div>
-      <div className={`text-xl font-bold mt-1 ${valueCls ?? "text-slate-900"}`}>{value}</div>
-      {sub && <div className="text-[11px] text-slate-500 mt-0.5">{sub}</div>}
-      {delta}
+    <div title={title} className="h-full">
+      <StatCard
+        label={label}
+        // Rupee figures can run to 9+ characters; a step smaller than the
+        // default tile size keeps them inside a half-width phone tile.
+        value={<span className={`text-xl sm:text-2xl break-words ${valueCls ?? ""}`}>{value}</span>}
+        hint={
+          sub || delta ? (
+            <>
+              {sub && <span className="block">{sub}</span>}
+              {delta}
+            </>
+          ) : undefined
+        }
+      />
     </div>
   );
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-amber-900/10 bg-white p-4">
-      <h3 className="text-sm font-semibold text-slate-800 mb-3">{title}</h3>
-      <div className="h-64">{children}</div>
-    </div>
+    <Panel title={title}>
+      <div className="h-60 sm:h-64">{children}</div>
+    </Panel>
   );
 }
 
@@ -163,35 +190,37 @@ function PeriodPicker({
   onChange: (r: Range) => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-semibold text-slate-700 w-16">{label}</span>
-      <Input
-        type="month"
-        aria-label={`${label} from`}
-        value={value.fromYm}
-        onChange={(e) =>
-          e.target.value &&
-          onChange({
-            fromYm: e.target.value,
-            toYm: e.target.value > value.toYm ? e.target.value : value.toYm,
-          })
-        }
-        className="h-9 text-xs w-40"
-      />
-      <span className="text-xs text-slate-400">to</span>
-      <Input
-        type="month"
-        aria-label={`${label} to`}
-        value={value.toYm}
-        onChange={(e) =>
-          e.target.value &&
-          onChange({
-            fromYm: e.target.value < value.fromYm ? e.target.value : value.fromYm,
-            toYm: e.target.value,
-          })
-        }
-        className="h-9 text-xs w-40"
-      />
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+      <span className="text-[13px] font-medium text-stone-600 sm:w-16 shrink-0">{label}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <Input
+          type="month"
+          aria-label={`${label} from`}
+          value={value.fromYm}
+          onChange={(e) =>
+            e.target.value &&
+            onChange({
+              fromYm: e.target.value,
+              toYm: e.target.value > value.toYm ? e.target.value : value.toYm,
+            })
+          }
+          className="h-9 text-sm min-w-0 flex-1 sm:w-40 sm:flex-none"
+        />
+        <span className="text-xs text-stone-400 shrink-0">to</span>
+        <Input
+          type="month"
+          aria-label={`${label} to`}
+          value={value.toYm}
+          onChange={(e) =>
+            e.target.value &&
+            onChange({
+              fromYm: e.target.value < value.fromYm ? e.target.value : value.fromYm,
+              toYm: e.target.value,
+            })
+          }
+          className="h-9 text-sm min-w-0 flex-1 sm:w-40 sm:flex-none"
+        />
+      </div>
     </div>
   );
 }
@@ -229,41 +258,36 @@ function PnlTable({ pnl, categories }: { pnl: PnlResponse["pnl"]; categories: Ca
     { label: "Other income", pick: (m) => m.otherIncome, bold: true },
     { label: "Net profit", pick: (m) => m.netProfit, bold: true },
   ];
+  const stickyCls =
+    "sticky left-0 z-[1] min-w-36 sm:min-w-44 max-w-[11rem] sm:max-w-none border-r border-stone-100";
   return (
-    <div className="rounded-xl border border-amber-900/10 bg-white overflow-x-auto">
-      <table className="w-full text-xs">
+    <TableScroll>
+      <table className="admin-table-fixed w-full text-[13px] tabular-nums">
         <thead>
-          <tr className="border-b border-amber-100 bg-amber-50/60">
-            <th className="text-left py-2.5 px-3 sticky left-0 bg-amber-50 font-bold text-amber-900/70 min-w-44">
-              Line
-            </th>
+          <tr className="border-b border-stone-200 bg-stone-50">
+            <th className={`${thCls} ${stickyCls} text-left bg-stone-50`}>Line</th>
             {pnl.months.map((m) => (
-              <th
-                key={m.month}
-                className="text-right py-2.5 px-3 font-bold text-amber-900/70 whitespace-nowrap"
-              >
+              <th key={m.month} className={`${thCls} text-right`}>
                 {ymShort(m.month)}
               </th>
             ))}
-            <th className="text-right py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap">
-              Total
-            </th>
+            <th className={`${thCls} text-right text-stone-900`}>Total</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-stone-100">
           {rows.map((r) => (
-            <tr key={r.label} className={r.bold ? "bg-amber-50/40 font-semibold" : ""}>
+            <tr key={r.label} className={r.bold ? "bg-stone-50 font-semibold" : ""}>
               <td
-                className={`py-2 px-3 sticky left-0 ${r.bold ? "bg-amber-50" : "bg-white"} ${r.indent ? "pl-6 text-slate-600" : "text-slate-900"}`}
+                className={`py-2 px-3 ${stickyCls} ${r.bold ? "bg-stone-50 text-stone-900" : "bg-white"} ${r.indent ? "pl-6 text-stone-600" : "text-stone-900"}`}
               >
-                {r.label}
+                <span className="block truncate sm:whitespace-normal">{r.label}</span>
               </td>
               {cols.map((m, i) => {
                 const v = r.pick(m);
                 return (
                   <td
                     key={m.month}
-                    className={`py-2 px-3 text-right whitespace-nowrap ${i === cols.length - 1 ? "font-semibold" : ""} ${v < 0 ? "text-red-700" : ""}`}
+                    className={`py-2 px-3 text-right whitespace-nowrap ${i === cols.length - 1 ? "font-semibold" : ""} ${v < 0 ? "text-rose-700" : "text-stone-800"}`}
                   >
                     {v === 0 ? "—" : inr(v)}
                   </td>
@@ -271,33 +295,33 @@ function PnlTable({ pnl, categories }: { pnl: PnlResponse["pnl"]; categories: Ca
               })}
             </tr>
           ))}
-          <tr className="border-t border-amber-100 text-slate-600">
-            <td className="py-2 px-3 sticky left-0 bg-white">Gross margin</td>
+          <tr className="border-t border-stone-200 text-stone-600">
+            <td className={`py-2 px-3 bg-white ${stickyCls}`}>Gross margin</td>
             {cols.map((m) => (
-              <td key={m.month} className="py-2 px-3 text-right">
+              <td key={m.month} className="py-2 px-3 text-right whitespace-nowrap">
                 {marginText(m.grossMarginPct)}
               </td>
             ))}
           </tr>
-          <tr className="text-slate-600">
-            <td className="py-2 px-3 sticky left-0 bg-white">Net margin</td>
+          <tr className="text-stone-600">
+            <td className={`py-2 px-3 bg-white ${stickyCls}`}>Net margin</td>
             {cols.map((m) => (
-              <td key={m.month} className="py-2 px-3 text-right">
+              <td key={m.month} className="py-2 px-3 text-right whitespace-nowrap">
                 {marginText(m.netMarginPct)}
               </td>
             ))}
           </tr>
-          <tr className="text-slate-600">
-            <td className="py-2 px-3 sticky left-0 bg-white">Paying subscribers</td>
+          <tr className="text-stone-600">
+            <td className={`py-2 px-3 bg-white ${stickyCls}`}>Paying subscribers</td>
             {cols.map((m) => (
-              <td key={m.month} className="py-2 px-3 text-right">
+              <td key={m.month} className="py-2 px-3 text-right whitespace-nowrap">
                 {m.payingSubscribers}
               </td>
             ))}
           </tr>
         </tbody>
       </table>
-    </div>
+    </TableScroll>
   );
 }
 
@@ -309,6 +333,7 @@ function FinancePage() {
   const [range, setRange] = useState<Range>(() => presetRange("last_6", today));
   const [basis, setBasis] = useState<PnlBasis>("cash");
   const [showBasisInfo, setShowBasisInfo] = useState(false);
+  const [tab, setTab] = useState<FinanceTab>("overview");
 
   const [data, setData] = useState<PnlResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -397,63 +422,88 @@ function FinancePage() {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="bg-white p-5 rounded-2xl border border-amber-900/10 space-y-3">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Finance &amp; P&amp;L
-            </h1>
-            <p className="text-xs text-amber-900/60 mt-0.5">
-              Expenses, other income aur profit — sirf owner ko dikhta hai. {ymLabel(range.fromYm)}
-              {range.fromYm !== range.toYm ? ` – ${ymLabel(range.toYm)}` : ""}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              className={selectCls}
-              value={preset}
-              onChange={(e) => pickPreset(e.target.value as Preset)}
-              aria-label="Period preset"
+    <div className="space-y-6">
+      <PageHeader
+        title="Finance & P&L"
+        description="Expenses, other income aur profit — sirf owner ko dikhta hai."
+        meta={`${ymLabel(range.fromYm)}${range.fromYm !== range.toYm ? ` – ${ymLabel(range.toYm)}` : ""}`}
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void loadPnl()}
+              disabled={loading}
+              className="h-9 gap-1.5"
             >
-              {PRESETS.map((p) => (
-                <option key={p.key} value={p.key}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-            {preset === "custom" && (
-              <>
-                <Input
-                  type="month"
-                  aria-label="From month"
-                  value={range.fromYm}
-                  onChange={(e) =>
-                    e.target.value &&
-                    setRange((r) => ({
-                      fromYm: e.target.value,
-                      toYm: e.target.value > r.toYm ? e.target.value : r.toYm,
-                    }))
-                  }
-                  className="h-9 text-xs w-40"
-                />
-                <Input
-                  type="month"
-                  aria-label="To month"
-                  value={range.toYm}
-                  onChange={(e) =>
-                    e.target.value &&
-                    setRange((r) => ({
-                      fromYm: e.target.value < r.fromYm ? e.target.value : r.fromYm,
-                      toYm: e.target.value,
-                    }))
-                  }
-                  className="h-9 text-xs w-40"
-                />
-              </>
-            )}
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => void exportXlsx()}
+              disabled={exporting}
+              className="h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {exporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}{" "}
+              Export .xlsx
+            </Button>
+          </>
+        }
+      />
+
+      {/* Period + basis toolbar */}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <select
+            className={selectCls}
+            value={preset}
+            onChange={(e) => pickPreset(e.target.value as Preset)}
+            aria-label="Period preset"
+          >
+            {PRESETS.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          {preset === "custom" && (
+            <div className="flex items-center gap-2 min-w-0">
+              <Input
+                type="month"
+                aria-label="From month"
+                value={range.fromYm}
+                onChange={(e) =>
+                  e.target.value &&
+                  setRange((r) => ({
+                    fromYm: e.target.value,
+                    toYm: e.target.value > r.toYm ? e.target.value : r.toYm,
+                  }))
+                }
+                className="h-9 text-sm min-w-0 flex-1 sm:w-40 sm:flex-none"
+              />
+              <span className="text-xs text-stone-400 shrink-0">to</span>
+              <Input
+                type="month"
+                aria-label="To month"
+                value={range.toYm}
+                onChange={(e) =>
+                  e.target.value &&
+                  setRange((r) => ({
+                    fromYm: e.target.value < r.fromYm ? e.target.value : r.fromYm,
+                    toYm: e.target.value,
+                  }))
+                }
+                className="h-9 text-sm min-w-0 flex-1 sm:w-40 sm:flex-none"
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
             <div
-              className="inline-flex rounded-md border border-amber-200 overflow-hidden"
+              className="inline-flex gap-1 rounded-lg bg-stone-100 p-1"
               role="group"
               aria-label="Basis"
             >
@@ -463,7 +513,7 @@ function FinancePage() {
                   type="button"
                   onClick={() => setBasis(b)}
                   aria-pressed={basis === b}
-                  className={`px-3 h-9 text-xs font-semibold ${basis === b ? "bg-amber-700 text-white" : "bg-white text-slate-700"}`}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${basis === b ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}
                 >
                   {b === "cash" ? "Cash" : "Normalised"}
                 </button>
@@ -472,90 +522,68 @@ function FinancePage() {
             <button
               type="button"
               aria-label="What do Cash and Normalised mean?"
+              aria-expanded={showBasisInfo}
               onClick={() => setShowBasisInfo((s) => !s)}
-              className="text-amber-800"
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-stone-100 ${showBasisInfo ? "text-orange-700" : "text-stone-400"}`}
             >
               <Info className="w-4 h-4" />
             </button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void loadPnl()}
-              disabled={loading}
-              className="h-9 gap-1.5 text-xs"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => void exportXlsx()}
-              disabled={exporting}
-              className="h-9 gap-1.5 text-xs bg-amber-700 hover:bg-amber-800 text-white"
-            >
-              {exporting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Download className="w-3.5 h-3.5" />
-              )}{" "}
-              Export .xlsx
-            </Button>
           </div>
         </div>
         {showBasisInfo && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950 space-y-1">
-            <p>
-              <b>Cash</b> — paisa jis mahine mein aaya/gaya, usi mahine mein. Yearly plan ya
-              multi-month QR prepayment poora ek mahine mein dikhta hai.
-            </p>
-            <p>
-              <b>Normalised</b> — yearly plans aur multi-month QR prepayments un mahino mein baant
-              diye jaate hain jin ke liye payment hui; &quot;spread over N months&quot; wale
-              expenses bhi. Mahine-ba-mahine tulna ke liye behtar.
-            </p>
-            <p>
-              <b>Collected (incl. later-refunded)</b> — revenue mein wo payments bhi hain jo baad
-              mein refund hui; refunds apni alag line mein, refund ke mahine mein. Isliye yeh
-              Reports ke &quot;gross (captured)&quot; se alag ho sakta hai.
-            </p>
-          </div>
+          <Notice tone="info" icon={Info}>
+            <div className="space-y-1.5 text-[13px]">
+              <p>
+                <b>Cash</b> — paisa jis mahine mein aaya/gaya, usi mahine mein. Yearly plan ya
+                multi-month QR prepayment poora ek mahine mein dikhta hai.
+              </p>
+              <p>
+                <b>Normalised</b> — yearly plans aur multi-month QR prepayments un mahino mein baant
+                diye jaate hain jin ke liye payment hui; &quot;spread over N months&quot; wale
+                expenses bhi. Mahine-ba-mahine tulna ke liye behtar.
+              </p>
+              <p>
+                <b>Collected (incl. later-refunded)</b> — revenue mein wo payments bhi hain jo baad
+                mein refund hui; refunds apni alag line mein, refund ke mahine mein. Isliye yeh
+                Reports ke &quot;gross (captured)&quot; se alag ho sakta hai.
+              </p>
+            </div>
+          </Notice>
         )}
       </div>
 
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs">
+        <Notice tone="bad" icon={AlertCircle}>
           {error}
-        </div>
+        </Notice>
       )}
 
-      <Tabs defaultValue="overview">
-        <TabsList className="bg-amber-50">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="compare">Compare</TabsTrigger>
-          <TabsTrigger value="ledger">Ledger</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-        </TabsList>
+      <div className="space-y-4">
+        <SegmentedTabs
+          value={tab}
+          onChange={setTab}
+          items={[
+            { value: "overview", label: "Overview" },
+            { value: "compare", label: "Compare" },
+            { value: "ledger", label: "Ledger" },
+            { value: "categories", label: "Categories" },
+          ]}
+        />
 
-        <TabsContent value="overview" className="space-y-5 mt-4">
-          <Overview data={data} loading={loading} />
-        </TabsContent>
-
-        <TabsContent value="compare" className="space-y-4 mt-4">
-          <ComparePanel basis={basis} today={today} />
-        </TabsContent>
-
-        <TabsContent value="ledger" className="mt-4">
+        {tab === "overview" && <Overview data={data} loading={loading} />}
+        {tab === "compare" && <ComparePanel basis={basis} today={today} />}
+        {tab === "ledger" && (
           <FinanceLedger
             fromYm={range.fromYm}
             toYm={range.toYm}
             categories={cats}
             onChanged={changed}
           />
-        </TabsContent>
-
-        <TabsContent value="categories" className="mt-4">
+        )}
+        {tab === "categories" && (
           <FinanceCategories categories={cats} loading={catsLoading} onChanged={changed} />
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 }
@@ -563,13 +591,14 @@ function FinancePage() {
 // ─── Overview tab ────────────────────────────────────────────
 
 function Overview({ data, loading }: { data: PnlResponse | null; loading: boolean }) {
+  const isMobile = useIsMobile();
   const catName = useMemo(() => new Map((data?.categories ?? []).map((c) => [c.id, c])), [data]);
 
   if (!data) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[...Array(8)].map((_, i) => (
-          <Skeleton key={i} className="h-24 bg-amber-50 rounded-xl" />
+          <Skeleton key={i} className="h-28 bg-stone-100 rounded-xl" />
         ))}
       </div>
     );
@@ -594,10 +623,11 @@ function Overview({ data, loading }: { data: PnlResponse | null; loading: boolea
 
   const rupeeTip = (v: unknown) => inr(Math.round(Number(v) * 100));
   const subscribersUnit = t.payingSubscribers === 1 ? "subscriber" : "subscribers";
+  const yW = isMobile ? 46 : 58;
 
   return (
-    <div className={loading ? "opacity-60 transition-opacity space-y-5" : "space-y-5"}>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className={loading ? "opacity-60 transition-opacity space-y-6" : "space-y-6"}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Kpi
           label="Net revenue"
           value={inr(t.netRevenue)}
@@ -615,7 +645,7 @@ function Overview({ data, loading }: { data: PnlResponse | null; loading: boolea
           label="Gross profit"
           value={inr(t.grossProfit)}
           sub={`Margin ${marginText(t.grossMarginPct)}`}
-          valueCls={t.grossProfit < 0 ? "text-red-700" : undefined}
+          valueCls={t.grossProfit < 0 ? "text-rose-700" : undefined}
           delta={<Delta cur={t.grossProfit} prev={p?.grossProfit} goodWhen="up" />}
         />
         <Kpi
@@ -627,7 +657,7 @@ function Overview({ data, loading }: { data: PnlResponse | null; loading: boolea
           label="Net profit"
           value={inr(t.netProfit)}
           sub={`Margin ${marginText(t.netMarginPct)}${t.otherIncome ? ` · incl. other income ${inr(t.otherIncome)}` : ""}`}
-          valueCls={t.netProfit < 0 ? "text-red-700" : "text-emerald-700"}
+          valueCls={t.netProfit < 0 ? "text-rose-700" : "text-emerald-700"}
           delta={<Delta cur={t.netProfit} prev={p?.netProfit} goodWhen="up" />}
         />
         <Kpi
@@ -662,15 +692,15 @@ function Overview({ data, loading }: { data: PnlResponse | null; loading: boolea
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         <ChartCard title="Monthly: revenue vs expenses, with net profit">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={monthly} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={inrAxis} tick={{ fontSize: 11 }} width={58} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
+              <XAxis dataKey="name" tick={TICK} />
+              <YAxis tickFormatter={inrAxis} tick={TICK} width={yW} />
               <Tooltip formatter={rupeeTip} />
-              <Legend />
+              <Legend wrapperStyle={LEGEND_STYLE} />
               <Bar dataKey="Net revenue" fill={CHART_COLORS.revenue} radius={[3, 3, 0, 0]} />
               <Bar dataKey="Total expenses" fill={CHART_COLORS.expenses} radius={[3, 3, 0, 0]} />
               <Line
@@ -687,11 +717,11 @@ function Overview({ data, loading }: { data: PnlResponse | null; loading: boolea
         <ChartCard title="Revenue per month: Autopay vs QR / offline">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthly} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={inrAxis} tick={{ fontSize: 11 }} width={58} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
+              <XAxis dataKey="name" tick={TICK} />
+              <YAxis tickFormatter={inrAxis} tick={TICK} width={yW} />
               <Tooltip formatter={rupeeTip} />
-              <Legend />
+              <Legend wrapperStyle={LEGEND_STYLE} />
               <Bar dataKey="Autopay" stackId="rev" fill={CHART_COLORS.autopay} />
               <Bar
                 dataKey="QR / offline"
@@ -706,19 +736,23 @@ function Overview({ data, loading }: { data: PnlResponse | null; loading: boolea
 
       <ChartCard title="Expenses by category (period total, top 10)">
         {byCategory.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-sm text-slate-400">
-            Is period mein koi expense nahi.
-          </div>
+          <EmptyState title="Is period mein koi expense nahi." className="h-full py-0" />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={byCategory}
               layout="vertical"
-              margin={{ top: 4, right: 16, left: 8, bottom: 0 }}
+              margin={{ top: 4, right: isMobile ? 8 : 16, left: 0, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tickFormatter={inrAxis} tick={{ fontSize: 11 }} />
-              <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={GRID_STROKE} />
+              <XAxis type="number" tickFormatter={inrAxis} tick={TICK} />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={isMobile ? 92 : 150}
+                tick={TICK}
+                tickFormatter={shortLabel(isMobile ? 13 : 24)}
+              />
               <Tooltip formatter={rupeeTip} />
               <Bar dataKey="Amount" fill={CHART_COLORS.bar} radius={[0, 3, 3, 0]} />
             </BarChart>
@@ -726,10 +760,9 @@ function Overview({ data, loading }: { data: PnlResponse | null; loading: boolea
         )}
       </ChartCard>
 
-      <div>
-        <h3 className="text-sm font-semibold text-slate-800 mb-2">P&amp;L statement</h3>
+      <Panel title="P&L statement" description="Month by month, with the period total." flush>
         <PnlTable pnl={data.pnl} categories={data.categories} />
-      </div>
+      </Panel>
     </div>
   );
 }
@@ -798,103 +831,106 @@ function ComparePanel({ basis, today }: { basis: PnlBasis; today: string }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white border border-amber-900/10 rounded-xl p-4 space-y-3">
-        <div className="flex flex-wrap gap-1.5">
+    <div className="space-y-4 sm:space-y-6">
+      <Panel
+        title="Periods"
+        description="Δ = B − A. Costs are shown green when they go down."
+        bodyClassName="space-y-3"
+      >
+        <div className="flex flex-wrap gap-2">
           {shortcuts.map((s) => (
-            <button
+            <Button
               key={s.label}
               type="button"
+              variant="outline"
+              size="sm"
               onClick={s.apply}
-              className="px-3 py-1.5 rounded-full text-xs font-semibold border border-amber-200 bg-white text-slate-700 hover:bg-amber-50"
+              className="h-9 rounded-full text-xs"
             >
               {s.label}
-            </button>
+            </Button>
           ))}
         </div>
         <PeriodPicker label="A (base)" value={a} onChange={setA} />
         <PeriodPicker label="B" value={b} onChange={setB} />
-        <p className="text-[11px] text-slate-500">
-          Δ = B − A. Costs are shown green when they go down.
-        </p>
-      </div>
+      </Panel>
 
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs">
+        <Notice tone="bad" icon={AlertCircle}>
           {error}
-        </div>
+        </Notice>
       )}
-      {!cmp && !error && <Skeleton className="h-64 bg-amber-50 rounded-xl" />}
+      {!cmp && !error && <Skeleton className="h-64 bg-stone-100 rounded-xl" />}
 
       {cmp && (
         <div className={loading ? "opacity-60 transition-opacity space-y-4" : "space-y-4"}>
           {cmp.movers.length > 0 && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-              <h3 className="text-sm font-semibold text-amber-950 mb-1.5">Top movers</h3>
-              <ul className="space-y-1 text-sm text-amber-950 list-disc pl-5">
+            <Panel title="Top movers" description="Arrow reads A → B.">
+              <ul className="space-y-1.5 text-sm text-stone-700 list-disc pl-5">
                 {cmp.movers.map((m) => (
                   <li key={m.key}>{m.sentence}</li>
                 ))}
               </ul>
-              <p className="text-[10px] text-amber-900/60 mt-2">Arrow reads A → B.</p>
-            </div>
+            </Panel>
           )}
 
-          <div className="rounded-xl border border-amber-900/10 bg-white overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-amber-100 bg-amber-50/60 font-bold text-amber-900/70">
-                  <th className="text-left py-2.5 px-3">Line</th>
-                  <th className="text-right py-2.5 px-3 whitespace-nowrap">
-                    A ({ymLabel(a.fromYm)}
-                    {a.fromYm !== a.toYm ? `–${ymShort(a.toYm)}` : ""})
-                  </th>
-                  <th className="text-right py-2.5 px-3 whitespace-nowrap">
-                    B ({ymLabel(b.fromYm)}
-                    {b.fromYm !== b.toYm ? `–${ymShort(b.toYm)}` : ""})
-                  </th>
-                  <th className="text-right py-2.5 px-3">Δ</th>
-                  <th className="text-right py-2.5 px-3">Δ%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cmp.rows.map((r) => {
-                  // rows were computed as a = compare period (A), b = primary (B)
-                  const tone = toneOf(r.delta, r.goodWhen);
-                  return (
-                    <tr key={r.key} className={r.isSubtotal ? "bg-amber-50/40 font-semibold" : ""}>
-                      <td
-                        className={`py-2 px-3 ${r.isSubtotal ? "text-slate-900" : "pl-6 text-slate-600"}`}
-                      >
-                        {r.label}
-                        {r.isSubtotal && (
-                          <span className="ml-2 text-[10px] font-normal text-slate-400">
-                            {group[r.group]}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3 text-right whitespace-nowrap">
-                        {r.a === 0 ? "—" : inr(r.a)}
-                      </td>
-                      <td className="py-2 px-3 text-right whitespace-nowrap">
-                        {r.b === 0 ? "—" : inr(r.b)}
-                      </td>
-                      <td
-                        className={`py-2 px-3 text-right whitespace-nowrap font-semibold ${TONE_CLS[tone]}`}
-                      >
-                        {r.delta === 0
-                          ? "—"
-                          : `${r.delta > 0 ? "▲ +" : "▼ −"}${inr(Math.abs(r.delta))}`}
-                      </td>
-                      <td className={`py-2 px-3 text-right whitespace-nowrap ${TONE_CLS[tone]}`}>
-                        {pctText(r.deltaPct)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Panel title="Line by line" flush>
+            <TableScroll>
+              <table className="admin-table-fixed w-full min-w-[560px] text-[13px] tabular-nums">
+                <thead>
+                  <tr className="border-b border-stone-200 bg-stone-50">
+                    <th className={`${thCls} text-left`}>Line</th>
+                    <th className={`${thCls} text-right`}>
+                      A ({ymLabel(a.fromYm)}
+                      {a.fromYm !== a.toYm ? `–${ymShort(a.toYm)}` : ""})
+                    </th>
+                    <th className={`${thCls} text-right`}>
+                      B ({ymLabel(b.fromYm)}
+                      {b.fromYm !== b.toYm ? `–${ymShort(b.toYm)}` : ""})
+                    </th>
+                    <th className={`${thCls} text-right`}>Δ</th>
+                    <th className={`${thCls} text-right`}>Δ%</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {cmp.rows.map((r) => {
+                    // rows were computed as a = compare period (A), b = primary (B)
+                    const tone = toneOf(r.delta, r.goodWhen);
+                    return (
+                      <tr key={r.key} className={r.isSubtotal ? "bg-stone-50 font-semibold" : ""}>
+                        <td
+                          className={`py-2 px-3 ${r.isSubtotal ? "text-stone-900" : "pl-6 text-stone-600"}`}
+                        >
+                          {r.label}
+                          {r.isSubtotal && (
+                            <span className="ml-2 text-xs font-normal text-stone-400">
+                              {group[r.group]}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap text-stone-800">
+                          {r.a === 0 ? "—" : inr(r.a)}
+                        </td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap text-stone-800">
+                          {r.b === 0 ? "—" : inr(r.b)}
+                        </td>
+                        <td
+                          className={`py-2 px-3 text-right whitespace-nowrap font-semibold ${TONE_CLS[tone]}`}
+                        >
+                          {r.delta === 0
+                            ? "—"
+                            : `${r.delta > 0 ? "▲ +" : "▼ −"}${inr(Math.abs(r.delta))}`}
+                        </td>
+                        <td className={`py-2 px-3 text-right whitespace-nowrap ${TONE_CLS[tone]}`}>
+                          {pctText(r.deltaPct)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </TableScroll>
+          </Panel>
         </div>
       )}
     </div>

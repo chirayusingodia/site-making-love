@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { callAdminApi, fetchMyRole } from "@/lib/admin-api";
 import {
@@ -18,23 +18,23 @@ import {
   type ReportKey,
   type ViewRow,
 } from "@/lib/reports-logic";
-import {
-  AlertCircle,
-  BadgeIndianRupee,
-  BarChart3,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  Download,
-  FileText,
-  Flame,
-  Loader2,
-  RefreshCw,
-  Users,
-  XCircle,
-} from "lucide-react";
+import { AlertCircle, CalendarDays, Download, FileText, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  SegmentedTabs,
+  StatCard,
+  StatusPill,
+  TableScroll,
+  type Tone,
+} from "@/components/admin/admin-ui";
+import { AnalyticsDashboard } from "@/components/admin/analytics-dashboard";
+
+type ReportsTab = "trends" | "monthly";
 
 // OWNER-ONLY route (financial data — Session 6.5 two-tier roles):
 //   1. beforeLoad redirects any non-owner (incl. admin) to Overview.
@@ -42,6 +42,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 //      non-owners with 403 — no direct Supabase queries from this
 //      page, so there is nothing financial to inspect in devtools.
 export const Route = createFileRoute("/admin/reports")({
+  // Analytics (trend charts) and the monthly exportable reports used to be
+  // two separate nav items; they are now two tabs of this one page.
+  validateSearch: (search: Record<string, unknown>): { tab?: ReportsTab } => ({
+    tab: search.tab === "monthly" ? "monthly" : search.tab === "trends" ? "trends" : undefined,
+  }),
   beforeLoad: async () => {
     const role = await fetchMyRole();
     if (role !== "owner") {
@@ -80,7 +85,6 @@ function ReportShell({
   id,
   title,
   subtitle,
-  icon: Icon,
   printKey,
   exporting,
   onCsv,
@@ -90,7 +94,6 @@ function ReportShell({
   id: Exclude<PrintKey, null>;
   title: string;
   subtitle: string;
-  icon: React.ElementType;
   printKey: PrintKey;
   exporting: boolean;
   onCsv: () => void;
@@ -101,23 +104,20 @@ function ReportShell({
   return (
     <section
       data-report={id}
-      className={`bg-white rounded-2xl border border-amber-900/10 shadow-2xs ${hideOnPrint ? "print:hidden" : ""}`}
+      className={`admin-card overflow-hidden ${hideOnPrint ? "print:hidden" : ""}`}
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4 pb-3 border-b border-amber-100">
-        <div>
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Icon className="w-4 h-4 text-amber-700" />
-            {title}
-          </h2>
-          <p className="text-[11px] text-amber-900/60 mt-0.5">{subtitle}</p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between px-4 sm:px-5 pt-4 pb-3 border-b border-stone-100">
+        <div className="min-w-0">
+          <h2 className="text-[15px] font-semibold text-stone-900">{title}</h2>
+          <p className="mt-0.5 text-xs text-stone-500 leading-relaxed">{subtitle}</p>
         </div>
-        <div className="flex gap-2 print:hidden">
+        <div className="flex gap-2 shrink-0 print:hidden">
           <Button
             onClick={onCsv}
             disabled={exporting}
             variant="outline"
             size="sm"
-            className="border-amber-900/15 bg-amber-50/50 text-amber-900 gap-1.5 text-xs h-7"
+            className="h-9 sm:h-8 gap-1.5"
           >
             {exporting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -130,73 +130,84 @@ function ReportShell({
             onClick={() => onPrint(id)}
             variant="outline"
             size="sm"
-            className="border-amber-900/15 bg-amber-50/50 text-amber-900 gap-1.5 text-xs h-7"
+            className="h-9 sm:h-8 gap-1.5"
           >
             <FileText className="w-3.5 h-3.5" /> PDF
           </Button>
         </div>
       </header>
-      <div className="p-5">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </section>
   );
 }
 
-function StatCard({
+/** Report KPI tile — the shared StatCard with a value size that fits half a phone width. */
+function ReportStat({
   label,
   value,
   sub,
-  tone,
+  status,
 }: {
   label: string;
   value: string;
   sub?: string;
-  tone?: "rose" | "emerald" | "amber" | "sky";
+  status?: { tone: Tone; text: string };
 }) {
-  const toneCls =
-    tone === "rose"
-      ? "border-rose-200 text-rose-800"
-      : tone === "emerald"
-        ? "border-emerald-200 text-emerald-800"
-        : tone === "sky"
-          ? "border-sky-200 text-sky-800"
-          : tone === "amber"
-            ? "border-amber-200 text-amber-800"
-            : "border-amber-900/10 text-slate-900";
   return (
-    <div className={`bg-white rounded-xl border p-4 ${toneCls}`}>
-      <div className="text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</div>
-      <div className="text-2xl font-bold mt-1">{value}</div>
-      {sub && <div className="text-[11px] opacity-70 mt-0.5">{sub}</div>}
+    <StatCard
+      label={label}
+      value={<span className="text-xl sm:text-2xl break-words">{value}</span>}
+      hint={sub}
+      status={status}
+      className="p-3.5 sm:p-4"
+    />
+  );
+}
+
+const BATCH_TONE: Record<string, Tone> = {
+  Done: "good",
+  Pending: "warn",
+  Missed: "bad",
+};
+
+function BatchStatusCell({ cell }: { cell: import("@/lib/reports-logic").BatchCell }) {
+  return (
+    <div>
+      <StatusPill tone={BATCH_TONE[cell.label] ?? "neutral"}>{cell.label}</StatusPill>
+      <div className="text-xs text-stone-400 mt-1">{cell.note}</div>
     </div>
   );
 }
 
-function BatchStatusCell({ cell }: { cell: import("@/lib/reports-logic").BatchCell }) {
-  const cls =
-    cell.label === "Done"
-      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-      : cell.label === "Pending"
-        ? "bg-amber-50 text-amber-800 border-amber-200"
-        : cell.label === "Missed"
-          ? "bg-rose-50 text-rose-800 border-rose-200"
-          : "bg-slate-50 text-slate-400 border-slate-200";
-  const CellIcon = cell.label === "Done" ? CheckCircle2 : cell.label === "Missed" ? XCircle : Clock;
-  return (
-    <div>
-      <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cls}`}
-      >
-        <CellIcon className="w-3 h-3" />
-        {cell.label}
-      </span>
-      <div className="text-[10px] text-slate-400 mt-1">{cell.note}</div>
-    </div>
-  );
-}
+const thCls = "py-2.5 px-4 text-xs font-medium text-stone-500";
 
 // ─── Main Page ───────────────────────────────────────────────
 
 function AdminReportsPage() {
+  const { tab = "trends" } = Route.useSearch();
+  const navigate = useNavigate({ from: "/admin/reports" });
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4 print:hidden">
+        <PageHeader
+          title="Reports & Analytics"
+          description="Owner only. Trends compares revenue, expenses, profit and subscribers month on month; Monthly reports are the exportable CSV / PDF statements."
+        />
+        <SegmentedTabs
+          value={tab}
+          onChange={(t) => navigate({ search: { tab: t }, replace: true })}
+          items={[
+            { value: "trends", label: "Trends" },
+            { value: "monthly", label: "Monthly reports" },
+          ]}
+        />
+      </div>
+      {tab === "trends" ? <AnalyticsDashboard /> : <MonthlyReports />}
+    </div>
+  );
+}
+
+function MonthlyReports() {
   // [Pass-2 F12] default month on an IST calendar — the viewer-local
   // Date preselected the previous month for owners abroad on the 1st.
   const istToday = new Intl.DateTimeFormat("en-CA", {
@@ -303,28 +314,23 @@ function AdminReportsPage() {
   const { tueDate, satDate } = monthWindow(month);
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-5 rounded-2xl border border-amber-900/10 shadow-2xs print:hidden">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-amber-700" />
-            Reports
-          </h1>
-          <p className="text-xs text-amber-900/60 mt-0.5">
-            Owner-only · Subscriber, revenue, seva completion and pending-seva reporting. PDF export
-            uses the browser's print → Save as PDF.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <CalendarDays className="w-4 h-4 text-amber-700" />
+    <div className="space-y-6">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 print:hidden">
+        <p className="text-sm text-stone-500">
+          Subscriber, revenue, seva completion and pending-seva statements. PDF export uses the
+          browser's print → Save as PDF.
+        </p>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative flex-1 sm:flex-none">
+            <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               id="reports-month"
               type="month"
+              aria-label="Report month"
               value={month}
               onChange={(e) => e.target.value && setMonth(e.target.value)}
-              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
+              className="h-9 w-full sm:w-44 rounded-md border border-stone-300 bg-white pl-8 pr-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-orange-600/30"
             />
           </div>
           <Button
@@ -332,7 +338,7 @@ function AdminReportsPage() {
             disabled={loading}
             variant="outline"
             size="sm"
-            className="border-amber-900/15 bg-amber-50/50 text-amber-900 gap-1.5 text-xs"
+            className="h-9 gap-1.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -341,16 +347,15 @@ function AdminReportsPage() {
       </div>
 
       {errorMsg && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs flex items-center gap-2 print:hidden">
-          <AlertCircle className="w-4 h-4 flex-none" />
+        <Notice tone="bad" icon={AlertCircle} className="print:hidden">
           {errorMsg}
-        </div>
+        </Notice>
       )}
 
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-40 w-full bg-amber-50 rounded-2xl" />
+            <Skeleton key={i} className="h-40 w-full bg-stone-100 rounded-xl" />
           ))}
         </div>
       ) : (
@@ -360,43 +365,35 @@ function AdminReportsPage() {
             id="subscribers"
             title="Subscriber Status Report"
             subtitle={`${monthLabel(month)} · New = activated this month (start_date) · Reactivated = pause → active (webhook resumed events)`}
-            icon={Users}
             printKey={printKey}
             exporting={exporting === "subscribers"}
             onCsv={() => exportCsv("subscribers")}
             onPrint={doPrint}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-              <StatCard
-                label="Active now"
-                value={String(subscriberReport.activeNow)}
-                tone="emerald"
-              />
-              <StatCard
-                label="New this month"
-                value={String(subscriberReport.newThisMonth)}
-                tone="sky"
-              />
-              <StatCard
+              <ReportStat label="Active now" value={String(subscriberReport.activeNow)} />
+              <ReportStat label="New this month" value={String(subscriberReport.newThisMonth)} />
+              <ReportStat
                 label="Paused this month"
                 value={String(subscriberReport.pausedThisMonth)}
-                tone="amber"
               />
-              <StatCard
+              <ReportStat
                 label="Cancelled this month"
                 value={String(subscriberReport.cancelledThisMonth)}
-                tone="rose"
               />
-              <StatCard
+              <ReportStat
                 label="Reactivated this month"
                 value={String(subscriberReport.reactivatedThisMonth)}
-                tone="emerald"
               />
-              <StatCard
+              <ReportStat
                 label="Failed payments"
                 value={String(subscriberReport.failedPaymentCount)}
                 sub={`${subscriberReport.failedSubs} subscription(s) affected`}
-                tone="rose"
+                status={
+                  subscriberReport.failedPaymentCount > 0
+                    ? { tone: "bad", text: "Follow up" }
+                    : undefined
+                }
               />
             </div>
           </ReportShell>
@@ -406,36 +403,31 @@ function AdminReportsPage() {
             id="revenue"
             title="Revenue Report"
             subtitle={`${monthLabel(month)} · MRR = active plans, yearly normalised to monthly-equivalent (price ÷ 12) · Churn = cancelled ÷ active base at month start`}
-            icon={BadgeIndianRupee}
             printKey={printKey}
             exporting={exporting === "revenue"}
             onCsv={() => exportCsv("revenue")}
             onPrint={doPrint}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-              <StatCard
+              <ReportStat
                 label="Gross revenue (captured, incl. QR)"
                 value={fmtINR(revenueReport.gross)}
-                tone="emerald"
               />
-              <StatCard
+              <ReportStat
                 label="Failed revenue — opportunity loss"
                 value={fmtINR(revenueReport.failed)}
                 sub="failed charge attempts this month"
-                tone="rose"
               />
-              <StatCard label="Refunded" value={fmtINR(revenueReport.refunded)} tone="sky" />
-              <StatCard
+              <ReportStat label="Refunded" value={fmtINR(revenueReport.refunded)} />
+              <ReportStat
                 label="MRR"
                 value={fmtINR(Math.round(revenueReport.mrr))}
                 sub="yearly plans ÷ 12"
-                tone="amber"
               />
-              <StatCard
+              <ReportStat
                 label="Churn rate"
                 value={`${(revenueReport.churn * 100).toFixed(1)}%`}
                 sub={`base: ${revenueReport.churnBase} active at month start`}
-                tone="rose"
               />
             </div>
           </ReportShell>
@@ -445,66 +437,60 @@ function AdminReportsPage() {
             id="seva"
             title="Seva Completion Report"
             subtitle={`${monthLabel(month)} · seva_proofs joined to sankalp_batches · Note: seva_proofs is deprecated for new uploads (rev 005) — new proof videos live in name_segments`}
-            icon={Flame}
             printKey={printKey}
             exporting={exporting === "seva"}
             onCsv={() => exportCsv("seva")}
             onPrint={doPrint}
           >
             {sevaReport.length === 0 ? (
-              <div className="text-center py-8 text-sm text-slate-400">
-                No seva proofs recorded for {monthLabel(month)}.
-              </div>
+              <EmptyState
+                title={`No seva proofs recorded for ${monthLabel(month)}.`}
+                className="py-8"
+              />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-amber-100 bg-amber-50/60">
-                      <th className="text-left py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Seva
-                      </th>
-                      <th className="text-right py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Proofs uploaded
-                      </th>
-                      <th className="text-right py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Delivered
-                      </th>
-                      <th className="text-right py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Pending delivery
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sevaReport.map((r) => (
-                      <tr key={r.name} className="border-b border-amber-50">
-                        <td className="py-2.5 px-4 font-medium text-slate-800">{r.name}</td>
-                        <td className="py-2.5 px-4 text-right font-semibold text-slate-900">
-                          {r.uploaded}
+              <div className="-mx-4 sm:-mx-5 -mb-4 sm:-mb-5 border-t border-stone-100">
+                <TableScroll>
+                  <table className="admin-table-fixed w-full min-w-[480px] text-sm tabular-nums">
+                    <thead>
+                      <tr className="border-b border-stone-200 bg-stone-50">
+                        <th className={`${thCls} text-left`}>Seva</th>
+                        <th className={`${thCls} text-right`}>Proofs uploaded</th>
+                        <th className={`${thCls} text-right`}>Delivered</th>
+                        <th className={`${thCls} text-right`}>Pending delivery</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                      {sevaReport.map((r) => (
+                        <tr key={r.name}>
+                          <td className="py-2.5 px-4 font-medium text-stone-900">{r.name}</td>
+                          <td className="py-2.5 px-4 text-right font-medium text-stone-900">
+                            {r.uploaded}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-medium text-emerald-700">
+                            {r.delivered}
+                          </td>
+                          <td
+                            className={`py-2.5 px-4 text-right font-medium ${r.pending > 0 ? "text-amber-700" : "text-stone-400"}`}
+                          >
+                            {r.pending}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-stone-50 font-semibold">
+                        <td className="py-2.5 px-4 text-stone-900">Total</td>
+                        <td className="py-2.5 px-4 text-right text-stone-900">
+                          {sevaReport.reduce((s, r) => s + r.uploaded, 0)}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-semibold text-emerald-700">
-                          {r.delivered}
+                        <td className="py-2.5 px-4 text-right text-emerald-700">
+                          {sevaReport.reduce((s, r) => s + r.delivered, 0)}
                         </td>
-                        <td
-                          className={`py-2.5 px-4 text-right font-semibold ${r.pending > 0 ? "text-amber-700" : "text-slate-400"}`}
-                        >
-                          {r.pending}
+                        <td className="py-2.5 px-4 text-right text-amber-700">
+                          {sevaReport.reduce((s, r) => s + r.pending, 0)}
                         </td>
                       </tr>
-                    ))}
-                    <tr className="bg-amber-50/40 font-bold">
-                      <td className="py-2.5 px-4 text-slate-900">Total</td>
-                      <td className="py-2.5 px-4 text-right text-slate-900">
-                        {sevaReport.reduce((s, r) => s + r.uploaded, 0)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right text-emerald-700">
-                        {sevaReport.reduce((s, r) => s + r.delivered, 0)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right text-amber-700">
-                        {sevaReport.reduce((s, r) => s + r.pending, 0)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </TableScroll>
               </div>
             )}
           </ReportShell>
@@ -514,70 +500,95 @@ function AdminReportsPage() {
             id="pending"
             title="Pending Sevas Report"
             subtitle={`${monthLabel(month)} · 2nd Tuesday batch ${fmtDate(tueDate)} and Last Saturday batch ${fmtDate(satDate)} are SEPARATE columns — statuses are never merged · Join date/time shown so a genuine miss is distinguishable from a subscriber still in the normal wait window`}
-            icon={Clock}
             printKey={printKey}
             exporting={exporting === "pending"}
             onCsv={() => exportCsv("pending")}
             onPrint={doPrint}
           >
-            <div className="mb-3 print:hidden">
-              <input
+            <div className="mb-4 print:hidden">
+              <Input
                 id="pending-sevas-search"
                 type="text"
                 placeholder="Filter by subscriber or plan…"
+                aria-label="Filter by subscriber or plan"
                 value={pendingSearch}
                 onChange={(e) => setPendingSearch(e.target.value)}
-                className="w-full max-w-xs px-3 py-2 text-xs border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white placeholder-slate-400"
+                className="h-9 w-full sm:max-w-xs text-sm"
               />
             </div>
             {filteredPendingSevas.length === 0 ? (
-              <div className="text-center py-8 text-sm text-slate-400">
-                No active subscriptions to report on.
-              </div>
+              <EmptyState title="No active subscriptions to report on." className="py-8" />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-amber-100 bg-amber-50/60">
-                      <th className="text-left py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Subscriber
-                      </th>
-                      <th className="text-left py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Plan
-                      </th>
-                      <th className="text-left py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Joined (date · time IST)
-                      </th>
-                      <th className="text-left py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        2nd Tuesday batch — {fmtDate(tueDate)}
-                      </th>
-                      <th className="text-left py-2.5 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                        Saturday batch — {fmtDate(satDate)}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPendingSevas.map((r) => (
-                      <tr
-                        key={r.id}
-                        className="border-b border-amber-50 hover:bg-amber-50/30 align-top"
-                      >
-                        <td className="py-2.5 px-4 font-semibold text-slate-900">{r.name}</td>
-                        <td className="py-2.5 px-4 text-xs text-slate-600">{r.plan}</td>
-                        <td className="py-2.5 px-4 text-xs text-slate-600 whitespace-nowrap">
-                          {fmtDate(r.joinedDate)}{" "}
-                          <span className="text-slate-400">· {r.joinedTime}</span>
-                        </td>
-                        <td className="py-2.5 px-4">
+              <div className="-mx-4 sm:-mx-5 -mb-4 sm:-mb-5 border-t border-stone-100">
+                {/* Phone: stacked cards (never printed — print always uses the table) */}
+                <ul className="md:hidden print:hidden divide-y divide-stone-100">
+                  {filteredPendingSevas.map((r) => (
+                    <li key={r.id} className="px-4 py-3 space-y-2">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-stone-900 break-words">
+                          {r.name}
+                        </div>
+                        <div className="text-xs text-stone-500">
+                          {r.plan} · joined {fmtDate(r.joinedDate)}{" "}
+                          <span className="text-stone-400">· {r.joinedTime}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-stone-500 mb-1">
+                            2nd Tue · {fmtDate(tueDate)}
+                          </div>
                           <BatchStatusCell cell={r.tue} />
-                        </td>
-                        <td className="py-2.5 px-4">
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-stone-500 mb-1">
+                            Sat · {fmtDate(satDate)}
+                          </div>
                           <BatchStatusCell cell={r.sat} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Tablet / desktop / print: table */}
+                <div className="hidden md:block print:block">
+                  <TableScroll>
+                    <table className="admin-table-fixed w-full min-w-[760px] text-sm">
+                      <thead>
+                        <tr className="border-b border-stone-200 bg-stone-50">
+                          <th className={`${thCls} text-left`}>Subscriber</th>
+                          <th className={`${thCls} text-left`}>Plan</th>
+                          <th className={`${thCls} text-left`}>Joined (date · time IST)</th>
+                          <th className={`${thCls} text-left`}>
+                            2nd Tuesday batch — {fmtDate(tueDate)}
+                          </th>
+                          <th className={`${thCls} text-left`}>
+                            Saturday batch — {fmtDate(satDate)}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        {filteredPendingSevas.map((r) => (
+                          <tr key={r.id} className="hover:bg-stone-50/60 align-top">
+                            <td className="py-3 px-4 font-medium text-stone-900">{r.name}</td>
+                            <td className="py-3 px-4 text-[13px] text-stone-600">{r.plan}</td>
+                            <td className="py-3 px-4 text-[13px] text-stone-600 whitespace-nowrap">
+                              {fmtDate(r.joinedDate)}{" "}
+                              <span className="text-stone-400">· {r.joinedTime}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <BatchStatusCell cell={r.tue} />
+                            </td>
+                            <td className="py-3 px-4">
+                              <BatchStatusCell cell={r.sat} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </TableScroll>
+                </div>
               </div>
             )}
           </ReportShell>

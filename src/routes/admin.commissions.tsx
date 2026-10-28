@@ -2,9 +2,17 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { callAdminApi } from "@/lib/admin-api";
-import { Loader2, Lock, LockOpen, PlayCircle } from "lucide-react";
+import { AlertTriangle, Loader2, Lock, LockOpen, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  Panel,
+  StatusPill,
+  TableScroll,
+} from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/commissions")({
   // OWNER-ONLY (financial data — same gate discipline as /admin/reports).
@@ -114,34 +122,25 @@ function AdminCommissionsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          Commission Engine
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-white">
-            OWNER
-          </span>
-        </h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Reconciler idempotent hai — dobara chalane par zero duplicate banega. Locked month mein
-          koi entry nahi likhi ja sakti.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Commission engine"
+        description="Reconciler idempotent hai — dobara chalane par zero duplicate banega. Locked month mein koi entry nahi likhi ja sakti."
+      />
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm px-4 py-3">
-          {error}
-        </div>
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{error}</span>
+        </Notice>
       )}
 
       {/* Reconciler */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs p-5 space-y-3">
-        <h2 className="text-base font-bold text-slate-900">Reconciler</h2>
-        <div className="flex gap-2">
+      <Panel title="Reconciler">
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => runReconcile(false)}
             disabled={busy !== null}
-            className="gap-2 bg-amber-700 hover:bg-amber-800"
+            className="gap-2 bg-orange-600 hover:bg-orange-700 text-white"
           >
             {busy === "reconcile" ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -161,103 +160,112 @@ function AdminCommissionsPage() {
           </Button>
         </div>
         {summary && (
-          <pre className="mt-2 rounded-lg bg-slate-900 text-emerald-300 text-[11px] p-3 overflow-auto max-h-64">
+          <pre className="mt-3 rounded-lg border border-stone-200 bg-stone-50 text-stone-800 text-xs p-3 overflow-auto max-h-64">
             {JSON.stringify(summary, null, 2)}
           </pre>
         )}
-      </section>
+      </Panel>
 
       {/* Periods */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs p-5">
-        <h2 className="text-base font-bold text-slate-900 mb-3">Payout periods</h2>
+      <Panel title="Payout periods" flush>
         {!byPeriod ? (
-          <Skeleton className="h-24 w-full" />
-        ) : byPeriod.length === 0 && !periods?.length ? (
-          <p className="text-xs text-slate-400">Abhi koi commission entry nahi bani.</p>
-        ) : (
-          <div className="overflow-x-auto -mx-5 px-5">
-          <table className="w-full text-sm min-w-[560px]">
-            <thead>
-              <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
-                <th className="pb-2">Period</th>
-                <th className="pb-2 text-right">Net payable</th>
-                <th className="pb-2 text-right">Entries</th>
-                <th className="pb-2 text-right">Status</th>
-                <th className="pb-2 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(byPeriod ?? []).map((p) => {
-                const lockedRow = periods?.find((x) => x.period === p.period);
-                const locked = Boolean(lockedRow?.locked_at);
-                return (
-                  <tr key={p.period} className="border-t border-slate-100">
-                    <td className="py-1.5 font-mono text-xs">{p.period}</td>
-                    <td className="py-1.5 text-right font-bold">{inr(p.net)}</td>
-                    <td className="py-1.5 text-right text-xs">{p.count}</td>
-                    <td className="py-1.5 text-right text-xs">
-                      {locked ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700">
-                          <Lock className="w-3 h-3" /> locked
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">open</span>
-                      )}
-                    </td>
-                    <td className="py-1.5 text-right">
-                      <Button
-                        size="sm"
-                        variant={locked ? "outline" : "default"}
-                        className={`h-9 md:h-7 text-xs gap-1 ${locked ? "" : "bg-amber-700 hover:bg-amber-800"}`}
-                        disabled={busy !== null}
-                        onClick={() => toggleLock(p.period, !locked)}
-                      >
-                        {busy === `lock-${p.period}` ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : locked ? (
-                          <LockOpen className="w-3 h-3" />
-                        ) : (
-                          <Lock className="w-3 h-3" />
-                        )}
-                        {locked ? "Unlock" : "Lock & pay"}
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {(periods ?? [])
-                .filter((pr) => !(byPeriod ?? []).some((b) => b.period === pr.period))
-                .map((pr) => (
-                  <tr key={pr.period} className="border-t border-slate-100">
-                    <td className="py-1.5 font-mono text-xs">{pr.period}</td>
-                    <td className="py-1.5 text-right">—</td>
-                    <td className="py-1.5 text-right">—</td>
-                    <td className="py-1.5 text-right text-xs">
-                      {pr.locked_at ? "locked" : "open"}
-                    </td>
-                    <td className="py-1.5 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-9 md:h-7 text-xs gap-1"
-                        disabled={busy !== null}
-                        onClick={() => toggleLock(pr.period, !pr.locked_at)}
-                      >
-                        {pr.locked_at ? (
-                          <LockOpen className="w-3 h-3" />
-                        ) : (
-                          <Lock className="w-3 h-3" />
-                        )}
-                        {pr.locked_at ? "Unlock" : "Lock"}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+          <div className="p-4 sm:p-5">
+            <Skeleton className="h-24 w-full" />
           </div>
+        ) : byPeriod.length === 0 && !periods?.length ? (
+          <EmptyState title="Abhi koi commission entry nahi bani." />
+        ) : (
+          <TableScroll>
+            <table className="w-full text-sm admin-table-fixed min-w-[560px]">
+              <thead>
+                <tr className="text-left text-xs text-stone-500 border-b border-stone-100">
+                  <th className="font-medium px-4 sm:px-5 py-2.5">Period</th>
+                  <th className="font-medium px-3 py-2.5 text-right">Net payable</th>
+                  <th className="font-medium px-3 py-2.5 text-right">Entries</th>
+                  <th className="font-medium px-3 py-2.5 text-right">Status</th>
+                  <th className="font-medium px-4 sm:px-5 py-2.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {(byPeriod ?? []).map((p) => {
+                  const lockedRow = periods?.find((x) => x.period === p.period);
+                  const locked = Boolean(lockedRow?.locked_at);
+                  return (
+                    <tr key={p.period}>
+                      <td className="px-4 sm:px-5 py-2.5 font-mono text-xs text-stone-700">
+                        {p.period}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-stone-900">
+                        {inr(p.net)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-xs tabular-nums text-stone-600">
+                        {p.count}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        {locked ? (
+                          <StatusPill tone="good">locked</StatusPill>
+                        ) : (
+                          <StatusPill tone="neutral">open</StatusPill>
+                        )}
+                      </td>
+                      <td className="px-4 sm:px-5 py-2.5 text-right">
+                        <Button
+                          size="sm"
+                          variant={locked ? "outline" : "default"}
+                          className={`h-9 md:h-7 text-xs gap-1 ${locked ? "" : "bg-orange-600 hover:bg-orange-700 text-white"}`}
+                          disabled={busy !== null}
+                          onClick={() => toggleLock(p.period, !locked)}
+                        >
+                          {busy === `lock-${p.period}` ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : locked ? (
+                            <LockOpen className="w-3 h-3" />
+                          ) : (
+                            <Lock className="w-3 h-3" />
+                          )}
+                          {locked ? "Unlock" : "Lock & pay"}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {(periods ?? [])
+                  .filter((pr) => !(byPeriod ?? []).some((b) => b.period === pr.period))
+                  .map((pr) => (
+                    <tr key={pr.period}>
+                      <td className="px-4 sm:px-5 py-2.5 font-mono text-xs text-stone-700">
+                        {pr.period}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-stone-400">—</td>
+                      <td className="px-3 py-2.5 text-right text-stone-400">—</td>
+                      <td className="px-3 py-2.5 text-right">
+                        <StatusPill tone={pr.locked_at ? "good" : "neutral"}>
+                          {pr.locked_at ? "locked" : "open"}
+                        </StatusPill>
+                      </td>
+                      <td className="px-4 sm:px-5 py-2.5 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-9 md:h-7 text-xs gap-1"
+                          disabled={busy !== null}
+                          onClick={() => toggleLock(pr.period, !pr.locked_at)}
+                        >
+                          {pr.locked_at ? (
+                            <LockOpen className="w-3 h-3" />
+                          ) : (
+                            <Lock className="w-3 h-3" />
+                          )}
+                          {pr.locked_at ? "Unlock" : "Lock"}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </TableScroll>
         )}
-      </section>
+      </Panel>
     </div>
   );
 }

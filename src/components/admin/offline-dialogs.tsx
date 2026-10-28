@@ -30,7 +30,7 @@ import {
 // functions the server runs), so what the owner previews is what is saved.
 
 const selectCls =
-  "w-full text-sm border border-amber-200 rounded-md px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700";
+  "w-full h-9 text-sm border border-stone-200 rounded-md px-2.5 focus:outline-none focus:ring-2 focus:ring-orange-200 bg-white text-stone-700";
 
 const METHOD_LABEL: Record<OfflineMethod, string> = {
   upi_qr: "UPI QR",
@@ -140,10 +140,10 @@ function PaymentFields({
               key={m}
               type="button"
               onClick={() => set("months", m)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+              className={`h-9 sm:h-8 min-w-9 px-3 rounded-md text-xs font-medium border transition-colors ${
                 form.months === m
-                  ? "bg-amber-700 text-white border-amber-700"
-                  : "bg-white text-slate-700 border-amber-200"
+                  ? "bg-orange-600 text-white border-orange-600"
+                  : "bg-white text-stone-700 border-stone-200 hover:bg-stone-50"
               }`}
             >
               {m}
@@ -155,7 +155,7 @@ function PaymentFields({
             max={24}
             value={form.months}
             onChange={(e) => set("months", Math.max(1, Math.min(24, Number(e.target.value) || 1)))}
-            className="w-20 h-8 text-xs"
+            className="w-20 h-9 sm:h-8 text-xs"
             aria-label="Months covered"
           />
         </div>
@@ -191,7 +191,7 @@ function PaymentFields({
 
       <div className="space-y-1">
         <Label>Screenshot (optional)</Label>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <CloudinaryImageButton
             folder={`punyata-finance/qr-proofs/${folderKey}`}
             label={form.proofUrl ? "Replace screenshot" : "Upload screenshot"}
@@ -202,13 +202,13 @@ function PaymentFields({
               href={form.proofUrl}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-amber-800 underline"
+              className="text-xs font-medium text-orange-700 hover:underline"
             >
               View uploaded
             </a>
           )}
         </div>
-        <p className="text-[10px] text-slate-500">
+        <p className="text-xs text-stone-500">
           Cloudinary links are unguessable but public — don&apos;t upload anything showing a full
           bank account number.
         </p>
@@ -251,7 +251,7 @@ export function RecordPaymentDialog({
 }) {
   return (
     <Dialog open={!!target} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-lg p-4 sm:p-6">
         {target && (
           <RecordPaymentBody
             key={target.subscriptionId}
@@ -325,7 +325,7 @@ function RecordPaymentBody({
       <PaymentFields state={pay} folderKey={target.subscriptionId.slice(0, 8)} />
 
       {preview && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 leading-relaxed">
           Cover: <b>{fmtDueDate(preview.periodStart)}</b> → <b>{fmtDueDate(preview.periodEnd)}</b>
           {" · "}Status: {target.status === "halted" ? "Halted" : "Active"} → <b>Active</b>
           {preview.reactivate ? " (service resumes)" : ""}
@@ -333,7 +333,7 @@ function RecordPaymentBody({
       )}
 
       {err && (
-        <p className="text-xs text-red-700">
+        <p className="text-xs text-rose-700 break-words">
           {err}
           {stale && (
             <>
@@ -353,14 +353,14 @@ function RecordPaymentBody({
         </p>
       )}
 
-      <DialogFooter>
+      <DialogFooter className="gap-2 sm:gap-0">
         <Button variant="outline" onClick={onClose} disabled={busy}>
           Cancel
         </Button>
         <Button
           onClick={submit}
           disabled={busy || !pay.form.amount}
-          className="bg-amber-700 hover:bg-amber-800 text-white"
+          className="bg-orange-600 hover:bg-orange-700 text-white"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
           Save payment
@@ -415,7 +415,7 @@ function ReasonDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-lg p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -430,8 +430,8 @@ function ReasonDialog({
             onChange={(e) => setReason(e.target.value)}
           />
         </div>
-        {err && <p className="text-xs text-red-700">{err}</p>}
-        <DialogFooter>
+        {err && <p className="text-xs text-rose-700 break-words">{err}</p>}
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             Back
           </Button>
@@ -440,8 +440,8 @@ function ReasonDialog({
             disabled={busy || reason.trim().length < 3}
             className={
               destructive
-                ? "bg-red-700 hover:bg-red-800 text-white"
-                : "bg-amber-700 hover:bg-amber-800 text-white"
+                ? "bg-rose-600 hover:bg-rose-700 text-white"
+                : "bg-orange-600 hover:bg-orange-700 text-white"
             }
           >
             {busy && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
@@ -536,7 +536,7 @@ export function AddOfflineSubscriberDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-lg p-4 sm:p-6">
         {open && <AddBody onClose={onClose} onDone={onDone} />}
       </DialogContent>
     </Dialog>
@@ -647,7 +647,7 @@ function AddBody({ onClose, onDone }: { onClose: () => void; onDone: () => void 
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <Label>Family members (sankalp, up to 4)</Label>
             {family.length < 4 && (
               <Button
@@ -661,11 +661,8 @@ function AddBody({ onClose, onDone }: { onClose: () => void; onDone: () => void 
             )}
           </div>
           {members.map((m, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-amber-100 p-2.5 space-y-2 bg-amber-50/30"
-            >
-              <div className="flex items-center justify-between text-[11px] font-semibold text-amber-900/70">
+            <div key={i} className="rounded-lg border border-stone-200 p-2.5 space-y-2 bg-stone-50">
+              <div className="flex items-center justify-between text-xs font-medium text-stone-500">
                 <span>
                   Slot {i + 1}
                   {i === 0 ? " (primary)" : ""}
@@ -675,13 +672,13 @@ function AddBody({ onClose, onDone }: { onClose: () => void; onDone: () => void 
                     type="button"
                     aria-label={`Remove member ${i + 1}`}
                     onClick={() => setFamily((f) => f.filter((_, j) => j !== i))}
-                    className="text-red-600"
+                    className="inline-flex items-center justify-center w-8 h-8 -mr-1.5 rounded-md text-rose-600 hover:bg-rose-50"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-2">
                 <Input
                   placeholder="Naam"
                   value={m.fullName}
@@ -708,22 +705,22 @@ function AddBody({ onClose, onDone }: { onClose: () => void; onDone: () => void 
           ))}
         </div>
 
-        <div className="border-t border-amber-100 pt-3">
-          <div className="text-sm font-semibold text-slate-800 mb-2">First payment</div>
+        <div className="border-t border-stone-100 pt-3">
+          <div className="text-sm font-semibold text-stone-900 mb-2">First payment</div>
           <PaymentFields state={pay} folderKey="new" />
         </div>
       </div>
 
-      {err && <p className="text-xs text-red-700">{err}</p>}
+      {err && <p className="text-xs text-rose-700 break-words">{err}</p>}
 
-      <DialogFooter>
+      <DialogFooter className="gap-2 sm:gap-0">
         <Button variant="outline" onClick={onClose} disabled={busy}>
           Cancel
         </Button>
         <Button
           onClick={submit}
           disabled={!canSubmit}
-          className="bg-amber-700 hover:bg-amber-800 text-white"
+          className="bg-orange-600 hover:bg-orange-700 text-white"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
           Add subscriber
