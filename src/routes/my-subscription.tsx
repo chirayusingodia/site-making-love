@@ -34,10 +34,12 @@ import { supabase } from "@/lib/supabase";
 import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 import { usePublicPlans, getPlanById, formatINR } from "@/lib/plans";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
-import { nextSevaDate, fmtSevaDate, monthsActive, elapsedSevaDates } from "@/lib/seva-dates";
+import { nextSevaDate, fmtSevaDate, monthsActive, elapsedSevaDates, type SevaDate } from "@/lib/seva-dates";
 import { specialDayItems } from "@/lib/special-days";
 import { computeImpact, impactTiles, type PunyaImpact, type ImpactPlanFlags } from "@/lib/punya-impact";
 import { renderPunyaCard, sharePunyaCard } from "@/lib/punya-card-render";
+import { renderPatraToBlob, type PatraRenderData } from "@/lib/ashirwad-patra-render";
+import { occasionLabel } from "@/lib/ashirwad-patra";
 import { useTranslation, localizedName, type Lang } from "@/lib/translations";
 import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
 
@@ -98,6 +100,9 @@ interface PatraRow {
   occasion_label: string;
   batch_date: string;
   image_url: string | null;
+  gotra: string | null;
+  seva_names: string[];
+  batch_kind: "second_tuesday" | "last_saturday";
 }
 
 interface ProofRow {
@@ -177,7 +182,7 @@ function sevaIcon(s: LiveSeva): LucideIcon {
 }
 
 function MySubscriptionPage() {
-  const { userId, loading: sessionLoading } = useSessionProfile();
+  const { userId, loading: sessionLoading, profile: sessionProfile } = useSessionProfile();
   const { t, lang } = useTranslation();
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [membersBySub, setMembersBySub] = useState<Record<string, MemberRow[]>>({});
@@ -225,7 +230,7 @@ function MySubscriptionPage() {
         // (newest first; only rendered images shown). RLS-scoped.
         const pRes = await supabase
           .from("ashirwad_patras")
-          .select("id,patra_no,names,occasion_label,batch_date,image_url")
+          .select("id,patra_no,names,occasion_label,batch_date,image_url,gotra,seva_names,batch_kind")
           .in("subscription_id", subIds)
           .order("batch_date", { ascending: false });
         setPatras((pRes.data as PatraRow[]) ?? []);
@@ -384,6 +389,91 @@ function MySubscriptionPage() {
   // Next scheduled seva (cadence hint) — only meaningful while active.
   const next = isActive ? nextSevaDate(hasLastSaturday) : null;
 
+  // Ashirwad Patra per pooja. A patra issued by the team (with its image) is
+  // used as-is; for every other pooja that has already happened we issue one
+  // automatically — rendered from the family's own names + that day's sevas —
+  // so the shelf is never blank. A row issued without an image is rendered from
+  // its own frozen snapshot.
+  const DAY_LABEL: Record<string, string> = {
+    sd_2nd_tuesday: "2nd Tuesday",
+    sd_last_saturday: "Last Saturday",
+  };
+  const familyNames = members.map((m) => m.full_name?.trim()).filter((n): n is string => !!n);
+  const fallbackName = sessionProfile?.full_name?.trim();
+  const autoNames = familyNames.length > 0 ? familyNames : fallbackName ? [fallbackName] : [];
+  const autoGotra = members.find((m) => m.gotra?.trim())?.gotra?.trim() ?? null;
+  const realByDate = new Map(patras.map((r) => [r.batch_date.slice(0, 10), r]));
+  const patraItems: PatraItem[] = [];
+  const itemByIso = new Map<string, PatraItem>();
+  for (const pj of [...pastPoojas].reverse()) {
+    const iso = isoOf(pj.date);
+    const real = realByDate.get(iso);
+    let item: PatraItem | null = null;
+    if (real?.image_url) {
+      item = { key: real.id, iso, patraNo: real.patra_no, url: real.image_url, render: null };
+    } else if (real) {
+      item = {
+        key: real.id,
+        iso,
+        patraNo: real.patra_no,
+        url: null,
+        render: {
+          names: real.names,
+          gotra: real.gotra,
+          sevaNames: real.seva_names,
+          occasionLabel: real.occasion_label,
+          batchDate: iso,
+          patraNo: real.patra_no,
+        },
+      };
+    } else if (autoNames.length > 0) {
+      const kind = pj.labelKey === "sd_last_saturday" ? "last_saturday" : "second_tuesday";
+      const no = `AP-${iso.replace(/-/g, "")}-${current.id.slice(0, 4).toUpperCase()}`;
+      item = {
+        key: `auto-${iso}`,
+        iso,
+        patraNo: no,
+        url: null,
+        render: {
+          names: autoNames,
+          gotra: autoGotra,
+          sevaNames: includedSevas
+            .filter((sv) => sv.days.length === 0 || sv.days.includes(DAY_LABEL[pj.labelKey]))
+            .map((sv) => sv.name),
+          occasionLabel: occasionLabel(kind, false),
+          batchDate: iso,
+          patraNo: no,
+        },
+      };
+    }
+    if (item) {
+      patraItems.push(item);
+      itemByIso.set(iso, item);
+    }
+  }
+  // Team-issued patras for dates outside the calendar cadence (e.g. catch-ups).
+  for (const r of patras) {
+    const iso = r.batch_date.slice(0, 10);
+    if (itemByIso.has(iso)) continue;
+    patraItems.push({
+      key: r.id,
+      iso,
+      patraNo: r.patra_no,
+      url: r.image_url,
+      render: r.image_url
+        ? null
+        : {
+            names: r.names,
+            gotra: r.gotra,
+            sevaNames: r.seva_names,
+            occasionLabel: r.occasion_label,
+            batchDate: iso,
+            patraNo: r.patra_no,
+          },
+    });
+  }
+  patraItems.sort((a, b) => (a.iso < b.iso ? 1 : -1));
+
   const joinLabel = fmtDate(current.start_date ?? current.created_at);
   const priceLabel = plan ? formatINR(plan.price_paise) : "";
   const whatsInTitle = plan
@@ -459,6 +549,15 @@ function MySubscriptionPage() {
             lang={lang}
           />
         )}
+
+        {/* ═══ POOJA HISTORY — every pooja since joining, with its special day ═══ */}
+        <PoojaHistory
+          poojas={pastPoojas}
+          sevasPerPooja={includedSevas.length}
+          patraByIso={itemByIso}
+          next={isActive ? next : null}
+          lang={lang}
+        />
 
         {/* ═══ ACTIVE MEMBERSHIP ═══ */}
         <div className="card-soft p-5">
@@ -584,107 +683,8 @@ function MySubscriptionPage() {
           </div>
         )}
 
-        {/* ═══ PUNYA LEDGER (bahi-khata) — from Ashirwad Patras ═══ */}
-        <div className="card-soft p-5">
-          <div className="flex items-center gap-2">
-            <BookOpen size={18} className="text-brand" />
-            <h3 className="text-base">{t("ms_ledger")}</h3>
-          </div>
-          <p className="text-[11.5px] text-muted-foreground mt-0.5">{t("ms_ledger_desc")}</p>
-
-          {patras.length === 0 ? (
-            <div className="mt-3 rounded-2xl border border-dashed border-brand/40 bg-brand-soft/30 p-4 text-center">
-              <p className="text-xs font-semibold text-foreground/80">{t("ms_ledger_empty")}</p>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                {isActive && next
-                  ? `${t("ms_ledger_empty_active_pre")} ${fmtSevaDate(next.date, lang)} ${t("ms_ledger_empty_active_post")}`
-                  : t("ms_ledger_empty_inactive")}
-              </p>
-            </div>
-          ) : (
-            <ul className="mt-3">
-              {patras.map((p) => {
-                const dm = fmtDayMonth(p.batch_date, lang);
-                // Auspicious day the pooja fell on (festival / tithi / weekday deity).
-                const bd = p.batch_date.slice(0, 10).split("-").map(Number);
-                const special =
-                  bd.length === 3 && !bd.some(isNaN)
-                    ? specialDayItems(new Date(bd[0], bd[1] - 1, bd[2]))[0]
-                    : undefined;
-                return (
-                  <li key={p.id} className="flex items-center gap-3 py-2.5 border-b border-black/5 last:border-0">
-                    <div className="w-10 text-center shrink-0">
-                      <div className="text-base font-extrabold leading-none">{dm.day}</div>
-                      <div className="text-[10px] font-semibold text-muted-foreground">{dm.mon}</div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13.5px] font-bold truncate">{p.occasion_label}</div>
-                      {special && (
-                        <div className="text-[11px] font-semibold text-brand truncate">
-                          ✦ {lang === "english" ? special.en : special.hi}
-                        </div>
-                      )}
-                      <div className="text-[11px] text-muted-foreground">{t("ms_patra")} {p.patra_no}</div>
-                    </div>
-                    {p.image_url ? (
-                      <a
-                        href={p.image_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 bg-[#EAF8EE] text-[#1FA855] text-[11.5px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
-                      >
-                        <Play size={12} /> {t("ms_proof")}
-                      </a>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground shrink-0">{t("ms_preparing")}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        {/* ═══ ASHIRWAD PATRA gallery ═══ */}
-        {patras.length > 0 && (
-          <div className="card-soft p-5">
-            <div className="flex items-center gap-2">
-              <ScrollText size={18} className="text-brand" />
-              <h3 className="text-base">{t("ms_patra_title")}</h3>
-            </div>
-            <p className="text-[11.5px] text-muted-foreground mt-0.5">{t("ms_patra_desc")}</p>
-            <div className="flex gap-3 mt-3 overflow-x-auto scrollbar-none pb-1">
-              {patras.map((p) => (
-                <div key={p.id} className="shrink-0 w-[104px]">
-                  <div className="h-[140px] rounded-xl border border-brand/25 overflow-hidden bg-gradient-to-b from-[#FFF7EE] to-[#FDE9D6]">
-                    {p.image_url ? (
-                      <a href={p.image_url} target="_blank" rel="noreferrer">
-                        <img src={p.image_url} alt={`${t("ms_patra")} ${p.patra_no}`} className="w-full h-full object-cover" />
-                      </a>
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-2 text-center">
-                        <ScrollText size={24} className="text-brand-deep" />
-                        <span className="text-[9px] text-muted-foreground">{t("ms_soon")}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2 justify-center mt-1.5">
-                    {p.image_url && (
-                      <>
-                        <a href={p.image_url} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-brand inline-flex items-center gap-1">
-                          <ExternalLink size={11} /> {t("ms_view")}
-                        </a>
-                        <a href={patraDownloadUrl(p.image_url)} className="text-[11px] font-bold text-foreground/70 inline-flex items-center gap-1">
-                          <Download size={11} /> {t("ms_save")}
-                        </a>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* ═══ ASHIRWAD PATRA shelf — issued or auto-issued ═══ */}
+        <PatraShelf items={patraItems} />
 
         {/* ═══ FAMILY / SANKALP ═══ */}
         <div className="card-soft p-5">
@@ -748,6 +748,242 @@ function MySubscriptionPage() {
   );
 }
 
+interface PatraItem {
+  key: string;
+  iso: string;
+  patraNo: string;
+  /** Final hosted image, when the team has issued + uploaded it. */
+  url: string | null;
+  /** Otherwise: what to draw on the client. */
+  render: PatraRenderData | null;
+}
+
+// One canvas render per distinct certificate per page load, shared by the
+// history row and the shelf.
+const patraBlobCache = new Map<string, Promise<string>>();
+function patraObjectUrl(item: PatraItem): Promise<string> {
+  const d = item.render!;
+  const key = JSON.stringify([d.names, d.gotra, d.sevaNames, d.occasionLabel, d.batchDate, d.patraNo]);
+  let hit = patraBlobCache.get(key);
+  if (!hit) {
+    hit = renderPatraToBlob(d).then((b) => URL.createObjectURL(b));
+    patraBlobCache.set(key, hit);
+  }
+  return hit;
+}
+
+/** The patra image URL for an item: hosted, or rendered on the spot. */
+function usePatraUrl(item: PatraItem): string | null {
+  const [url, setUrl] = useState<string | null>(item.url);
+  useEffect(() => {
+    if (item.url) {
+      setUrl(item.url);
+      return;
+    }
+    if (!item.render) return;
+    let live = true;
+    patraObjectUrl(item)
+      .then((u) => live && setUrl(u))
+      .catch(() => live && setUrl(null));
+    return () => {
+      live = false;
+    };
+  }, [item]);
+  return url;
+}
+
+function PatraLink({ item, label, className }: { item: PatraItem; label: string; className: string }) {
+  const url = usePatraUrl(item);
+  if (!url) return <span className="self-start text-[11px] text-muted-foreground shrink-0">…</span>;
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className={className}>
+      <ScrollText size={12} /> {label}
+    </a>
+  );
+}
+
+function PatraThumb({ item, lang }: { item: PatraItem; lang: Lang }) {
+  const url = usePatraUrl(item);
+  const en = lang === "english";
+  const dm = fmtDayMonth(item.iso, lang);
+  return (
+    <div className="shrink-0 w-[104px]">
+      <div className="h-[140px] rounded-xl border border-brand/25 overflow-hidden bg-gradient-to-b from-[#FFF7EE] to-[#FDE9D6]">
+        {url ? (
+          <a href={url} target="_blank" rel="noreferrer">
+            <img src={url} alt={item.patraNo} className="w-full h-full object-cover" />
+          </a>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-2 text-center animate-pulse">
+            <ScrollText size={24} className="text-brand-deep" />
+            <span className="text-[9px] text-muted-foreground">{en ? "Preparing…" : "तैयार हो रहा है…"}</span>
+          </div>
+        )}
+      </div>
+      <div className="text-[11px] font-bold text-center mt-1.5">
+        {dm.day} {dm.mon}
+      </div>
+      {url && (
+        <div className="flex gap-2 justify-center mt-0.5">
+          <a href={url} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-brand inline-flex items-center gap-1">
+            <ExternalLink size={11} /> {en ? "View" : "देखें"}
+          </a>
+          <a
+            href={item.url ? patraDownloadUrl(url) : url}
+            download={`${item.patraNo}.png`}
+            className="text-[11px] font-bold text-foreground/70 inline-flex items-center gap-1"
+          >
+            <Download size={11} /> {en ? "Save" : "सेव"}
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Every Ashirwad Patra, newest first. Issued by the team when available,
+// otherwise issued automatically for each pooja already performed.
+function PatraShelf({ items }: { items: PatraItem[] }) {
+  const { t, lang } = useTranslation();
+  if (items.length === 0) return null;
+  return (
+    <div className="card-soft p-5">
+      <div className="flex items-center gap-2">
+        <ScrollText size={18} className="text-brand" />
+        <h3 className="text-base">{t("ms_patra_title")}</h3>
+      </div>
+      <p className="text-[11.5px] text-muted-foreground mt-0.5">{t("ms_patra_desc")}</p>
+      <div className="flex gap-3 mt-3 overflow-x-auto scrollbar-none pb-1">
+        {items.map((it) => (
+          <PatraThumb key={it.key} item={it} lang={lang} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function isoOf(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Every pooja that has come around since she joined (newest first): the date,
+// the special day it fell on (festival / tithi / weekday deity), how many
+// sevas ran, and the Ashirwad Patra if one has been issued for that day.
+function PoojaHistory({
+  poojas,
+  sevasPerPooja,
+  patraByIso,
+  next,
+  lang,
+}: {
+  poojas: SevaDate[];
+  sevasPerPooja: number;
+  patraByIso: Map<string, PatraItem>;
+  next: SevaDate | null;
+  lang: Lang;
+}) {
+  const { t } = useTranslation();
+  const en = lang === "english";
+  const [showAll, setShowAll] = useState(false);
+  const rows = [...poojas].reverse();
+  const visible = showAll ? rows : rows.slice(0, 4);
+
+  return (
+    <div className="card-soft p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <BookOpen size={18} className="text-brand" />
+          <h3 className="text-base">{en ? "Pooja History" : "पूजा इतिहास"}</h3>
+        </div>
+        {rows.length > 0 && (
+          <span className="bg-accent text-brand text-[11px] font-extrabold px-2.5 py-1 rounded-full">
+            {rows.length} {en ? (rows.length === 1 ? "pooja" : "poojas") : "पूजाएँ"}
+          </span>
+        )}
+      </div>
+      <p className="text-[11.5px] text-muted-foreground mt-0.5">
+        {en
+          ? "Every pooja done in your name — the date and the special day it fell on."
+          : "आपके नाम से हुई हर पूजा — तिथि और वह विशेष दिन जब वह संपन्न हुई।"}
+      </p>
+
+      {rows.length === 0 ? (
+        <div className="mt-3 rounded-2xl border border-dashed border-brand/40 bg-brand-soft/30 p-4 text-center">
+          <p className="text-xs font-semibold text-foreground/80">
+            {en ? "Your first pooja is coming" : "आपकी पहली पूजा आने वाली है"}
+          </p>
+          {next && (
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {fmtSevaDate(next.date, lang)} · {t(next.labelKey)}
+            </p>
+          )}
+        </div>
+      ) : (
+        <ul className="mt-3">
+          {visible.map((pj) => {
+            const iso = isoOf(pj.date);
+            const special = specialDayItems(pj.date);
+            const main = special[0];
+            const patra = patraByIso.get(iso);
+            const day = pj.date.toLocaleDateString("en-IN", { day: "2-digit" });
+            const mon = pj.date.toLocaleDateString(en ? "en-IN" : "hi-IN", { month: "short" });
+            return (
+              <li key={iso} className="flex gap-3 py-3 border-b border-black/5 last:border-0">
+                <div className="w-11 shrink-0 text-center rounded-xl bg-[#FFF7F1] border border-brand/15 py-1.5">
+                  <div className="text-base font-extrabold leading-none">{day}</div>
+                  <div className="text-[10px] font-semibold text-muted-foreground mt-0.5">{mon}</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13.5px] font-bold leading-tight">
+                    {main ? (en ? main.en : main.hi) : t(pj.labelKey)}
+                  </div>
+                  {main && (
+                    <div className="text-[11px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">
+                      {en ? main.descEn : main.descHi}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <span className="text-[10.5px] font-bold text-brand bg-brand-soft/50 px-2 py-0.5 rounded-full">
+                      {t(pj.labelKey)}
+                    </span>
+                    {sevasPerPooja > 0 && (
+                      <span className="text-[10.5px] font-bold text-[#2f8f43] bg-success/12 px-2 py-0.5 rounded-full">
+                        ✓ {sevasPerPooja} {en ? "sevas done" : "सेवाएँ संपन्न"}
+                      </span>
+                    )}
+                    {special.slice(1).map((x) => (
+                      <span key={x.en} className="text-[10.5px] font-semibold text-foreground/70 bg-secondary px-2 py-0.5 rounded-full">
+                        {en ? x.en : x.hi}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {patra && (
+                  <PatraLink
+                    item={patra}
+                    label={t("ms_patra")}
+                    className="self-start inline-flex items-center gap-1 bg-[#EAF8EE] text-[#1FA855] text-[11px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {rows.length > 4 && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-2 w-full text-xs font-bold text-brand py-2"
+        >
+          {showAll ? (en ? "Show less" : "कम दिखाएँ") : en ? `Show all ${rows.length} poojas` : `सभी ${rows.length} पूजाएँ देखें`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ImpactCard({
   impact,
   months,
@@ -796,10 +1032,10 @@ function ImpactCard({
             {en ? "Your impact" : "आपका पुण्य प्रभाव"}
           </div>
           <h3 className="text-[17px] mt-0.5">
-            {impact.poojas > 0
+            {completedCount > 0
               ? en
-                ? `${impact.poojas} poojas in your name`
-                : `आपके नाम से ${impact.poojas} पूजाएँ`
+                ? `${completedCount} sevas in your name · ${impact.poojas} poojas`
+                : `आपके नाम से ${completedCount} सेवाएँ · ${impact.poojas} पूजाएँ`
               : en
                 ? "Your first pooja is coming"
                 : "आपकी पहली पूजा आने वाली है"}
