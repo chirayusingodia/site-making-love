@@ -267,3 +267,51 @@
   .animate-fade-up, .animate-pulse-ring, .animate-fade-in, .animate-scale-up, .animate-slide-in-right, .btn-glow-pulse, .trust-seal-shine { animation: none !important; }
 }
 
+
+/* ─── Admin panel theme (.admin-ui) ─────────────────────────────────────
+   The admin pages were written with amber-* utilities for everything —
+   borders, muted text, panel washes — which turned the whole panel orange.
+   Tailwind v4 utilities resolve through --color-* variables, so inside the
+   admin shell we remap the PALE amber steps (50–300) and the DARK text steps
+   (800–950) to warm neutrals. The mid steps (400–700) keep real amber, so
+   warning dots, icons and genuine "attention" accents still read as amber.
+   New admin code should use stone-* for chrome and the primitives in
+   src/components/admin/admin-ui.tsx rather than relying on this remap. */
+.admin-ui {
+  --color-amber-50: #fafaf9;
+  --color-amber-100: #f5f5f4;
+  --color-amber-200: #e7e5e4;
+  --color-amber-300: #d6d3d1;
+  --color-amber-800: #44403c;
+  --color-amber-900: #292524;
+  --color-amber-950: #1c1917;
+  --radius: 0.625rem;
+  --admin-radius: 0.75rem;
+  --background: #f6f6f4;
+  --border: #e7e5e4;
+  --input: #d6d3d1;
+  --ring: #c2410c;
+  --primary: #c2410c;
+  --muted: #f5f5f4;
+  --muted-foreground: #78716c;
+  --accent: #f5f5f4;
+  --secondary: #f5f5f4;
+  background-color: var(--background);
+  font-family: 'Hind', 'Noto Sans Devanagari', system-ui, sans-serif;
+}
+.admin-ui h1, .admin-ui h2, .admin-ui h3, .admin-ui h4 { color: inherit; }
+.admin-ui .admin-card {
+  background: #fff;
+  border: 1px solid #e7e5e4;
+  border-radius: var(--admin-radius);
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+/* Safety net for any table not yet wrapped in <TableScroll>: on phones a
+   wide table scrolls inside itself instead of widening the whole page. */
+@media (max-width: 767px) {
+  .admin-ui main table:not(.admin-table-fixed) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}

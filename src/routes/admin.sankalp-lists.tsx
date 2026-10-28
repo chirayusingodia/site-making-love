@@ -14,10 +14,9 @@ import {
   ShieldAlert,
   Info,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState, Notice, PageHeader, Panel, TableScroll } from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/sankalp-lists")({
   component: SankalpListsPage,
@@ -369,78 +368,62 @@ function SankalpListsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-amber-900/10 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <ScrollText className="w-6 h-6 text-amber-700" />
-            Sankalp Name Lists
-            <Badge
-              variant="outline"
-              className="bg-amber-50 text-amber-900 border-amber-300 font-mono text-[11px]"
-            >
-              Live Supabase
-            </Badge>
-          </h1>
-          <p className="text-xs text-amber-900/70 mt-1">
-            Active subscriptions grouped by live plan_sevas composition. Pandit-facing exports
-            contain seva names + name-gotra only.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {lastRefreshed && (
-            <span className="text-xs text-amber-900/60 font-mono hidden sm:block">
-              Updated: {lastRefreshed}
-            </span>
-          )}
+      <PageHeader
+        title="Sankalp Name Lists"
+        description="Active subscriptions grouped by live plan_sevas composition. Pandit-facing exports contain seva names + name-gotra only."
+        meta={lastRefreshed ? `Updated ${lastRefreshed}` : undefined}
+        actions={
           <Button
             onClick={fetchAll}
             disabled={loading}
             variant="outline"
             size="sm"
-            className="border-amber-900/15 bg-amber-50/50 hover:bg-amber-100/50 text-amber-900 gap-1.5 text-xs font-semibold"
+            className="h-9 gap-1.5"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-amber-700" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {globalError && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl text-xs flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-          <span>{globalError}</span>
-        </div>
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{globalError}</span>
+        </Notice>
       )}
 
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {[1, 2].map((i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-2xl bg-amber-100/50" />
+            <Skeleton key={i} className="h-48 w-full rounded-xl bg-stone-100" />
           ))}
         </div>
       ) : (
-        <>
+        <div className="space-y-4 sm:space-y-6">
           {groups.map((group, i) => (
             <GroupCard key={group.key || "no-sevas"} group={group} listNumber={i + 1} />
           ))}
 
           {groups.length === 0 && (
-            <div className="text-center py-12 text-xs text-slate-400 bg-white rounded-2xl border border-amber-900/10">
-              No active plans found. Create plans in the Plans &amp; Sevas manager.
+            <div className="admin-card">
+              <EmptyState
+                icon={ScrollText}
+                title="No active plans found"
+                description="Create plans in the Plans & Sevas manager."
+              />
             </div>
           )}
 
           {ungrouped.length > 0 && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl text-xs flex items-start gap-3">
-              <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-              <span>
+            <Notice tone="bad" icon={ShieldAlert}>
+              <span className="break-words">
                 {ungrouped.length} active subscription(s) reference an inactive or missing plan and
                 are not in any list above. Internal refs:{" "}
                 {ungrouped.map((s) => s.id.slice(0, 8)).join(", ")}
               </span>
-            </div>
+            </Notice>
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -464,185 +447,221 @@ function GroupCard({ group, listNumber }: { group: SankalpGroup; listNumber: num
       .join(" + ") + " — Sankalp List";
 
   return (
-    <Card className="border border-amber-900/10 bg-white overflow-hidden">
-      <CardHeader className="pb-3 bg-amber-50/60 border-b border-amber-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2 flex-wrap">
-              <Flame className="w-4 h-4 text-amber-700 shrink-0" />
-              List {listNumber}: {adminTitle}
-            </CardTitle>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge
-                variant="outline"
-                className="bg-white text-amber-900 border-amber-300 text-[10px] font-semibold"
-              >
-                <Users className="w-3 h-3 mr-1" />
-                {group.subscribers.length} subscriber{group.subscribers.length === 1 ? "" : "s"}
-              </Badge>
-              <Badge
-                variant="outline"
-                className="bg-white text-amber-900 border-amber-300 text-[10px] font-semibold"
-              >
-                {totalMembers} names
-              </Badge>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => downloadPanditList(group, listNumber)}
-              className="border-amber-900/20 text-amber-900 hover:bg-amber-50 gap-1.5 text-xs font-semibold"
-            >
-              <Download className="w-3.5 h-3.5" /> Download
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => printPanditList(group)}
-              className="bg-amber-700 hover:bg-amber-800 text-white gap-1.5 text-xs font-semibold"
-            >
-              <Printer className="w-3.5 h-3.5" /> Print
-            </Button>
-          </div>
+    <Panel
+      title={
+        <span className="break-words">
+          List {listNumber}: {adminTitle}
+        </span>
+      }
+      description={
+        <span className="inline-flex items-center gap-1.5 flex-wrap">
+          <Users className="w-3.5 h-3.5 text-stone-400" />
+          {group.subscribers.length} subscriber{group.subscribers.length === 1 ? "" : "s"}
+          <span className="text-stone-300">·</span>
+          {totalMembers} names
+        </span>
+      }
+      actions={
+        <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => downloadPanditList(group, listNumber)}
+            className="h-10 sm:h-9 gap-1.5"
+          >
+            <Download className="w-4 h-4" /> Download
+          </Button>
+          <Button
+            onClick={() => printPanditList(group)}
+            className="h-10 sm:h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            <Printer className="w-4 h-4" /> Print
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        {multiPlan && (
-          <div className="bg-blue-50 border border-blue-200 text-blue-900 p-3 rounded-xl text-xs flex items-start gap-2.5">
-            <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-            <span>
-              {group.plans.map((p) => p.name).join(" + ")} are grouped together because their live
-              <code className="bg-blue-100 px-1 rounded text-[10px] font-mono mx-1">
-                plan_sevas
-              </code>
-              composition is identical (checked live, not assumed). If their sevas ever diverge in
-              the Plans &amp; Sevas Manager, they will automatically split into separate lists.
-            </span>
-          </div>
-        )}
+      }
+      bodyClassName="space-y-4"
+    >
+      {multiPlan && (
+        <Notice tone="info" icon={Info}>
+          {group.plans.map((p) => p.name).join(" + ")} are grouped together because their live
+          <code className="bg-sky-100 px-1 rounded text-[11px] font-mono mx-1">plan_sevas</code>
+          composition is identical (checked live, not assumed). If their sevas ever diverge in the
+          Plans &amp; Sevas Manager, they will automatically split into separate lists.
+        </Notice>
+      )}
 
-        {/* Sevas included — derived live from plan_sevas */}
-        <div>
-          <div className="text-xs font-bold text-amber-900/80 uppercase tracking-wider mb-2">
-            Sevas included (live from plan_sevas)
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {group.sevas.length > 0 ? (
-              group.sevas.map((s) => (
-                <span
-                  key={s.id}
-                  className="text-xs bg-amber-50 border border-amber-200 text-amber-900 px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5"
-                >
-                  <Flame className="w-3 h-3 text-amber-600" />
-                  {s.name}
-                  {!s.is_active && (
-                    <span className="text-[9px] text-rose-600 font-bold">(inactive seva)</span>
-                  )}
-                </span>
-              ))
-            ) : (
-              <span className="text-xs text-slate-400 italic">
-                No sevas mapped to this plan group in plan_sevas.
+      {/* Sevas included — derived live from plan_sevas */}
+      <div>
+        <div className="text-[13px] font-medium text-stone-500 mb-2">
+          Sevas included (live from plan_sevas)
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {group.sevas.length > 0 ? (
+            group.sevas.map((s) => (
+              <span
+                key={s.id}
+                className="text-xs bg-stone-50 border border-stone-200 text-stone-700 px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5"
+              >
+                <Flame className="w-3 h-3 text-orange-600" />
+                {s.name}
+                {!s.is_active && (
+                  <span className="text-[11px] text-rose-600 font-medium">(inactive seva)</span>
+                )}
               </span>
-            )}
-          </div>
+            ))
+          ) : (
+            <span className="text-xs text-stone-400 italic">
+              No sevas mapped to this plan group in plan_sevas.
+            </span>
+          )}
         </div>
+      </div>
 
-        {/* Toggles */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          <button
-            onClick={() => setShowAdminList((v) => !v)}
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            {showAdminList ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-            {showAdminList ? "Hide" : "Show"} full list (admin view)
-          </button>
-          <button
-            onClick={() => setShowPanditPreview((v) => !v)}
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-amber-300 text-amber-800 hover:bg-amber-50 transition-colors"
-          >
-            {showPanditPreview ? (
-              <EyeOff className="w-3.5 h-3.5" />
-            ) : (
-              <Eye className="w-3.5 h-3.5" />
-            )}
-            {showPanditPreview ? "Hide" : "Preview"} Pandit-facing export
-          </button>
-        </div>
+      {/* Toggles */}
+      <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2">
+        <Button
+          variant="outline"
+          onClick={() => setShowAdminList((v) => !v)}
+          className="h-10 sm:h-9 gap-1.5 justify-center"
+          aria-expanded={showAdminList}
+        >
+          {showAdminList ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          {showAdminList ? "Hide" : "Show"} full list (admin view)
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => setShowPanditPreview((v) => !v)}
+          className="h-10 sm:h-9 gap-1.5 justify-center"
+          aria-expanded={showPanditPreview}
+        >
+          {showPanditPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          {showPanditPreview ? "Hide" : "Preview"} Pandit-facing export
+        </Button>
+      </div>
 
-        {showAdminList && <AdminNameList group={group} />}
-        {showPanditPreview && <PanditPreview group={group} />}
-      </CardContent>
-    </Card>
+      {showAdminList && <AdminNameList group={group} />}
+      {showPanditPreview && <PanditPreview group={group} />}
+    </Panel>
   );
 }
 
 // ─── Admin name list (internal: grouped per subscription w/ internal refs) ───
+// Stacked cards below md (phones), table from md up.
 function AdminNameList({ group }: { group: SankalpGroup }) {
   if (group.subscribers.length === 0) {
     return (
-      <div className="text-center py-8 text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-100">
-        No active subscriptions in this plan group right now.
+      <div className="rounded-lg border border-stone-200 bg-stone-50">
+        <EmptyState
+          title="No active subscriptions in this plan group right now."
+          className="py-8"
+        />
       </div>
     );
   }
   let rowNum = 0;
+  const rows = group.subscribers.flatMap(({ subscription, members }) => {
+    const since = fmtActiveSince(subscription.start_date ?? subscription.created_at);
+    const ref = subscription.id.slice(0, 8);
+    return members.length > 0
+      ? members.map((m) => ({
+          key: m.id,
+          num: ++rowNum as number | null,
+          member: m as FamilyMember | null,
+          ref,
+          since,
+        }))
+      : [{ key: subscription.id, num: null, member: null, ref, since }];
+  });
+
   return (
-    <div className="rounded-xl border border-amber-900/10 overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-[#FDF3EB]">
-          <tr className="border-b border-amber-100">
-            <th className="text-left px-4 py-2.5 font-bold text-slate-900 text-xs">#</th>
-            <th className="text-left px-4 py-2.5 font-bold text-slate-900 text-xs">Name</th>
-            <th className="text-left px-4 py-2.5 font-bold text-slate-900 text-xs">Gotra</th>
-            <th className="text-left px-4 py-2.5 font-bold text-slate-900 text-xs">Slot</th>
-            <th className="text-left px-4 py-2.5 font-bold text-slate-900 text-xs">Sub Ref</th>
-            <th className="text-left px-4 py-2.5 font-bold text-slate-900 text-xs">Active Since</th>
-          </tr>
-        </thead>
-        <tbody>
-          {group.subscribers.flatMap(({ subscription, members }) =>
-            members.length > 0
-              ? members.map((m) => (
-                  <tr key={m.id} className="border-b border-amber-50 last:border-0">
-                    <td className="px-4 py-2 text-xs text-slate-400">{++rowNum}</td>
-                    <td className="px-4 py-2 text-xs font-semibold text-slate-800">
-                      {m.full_name}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-slate-600">{m.gotra?.trim() || "—"}</td>
-                    <td className="px-4 py-2 text-xs text-slate-500">
-                      {m.slot_number}
-                      {m.slot_number === 1 ? " (primary)" : ""}
-                    </td>
-                    <td className="px-4 py-2 text-[10px] font-mono text-slate-400">
-                      {subscription.id.slice(0, 8)}
-                    </td>
-                    <td className="px-4 py-2 text-[10px] text-slate-500">
-                      {fmtActiveSince(subscription.start_date ?? subscription.created_at)}
-                    </td>
-                  </tr>
-                ))
-              : [
-                  <tr
-                    key={subscription.id}
-                    className="border-b border-amber-50 last:border-0 bg-rose-50/40"
-                  >
-                    <td className="px-4 py-2 text-xs text-rose-400">—</td>
-                    <td className="px-4 py-2 text-xs text-rose-700 italic" colSpan={3}>
-                      No family members recorded
-                    </td>
-                    <td className="px-4 py-2 text-[10px] font-mono text-slate-400">
-                      {subscription.id.slice(0, 8)}
-                    </td>
-                    <td className="px-4 py-2 text-[10px] text-slate-500">
-                      {fmtActiveSince(subscription.start_date ?? subscription.created_at)}
-                    </td>
-                  </tr>,
-                ],
-          )}
-        </tbody>
-      </table>
+    <div className="rounded-lg border border-stone-200 overflow-hidden">
+      {/* Mobile: stacked cards */}
+      <ul className="md:hidden divide-y divide-stone-100">
+        {rows.map((r) =>
+          r.member ? (
+            <li key={r.key} className="px-3.5 py-3 flex gap-3">
+              <span className="text-xs tabular-nums text-stone-400 w-6 shrink-0 pt-0.5">
+                {r.num}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold text-stone-900 break-words min-w-0">
+                    {r.member.full_name}
+                  </span>
+                  <span className="text-xs text-stone-500 shrink-0">
+                    Slot {r.member.slot_number}
+                    {r.member.slot_number === 1 ? " (primary)" : ""}
+                  </span>
+                </div>
+                <div className="mt-0.5 text-[13px] text-stone-600 break-words">
+                  Gotra: {r.member.gotra?.trim() || "—"}
+                </div>
+                <div className="mt-1 text-xs text-stone-400">
+                  <span className="font-mono">{r.ref}</span> · Active since {r.since}
+                </div>
+              </div>
+            </li>
+          ) : (
+            <li key={r.key} className="px-3.5 py-3 bg-rose-50/50">
+              <div className="text-sm text-rose-700 italic">No family members recorded</div>
+              <div className="mt-1 text-xs text-stone-400">
+                <span className="font-mono">{r.ref}</span> · Active since {r.since}
+              </div>
+            </li>
+          ),
+        )}
+      </ul>
+
+      {/* md+: table */}
+      <TableScroll className="hidden md:block">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="bg-stone-50">
+            <tr className="border-b border-stone-200">
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500">#</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500">Name</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500">Gotra</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500">Slot</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500">Sub ref</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500">
+                Active since
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-stone-100">
+            {rows.map((r) =>
+              r.member ? (
+                <tr key={r.key}>
+                  <td className="px-4 py-2.5 text-xs text-stone-400 tabular-nums">{r.num}</td>
+                  <td className="px-4 py-2.5 text-[13px] font-medium text-stone-900">
+                    {r.member.full_name}
+                  </td>
+                  <td className="px-4 py-2.5 text-[13px] text-stone-600">
+                    {r.member.gotra?.trim() || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-stone-500">
+                    {r.member.slot_number}
+                    {r.member.slot_number === 1 ? " (primary)" : ""}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs font-mono text-stone-400">{r.ref}</td>
+                  <td className="px-4 py-2.5 text-xs text-stone-500 whitespace-nowrap">
+                    {r.since}
+                  </td>
+                </tr>
+              ) : (
+                <tr key={r.key} className="bg-rose-50/50">
+                  <td className="px-4 py-2.5 text-xs text-rose-400">—</td>
+                  <td className="px-4 py-2.5 text-[13px] text-rose-700 italic" colSpan={3}>
+                    No family members recorded
+                  </td>
+                  <td className="px-4 py-2.5 text-xs font-mono text-stone-400">{r.ref}</td>
+                  <td className="px-4 py-2.5 text-xs text-stone-500 whitespace-nowrap">
+                    {r.since}
+                  </td>
+                </tr>
+              ),
+            )}
+          </tbody>
+        </table>
+      </TableScroll>
     </div>
   );
 }
@@ -653,52 +672,62 @@ function AdminNameList({ group }: { group: SankalpGroup }) {
 function PanditPreview({ group }: { group: SankalpGroup }) {
   const names = flatNameList(group);
   return (
-    <div className="rounded-xl border-2 border-amber-300 bg-white p-6 font-serif shadow-inner">
-      <div className="text-center text-xl text-amber-700">॥ श्री गणेशाय नमः ॥</div>
-      <div className="text-center text-lg font-bold mt-1">संकल्प नामावली — Sankalp Name List</div>
-      <div className="text-center text-xs text-slate-500 mt-0.5 mb-4">
-        {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
-        {" • "}कुल नाम: {names.length}
-      </div>
+    <div className="rounded-lg border border-stone-200 bg-stone-50 p-2 sm:p-3">
+      <div className="rounded-md border border-stone-200 bg-white px-4 py-5 sm:p-6 font-serif">
+        <div className="text-center text-xl text-amber-700">॥ श्री गणेशाय नमः ॥</div>
+        <div className="text-center text-base sm:text-lg font-bold mt-1 text-stone-900">
+          संकल्प नामावली — Sankalp Name List
+        </div>
+        <div className="text-center text-xs text-stone-500 mt-0.5 mb-4">
+          {new Date().toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+          {" • "}कुल नाम: {names.length}
+        </div>
 
-      <div className="text-[11px] font-bold uppercase tracking-widest text-amber-800 border-b-2 border-amber-600 pb-1 mb-2">
-        सेवाएँ — Sevas in this Sankalp
-      </div>
-      <ul className="mb-4">
-        {group.sevas.map((s) => (
-          <li key={s.id} className="text-sm py-0.5">
-            🚩 {s.name}
-          </li>
-        ))}
-        {group.sevas.length === 0 && <li className="text-sm text-slate-400">—</li>}
-      </ul>
+        <div className="text-[11px] font-bold uppercase tracking-widest text-amber-800 border-b-2 border-amber-600 pb-1 mb-2">
+          सेवाएँ — Sevas in this Sankalp
+        </div>
+        <ul className="mb-4">
+          {group.sevas.map((s) => (
+            <li key={s.id} className="text-sm py-0.5">
+              🚩 {s.name}
+            </li>
+          ))}
+          {group.sevas.length === 0 && <li className="text-sm text-stone-400">—</li>}
+        </ul>
 
-      <div className="text-[11px] font-bold uppercase tracking-widest text-amber-800 border-b-2 border-amber-600 pb-1 mb-2">
-        नाम एवं गोत्र — Names &amp; Gotra
-      </div>
-      <ol className="list-none">
-        {names.map((n, i) => (
-          <li
-            key={i}
-            className="flex justify-between gap-4 py-1 border-b border-dotted border-slate-300 text-sm"
-          >
-            <span className="flex gap-2 min-w-0">
-              <span className="text-amber-800 font-bold w-8 shrink-0">{i + 1}.</span>
-              <span className="font-semibold truncate">{n.name}</span>
-            </span>
-            <span className="text-slate-600 whitespace-nowrap">{n.gotra?.trim() || "—"}</span>
-          </li>
-        ))}
-        {names.length === 0 && <li className="text-sm text-slate-400 py-2">No names.</li>}
-      </ol>
+        <div className="text-[11px] font-bold uppercase tracking-widest text-amber-800 border-b-2 border-amber-600 pb-1 mb-2">
+          नाम एवं गोत्र — Names &amp; Gotra
+        </div>
+        <ol className="list-none">
+          {names.map((n, i) => (
+            <li
+              key={i}
+              className="flex justify-between gap-3 py-1 border-b border-dotted border-stone-300 text-sm"
+            >
+              <span className="flex gap-2 min-w-0">
+                <span className="text-amber-800 font-bold w-8 shrink-0">{i + 1}.</span>
+                <span className="font-semibold break-words min-w-0">{n.name}</span>
+              </span>
+              <span className="text-stone-600 text-right shrink-0 max-w-[45%] break-words sm:whitespace-nowrap">
+                {n.gotra?.trim() || "—"}
+              </span>
+            </li>
+          ))}
+          {names.length === 0 && <li className="text-sm text-stone-400 py-2">No names.</li>}
+        </ol>
 
-      <div className="text-center text-[10px] text-slate-400 mt-5">
-        पुण्यता — Sewa Hamari, Punya Aapka
+        <div className="text-center text-[11px] text-stone-400 mt-5">
+          पुण्यता — Sewa Hamari, Punya Aapka
+        </div>
       </div>
-      <div className="mt-4 pt-3 border-t border-amber-100 text-[10px] text-amber-700/70 font-sans text-center">
+      <p className="mt-2 px-1 text-xs text-stone-500 text-center">
         This preview is exactly what Print / Download produces — no plan name, price, or phone
         number is ever included.
-      </div>
+      </p>
     </div>
   );
 }

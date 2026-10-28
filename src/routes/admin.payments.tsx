@@ -13,10 +13,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Clock,
   CreditCard,
   Download,
-  Filter,
   Loader2,
   Lock,
   RefreshCw,
@@ -25,9 +23,18 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  Panel,
+  StatCard,
+  StatusPill,
+  TableScroll,
+  type Tone,
+} from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/payments")({
   component: AdminPaymentsPage,
@@ -82,31 +89,18 @@ function fmtDateTime(d: string | null) {
 }
 
 function PayStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string; icon: React.ElementType }> = {
-    captured: {
-      label: "Captured",
-      cls: "bg-emerald-50 text-emerald-800 border-emerald-200",
-      icon: CheckCircle2,
-    },
-    failed: { label: "Failed", cls: "bg-rose-50 text-rose-800 border-rose-200", icon: XCircle },
-    refunded: { label: "Refunded", cls: "bg-sky-50 text-sky-800 border-sky-200", icon: RotateCcw },
-    pending: { label: "Pending", cls: "bg-slate-100 text-slate-700 border-slate-200", icon: Clock },
+  const map: Record<string, { label: string; tone: Tone }> = {
+    captured: { label: "Captured", tone: "good" },
+    failed: { label: "Failed", tone: "bad" },
+    refunded: { label: "Refunded", tone: "info" },
+    pending: { label: "Pending", tone: "neutral" },
   };
-  const m = map[status] ?? {
-    label: status,
-    cls: "bg-slate-100 text-slate-700 border-slate-200",
-    icon: AlertCircle,
-  };
-  const Icon = m.icon;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${m.cls}`}
-    >
-      <Icon className="w-3 h-3" />
-      {m.label}
-    </span>
-  );
+  const m = map[status] ?? { label: status, tone: "neutral" as Tone };
+  return <StatusPill tone={m.tone}>{m.label}</StatusPill>;
 }
+
+const FIELD_CLS =
+  "h-9 w-full rounded-md border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20";
 
 // 🔒 placeholder for owner-only fields (amount / Razorpay IDs) —
 // signals "restricted", not "missing". The real values were never
@@ -114,7 +108,7 @@ function PayStatusBadge({ status }: { status: string }) {
 function MaskedCell() {
   return (
     <span
-      className="inline-flex items-center gap-1 text-amber-900/40"
+      className="inline-flex items-center gap-1 text-stone-400"
       title="Owner only — financial field restricted"
     >
       <Lock className="w-3.5 h-3.5" />
@@ -256,354 +250,390 @@ function AdminPaymentsPage() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const isOwner = viewerRole === "owner";
 
+  const amountCls = (status: string) =>
+    status === "failed"
+      ? "text-rose-700"
+      : status === "refunded"
+        ? "text-sky-700"
+        : "text-stone-900";
+
+  const sourceCell = (p: PaymentListRow) => (
+    <>
+      {p.gateway === "offline_qr" ? (
+        <StatusPill tone="neutral">{paymentSource(p)}</StatusPill>
+      ) : (
+        <span className="capitalize">{p.method || "—"}</span>
+      )}
+      {p.cycle_number != null && (
+        <div className="text-xs text-stone-400">cycle {p.cycle_number}</div>
+      )}
+    </>
+  );
+
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-5 rounded-2xl border border-amber-900/10 shadow-2xs">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-amber-700" />
-            Payments Log
-          </h1>
-          <p className="text-xs text-amber-900/60 mt-0.5">
+    <div className="space-y-6">
+      <PageHeader
+        title="Payments"
+        description={
+          <>
             {loading
               ? "Loading…"
               : `Showing ${rows.length > 0 ? page * PAGE_SIZE + 1 : 0}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} of ${totalCount.toLocaleString()} transactions`}
             {!isOwner && " · Amounts restricted to Owner"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => fetchPage(page, filters)}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="border-amber-900/15 bg-amber-50/50 text-amber-900 gap-1.5 text-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <Button
-            onClick={exportCSV}
-            disabled={exporting || totalCount === 0}
-            size="sm"
-            className="bg-amber-700 hover:bg-amber-800 text-white gap-1.5 text-xs"
-          >
-            {exporting ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…
-              </>
-            ) : (
-              <>
-                <Download className="w-3.5 h-3.5" /> Export CSV
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <>
+            <Button
+              onClick={() => fetchPage(page, filters)}
+              disabled={loading}
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+            <Button
+              onClick={exportCSV}
+              disabled={exporting || totalCount === 0}
+              size="sm"
+              className="bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+            >
+              {exporting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" /> Export CSV
+                </>
+              )}
+            </Button>
+          </>
+        }
+      />
 
       {/* Aggregate strip (whole filtered set).
           Owner: ₹ sums. Admin: transaction counts (no ₹). */}
       {agg && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-xl border border-emerald-200 p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/70">
-              Captured (filtered)
-            </div>
-            {agg.capturedPaise !== null ? (
-              <div className="text-xl font-bold text-emerald-800 mt-1">
-                {fmtINR(agg.capturedPaise)}
-              </div>
-            ) : (
-              <div className="text-xl font-bold text-emerald-800 mt-1">
-                {agg.capturedCount}{" "}
-                <span className="text-xs font-medium text-emerald-700/60">payments</span>
-              </div>
-            )}
-          </div>
-          <div className="bg-white rounded-xl border border-rose-200 p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700/70">
-              {agg.failedPaise !== null ? "Failed — opportunity loss" : "Failed (filtered)"}
-            </div>
-            {agg.failedPaise !== null ? (
-              <div className="text-xl font-bold text-rose-800 mt-1">{fmtINR(agg.failedPaise)}</div>
-            ) : (
-              <div className="text-xl font-bold text-rose-800 mt-1">
-                {agg.failedCount}{" "}
-                <span className="text-xs font-medium text-rose-700/60">payments</span>
-              </div>
-            )}
-          </div>
-          <div className="bg-white rounded-xl border border-sky-200 p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-sky-700/70">
-              Refunded
-            </div>
-            {agg.refundedPaise !== null ? (
-              <div className="text-xl font-bold text-sky-800 mt-1">{fmtINR(agg.refundedPaise)}</div>
-            ) : (
-              <div className="text-xl font-bold text-sky-800 mt-1">
-                {agg.refundedCount}{" "}
-                <span className="text-xs font-medium text-sky-700/60">payments</span>
-              </div>
-            )}
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <StatCard
+            label="Captured (filtered)"
+            icon={CheckCircle2}
+            value={
+              agg.capturedPaise !== null ? (
+                fmtINR(agg.capturedPaise)
+              ) : (
+                <>
+                  {agg.capturedCount}{" "}
+                  <span className="text-sm font-medium text-stone-500">payments</span>
+                </>
+              )
+            }
+            status={{ tone: "good", text: "Captured" }}
+          />
+          <StatCard
+            label={agg.failedPaise !== null ? "Failed — opportunity loss" : "Failed (filtered)"}
+            icon={XCircle}
+            value={
+              agg.failedPaise !== null ? (
+                fmtINR(agg.failedPaise)
+              ) : (
+                <>
+                  {agg.failedCount}{" "}
+                  <span className="text-sm font-medium text-stone-500">payments</span>
+                </>
+              )
+            }
+            status={{ tone: "bad", text: "Failed" }}
+          />
+          <StatCard
+            label="Refunded"
+            icon={RotateCcw}
+            value={
+              agg.refundedPaise !== null ? (
+                fmtINR(agg.refundedPaise)
+              ) : (
+                <>
+                  {agg.refundedCount}{" "}
+                  <span className="text-sm font-medium text-stone-500">payments</span>
+                </>
+              )
+            }
+            status={{ tone: "info", text: "Refunded" }}
+          />
         </div>
       )}
 
       {errorMsg && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-none" />
+        <Notice tone="bad" icon={AlertCircle}>
           {errorMsg}
-        </div>
+        </Notice>
       )}
 
       {/* Filters */}
-      <Card className="border border-amber-900/10 bg-white">
-        <CardHeader className="pb-3 pt-4 px-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-              <Filter className="w-4 h-4 text-amber-700" />
-              Filters
-              <span className="text-[10px] font-normal text-amber-900/50">
-                (applied server-side; date range = ledger date, IST)
-              </span>
-            </div>
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="text-xs text-amber-700 hover:underline flex items-center gap-1"
-              >
-                <X className="w-3 h-3" /> Clear all
-              </button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="px-5 pb-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-              <input
-                id="pay-search"
-                type="text"
-                placeholder="Razorpay payment id…"
-                value={pendingFilters.search}
-                onChange={(e) => setPending((p) => ({ ...p, search: e.target.value }))}
-                onKeyDown={(e) => e.key === "Enter" && applyPendingFilters()}
-                className="w-full pl-8 pr-3 py-2 text-xs border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white placeholder-slate-400"
-              />
-            </div>
-            <select
-              id="pay-filter-status"
-              value={pendingFilters.status}
-              onChange={(e) => setPending((p) => ({ ...p, status: e.target.value }))}
-              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-            >
-              <option value="all">All Statuses</option>
-              <option value="captured">Captured</option>
-              <option value="failed">Failed</option>
-              <option value="refunded">Refunded</option>
-              <option value="pending">Pending</option>
-            </select>
-            <select
-              id="pay-filter-plan"
-              value={pendingFilters.planId}
-              onChange={(e) => setPending((p) => ({ ...p, planId: e.target.value }))}
-              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-            >
-              <option value="all">All Plans</option>
-              {planOptions.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.name}
-                </option>
-              ))}
-            </select>
-            <div className="flex gap-2">
-              <input
-                id="pay-filter-date-from"
-                type="date"
-                value={pendingFilters.dateFrom}
-                onChange={(e) => setPending((p) => ({ ...p, dateFrom: e.target.value }))}
-                title="Ledger date from"
-                className="flex-1 text-xs border border-amber-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-              />
-              <input
-                id="pay-filter-date-to"
-                type="date"
-                value={pendingFilters.dateTo}
-                onChange={(e) => setPending((p) => ({ ...p, dateTo: e.target.value }))}
-                title="Ledger date to"
-                className="flex-1 text-xs border border-amber-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end mt-3">
+      <Panel
+        title="Filters"
+        description="Applied server-side; date range = ledger date, IST."
+        actions={
+          hasActiveFilters ? (
             <Button
-              onClick={applyPendingFilters}
+              variant="ghost"
               size="sm"
-              className="bg-amber-700 hover:bg-amber-800 text-white text-xs h-7 px-4 gap-1.5"
+              onClick={clearFilters}
+              className="gap-1 text-orange-700"
             >
-              <Search className="w-3 h-3" />
-              Apply Filters
+              <X className="w-3.5 h-3.5" /> Clear all
             </Button>
+          ) : undefined
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+            <input
+              id="pay-search"
+              type="text"
+              placeholder="Razorpay payment id…"
+              value={pendingFilters.search}
+              onChange={(e) => setPending((p) => ({ ...p, search: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && applyPendingFilters()}
+              className={`${FIELD_CLS} pl-8 placeholder:text-stone-400`}
+            />
           </div>
-        </CardContent>
-      </Card>
+          <select
+            id="pay-filter-status"
+            value={pendingFilters.status}
+            onChange={(e) => setPending((p) => ({ ...p, status: e.target.value }))}
+            className={FIELD_CLS}
+          >
+            <option value="all">All Statuses</option>
+            <option value="captured">Captured</option>
+            <option value="failed">Failed</option>
+            <option value="refunded">Refunded</option>
+            <option value="pending">Pending</option>
+          </select>
+          <select
+            id="pay-filter-plan"
+            value={pendingFilters.planId}
+            onChange={(e) => setPending((p) => ({ ...p, planId: e.target.value }))}
+            className={FIELD_CLS}
+          >
+            <option value="all">All Plans</option>
+            {planOptions.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name}
+              </option>
+            ))}
+          </select>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              id="pay-filter-date-from"
+              type="date"
+              value={pendingFilters.dateFrom}
+              onChange={(e) => setPending((p) => ({ ...p, dateFrom: e.target.value }))}
+              title="Ledger date from"
+              aria-label="Ledger date from"
+              className={`${FIELD_CLS} min-w-0 px-2`}
+            />
+            <input
+              id="pay-filter-date-to"
+              type="date"
+              value={pendingFilters.dateTo}
+              onChange={(e) => setPending((p) => ({ ...p, dateTo: e.target.value }))}
+              title="Ledger date to"
+              aria-label="Ledger date to"
+              className={`${FIELD_CLS} min-w-0 px-2`}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end mt-3">
+          <Button
+            onClick={applyPendingFilters}
+            size="sm"
+            className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+          >
+            <Search className="w-3.5 h-3.5" />
+            Apply filters
+          </Button>
+        </div>
+      </Panel>
 
-      {/* Table */}
-      <div className="rounded-xl border border-amber-900/10 overflow-hidden bg-white shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-amber-100 bg-amber-50/60">
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Date (IST)
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Subscriber
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Plan
-                </th>
-                <th className="text-right py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Source / Cycle
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Razorpay ID
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading &&
-                [...Array(8)].map((_, i) => (
-                  <tr key={i} className="border-b border-amber-50">
-                    {[...Array(7)].map((_, j) => (
-                      <td key={j} className="py-3 px-4">
-                        <Skeleton className="h-4 w-full bg-amber-50" />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-16 text-center text-sm text-slate-400">
-                    {hasActiveFilters
-                      ? "No payments match the current filters."
-                      : "No payment records yet — they appear once the Razorpay webhook starts processing events."}
-                  </td>
-                </tr>
-              )}
-
-              {!loading &&
-                rows.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-amber-50 hover:bg-amber-50/30 transition-colors align-top"
-                  >
-                    <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
-                      {fmtDateTime(p.paid_at ?? p.created_at)}
-                      {p.status !== "captured" && p.paid_at === null && (
-                        <div className="text-[10px] text-slate-400">ledger date</div>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-slate-900">
+      {/* Transactions */}
+      <Panel title="Transactions" flush>
+        {loading ? (
+          <div className="p-4 sm:p-5 space-y-2">
+            {[...Array(8)].map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <EmptyState
+            icon={CreditCard}
+            title={
+              hasActiveFilters ? "No payments match the current filters." : "No payment records yet"
+            }
+            description={
+              hasActiveFilters
+                ? undefined
+                : "They appear once the Razorpay webhook starts processing events."
+            }
+          />
+        ) : (
+          <>
+            {/* Phone: stacked cards */}
+            <ul className="md:hidden divide-y divide-stone-100">
+              {rows.map((p) => (
+                <li key={p.id} className="px-4 py-3 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium text-stone-900 truncate">
                         {nameMap.get(p.subscription_id) || (
-                          <span className="text-slate-400 italic">—</span>
+                          <span className="text-stone-400">—</span>
                         )}
                       </div>
-                      <div className="text-[10px] text-slate-400 font-mono">
-                        {p.subscription_id.slice(0, 8)}…
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-slate-800">
+                      <div className="text-xs text-stone-500 truncate">
                         {p.subscription?.plans?.name || "—"}
+                        {p.subscription?.plans?.billing_period && (
+                          <span className="capitalize">
+                            {" "}
+                            · {p.subscription.plans.billing_period}
+                          </span>
+                        )}
                       </div>
-                      <div className="text-[11px] text-slate-400 capitalize">
-                        {p.subscription?.plans?.billing_period || ""}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right">
+                    </div>
+                    <div className="text-right shrink-0">
                       {p.amount_paise === null ? (
                         <MaskedCell />
                       ) : (
-                        <span
-                          className={`font-semibold ${p.status === "failed" ? "text-rose-700" : p.status === "refunded" ? "text-sky-700" : "text-slate-900"}`}
-                        >
+                        <span className={`font-semibold tabular-nums ${amountCls(p.status)}`}>
                           {fmtINR(p.amount_paise)}
                         </span>
                       )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <PayStatusBadge status={p.status} />
-                      {p.status === "failed" && p.failure_reason && (
-                        <div className="text-[10px] text-rose-600 mt-1 max-w-52">
-                          {p.failure_reason}
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-xs text-slate-600">
-                      {p.gateway === "offline_qr" ? (
-                        <div>
-                          <span className="inline-block rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-800">
-                            {paymentSource(p)}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="capitalize">{p.method || "—"}</div>
-                      )}
-                      {p.cycle_number != null && (
-                        <div className="text-[10px] text-slate-400">cycle {p.cycle_number}</div>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-[11px] font-mono text-slate-500">
-                      {p.razorpay_payment_id === null ? (
-                        <MaskedCell />
-                      ) : (
-                        p.razorpay_payment_id || "—"
-                      )}
-                    </td>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500">
+                    <PayStatusBadge status={p.status} />
+                    <span>
+                      {fmtDateTime(p.paid_at ?? p.created_at)}
+                      {p.status !== "captured" && p.paid_at === null && " (ledger date)"}
+                    </span>
+                    <div className="flex items-center gap-1.5">{sourceCell(p)}</div>
+                  </div>
+                  {p.status === "failed" && p.failure_reason && (
+                    <div className="text-xs text-rose-600">{p.failure_reason}</div>
+                  )}
+                  <div className="text-xs font-mono text-stone-400 break-all">
+                    {p.subscription_id.slice(0, 8)}… ·{" "}
+                    {p.razorpay_payment_id === null ? <MaskedCell /> : p.razorpay_payment_id || "—"}
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Tablet / desktop: table */}
+            <TableScroll className="hidden md:block">
+              <table className="w-full text-sm admin-table-fixed min-w-[900px]">
+                <thead>
+                  <tr className="text-left text-xs text-stone-500 border-b border-stone-100">
+                    <th className="font-medium px-4 py-2.5">Date (IST)</th>
+                    <th className="font-medium px-3 py-2.5">Subscriber</th>
+                    <th className="font-medium px-3 py-2.5">Plan</th>
+                    <th className="font-medium px-3 py-2.5 text-right">Amount</th>
+                    <th className="font-medium px-3 py-2.5">Status</th>
+                    <th className="font-medium px-3 py-2.5">Source / cycle</th>
+                    <th className="font-medium px-4 py-2.5">Razorpay ID</th>
                   </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {rows.map((p) => (
+                    <tr key={p.id} className="hover:bg-stone-50/60 transition-colors align-top">
+                      <td className="px-4 py-3 text-xs text-stone-600 whitespace-nowrap">
+                        {fmtDateTime(p.paid_at ?? p.created_at)}
+                        {p.status !== "captured" && p.paid_at === null && (
+                          <div className="text-xs text-stone-400">ledger date</div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="font-medium text-stone-900">
+                          {nameMap.get(p.subscription_id) || (
+                            <span className="text-stone-400">—</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-stone-400 font-mono">
+                          {p.subscription_id.slice(0, 8)}…
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="text-stone-800">{p.subscription?.plans?.name || "—"}</div>
+                        <div className="text-xs text-stone-400 capitalize">
+                          {p.subscription?.plans?.billing_period || ""}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-right whitespace-nowrap">
+                        {p.amount_paise === null ? (
+                          <MaskedCell />
+                        ) : (
+                          <span className={`font-semibold tabular-nums ${amountCls(p.status)}`}>
+                            {fmtINR(p.amount_paise)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <PayStatusBadge status={p.status} />
+                        {p.status === "failed" && p.failure_reason && (
+                          <div className="text-xs text-rose-600 mt-1 max-w-52">
+                            {p.failure_reason}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-xs text-stone-600">{sourceCell(p)}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-500 break-all">
+                        {p.razorpay_payment_id === null ? (
+                          <MaskedCell />
+                        ) : (
+                          p.razorpay_payment_id || "—"
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScroll>
+          </>
+        )}
 
         {!loading && totalCount > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-amber-100 bg-amber-50/30">
-            <p className="text-xs text-amber-900/60">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-stone-100">
+            <p className="text-xs text-stone-500">
               Page {page + 1} of {totalPages} · {totalCount.toLocaleString()} total
             </p>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <Button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0 || loading}
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-amber-200"
+                className="h-9 w-9 sm:h-8 sm:w-8 p-0"
+                aria-label="Previous page"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
+                <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1 || loading}
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-amber-200"
+                className="h-9 w-9 sm:h-8 sm:w-8 p-0"
+                aria-label="Next page"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

@@ -13,6 +13,8 @@ import {
 } from "@/lib/sankalp-logic";
 import { Printer, ArrowLeft, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/pandit/$batchId")({
   component: PanditListPage,
@@ -143,12 +145,13 @@ function PanditListPage() {
     })();
   }, [batchId]);
 
-  if (loading) return <Skeleton className="h-96 w-full rounded-2xl bg-amber-100/50" />;
+  if (loading)
+    return <Skeleton className="h-96 w-full max-w-3xl mx-auto rounded-xl bg-stone-100" />;
   if (error || !batch) {
     return (
-      <div className="bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl text-sm">
+      <Notice tone="bad" icon={AlertTriangle} className="max-w-3xl mx-auto">
         {error ?? "Batch not found"}
-      </div>
+      </Notice>
     );
   }
 
@@ -157,25 +160,29 @@ function PanditListPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-4 print:max-w-none">
       {/* Screen-only toolbar */}
-      <div className="flex items-center justify-between print:hidden">
-        <Link
-          to="/admin/proof-upload"
-          className="text-xs font-medium text-amber-900/70 hover:text-amber-900 flex items-center gap-1.5"
+      <div className="flex items-center justify-between gap-3 print:hidden">
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="h-9 gap-1.5 -ml-2 text-stone-600 hover:text-stone-900"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Proof Upload
-        </Link>
-        <button
+          <Link to="/admin/proof-upload">
+            <ArrowLeft className="w-4 h-4" /> Back to Proof Upload
+          </Link>
+        </Button>
+        <Button
           onClick={() => window.print()}
-          className="flex items-center gap-1.5 bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+          size="sm"
+          className="h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
         >
-          <Printer className="w-3.5 h-3.5" /> Print
-        </button>
+          <Printer className="w-4 h-4" /> Print
+        </Button>
       </div>
 
       {/* Sankalp Pending notice — screen only, NEVER printed for Pandit ji */}
       {pendingCount > 0 && (
-        <div className="print:hidden bg-amber-50 border border-amber-300 text-amber-900 p-3 rounded-xl text-xs flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <Notice tone="warn" icon={AlertTriangle} className="print:hidden">
           <span>
             <strong>{pendingCount}</strong> subscription{pendingCount === 1 ? "" : "s"} in this
             batch have <strong>no family details yet</strong> (Sankalp Pending) — excluded from the
@@ -185,14 +192,16 @@ function PanditListPage() {
             </Link>
             .
           </span>
-        </div>
+        </Notice>
       )}
 
       {/* Printable sheet — seva names + name-gotra ONLY */}
-      <div className="bg-white rounded-2xl border border-amber-900/10 p-8 font-serif print:border-0 print:p-0">
+      <div className="admin-card px-4 py-6 sm:p-8 font-serif print:border-0 print:p-0 print:shadow-none print:rounded-none">
         <div className="text-center text-2xl text-amber-700">॥ श्री गणेशाय नमः ॥</div>
-        <h1 className="text-center text-xl font-bold mt-1">संकल्प नामावली — Sankalp Name List</h1>
-        <div className="text-center text-xs text-slate-500 mt-1 mb-6">
+        <h1 className="text-center text-lg sm:text-xl font-bold mt-1 text-stone-900">
+          संकल्प नामावली — Sankalp Name List
+        </h1>
+        <div className="text-center text-xs text-stone-500 mt-1 mb-6">
           {batchLabel(batch.batch_type, batch.batch_date)}
           {" • "}कुल नाम: {totalNames}
         </div>
@@ -208,7 +217,7 @@ function PanditListPage() {
                   🚩 {s.name}
                 </li>
               ))}
-              {g.sevas.length === 0 && <li className="text-sm text-slate-400">—</li>}
+              {g.sevas.length === 0 && <li className="text-sm text-stone-400">—</li>}
             </ul>
 
             <div className="text-[11px] font-bold uppercase tracking-widest text-amber-800 border-b-2 border-amber-600 pb-1 mb-2 font-sans">
@@ -218,27 +227,29 @@ function PanditListPage() {
               {g.names.map((n, i) => (
                 <li
                   key={i}
-                  className="flex justify-between gap-4 py-1 border-b border-dotted border-slate-300 text-sm"
+                  className="flex justify-between gap-4 py-1 border-b border-dotted border-stone-300 text-sm"
                 >
                   <span className="flex gap-2 min-w-0">
                     <span className="text-amber-800 font-bold w-8 shrink-0">{i + 1}.</span>
-                    <span className="font-semibold">{n.name}</span>
+                    <span className="font-semibold break-words min-w-0">{n.name}</span>
                   </span>
-                  <span className="text-slate-600 whitespace-nowrap">{n.gotra?.trim() || "—"}</span>
+                  <span className="text-stone-600 text-right shrink-0 max-w-[45%] break-words sm:whitespace-nowrap">
+                    {n.gotra?.trim() || "—"}
+                  </span>
                 </li>
               ))}
-              {g.names.length === 0 && <li className="text-sm text-slate-400 py-2">No names.</li>}
+              {g.names.length === 0 && <li className="text-sm text-stone-400 py-2">No names.</li>}
             </ol>
           </div>
         ))}
 
         {groups.length === 0 && (
-          <div className="text-center text-sm text-slate-400 py-8">
+          <div className="text-center text-sm text-stone-400 py-8">
             No subscribers in this batch yet.
           </div>
         )}
 
-        <div className="text-center text-[11px] text-slate-400 mt-8">
+        <div className="text-center text-[11px] text-stone-400 mt-8">
           पुण्यता — Sewa Hamari, Punya Aapka
         </div>
       </div>

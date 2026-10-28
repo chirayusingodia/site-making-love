@@ -32,13 +32,11 @@ import {
   RefreshCw,
   ScrollText,
   Sparkles,
-  Upload,
   Users,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState, Notice, PageHeader, Panel, StatusPill } from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/ashirwad-patra")({
   component: AshirwadPatraPage,
@@ -106,79 +104,69 @@ function AshirwadPatraPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-5 rounded-2xl border border-amber-900/10 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <ScrollText className="w-6 h-6 text-amber-700" />
-          Ashirwad Patra
-          <Badge
-            variant="outline"
-            className="bg-amber-50 text-amber-900 border-amber-300 font-mono text-[11px]"
-          >
-            New
-          </Badge>
-        </h1>
-        <p className="text-xs text-amber-900/70 mt-1">
-          Har pooja ke baad har parivaar ka ek Ashirwad Patra ban-ta hai — poore parivaar ke naam
-          (website par jo naam nahi hain, woh bhi), us din ki sevayein, aur ashirwad ke saath. Image
-          fixed size me render hoti hai (har device par same). Neeche se download karo ya WhatsApp
-          par bhejo.
-        </p>
-      </div>
+      <PageHeader
+        title="Ashirwad Patra"
+        description="Har pooja ke baad har parivaar ka ek Ashirwad Patra ban-ta hai — poore parivaar ke naam (website par jo naam nahi hain, woh bhi), us din ki sevayein, aur ashirwad ke saath. Image fixed size me render hoti hai (har device par same). Neeche se download karo ya WhatsApp par bhejo."
+      />
 
       <ExcelPatraCard />
 
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl text-xs flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
+        <Notice tone="bad" icon={AlertTriangle}>
+          {error}
+        </Notice>
       )}
 
       {loading ? (
-        <Skeleton className="h-48 w-full rounded-2xl bg-amber-100/50" />
+        <Skeleton className="h-48 w-full rounded-xl bg-stone-100" />
       ) : (
-        <div className="grid lg:grid-cols-[300px_1fr] gap-4">
-          <Card className="border border-amber-900/10 bg-white h-fit">
-            <CardHeader className="pb-2 bg-amber-50/60 border-b border-amber-100">
-              <CardTitle className="text-sm font-bold text-amber-950">Completed Poojas</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 space-y-2">
-              {batches.length === 0 && (
-                <div className="text-center py-6 text-xs text-slate-400">
-                  Koi completed batch nahi. Proof Upload me batch "Mark Seva Completed" karein.
-                </div>
-              )}
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-4 items-start">
+          <Panel title="Completed poojas" bodyClassName="p-2 sm:p-3">
+            {batches.length === 0 && (
+              <EmptyState
+                icon={ScrollText}
+                title="Koi completed batch nahi"
+                description={`Proof Upload me batch "Mark Seva Completed" karein.`}
+                className="py-6"
+              />
+            )}
+            {/* Horizontal chip strip on phones/tablets, vertical list on lg+ */}
+            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible -mx-0.5 px-0.5 pb-1 lg:pb-0">
               {batches.map((b) => (
                 <button
                   key={b.id}
+                  type="button"
                   onClick={() => setSelectedId(b.id)}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl border text-xs transition-colors ${
+                  aria-pressed={selectedId === b.id}
+                  className={`shrink-0 w-[220px] lg:w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg border text-sm transition-colors ${
                     selectedId === b.id
-                      ? "border-amber-600 bg-amber-50"
-                      : "border-amber-900/10 hover:bg-amber-50/50"
+                      ? "border-orange-500 bg-orange-50/60 ring-1 ring-orange-500/20"
+                      : "border-stone-200 hover:bg-stone-50"
                   }`}
                 >
-                  <div className="font-semibold text-slate-800">
+                  <div className="font-medium text-stone-900 text-[13px] leading-snug">
                     {batchLabel(b.batch_type, b.batch_date)}
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
-                    <Users className="w-3 h-3" />
+                  <div className="text-xs text-stone-500 mt-1 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-stone-400" />
                     {b.subscriber_count} parivaar
-                    <span className="text-amber-700 font-semibold">· {b.patra_count} patra</span>
+                    <span className="text-stone-300">·</span>
+                    <span className="font-medium text-stone-700">{b.patra_count} patra</span>
                   </div>
                 </button>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </Panel>
 
           {selected ? (
             <BatchPatras key={selected.id} batch={selected} onCountChanged={loadBatches} />
           ) : (
-            <Card className="border border-dashed border-amber-900/15 bg-white/50">
-              <CardContent className="p-10 text-center text-sm text-slate-400">
-                Left se ek completed pooja chunein.
-              </CardContent>
-            </Card>
+            <div className="admin-card border-dashed">
+              <EmptyState
+                title="Ek completed pooja chunein"
+                description="Upar / left ki list se pooja select karein."
+              />
+            </div>
           )}
         </div>
       )}
@@ -372,162 +360,157 @@ function BatchPatras({
   }
 
   return (
-    <Card className="border border-amber-900/10 bg-white">
-      <CardHeader className="pb-2 bg-amber-50/60 border-b border-amber-100">
-        <CardTitle className="text-sm font-bold text-amber-950 flex items-center justify-between gap-2 flex-wrap">
-          <span className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-700" />
-            {batchLabel(batch.batch_type, batch.batch_date)}
-          </span>
-          <span className="text-[11px] font-medium text-slate-500">
-            {patras.length} patra · {readyCount} image ready
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Button
-            size="sm"
-            onClick={generate}
-            disabled={busy}
-            className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold gap-1.5"
-          >
-            {busy && !progress ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5" />
-            )}
-            {patras.length === 0 ? "Patra Generate Karein" : "Missing Patra Add Karein"}
-          </Button>
-          {patras.some((p) => !p.image_url) && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => renderPending(patras)}
-              disabled={busy}
-              className="border-amber-900/20 text-amber-900 hover:bg-amber-50 text-xs font-semibold gap-1.5"
-            >
-              {progress ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <ImageIcon className="w-3.5 h-3.5" />
-              )}
-              {progress
-                ? `Rendering ${progress.done}/${progress.total}…`
-                : `Render pending (${patras.filter((p) => !p.image_url).length})`}
-            </Button>
+    <Panel
+      title={batchLabel(batch.batch_type, batch.batch_date)}
+      description={`${patras.length} patra · ${readyCount} image ready`}
+      bodyClassName="space-y-4"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:flex-wrap">
+        <Button
+          onClick={generate}
+          disabled={busy}
+          className="h-10 sm:h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+        >
+          {busy && !progress ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
           )}
-          {note && <span className="text-[11px] text-emerald-700 font-medium">{note}</span>}
-        </div>
-        {err && <div className="text-[11px] text-rose-600">{err}</div>}
+          {patras.length === 0 ? "Patra Generate Karein" : "Missing Patra Add Karein"}
+        </Button>
+        {patras.some((p) => !p.image_url) && (
+          <Button
+            variant="outline"
+            onClick={() => renderPending(patras)}
+            disabled={busy}
+            className="h-10 sm:h-9 gap-1.5"
+          >
+            {progress ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ImageIcon className="w-4 h-4" />
+            )}
+            {progress
+              ? `Rendering ${progress.done}/${progress.total}…`
+              : `Render pending (${patras.filter((p) => !p.image_url).length})`}
+          </Button>
+        )}
+        {note && (
+          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-medium">
+            <Sparkles className="w-3.5 h-3.5" />
+            {note}
+          </span>
+        )}
+      </div>
+      {err && (
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{err}</span>
+        </Notice>
+      )}
 
-        {loading ? (
-          <Skeleton className="h-40 w-full rounded-xl bg-amber-100/40" />
-        ) : patras.length === 0 ? (
-          <div className="text-center py-8 text-xs text-slate-400">
-            Is batch ke liye abhi koi patra nahi bana. "Patra Generate Karein" dabayein.
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-3">
-            {patras.map((p) => {
-              const wa = waLink(p);
-              const contact = contacts.get(p.subscription_id);
-              return (
-                <div
-                  key={p.id}
-                  className="border border-amber-900/10 rounded-xl p-3 flex gap-3 bg-amber-50/20"
-                >
+      {loading ? (
+        <Skeleton className="h-40 w-full rounded-lg bg-stone-100" />
+      ) : patras.length === 0 ? (
+        <EmptyState
+          icon={ScrollText}
+          title="Is batch ke liye abhi koi patra nahi bana"
+          description={`"Patra Generate Karein" dabayein.`}
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {patras.map((p) => {
+            const wa = waLink(p);
+            const contact = contacts.get(p.subscription_id);
+            return (
+              <div
+                key={p.id}
+                className="rounded-lg border border-stone-200 bg-white p-3 flex flex-col gap-3"
+              >
+                <div className="flex gap-3">
                   <div className="w-20 shrink-0">
                     {p.image_url ? (
                       <a href={p.image_url} target="_blank" rel="noreferrer">
                         <img
                           src={p.image_url}
                           alt={`Ashirwad Patra ${p.patra_no}`}
-                          className="w-20 h-auto rounded border border-amber-900/10 hover:opacity-90"
+                          className="w-20 h-auto rounded border border-stone-200 hover:opacity-90"
                         />
                       </a>
                     ) : (
-                      <div className="w-20 h-28 rounded border border-dashed border-amber-900/20 bg-white/60 flex items-center justify-center text-[9px] text-slate-400 text-center px-1">
+                      <div className="w-20 h-28 rounded border border-dashed border-stone-300 bg-stone-50 flex items-center justify-center text-[11px] text-stone-400 text-center px-1">
                         image ban rahi…
                       </div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="text-xs font-semibold text-slate-800 leading-snug">
+                    <div className="text-sm font-medium text-stone-900 leading-snug break-words">
                       {p.names.join(", ")}
                     </div>
-                    <div className="text-[10px] text-slate-500 font-mono">{p.patra_no}</div>
+                    <div className="text-xs text-stone-500 font-mono break-all">{p.patra_no}</div>
                     {p.status === "delivered" ? (
-                      <Badge
-                        variant="outline"
-                        className="bg-emerald-50 text-emerald-800 border-emerald-300 text-[9px] font-bold uppercase"
-                      >
-                        Delivered
-                      </Badge>
+                      <StatusPill tone="good">Delivered</StatusPill>
                     ) : (
-                      <Badge
-                        variant="outline"
-                        className="bg-amber-50 text-amber-900 border-amber-300 text-[9px] font-bold uppercase"
-                      >
-                        Ready
-                      </Badge>
+                      <StatusPill tone="warn">Ready</StatusPill>
                     )}
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
-                      {p.image_url && (
-                        <a
-                          href={downloadUrl(p.image_url)}
-                          className="text-[11px] text-amber-800 font-semibold flex items-center gap-1 hover:underline"
-                        >
-                          <Download className="w-3 h-3" /> Download
-                        </a>
-                      )}
-                      {p.image_url && (
-                        <a
-                          href={p.image_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-slate-600 font-semibold flex items-center gap-1 hover:underline"
-                        >
-                          <ExternalLink className="w-3 h-3" /> Preview
-                        </a>
-                      )}
-                      {wa ? (
-                        <a
-                          href={wa}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 hover:underline"
-                        >
-                          <MessageCircle className="w-3 h-3" /> WhatsApp
-                        </a>
-                      ) : (
-                        <span className="text-[10px] text-slate-400">
-                          {!contact?.phone ? "no phone" : "image pending"}
-                        </span>
-                      )}
-                      {p.status !== "delivered" && p.image_url && (
-                        <button
-                          onClick={() => markDelivered(p)}
-                          className="text-[11px] text-slate-700 font-semibold hover:underline flex items-center gap-1"
-                        >
-                          <CheckCircle2 className="w-3 h-3" /> Mark Sent
-                        </button>
-                      )}
-                    </div>
+                    {!wa && (
+                      <div className="text-xs text-stone-400">
+                        {!contact?.phone ? "no phone" : "image pending"}
+                      </div>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
-          WhatsApp par image seedhe attach karne ke liye Meta API chahiye (abhi pending) — isliye
-          link message me patra ka image URL bhi jaata hai. Aap chahein to "Download" karke image
-          manually attach kar sakte hain, phir "Mark Sent" dabayein.
+                {(p.image_url || wa) && (
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                    {p.image_url && (
+                      <Button asChild variant="outline" size="sm" className="h-9 gap-1.5">
+                        <a href={downloadUrl(p.image_url)}>
+                          <Download className="w-4 h-4" /> Download
+                        </a>
+                      </Button>
+                    )}
+                    {p.image_url && (
+                      <Button asChild variant="outline" size="sm" className="h-9 gap-1.5">
+                        <a href={p.image_url} target="_blank" rel="noreferrer">
+                          <ExternalLink className="w-4 h-4" /> Preview
+                        </a>
+                      </Button>
+                    )}
+                    {wa && (
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
+                      >
+                        <a href={wa} target="_blank" rel="noreferrer">
+                          <MessageCircle className="w-4 h-4" /> WhatsApp
+                        </a>
+                      </Button>
+                    )}
+                    {p.status !== "delivered" && p.image_url && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => markDelivered(p)}
+                        className="h-9 gap-1.5 text-stone-700"
+                      >
+                        <CheckCircle2 className="w-4 h-4" /> Mark Sent
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      <p className="text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2">
+        WhatsApp par image seedhe attach karne ke liye Meta API chahiye (abhi pending) — isliye link
+        message me patra ka image URL bhi jaata hai. Aap chahein to "Download" karke image manually
+        attach kar sakte hain, phir "Mark Sent" dabayein.
+      </p>
+    </Panel>
   );
 }
 
@@ -660,146 +643,137 @@ function ExcelPatraCard() {
   const normal = sevas.filter((s) => !isHawanSeva(s));
 
   return (
-    <Card className="border border-amber-900/10 bg-white">
-      <CardHeader className="pb-2 bg-amber-50/60 border-b border-amber-100">
-        <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2">
-          <FileSpreadsheet className="w-4 h-4 text-amber-700" /> Excel se Patra banayein — Pandit
-          list
-        </CardTitle>
-        <p className="text-[11px] text-amber-900/60">
-          Pandit-ji ki Gotra sheet (.xlsx) upload karein — har gotra ka poora parivaar ek patra me.
-          Occasion, date aur sevayein chunein, phir download karein (ek-ek ya sab ZIP me).
-        </p>
-      </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        <div className="grid sm:grid-cols-2 gap-3">
-          <label className="text-xs font-semibold text-slate-700 space-y-1">
-            <span>Occasion (avsar)</span>
-            <input
-              type="text"
-              value={occasion}
-              onChange={(e) => setOccasion(e.target.value)}
-              className="w-full border border-amber-900/20 rounded-lg px-3 py-1.5 text-xs bg-white font-normal"
-              placeholder="अंतिम शनिवार संकल्प"
-            />
-          </label>
-          <label className="text-xs font-semibold text-slate-700 space-y-1">
-            <span>Date</span>
-            <input
-              type="date"
-              value={dateISO}
-              onChange={(e) => setDateISO(e.target.value)}
-              className="w-full border border-amber-900/20 rounded-lg px-3 py-1.5 text-xs bg-white font-normal"
-            />
-          </label>
-        </div>
+    <Panel
+      title="Excel se Patra banayein — Pandit list"
+      description="Pandit-ji ki Gotra sheet (.xlsx) upload karein — har gotra ka poora parivaar ek patra me. Occasion, date aur sevayein chunein, phir download karein (ek-ek ya sab ZIP me)."
+      bodyClassName="space-y-5"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label className="block space-y-1.5">
+          <span className="text-[13px] font-medium text-stone-700">Occasion (avsar)</span>
+          <input
+            type="text"
+            value={occasion}
+            onChange={(e) => setOccasion(e.target.value)}
+            className="w-full h-10 border border-stone-200 rounded-md px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
+            placeholder="अंतिम शनिवार संकल्प"
+          />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-[13px] font-medium text-stone-700">Date</span>
+          <input
+            type="date"
+            value={dateISO}
+            onChange={(e) => setDateISO(e.target.value)}
+            className="w-full h-10 border border-stone-200 rounded-md px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
+          />
+        </label>
+      </div>
 
-        <div>
-          <div className="text-xs font-semibold text-slate-700 mb-1.5">
-            Sevayein (patra par dikhengi)
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-            {normal.map((s) => (
-              <label key={s.id} className="flex items-center gap-1.5 text-xs text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={selected.has(s.id)}
-                  onChange={() => toggle(s.id)}
-                  className="accent-amber-700"
-                />
-                {s.name}
-              </label>
-            ))}
-            {hawans.map((s) => (
-              <label
-                key={s.id}
-                className="flex items-center gap-1.5 text-xs text-amber-900 font-medium"
-                title="Us din ka hawan chunein: 2nd मंगलवार = गृह शांति, अंतिम शनिवार = सर्व रोग निवारण"
-              >
-                <input
-                  type="checkbox"
-                  checked={selected.has(s.id)}
-                  onChange={() => toggle(s.id)}
-                  className="accent-amber-700"
-                />
-                {s.name} 🔥
-              </label>
-            ))}
-          </div>
+      <div>
+        <div className="text-[13px] font-medium text-stone-700 mb-2">
+          Sevayein (patra par dikhengi)
         </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-900 border border-amber-900/20 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-amber-50">
-            <Upload className="w-3.5 h-3.5" />
-            Excel chunein (.xlsx)
-            <input type="file" accept=".xlsx" onChange={onFile} className="hidden" />
-          </label>
-          {fileName && (
-            <span className="text-[11px] text-slate-600">
-              {fileName} — <b>{entries.length}</b> patra milе
-            </span>
-          )}
-          {entries.length > 0 && (
-            <Button
-              size="sm"
-              onClick={generate}
-              disabled={busy}
-              className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold gap-1.5"
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2">
+          {normal.map((s) => (
+            <label
+              key={s.id}
+              className="flex items-center gap-2 min-h-[40px] px-3 rounded-md border border-stone-200 text-sm text-stone-700 cursor-pointer hover:bg-stone-50 has-[:checked]:border-orange-300 has-[:checked]:bg-orange-50/50"
             >
-              {progress ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <ImageIcon className="w-3.5 h-3.5" />
-              )}
-              {progress ? `Banate hue ${progress.done}/${progress.total}…` : "Patra banayein"}
-            </Button>
-          )}
-          {results.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={downloadAll}
-              disabled={busy}
-              className="border-amber-900/20 text-amber-900 hover:bg-amber-50 text-xs font-semibold gap-1.5"
+              <input
+                type="checkbox"
+                checked={selected.has(s.id)}
+                onChange={() => toggle(s.id)}
+                className="w-4 h-4 accent-orange-600"
+              />
+              {s.name}
+            </label>
+          ))}
+          {hawans.map((s) => (
+            <label
+              key={s.id}
+              className="flex items-center gap-2 min-h-[40px] px-3 rounded-md border border-dashed border-amber-300 text-sm text-stone-800 font-medium cursor-pointer hover:bg-amber-50/60 has-[:checked]:border-solid has-[:checked]:bg-amber-50"
+              title="Us din ka hawan chunein: 2nd मंगलवार = गृह शांति, अंतिम शनिवार = सर्व रोग निवारण"
             >
-              <FolderArchive className="w-3.5 h-3.5" /> Sab download karein (ZIP)
-            </Button>
-          )}
+              <input
+                type="checkbox"
+                checked={selected.has(s.id)}
+                onChange={() => toggle(s.id)}
+                className="w-4 h-4 accent-orange-600"
+              />
+              {s.name} 🔥
+            </label>
+          ))}
         </div>
-        {err && <div className="text-[11px] text-rose-600">{err}</div>}
+      </div>
 
-        {results.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {results.map((r) => (
-              <div
-                key={r.patraNo}
-                className="border border-amber-900/10 rounded-xl p-2 bg-amber-50/20 space-y-1.5"
-              >
-                <a href={r.url} target="_blank" rel="noreferrer">
-                  <img
-                    src={r.url}
-                    alt={r.entry.gotra}
-                    className="w-full h-auto rounded border border-amber-900/10 hover:opacity-90"
-                  />
-                </a>
-                <div className="text-[11px] font-semibold text-slate-800 truncate">
-                  {r.entry.gotra}
-                </div>
-                <div className="text-[10px] text-slate-500 truncate">
-                  {r.entry.names.join(", ")}
-                </div>
-                <a
-                  href={r.url}
-                  download={`${r.patraNo}.png`}
-                  className="text-[11px] text-amber-800 font-semibold flex items-center gap-1 hover:underline"
-                >
-                  <Download className="w-3 h-3" /> Download
-                </a>
-              </div>
-            ))}
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:flex-wrap">
+        <label className="inline-flex items-center justify-center gap-2 h-11 sm:h-9 px-4 rounded-md border border-dashed border-stone-300 bg-stone-50 text-sm font-medium text-stone-700 cursor-pointer hover:bg-stone-100 hover:border-stone-400 transition-colors">
+          <FileSpreadsheet className="w-4 h-4 text-stone-500" />
+          Excel chunein (.xlsx)
+          <input type="file" accept=".xlsx" onChange={onFile} className="hidden" />
+        </label>
+        {fileName && (
+          <span className="text-xs text-stone-600 break-all">
+            {fileName} — <b>{entries.length}</b> patra milе
+          </span>
         )}
-      </CardContent>
-    </Card>
+        {entries.length > 0 && (
+          <Button
+            onClick={generate}
+            disabled={busy}
+            className="h-11 sm:h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            {progress ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ImageIcon className="w-4 h-4" />
+            )}
+            {progress ? `Banate hue ${progress.done}/${progress.total}…` : "Patra banayein"}
+          </Button>
+        )}
+        {results.length > 0 && (
+          <Button
+            variant="outline"
+            onClick={downloadAll}
+            disabled={busy}
+            className="h-11 sm:h-9 gap-1.5"
+          >
+            <FolderArchive className="w-4 h-4" /> Sab download karein (ZIP)
+          </Button>
+        )}
+      </div>
+      {err && (
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{err}</span>
+        </Notice>
+      )}
+
+      {results.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {results.map((r) => (
+            <div
+              key={r.patraNo}
+              className="rounded-lg border border-stone-200 bg-white p-2 space-y-1.5 min-w-0"
+            >
+              <a href={r.url} target="_blank" rel="noreferrer">
+                <img
+                  src={r.url}
+                  alt={r.entry.gotra}
+                  className="w-full h-auto rounded border border-stone-200 hover:opacity-90"
+                />
+              </a>
+              <div className="text-[13px] font-medium text-stone-900 truncate">{r.entry.gotra}</div>
+              <div className="text-xs text-stone-500 truncate">{r.entry.names.join(", ")}</div>
+              <Button asChild variant="outline" size="sm" className="w-full h-9 gap-1.5">
+                <a href={r.url} download={`${r.patraNo}.png`}>
+                  <Download className="w-4 h-4" /> Download
+                </a>
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
   );
 }

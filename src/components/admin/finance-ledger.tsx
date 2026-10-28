@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  AlertCircle,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -29,6 +30,7 @@ import { todayIST } from "@/lib/offline-subscriptions-logic";
 import { ENTRY_METHODS } from "@/lib/finance-requests";
 import { inr } from "@/lib/finance-ui";
 import { fmtDate } from "@/lib/reports-logic";
+import { EmptyState, Notice, TableScroll } from "@/components/admin/admin-ui";
 
 // The expense / other-income LEDGER (owner-only). Entries are soft-deleted
 // with a reason; edits are audited server-side with a before/after diff.
@@ -77,7 +79,7 @@ interface EntryDraft {
 }
 
 const selectCls =
-  "w-full text-sm border border-amber-200 rounded-md px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700";
+  "w-full min-w-0 text-sm border border-stone-300 rounded-md px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-orange-600/30 bg-white text-stone-700";
 
 const METHOD_LABEL: Record<string, string> = {
   upi: "UPI",
@@ -196,10 +198,54 @@ export function FinanceLedger({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const visibleCats = categories.filter((c) => !entryType || c.entry_type === entryType);
 
+  const groupLabel = (e: LedgerEntry) => {
+    const cat = catOf(e);
+    return cat?.entry_type === "income"
+      ? "Income"
+      : cat?.pnl_group === "direct"
+        ? "Direct cost"
+        : "Operating";
+  };
+  const metaLine = (e: LedgerEntry) =>
+    `${e.counterparty ?? ""}${e.amortize_months > 1 ? ` · spread over ${e.amortize_months} months` : ""}${e.reference_no ? ` · ref ${e.reference_no}` : ""}`;
+
+  const rowActions = (e: LedgerEntry) => (
+    <div className="flex gap-1 justify-end">
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-9 w-9 md:h-8 md:w-8 p-0 text-stone-500 hover:text-stone-900"
+        aria-label="Edit entry"
+        onClick={() => setEditing(toDraft(e, false))}
+      >
+        <Pencil className="w-3.5 h-3.5" />
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-9 w-9 md:h-8 md:w-8 p-0 text-stone-500 hover:text-stone-900"
+        aria-label="Duplicate entry with today's date"
+        title="Duplicate (today's date)"
+        onClick={() => setEditing(toDraft(e, true))}
+      >
+        <Copy className="w-3.5 h-3.5" />
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-9 w-9 md:h-8 md:w-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+        aria-label="Delete entry"
+        onClick={() => setDeleting(e)}
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </Button>
+    </div>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="bg-white border border-amber-900/10 rounded-xl p-4 space-y-3">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2.5">
+      <div className="admin-card p-3 sm:p-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
           <Input
             type="date"
             value={from}
@@ -208,7 +254,7 @@ export function FinanceLedger({
               setPage(1);
             }}
             aria-label="From date"
-            className="h-9 text-xs"
+            className="h-9 text-sm min-w-0"
           />
           <Input
             type="date"
@@ -218,10 +264,10 @@ export function FinanceLedger({
               setPage(1);
             }}
             aria-label="To date"
-            className="h-9 text-xs"
+            className="h-9 text-sm min-w-0"
           />
           <select
-            className={`${selectCls} h-9 text-xs`}
+            className={`${selectCls} h-9`}
             value={entryType}
             onChange={(e) => {
               setEntryType(e.target.value as "" | "expense" | "income");
@@ -235,7 +281,7 @@ export function FinanceLedger({
             <option value="income">Other income</option>
           </select>
           <select
-            className={`${selectCls} h-9 text-xs`}
+            className={`${selectCls} h-9`}
             value={categoryId}
             onChange={(e) => {
               setCategoryId(e.target.value);
@@ -252,7 +298,7 @@ export function FinanceLedger({
             ))}
           </select>
           <div className="relative col-span-2 md:col-span-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
             <Input
               value={q}
               onChange={(e) => {
@@ -260,13 +306,14 @@ export function FinanceLedger({
                 setPage(1);
               }}
               placeholder="Search…"
-              className="pl-8 h-9 text-xs"
+              aria-label="Search entries"
+              className="pl-8 h-9 text-sm"
             />
           </div>
           <Button
             size="sm"
             onClick={() => setEditing(blankDraft())}
-            className="h-9 text-xs gap-1.5 bg-amber-700 hover:bg-amber-800 text-white"
+            className="col-span-2 md:col-span-1 h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
           >
             <Plus className="w-3.5 h-3.5" /> Add entry
           </Button>
@@ -274,131 +321,136 @@ export function FinanceLedger({
       </div>
 
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs">
+        <Notice tone="bad" icon={AlertCircle}>
           {error}
-        </div>
+        </Notice>
       )}
 
-      <div className="bg-white border border-amber-900/10 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-amber-100 bg-amber-50/60 text-[10px] font-bold uppercase tracking-wider text-amber-900/60">
-                <th className="text-left py-2.5 px-3">Date</th>
-                <th className="text-left py-2.5 px-3">Category</th>
-                <th className="text-left py-2.5 px-3">Description</th>
-                <th className="text-right py-2.5 px-3">Amount</th>
-                <th className="text-left py-2.5 px-3">Method</th>
-                <th className="py-2.5 px-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {loading &&
-                [...Array(5)].map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={6} className="p-3">
-                      <Skeleton className="h-5 w-full bg-amber-50" />
-                    </td>
-                  </tr>
-                ))}
-              {!loading && entries.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-sm text-slate-400">
-                    Is period mein koi entry nahi.
-                  </td>
-                </tr>
-              )}
-              {!loading &&
-                entries.map((e) => {
-                  const cat = catOf(e);
-                  const isIncome = cat?.entry_type === "income";
-                  return (
-                    <tr
-                      key={e.id}
-                      className="border-b border-amber-50 align-top hover:bg-amber-50/30"
-                    >
-                      <td className="py-2.5 px-3 text-xs text-slate-600 whitespace-nowrap">
-                        {fmtDate(e.entry_date)}
-                      </td>
-                      <td className="py-2.5 px-3 text-xs">
-                        <div className="font-medium text-slate-800">{cat?.name ?? "—"}</div>
-                        <div className="text-[10px] text-slate-400">
-                          {isIncome
-                            ? "Income"
-                            : cat?.pnl_group === "direct"
-                              ? "Direct cost"
-                              : "Operating"}
+      <div className="admin-card overflow-hidden">
+        {loading ? (
+          <div className="p-4 space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full bg-stone-100" />
+            ))}
+          </div>
+        ) : entries.length === 0 ? (
+          <EmptyState title="Is period mein koi entry nahi." />
+        ) : (
+          <>
+            {/* Phone: stacked cards */}
+            <ul className="md:hidden divide-y divide-stone-100">
+              {entries.map((e) => {
+                const cat = catOf(e);
+                const isIncome = cat?.entry_type === "income";
+                const meta = metaLine(e);
+                return (
+                  <li key={e.id} className="px-4 py-3 space-y-1.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-stone-900 truncate">
+                          {cat?.name ?? "—"}
                         </div>
-                      </td>
-                      <td className="py-2.5 px-3 text-xs text-slate-700 max-w-xs">
-                        <div>{e.description}</div>
-                        <div className="text-[10px] text-slate-400">
-                          {e.counterparty ?? ""}
-                          {e.amortize_months > 1
-                            ? ` · spread over ${e.amortize_months} months`
-                            : ""}
-                          {e.reference_no ? ` · ref ${e.reference_no}` : ""}
+                        <div className="text-xs text-stone-500">
+                          {fmtDate(e.entry_date)} · {groupLabel(e)} ·{" "}
+                          {METHOD_LABEL[e.payment_method] ?? e.payment_method}
                         </div>
-                        {e.receipt_url && (
-                          <a
-                            href={e.receipt_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[10px] text-amber-800 underline"
-                          >
-                            Receipt
-                          </a>
-                        )}
-                      </td>
-                      <td
-                        className={`py-2.5 px-3 text-right font-semibold whitespace-nowrap ${isIncome ? "text-emerald-700" : "text-slate-900"}`}
+                      </div>
+                      <div
+                        className={`text-sm font-semibold tabular-nums whitespace-nowrap ${isIncome ? "text-emerald-700" : "text-stone-900"}`}
                       >
                         {isIncome ? "+" : "−"}
                         {inr(e.amount_paise)}
-                      </td>
-                      <td className="py-2.5 px-3 text-xs text-slate-600">
-                        {METHOD_LABEL[e.payment_method] ?? e.payment_method}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <div className="flex gap-1 justify-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0"
-                            aria-label="Edit entry"
-                            onClick={() => setEditing(toDraft(e, false))}
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0"
-                            aria-label="Duplicate entry with today's date"
-                            title="Duplicate (today's date)"
-                            onClick={() => setEditing(toDraft(e, true))}
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0 text-red-700"
-                            aria-label="Delete entry"
-                            onClick={() => setDeleting(e)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </td>
+                      </div>
+                    </div>
+                    <p className="text-sm text-stone-700 break-words">{e.description}</p>
+                    {meta && <p className="text-xs text-stone-500 break-all">{meta}</p>}
+                    <div className="flex items-center justify-between gap-2">
+                      {e.receipt_url ? (
+                        <a
+                          href={e.receipt_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-medium text-orange-700 hover:underline"
+                        >
+                          Receipt
+                        </a>
+                      ) : (
+                        <span />
+                      )}
+                      {rowActions(e)}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Tablet / desktop: table */}
+            <div className="hidden md:block">
+              <TableScroll>
+                <table className="admin-table-fixed w-full min-w-[720px] text-sm">
+                  <thead>
+                    <tr className="border-b border-stone-200 bg-stone-50 text-xs font-medium text-stone-500">
+                      <th className="text-left font-medium py-2.5 px-4">Date</th>
+                      <th className="text-left font-medium py-2.5 px-3">Category</th>
+                      <th className="text-left font-medium py-2.5 px-3">Description</th>
+                      <th className="text-right font-medium py-2.5 px-3">Amount</th>
+                      <th className="text-left font-medium py-2.5 px-3">Method</th>
+                      <th className="py-2.5 px-4">
+                        <span className="sr-only">Actions</span>
+                      </th>
                     </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {entries.map((e) => {
+                      const cat = catOf(e);
+                      const isIncome = cat?.entry_type === "income";
+                      const meta = metaLine(e);
+                      return (
+                        <tr key={e.id} className="align-top hover:bg-stone-50/60">
+                          <td className="py-3 px-4 text-[13px] text-stone-600 whitespace-nowrap">
+                            {fmtDate(e.entry_date)}
+                          </td>
+                          <td className="py-3 px-3 text-[13px]">
+                            <div className="font-medium text-stone-900">{cat?.name ?? "—"}</div>
+                            <div className="text-xs text-stone-400">{groupLabel(e)}</div>
+                          </td>
+                          <td className="py-3 px-3 text-[13px] text-stone-700 max-w-xs">
+                            <div className="break-words">{e.description}</div>
+                            {meta && (
+                              <div className="text-xs text-stone-400 break-words">{meta}</div>
+                            )}
+                            {e.receipt_url && (
+                              <a
+                                href={e.receipt_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs font-medium text-orange-700 hover:underline"
+                              >
+                                Receipt
+                              </a>
+                            )}
+                          </td>
+                          <td
+                            className={`py-3 px-3 text-right font-semibold tabular-nums whitespace-nowrap ${isIncome ? "text-emerald-700" : "text-stone-900"}`}
+                          >
+                            {isIncome ? "+" : "−"}
+                            {inr(e.amount_paise)}
+                          </td>
+                          <td className="py-3 px-3 text-[13px] text-stone-600">
+                            {METHOD_LABEL[e.payment_method] ?? e.payment_method}
+                          </td>
+                          <td className="py-2 px-4">{rowActions(e)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </TableScroll>
+            </div>
+          </>
+        )}
         {total > PAGE_SIZE && (
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-amber-100 bg-amber-50/30 text-xs text-amber-900/70">
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-t border-stone-100 text-xs text-stone-500">
             <span>
               Page {page} of {totalPages} · {total} entries
             </span>
@@ -406,7 +458,7 @@ export function FinanceLedger({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 w-7 p-0"
+                className="h-9 w-9 md:h-8 md:w-8 p-0"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
                 aria-label="Previous page"
@@ -416,7 +468,7 @@ export function FinanceLedger({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 w-7 p-0"
+                className="h-9 w-9 md:h-8 md:w-8 p-0"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
                 aria-label="Next page"
@@ -464,7 +516,7 @@ function EntryDialog({
 }) {
   return (
     <Dialog open={!!draft} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[90vh] overflow-y-auto rounded-xl p-5 sm:p-6">
         {draft && (
           <EntryForm
             key={draft.id ?? "new"}
@@ -545,7 +597,11 @@ function EntryForm({
       </DialogHeader>
 
       <div className="space-y-3">
-        <div className="flex gap-1.5">
+        <div
+          className="inline-flex gap-1 rounded-lg bg-stone-100 p-1"
+          role="group"
+          aria-label="Entry type"
+        >
           {(["expense", "income"] as const).map((t) => (
             <button
               key={t}
@@ -555,10 +611,10 @@ function EntryForm({
                 set("entryType", t);
                 set("categoryId", "");
               }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border disabled:opacity-60 ${
+              className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors disabled:opacity-60 ${
                 d.entryType === t
-                  ? "bg-amber-700 text-white border-amber-700"
-                  : "bg-white text-slate-700 border-amber-200"
+                  ? "bg-white text-stone-900 shadow-sm"
+                  : "text-stone-500 hover:text-stone-800"
               }`}
             >
               {t === "expense" ? "Expense" : "Income"}
@@ -656,7 +712,7 @@ function EntryForm({
 
         <div className="space-y-1">
           <Label>Receipt (optional)</Label>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <CloudinaryImageButton
               folder="punyata-finance/receipts"
               label={d.receiptUrl ? "Replace receipt" : "Upload receipt"}
@@ -667,13 +723,13 @@ function EntryForm({
                 href={d.receiptUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-amber-800 underline"
+                className="text-xs font-medium text-orange-700 hover:underline"
               >
                 View uploaded
               </a>
             )}
           </div>
-          <p className="text-[10px] text-slate-500">
+          <p className="text-xs text-stone-500">
             Cloudinary links are unguessable but public — don&apos;t upload anything showing a full
             bank account number.
           </p>
@@ -699,7 +755,7 @@ function EntryForm({
         <div>
           <button
             type="button"
-            className="text-xs text-amber-800 underline"
+            className="py-1 text-xs font-medium text-orange-700 hover:underline"
             onClick={() => setAdvanced((a) => !a)}
           >
             {advanced ? "Hide advanced" : "Advanced: spread over several months"}
@@ -718,7 +774,7 @@ function EntryForm({
                 }
                 className="w-28"
               />
-              <p className="text-[10px] text-slate-500">
+              <p className="text-xs text-stone-500">
                 Normalised P&amp;L basis splits this amount equally across N months (e.g. a yearly
                 hosting bill = 12). Cash basis still books it in the month paid.
               </p>
@@ -727,9 +783,9 @@ function EntryForm({
         </div>
       </div>
 
-      {err && <p className="text-xs text-red-700">{err}</p>}
+      {err && <p className="text-xs text-rose-700">{err}</p>}
 
-      <DialogFooter>
+      <DialogFooter className="gap-2">
         <Button variant="outline" onClick={onClose} disabled={busy}>
           Cancel
         </Button>
@@ -738,7 +794,7 @@ function EntryForm({
           disabled={
             busy || !d.categoryId || !d.description.trim() || !Number.isFinite(paise) || paise < 1
           }
-          className="bg-amber-700 hover:bg-amber-800 text-white"
+          className="bg-orange-600 hover:bg-orange-700 text-white"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
           Save entry
@@ -788,7 +844,7 @@ function DeleteDialog({
 
   return (
     <Dialog open={!!entry} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md max-h-[90vh] overflow-y-auto rounded-xl p-5 sm:p-6">
         <DialogHeader>
           <DialogTitle>Delete entry</DialogTitle>
           <DialogDescription>
@@ -806,15 +862,15 @@ function DeleteDialog({
             onChange={(e) => setReason(e.target.value)}
           />
         </div>
-        {err && <p className="text-xs text-red-700">{err}</p>}
-        <DialogFooter>
+        {err && <p className="text-xs text-rose-700">{err}</p>}
+        <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             Back
           </Button>
           <Button
             onClick={go}
             disabled={busy || reason.trim().length < 3}
-            className="bg-red-700 hover:bg-red-800 text-white"
+            className="bg-rose-600 hover:bg-rose-700 text-white"
           >
             {busy && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
             Delete entry

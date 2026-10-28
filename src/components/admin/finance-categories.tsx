@@ -1,9 +1,19 @@
 import { useState } from "react";
-import { Archive, ArchiveRestore, Check, Loader2, Pencil, Plus, X } from "lucide-react";
+import {
+  AlertCircle,
+  Archive,
+  ArchiveRestore,
+  Check,
+  Loader2,
+  Pencil,
+  Plus,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { callAdminApi } from "@/lib/admin-api";
 import type { FinanceCategory } from "@/components/admin/finance-ledger";
+import { Notice, Panel, StatusPill } from "@/components/admin/admin-ui";
 
 // Category manager (owner-only). Categories are never deleted: they are
 // added, renamed, re-sorted or archived. Once a category has entries its
@@ -56,28 +66,29 @@ export function FinanceCategories({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs">
+        <Notice tone="bad" icon={AlertCircle}>
           {error}
+        </Notice>
+      )}
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-stone-500">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading categories…
         </div>
       )}
-      {loading && <Loader2 className="w-5 h-5 animate-spin text-amber-700" />}
 
       {GROUPS.map((g) => {
         const rows = categories.filter((c) => c.pnl_group === g.key);
         return (
-          <section
+          <Panel
             key={g.key}
-            className="bg-white border border-amber-900/10 rounded-xl overflow-hidden"
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-amber-100 bg-amber-50/50">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900">{g.title}</h3>
-                <p className="text-[11px] text-slate-500">{g.hint}</p>
-              </div>
+            title={g.title}
+            description={g.hint}
+            flush
+            actions={
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 text-xs gap-1"
+                className="h-9 gap-1"
                 onClick={() => {
                   setAdding(g.key);
                   setNewName("");
@@ -85,21 +96,21 @@ export function FinanceCategories({
               >
                 <Plus className="w-3.5 h-3.5" /> Add
               </Button>
-            </div>
-
+            }
+          >
             {adding === g.key && (
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-amber-50 bg-amber-50/30">
+              <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 border-b border-stone-100 bg-stone-50">
                 <Input
                   autoFocus
                   value={newName}
                   maxLength={80}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="New category name"
-                  className="h-8 text-xs"
+                  className="h-9 text-sm min-w-0 flex-1"
                 />
                 <Button
                   size="sm"
-                  className="h-8 gap-1 text-xs bg-amber-700 hover:bg-amber-800 text-white"
+                  className="h-9 gap-1 shrink-0 bg-orange-600 hover:bg-orange-700 text-white"
                   disabled={!newName.trim() || busyId === "new"}
                   onClick={async () => {
                     if (
@@ -126,7 +137,7 @@ export function FinanceCategories({
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0"
+                  className="h-9 w-9 shrink-0 p-0 text-stone-500 hover:text-stone-900"
                   aria-label="Cancel"
                   onClick={() => setAdding(null)}
                 >
@@ -135,14 +146,14 @@ export function FinanceCategories({
               </div>
             )}
 
-            <ul>
+            <ul className="divide-y divide-stone-100">
               {rows.length === 0 && (
-                <li className="px-4 py-4 text-xs text-slate-400">Koi category nahi.</li>
+                <li className="px-4 sm:px-5 py-5 text-sm text-stone-400">Koi category nahi.</li>
               )}
               {rows.map((c) => (
                 <li
                   key={c.id}
-                  className={`flex items-center gap-2 px-4 py-2.5 border-b border-amber-50 last:border-0 ${c.is_archived ? "opacity-60" : ""}`}
+                  className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 ${c.is_archived ? "opacity-60" : ""}`}
                 >
                   {editId === c.id ? (
                     <>
@@ -150,19 +161,19 @@ export function FinanceCategories({
                         value={editName}
                         maxLength={80}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="h-8 text-xs flex-1"
+                        className="h-9 text-sm min-w-0 flex-1"
                         aria-label="Category name"
                       />
                       <Input
                         value={editSort}
                         inputMode="numeric"
                         onChange={(e) => setEditSort(e.target.value)}
-                        className="h-8 text-xs w-20"
+                        className="h-9 text-sm w-16 sm:w-20 shrink-0"
                         aria-label="Sort order"
                       />
                       <Button
                         size="sm"
-                        className="h-8 gap-1 text-xs bg-amber-700 hover:bg-amber-800 text-white"
+                        className="h-9 gap-1 shrink-0 bg-orange-600 hover:bg-orange-700 text-white"
                         disabled={!editName.trim() || busyId === c.id}
                         onClick={async () => {
                           const sort = editSort.trim() === "" ? undefined : Number(editSort);
@@ -191,7 +202,7 @@ export function FinanceCategories({
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-8 w-8 p-0"
+                        className="h-9 w-9 shrink-0 p-0 text-stone-500 hover:text-stone-900"
                         aria-label="Cancel"
                         onClick={() => setEditId(null)}
                       >
@@ -201,22 +212,18 @@ export function FinanceCategories({
                   ) : (
                     <>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-800">
-                          {c.name}
-                          {c.is_archived && (
-                            <span className="ml-2 text-[10px] font-semibold text-slate-500 border border-slate-200 rounded-full px-1.5 py-0.5">
-                              Archived
-                            </span>
-                          )}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-stone-900">
+                          <span className="break-words min-w-0">{c.name}</span>
+                          {c.is_archived && <StatusPill>Archived</StatusPill>}
                         </div>
-                        <div className="text-[11px] text-slate-400">
+                        <div className="text-xs text-stone-400">
                           {c.entry_count ?? 0} entries · order {c.sort_order}
                         </div>
                       </div>
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-8 w-8 p-0"
+                        className="h-9 w-9 shrink-0 p-0 text-stone-500 hover:text-stone-900"
                         aria-label={`Rename ${c.name}`}
                         onClick={() => {
                           setEditId(c.id);
@@ -229,7 +236,7 @@ export function FinanceCategories({
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-8 w-8 p-0"
+                        className="h-9 w-9 shrink-0 p-0 text-stone-500 hover:text-stone-900"
                         aria-label={c.is_archived ? `Restore ${c.name}` : `Archive ${c.name}`}
                         title={c.is_archived ? "Restore" : "Archive"}
                         disabled={busyId === c.id}
@@ -248,7 +255,7 @@ export function FinanceCategories({
                 </li>
               ))}
             </ul>
-          </section>
+          </Panel>
         );
       })}
     </div>

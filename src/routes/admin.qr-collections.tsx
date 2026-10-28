@@ -31,6 +31,16 @@ import {
   VoidPaymentDialog,
   type RecordPaymentTarget,
 } from "@/components/admin/offline-dialogs";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  Panel,
+  SegmentedTabs,
+  StatCard,
+  StatusPill,
+  type Tone,
+} from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/qr-collections")({
   // OWNER-ONLY (shows ₹ amounts — same gate discipline as /admin/commissions).
@@ -104,13 +114,13 @@ interface HistoryItem {
       }[];
 }
 
-const CHIP: Record<DueState, { label: string; cls: string }> = {
-  paid: { label: "Paid", cls: "bg-emerald-50 text-emerald-800 border-emerald-200" },
-  due_soon: { label: "Due soon", cls: "bg-amber-50 text-amber-800 border-amber-200" },
-  overdue_grace: { label: "Overdue (grace)", cls: "bg-red-50 text-red-800 border-red-200" },
-  lapsed: { label: "Lapsed", cls: "bg-slate-100 text-slate-600 border-slate-200" },
-  cancelled: { label: "Cancelled", cls: "bg-slate-50 text-slate-400 border-slate-200" },
-  not_offline: { label: "—", cls: "bg-slate-50 text-slate-400 border-slate-200" },
+const CHIP: Record<DueState, { label: string; tone: Tone }> = {
+  paid: { label: "Paid", tone: "good" },
+  due_soon: { label: "Due soon", tone: "warn" },
+  overdue_grace: { label: "Overdue (grace)", tone: "bad" },
+  lapsed: { label: "Lapsed", tone: "neutral" },
+  cancelled: { label: "Cancelled", tone: "neutral" },
+  not_offline: { label: "—", tone: "neutral" },
 };
 
 const FILTERS: { key: "all" | DueState; label: string }[] = [
@@ -127,17 +137,6 @@ const METHOD_LABEL: Record<string, string> = {
   cash: "Cash",
   bank_transfer: "Bank",
 };
-
-function KpiTile({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="rounded-xl border border-amber-900/10 bg-white p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/60">
-        {label}
-      </div>
-      <div className={`text-xl font-bold mt-1 ${tone ?? "text-slate-900"}`}>{value}</div>
-    </div>
-  );
-}
 
 function currentMonth(): string {
   return new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 7);
@@ -195,227 +194,232 @@ function QrCollectionsPage() {
       : null;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-5 rounded-2xl border border-amber-900/10">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">QR Collections</h1>
-          <p className="text-xs text-amber-900/60 mt-0.5">
-            Offline (QR / cash / bank) subscribers — monthly payments, due dates aur lapse. Owner
-            only.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            type="month"
-            value={month}
-            onChange={(e) => e.target.value && setMonth(e.target.value)}
-            className="h-9 w-40 text-xs"
-            aria-label="Month"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void load()}
-            disabled={loading}
-            className="gap-1.5 text-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setAdding(true)}
-            className="gap-1.5 text-xs bg-amber-700 hover:bg-amber-800 text-white"
-          >
-            <Plus className="w-3.5 h-3.5" /> Add offline subscriber
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="QR Collections"
+        description="Offline (QR / cash / bank) subscribers — monthly payments, due dates aur lapse."
+        actions={
+          <>
+            <Input
+              type="month"
+              value={month}
+              onChange={(e) => e.target.value && setMonth(e.target.value)}
+              className="h-9 w-full sm:w-40 text-sm"
+              aria-label="Month"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void load()}
+              disabled={loading}
+              className="h-9 gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setAdding(true)}
+              className="h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add offline subscriber
+            </Button>
+          </>
+        }
+      />
 
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs">
-          {error}
-        </div>
-      )}
+      {error && <Notice tone="bad">{error}</Notice>}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <KpiTile label="Expected this month" value={t ? fmtINR(t.expectedThisMonth) : "—"} />
-        <KpiTile
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        <StatCard
+          label="Expected this month"
+          value={t ? fmtINR(t.expectedThisMonth) : "—"}
+          loading={loading && !t}
+        />
+        <StatCard
           label="Collected this month"
           value={t ? fmtINR(t.collectedThisMonth) : "—"}
-          tone="text-emerald-700"
+          loading={loading && !t}
         />
-        <KpiTile label="Collection %" value={pct === null ? "—" : `${pct}%`} />
-        <KpiTile
+        <StatCard
+          label="Collection %"
+          value={pct === null ? "—" : `${pct}%`}
+          loading={loading && !t}
+        />
+        <StatCard
           label="Overdue (grace)"
           value={t ? String(t.overdueCount) : "—"}
-          tone="text-red-700"
+          loading={loading && !t}
+          status={t && t.overdueCount > 0 ? { tone: "bad", text: "Follow up" } : undefined}
         />
-        <KpiTile label="Lapsed" value={t ? String(t.lapsedCount) : "—"} tone="text-slate-600" />
+        <StatCard
+          label="Lapsed"
+          value={t ? String(t.lapsedCount) : "—"}
+          loading={loading && !t}
+          className="col-span-2 lg:col-span-1"
+        />
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center gap-3">
-        <div className="flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                filter === f.key
-                  ? "bg-amber-700 text-white border-amber-700"
-                  : "bg-white text-slate-700 border-amber-200"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <div className="relative md:ml-auto md:w-72">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Name or phone…"
-            className="pl-8 h-9 text-xs"
+      <Panel flush title="Subscribers" description="Naam par tap karein — payment history khulegi.">
+        <div className="flex flex-col md:flex-row md:items-center gap-3 px-4 sm:px-5 py-3 border-b border-stone-100">
+          <SegmentedTabs
+            value={filter}
+            onChange={setFilter}
+            items={FILTERS.map((f) => ({ value: f.key, label: f.label }))}
+            className="min-w-0"
           />
-        </div>
-      </div>
-
-      <div className="space-y-2.5">
-        {loading &&
-          [...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full bg-amber-50 rounded-xl" />
-          ))}
-
-        {!loading && rows.length === 0 && (
-          <div className="bg-white border border-amber-900/10 rounded-xl p-10 text-center text-sm text-slate-400">
-            {data?.rows.length
-              ? "Is filter mein koi subscriber nahi."
-              : 'Abhi koi offline subscriber nahi hai — "Add offline subscriber" se shuru karein.'}
+          <div className="relative w-full md:ml-auto md:w-72">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Name or phone…"
+              className="pl-8 h-9 text-sm"
+            />
           </div>
-        )}
+        </div>
 
-        {!loading &&
-          rows.map((r) => {
-            const chip = CHIP[r.dueState];
-            const live = r.status === "active" || r.status === "halted";
-            const label = r.name || r.phone || r.subscriptionId.slice(0, 8);
-            const waLink =
-              r.phone && r.nextBillingDate && live
-                ? buildOwnerReminderLink({
-                    name: r.name ?? "",
-                    phone: r.phone,
-                    dueDate: r.nextBillingDate,
-                    amountPaise: r.expectedPaise,
-                    vpa: data?.upiVpa,
-                  })
-                : null;
-            return (
-              <div
-                key={r.subscriptionId}
-                className="bg-white border border-amber-900/10 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center gap-3"
-              >
-                <button
-                  type="button"
-                  onClick={() => setHistoryFor(r)}
-                  className="text-left flex-1 min-w-0 group"
-                  aria-label={`Payment history of ${label}`}
+        <div className="divide-y divide-stone-100">
+          {loading &&
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="p-4 sm:px-5">
+                <Skeleton className="h-16 w-full bg-stone-100 rounded-lg" />
+              </div>
+            ))}
+
+          {!loading && rows.length === 0 && (
+            <EmptyState
+              icon={Wallet}
+              title={
+                data?.rows.length
+                  ? "Is filter mein koi subscriber nahi."
+                  : 'Abhi koi offline subscriber nahi hai — "Add offline subscriber" se shuru karein.'
+              }
+            />
+          )}
+
+          {!loading &&
+            rows.map((r) => {
+              const chip = CHIP[r.dueState];
+              const live = r.status === "active" || r.status === "halted";
+              const label = r.name || r.phone || r.subscriptionId.slice(0, 8);
+              const waLink =
+                r.phone && r.nextBillingDate && live
+                  ? buildOwnerReminderLink({
+                      name: r.name ?? "",
+                      phone: r.phone,
+                      dueDate: r.nextBillingDate,
+                      amountPaise: r.expectedPaise,
+                      vpa: data?.upiVpa,
+                    })
+                  : null;
+              return (
+                <div
+                  key={r.subscriptionId}
+                  className="px-4 sm:px-5 py-4 flex flex-col lg:flex-row lg:items-center gap-3"
                 >
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-slate-900 group-hover:underline">
-                      {label}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${chip.cls}`}
-                    >
-                      {chip.label}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    {r.phone ?? "—"} · {r.planName ?? "—"} · expected {fmtINR(r.expectedPaise)}/mo
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setHistoryFor(r)}
+                    className="text-left flex-1 min-w-0 group"
+                    aria-label={`Payment history of ${label}`}
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-stone-900 group-hover:underline break-all">
+                        {label}
+                      </span>
+                      <StatusPill tone={chip.tone}>{chip.label}</StatusPill>
+                    </div>
+                    <div className="text-xs text-stone-500 mt-1">
+                      {r.phone ?? "—"} · {r.planName ?? "—"} · expected {fmtINR(r.expectedPaise)}/mo
+                    </div>
+                  </button>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs lg:w-[26rem]">
-                  <div>
-                    <div className="text-[10px] uppercase text-slate-400 font-semibold">
-                      Next due
-                    </div>
-                    <div className="font-medium text-slate-800">{fmtDate(r.nextBillingDate)}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase text-slate-400 font-semibold">
-                      Last paid
-                    </div>
-                    {r.lastPayment ? (
-                      <div className="font-medium text-slate-800">
-                        {fmtDate(r.lastPayment.paidAt)} ·{" "}
-                        {r.lastPayment.amountPaise != null
-                          ? fmtINR(r.lastPayment.amountPaise)
-                          : "—"}
-                        <div className="text-[10px] text-slate-500 font-normal">
-                          {METHOD_LABEL[r.lastPayment.method ?? ""] ?? r.lastPayment.method}
-                          {r.lastPayment.referenceNo ? ` · ${r.lastPayment.referenceNo}` : ""}
-                        </div>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] lg:w-[26rem]">
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-stone-500">Next due</div>
+                      <div className="text-stone-800 tabular-nums">
+                        {fmtDate(r.nextBillingDate)}
                       </div>
-                    ) : (
-                      <div className="text-slate-400">—</div>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-stone-500">Last paid</div>
+                      {r.lastPayment ? (
+                        <div className="text-stone-800 tabular-nums">
+                          {fmtDate(r.lastPayment.paidAt)} ·{" "}
+                          {r.lastPayment.amountPaise != null
+                            ? fmtINR(r.lastPayment.amountPaise)
+                            : "—"}
+                          <div className="text-xs text-stone-500 break-all">
+                            {METHOD_LABEL[r.lastPayment.method ?? ""] ?? r.lastPayment.method}
+                            {r.lastPayment.referenceNo ? ` · ${r.lastPayment.referenceNo}` : ""}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-stone-400">—</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 lg:justify-end lg:max-w-[18rem]">
+                    {live && (
+                      <Button
+                        size="sm"
+                        className="h-9 sm:h-8 text-xs gap-1 bg-orange-600 hover:bg-orange-700 text-white"
+                        onClick={() =>
+                          setRecordTarget({
+                            subscriptionId: r.subscriptionId,
+                            name: r.name,
+                            status: r.status,
+                            nextBillingDate: r.nextBillingDate,
+                            anchorDay: r.anchorDay,
+                            planPricePaise: r.planPricePaise,
+                            planBillingPeriod: r.planBillingPeriod,
+                          })
+                        }
+                      >
+                        <Wallet className="w-3.5 h-3.5" /> Record payment
+                      </Button>
+                    )}
+                    {live && r.lastPayment && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-9 sm:h-8 text-xs gap-1"
+                        onClick={() =>
+                          setVoidTarget({ paymentId: r.lastPayment!.paymentId, label })
+                        }
+                      >
+                        <Undo2 className="w-3.5 h-3.5" /> Void last
+                      </Button>
+                    )}
+                    {waLink && (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="h-9 sm:h-8 text-xs gap-1"
+                      >
+                        <a href={waLink} target="_blank" rel="noreferrer">
+                          <MessageCircle className="w-3.5 h-3.5" /> Remind
+                        </a>
+                      </Button>
+                    )}
+                    {live && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-9 sm:h-8 text-xs gap-1 text-rose-700 border-rose-200 hover:bg-rose-50 hover:text-rose-800"
+                        onClick={() => setStopTarget({ subscriptionId: r.subscriptionId, label })}
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Stop
+                      </Button>
                     )}
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-1.5 lg:justify-end">
-                  {live && (
-                    <Button
-                      size="sm"
-                      className="h-8 text-xs gap-1 bg-amber-700 hover:bg-amber-800 text-white"
-                      onClick={() =>
-                        setRecordTarget({
-                          subscriptionId: r.subscriptionId,
-                          name: r.name,
-                          status: r.status,
-                          nextBillingDate: r.nextBillingDate,
-                          anchorDay: r.anchorDay,
-                          planPricePaise: r.planPricePaise,
-                          planBillingPeriod: r.planBillingPeriod,
-                        })
-                      }
-                    >
-                      <Wallet className="w-3.5 h-3.5" /> Record payment
-                    </Button>
-                  )}
-                  {live && r.lastPayment && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs gap-1"
-                      onClick={() => setVoidTarget({ paymentId: r.lastPayment!.paymentId, label })}
-                    >
-                      <Undo2 className="w-3.5 h-3.5" /> Void last
-                    </Button>
-                  )}
-                  {waLink && (
-                    <Button asChild size="sm" variant="outline" className="h-8 text-xs gap-1">
-                      <a href={waLink} target="_blank" rel="noreferrer">
-                        <MessageCircle className="w-3.5 h-3.5" /> Remind
-                      </a>
-                    </Button>
-                  )}
-                  {live && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs gap-1 text-red-700 border-red-200"
-                      onClick={() => setStopTarget({ subscriptionId: r.subscriptionId, label })}
-                    >
-                      <XCircle className="w-3.5 h-3.5" /> Stop
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-      </div>
+              );
+            })}
+        </div>
+      </Panel>
 
       <AddOfflineSubscriberDialog
         open={adding}
@@ -477,15 +481,15 @@ function HistorySheet({
     <Sheet open={!!row} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <History className="w-4 h-4" /> Payment history
+          <SheetTitle className="flex items-center gap-2 text-stone-900">
+            <History className="w-4 h-4 text-stone-400" /> Payment history
           </SheetTitle>
-          <SheetDescription>{row?.name ?? row?.phone ?? ""}</SheetDescription>
+          <SheetDescription className="break-all">{row?.name ?? row?.phone ?? ""}</SheetDescription>
         </SheetHeader>
         <div className="mt-4 space-y-2.5 px-4 pb-6">
-          {!items && !err && <Loader2 className="w-5 h-5 animate-spin text-amber-700" />}
-          {err && <p className="text-xs text-red-700">{err}</p>}
-          {items?.length === 0 && <p className="text-sm text-slate-400">Koi payment nahi.</p>}
+          {!items && !err && <Loader2 className="w-5 h-5 animate-spin text-stone-400" />}
+          {err && <Notice tone="bad">{err}</Notice>}
+          {items?.length === 0 && <p className="text-sm text-stone-400">Koi payment nahi.</p>}
           {items?.map((h) => {
             const p = Array.isArray(h.payments) ? h.payments[0] : h.payments;
             if (editing === h.payment_id) {
@@ -504,39 +508,40 @@ function HistorySheet({
               );
             }
             return (
-              <div
-                key={h.payment_id}
-                className="rounded-lg border border-amber-100 p-3 text-xs space-y-0.5"
-              >
-                <div className="flex justify-between font-semibold text-slate-900">
+              <div key={h.payment_id} className="admin-card p-3 text-xs space-y-1">
+                <div className="flex justify-between gap-2 text-sm font-semibold text-stone-900 tabular-nums">
                   <span>{p?.amount_paise != null ? fmtINR(p.amount_paise) : "—"}</span>
                   <span>{fmtDate(p?.paid_at ?? null)}</span>
                 </div>
-                <div className="text-slate-600">
+                <div className="text-stone-600">
                   {METHOD_LABEL[p?.method ?? ""] ?? p?.method} · {h.months_covered} mo ·{" "}
                   {fmtDate(h.period_start)} → {fmtDate(h.period_end)}
                 </div>
                 {h.reference_no && (
-                  <div className="font-mono text-[11px] text-slate-500">UTR {h.reference_no}</div>
+                  <div className="font-mono text-[11px] text-stone-500 break-all">
+                    UTR {h.reference_no}
+                  </div>
                 )}
-                {h.notes && <div className="text-slate-500">{h.notes}</div>}
-                {h.proof_url && (
-                  <a
-                    href={h.proof_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-amber-800 underline"
+                {h.notes && <div className="text-stone-500 break-words">{h.notes}</div>}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+                  {h.proof_url && (
+                    <a
+                      href={h.proof_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-orange-700 hover:underline"
+                    >
+                      Screenshot
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setEditing(h.payment_id)}
+                    className="font-medium text-orange-700 hover:underline"
                   >
-                    Screenshot
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setEditing(h.payment_id)}
-                  className="mt-1 text-amber-800 underline"
-                >
-                  Edit method / UTR / note
-                </button>
+                    Edit method / UTR / note
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -585,13 +590,13 @@ function EditPaymentForm({
   }
 
   return (
-    <div className="rounded-lg border border-amber-300 bg-amber-50/50 p-3 text-xs space-y-2">
+    <div className="rounded-lg border border-stone-300 bg-stone-50 p-3 text-xs space-y-2.5">
       <label className="block space-y-1">
-        <span className="font-semibold text-slate-700">Method</span>
+        <span className="font-medium text-stone-600">Method</span>
         <select
           value={method}
           onChange={(e) => setMethod(e.target.value)}
-          className="w-full border border-amber-200 rounded-md px-2 py-1.5 bg-white"
+          className="w-full h-9 border border-stone-200 rounded-md px-2 bg-white text-sm"
         >
           {Object.entries(METHOD_LABEL).map(([k, v]) => (
             <option key={k} value={k}>
@@ -601,28 +606,28 @@ function EditPaymentForm({
         </select>
       </label>
       <label className="block space-y-1">
-        <span className="font-semibold text-slate-700">UTR / reference</span>
+        <span className="font-medium text-stone-600">UTR / reference</span>
         <Input
           value={utr}
           maxLength={64}
           onChange={(e) => setUtr(e.target.value)}
-          className="h-8 text-xs"
+          className="h-9 text-sm bg-white"
         />
       </label>
       <label className="block space-y-1">
-        <span className="font-semibold text-slate-700">Note</span>
+        <span className="font-medium text-stone-600">Note</span>
         <Input
           value={notes}
           maxLength={1000}
           onChange={(e) => setNotes(e.target.value)}
-          className="h-8 text-xs"
+          className="h-9 text-sm bg-white"
         />
       </label>
-      {err && <p className="text-red-700">{err}</p>}
-      <div className="flex gap-2">
+      {err && <p className="text-rose-700">{err}</p>}
+      <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
-          className="h-7 text-xs bg-amber-700 hover:bg-amber-800 text-white"
+          className="h-9 sm:h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white"
           disabled={busy}
           onClick={save}
         >
@@ -631,7 +636,7 @@ function EditPaymentForm({
         <Button
           size="sm"
           variant="outline"
-          className="h-7 text-xs"
+          className="h-9 sm:h-8 text-xs"
           disabled={busy}
           onClick={onCancel}
         >

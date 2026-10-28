@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import {
-  Layers,
   RefreshCw,
   Pencil,
   Check,
@@ -14,18 +13,23 @@ import {
   Flame,
   Package,
   Award,
-  Grid,
   Clock,
   Loader2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  Panel,
+  SegmentedTabs,
+  StatusPill,
+  TableScroll,
+} from "@/components/admin/admin-ui";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CloudinaryImageButton } from "@/components/admin/CloudinaryImageButton";
 import {
@@ -192,75 +196,49 @@ function PlansSevasPage() {
     fetchAll();
   }, [fetchAll]);
 
+  const [tab, setTab] = useState<"assignment" | "plans" | "sevas" | "schedule" | "addons">(
+    "assignment",
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-amber-900/10 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Layers className="w-6 h-6 text-amber-700" />
-            Plans &amp; Sevas
-            <Badge
-              variant="outline"
-              className="bg-amber-50 text-amber-900 border-amber-300 font-mono text-[11px]"
-            >
-              Live Supabase
-            </Badge>
-          </h1>
-          <p className="text-xs text-amber-900/70 mt-1">
-            CRUD for plans, sevas, schedule rules, and tier assignments. Changes take effect
-            immediately for all subscribers.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {lastRefreshed && (
-            <span className="text-xs text-amber-900/60 font-mono hidden sm:block">
-              Updated: {lastRefreshed}
-            </span>
-          )}
+      <PageHeader
+        title="Plans & Sevas"
+        description="Plans, sevas, schedule rules and tier assignments. Changes take effect immediately for all subscribers."
+        meta={lastRefreshed ? `Updated ${lastRefreshed}` : undefined}
+        actions={
           <Button
             onClick={fetchAll}
             disabled={loading}
             variant="outline"
             size="sm"
-            className="border-amber-900/15 bg-amber-50/50 hover:bg-amber-100/50 text-amber-900 gap-1.5 text-xs font-semibold"
+            className="gap-1.5"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-amber-700" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {globalError && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl text-xs flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-          <span>{globalError}</span>
-        </div>
+        <Notice tone="bad" icon={AlertTriangle}>
+          <span className="break-words">{globalError}</span>
+        </Notice>
       )}
 
-      <Tabs defaultValue="assignment">
-        <TabsList className="bg-amber-50 border border-amber-200 h-auto flex-wrap gap-1 p-1">
-          <TabsTrigger value="assignment" className="text-xs font-semibold">
-            <Grid className="w-3.5 h-3.5 mr-1.5" />
-            Tier Assignment
-          </TabsTrigger>
-          <TabsTrigger value="plans" className="text-xs font-semibold">
-            <Package className="w-3.5 h-3.5 mr-1.5" />
-            Plans
-          </TabsTrigger>
-          <TabsTrigger value="sevas" className="text-xs font-semibold">
-            <Flame className="w-3.5 h-3.5 mr-1.5" />
-            Sevas
-          </TabsTrigger>
-          <TabsTrigger value="schedule" className="text-xs font-semibold">
-            <Clock className="w-3.5 h-3.5 mr-1.5" />
-            Schedule Rules
-          </TabsTrigger>
-          <TabsTrigger value="addons" className="text-xs font-semibold">
-            <Award className="w-3.5 h-3.5 mr-1.5" />
-            Add-ons
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="assignment" className="mt-4">
+      <div className="space-y-4">
+        <SegmentedTabs
+          value={tab}
+          onChange={setTab}
+          items={[
+            { value: "assignment", label: "Tier Assignment" },
+            { value: "plans", label: "Plans" },
+            { value: "sevas", label: "Sevas" },
+            { value: "schedule", label: "Schedule Rules" },
+            { value: "addons", label: "Add-ons" },
+          ]}
+        />
+        {tab === "assignment" && (
           <TierAssignmentMatrix
             plans={plans}
             sevas={sevas}
@@ -269,22 +247,18 @@ function PlansSevasPage() {
             loading={loading}
             onUpdated={fetchAll}
           />
-        </TabsContent>
-        <TabsContent value="plans" className="mt-4">
-          <PlansCrud plans={plans} loading={loading} onUpdated={fetchAll} />
-        </TabsContent>
-        <TabsContent value="sevas" className="mt-4">
-          <SevasCrud sevas={sevas} loading={loading} onUpdated={fetchAll} />
-        </TabsContent>
-        <TabsContent value="schedule" className="mt-4">
+        )}
+        {tab === "plans" && <PlansCrud plans={plans} loading={loading} onUpdated={fetchAll} />}
+        {tab === "sevas" && <SevasCrud sevas={sevas} loading={loading} onUpdated={fetchAll} />}
+        {tab === "schedule" && (
           <ScheduleRulesEditor
             sevas={sevas}
             scheduleRules={scheduleRules}
             loading={loading}
             onUpdated={fetchAll}
           />
-        </TabsContent>
-        <TabsContent value="addons" className="mt-4">
+        )}
+        {tab === "addons" && (
           <PlanAddonEditor
             plans={plans}
             planAddons={planAddons}
@@ -293,11 +267,39 @@ function PlansSevasPage() {
             loading={loading}
             onUpdated={fetchAll}
           />
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 }
+
+/** Transient save/toggle result banner used by every tab. */
+function ToastBanner({ toast }: { toast: { text: string; ok: boolean } | null }) {
+  if (!toast) return null;
+  return (
+    <Notice tone={toast.ok ? "good" : "bad"} icon={toast.ok ? Check : AlertTriangle}>
+      <span className="break-words">{toast.text}</span>
+    </Notice>
+  );
+}
+
+/** Loading placeholder rows shared by the tabs. */
+function LoadingRows({ count = 3, className = "h-16" }: { count?: number; className?: string }) {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: count }, (_, i) => (
+        <Skeleton key={i} className={`${className} w-full rounded-xl`} />
+      ))}
+    </div>
+  );
+}
+
+const codeCls = "bg-stone-100 text-stone-700 px-1 rounded text-[11px] font-mono";
+/** Dialogs fit a 375px phone and scroll inside themselves. */
+const dialogCls = "w-[calc(100vw-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto";
+const dialogFooterCls = "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2";
+const primaryBtnCls = "h-9 bg-orange-600 hover:bg-orange-700 text-white";
+const fieldLabelCls = "text-xs font-medium text-stone-600";
 
 // ─── Tier Assignment Matrix ────────────────────────────────────────────────────
 function TierAssignmentMatrix({
@@ -381,163 +383,139 @@ function TierAssignmentMatrix({
   const activeSevas = sevas.filter((s) => s.is_active);
   const activePlans = plans.filter((p) => p.is_active);
 
-  if (loading)
-    return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-xl bg-amber-100/50" />
-        ))}
-      </div>
-    );
+  if (loading) return <LoadingRows />;
 
   return (
     <div className="space-y-4">
-      {toast && (
-        <div
-          className={`text-xs px-4 py-3 rounded-xl flex items-center gap-2 font-medium ${toast.ok ? "bg-emerald-50 border border-emerald-200 text-emerald-900" : "bg-rose-50 border border-rose-200 text-rose-900"}`}
-        >
-          {toast.ok ? (
-            <Check className="w-4 h-4 shrink-0" />
-          ) : (
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-          )}
-          {toast.text}
-        </div>
-      )}
-      <Card className="border border-amber-900/10 bg-white overflow-hidden">
-        <CardHeader className="pb-3 bg-amber-50/60 border-b border-amber-100">
-          <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2">
-            <Grid className="w-4 h-4 text-amber-700" />
-            plan_sevas Assignment Matrix
-          </CardTitle>
-          <p className="text-xs text-amber-900/70 mt-1">
-            Toggle a seva per plan. Writes to{" "}
-            <code className="bg-amber-100 px-1 rounded text-[10px] font-mono">plan_sevas</code> and
-            auto-regenerates{" "}
-            <code className="bg-amber-100 px-1 rounded text-[10px] font-mono">plans.features</code>.
-            No code deploy needed.
-          </p>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[#FDF3EB]">
-                <tr className="border-b border-amber-100">
-                  <th className="text-left px-4 py-3 font-bold text-slate-900 text-xs min-w-[200px]">
-                    Seva
+      <ToastBanner toast={toast} />
+      <Panel
+        flush
+        title="Assignment matrix"
+        description={
+          <>
+            Toggle a seva per plan. Writes to <code className={codeCls}>plan_sevas</code> and
+            auto-regenerates <code className={codeCls}>plans.features</code>. No code deploy needed.
+          </>
+        }
+      >
+        <TableScroll>
+          <table className="w-full min-w-[480px] text-sm">
+            <thead className="bg-stone-50">
+              <tr className="border-b border-stone-200">
+                <th className="sticky left-0 z-10 bg-stone-50 text-left px-3 sm:px-4 py-2.5 font-medium text-stone-500 text-xs min-w-[150px] sm:min-w-[200px]">
+                  Seva
+                </th>
+                {activePlans.map((p) => (
+                  <th
+                    key={p.id}
+                    className="px-2 sm:px-3 py-2.5 text-center text-xs min-w-[96px] sm:min-w-[130px] align-top"
+                  >
+                    <div className="font-semibold text-stone-900">{p.name}</div>
+                    <div className="text-xs text-stone-500 font-normal mt-0.5 tabular-nums">
+                      Rs.{(p.price_paise / 100).toLocaleString("en-IN")}/
+                      {p.billing_period === "monthly" ? "mo" : "yr"}
+                    </div>
                   </th>
-                  {activePlans.map((p) => (
-                    <th
-                      key={p.id}
-                      className="px-3 py-3 font-bold text-slate-900 text-center text-xs min-w-[130px]"
-                    >
-                      <div className="font-extrabold">{p.name}</div>
-                      <div className="text-[10px] text-amber-700 font-semibold mt-0.5">
-                        Rs.{(p.price_paise / 100).toLocaleString("en-IN")}/
-                        {p.billing_period === "monthly" ? "mo" : "yr"}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {activeSevas.map((seva, i) => (
-                  <tr key={seva.id} className={i % 2 === 0 ? "bg-white" : "bg-amber-50/30"}>
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-800 text-xs">{seva.name}</div>
-                      {seva.description && (
-                        <div className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">
-                          {seva.description}
-                        </div>
-                      )}
-                    </td>
-                    {activePlans.map((plan) => {
-                      const key = `${plan.id}:${seva.id}`;
-                      const included = isIncluded(plan.id, seva.id);
-                      const isSpinning = toggling === key;
-                      return (
-                        <td key={plan.id} className="px-3 py-3 text-center">
-                          <button
-                            id={`toggle-${plan.id}-${seva.id}`}
-                            onClick={() => handleToggle(plan.id, seva.id)}
-                            disabled={toggling !== null}
-                            className={[
-                              "w-9 h-9 rounded-full border-2 flex items-center justify-center mx-auto transition-all duration-150",
-                              included
-                                ? "bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
-                                : "bg-white border-slate-300 text-slate-400 hover:border-amber-400 hover:text-amber-700",
-                              isSpinning ? "opacity-60 cursor-wait" : "cursor-pointer",
-                              toggling && !isSpinning ? "opacity-40 cursor-not-allowed" : "",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            title={
-                              included
-                                ? `Remove ${seva.name} from ${plan.name}`
-                                : `Add ${seva.name} to ${plan.name}`
-                            }
-                          >
-                            {isSpinning ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : included ? (
-                              <Check className="w-4 h-4" />
-                            ) : (
-                              <X className="w-4 h-4" />
-                            )}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
                 ))}
-                {activeSevas.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={activePlans.length + 1}
-                      className="text-center py-10 text-xs text-slate-400"
-                    >
-                      No active sevas. Add sevas in the Sevas tab.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="border-t border-amber-100 p-4 bg-amber-50/40 space-y-3">
-            <div className="text-xs font-bold text-amber-900/80 uppercase tracking-wider">
-              Live plans.features (auto-generated)
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {activePlans.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="bg-white rounded-xl border border-amber-100 p-3 space-y-1.5"
-                >
-                  <div className="font-bold text-xs text-slate-900">{plan.name}</div>
-                  {Array.isArray(plan.features) && plan.features.length > 0 ? (
-                    <ul className="space-y-1">
-                      {plan.features.map((f, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-[10px] text-slate-700">
-                          <Check className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-[10px] text-slate-400 italic">No features yet.</p>
-                  )}
-                </div>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {activeSevas.map((seva) => (
+                <tr key={seva.id} className="bg-white hover:bg-stone-50/60">
+                  <td className="sticky left-0 z-10 bg-white px-3 sm:px-4 py-2.5">
+                    <div className="font-medium text-stone-900 text-[13px]">{seva.name}</div>
+                    {seva.description && (
+                      <div className="text-xs text-stone-500 mt-0.5 line-clamp-1">
+                        {seva.description}
+                      </div>
+                    )}
+                  </td>
+                  {activePlans.map((plan) => {
+                    const key = `${plan.id}:${seva.id}`;
+                    const included = isIncluded(plan.id, seva.id);
+                    const isSpinning = toggling === key;
+                    return (
+                      <td key={plan.id} className="px-2 sm:px-3 py-2.5 text-center">
+                        <button
+                          id={`toggle-${plan.id}-${seva.id}`}
+                          onClick={() => handleToggle(plan.id, seva.id)}
+                          disabled={toggling !== null}
+                          className={[
+                            "w-9 h-9 rounded-full border flex items-center justify-center mx-auto transition-colors duration-150",
+                            included
+                              ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700"
+                              : "bg-white border-stone-300 text-stone-400 hover:border-orange-400 hover:text-orange-700",
+                            isSpinning ? "opacity-60 cursor-wait" : "cursor-pointer",
+                            toggling && !isSpinning ? "opacity-40 cursor-not-allowed" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                          title={
+                            included
+                              ? `Remove ${seva.name} from ${plan.name}`
+                              : `Add ${seva.name} to ${plan.name}`
+                          }
+                        >
+                          {isSpinning ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : included ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <X className="w-4 h-4" />
+                          )}
+                        </button>
+                      </td>
+                    );
+                  })}
+                </tr>
               ))}
-            </div>
+              {activeSevas.length === 0 && (
+                <tr>
+                  <td colSpan={activePlans.length + 1} className="p-0">
+                    <EmptyState
+                      icon={Flame}
+                      title="No active sevas"
+                      description="Add sevas in the Sevas tab."
+                    />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </TableScroll>
+        <div className="border-t border-stone-100 p-4 sm:p-5 bg-stone-50/60 space-y-3">
+          <div className="text-[13px] font-medium text-stone-600">
+            Live plans.features (auto-generated)
           </div>
-        </CardContent>
-      </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {activePlans.map((plan) => (
+              <div
+                key={plan.id}
+                className="bg-white rounded-lg border border-stone-200 p-3 space-y-2"
+              >
+                <div className="font-medium text-sm text-stone-900">{plan.name}</div>
+                {Array.isArray(plan.features) && plan.features.length > 0 ? (
+                  <ul className="space-y-1">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs text-stone-700">
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
+                        <span className="min-w-0 break-words">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-stone-400">No features yet.</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </Panel>
       {plans.filter((p) => !p.is_active).length > 0 && (
-        <div className="text-xs text-amber-800/70 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2">
-          <EyeOff className="w-4 h-4 shrink-0 text-amber-600" />
+        <Notice tone="info" icon={EyeOff}>
           {plans.filter((p) => !p.is_active).length} inactive plan(s) hidden. Activate in Plans tab
           to manage assignments.
-        </div>
+        </Notice>
       )}
     </div>
   );
@@ -595,116 +573,108 @@ function PlansCrud({
     if (!err) onUpdated();
   };
 
-  if (loading)
-    return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-xl bg-amber-100/50" />
-        ))}
-      </div>
-    );
+  if (loading) return <LoadingRows className="h-20" />;
 
   return (
     <div className="space-y-4">
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 text-xs px-4 py-3 rounded-xl">
-          {error}
-        </div>
-      )}
+      {error && <Notice tone="bad">{error}</Notice>}
       <div className="space-y-3">
         {plans.map((plan) => (
-          <Card
+          <div
             key={plan.id}
-            className={`border transition-all duration-200 ${plan.is_active ? "border-amber-900/10 bg-white" : "border-slate-200 bg-slate-50/50"} ${successId === plan.id ? "ring-2 ring-emerald-400" : ""}`}
+            className={`admin-card p-4 transition-shadow ${plan.is_active ? "" : "bg-stone-50"} ${successId === plan.id ? "ring-2 ring-emerald-400" : ""}`}
           >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-slate-900">{plan.name}</span>
-                    <code className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono">
-                      {plan.slug}
-                    </code>
-                    <Badge
-                      variant={plan.is_active ? "default" : "secondary"}
-                      className={`text-[10px] ${plan.is_active ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-slate-100 text-slate-600"}`}
-                    >
-                      {plan.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] bg-blue-50 text-blue-700 border-blue-200"
-                    >
-                      {plan.billing_period}
-                    </Badge>
-                  </div>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-slate-600">
-                    <span className="font-mono font-bold text-amber-800">
-                      Rs.{(plan.price_paise / 100).toLocaleString("en-IN")}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`font-semibold ${plan.is_active ? "text-stone-900" : "text-stone-500"}`}
+                  >
+                    {plan.name}
+                  </span>
+                  <code className={`${codeCls} break-all`}>{plan.slug}</code>
+                  <StatusPill tone={plan.is_active ? "good" : "neutral"}>
+                    {plan.is_active ? "Active" : "Inactive"}
+                  </StatusPill>
+                  <StatusPill tone="info">{plan.billing_period}</StatusPill>
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-600">
+                  <span className="font-semibold text-stone-900 tabular-nums">
+                    Rs.{(plan.price_paise / 100).toLocaleString("en-IN")}
+                  </span>
+                  {plan.tagline && (
+                    <span className="text-stone-500 line-clamp-1 min-w-0 max-w-full sm:max-w-md">
+                      {plan.tagline}
                     </span>
-                    {plan.tagline && (
-                      <span className="text-slate-500 line-clamp-1 max-w-xs">{plan.tagline}</span>
-                    )}
-                  </div>
-                  {plan.features && plan.features.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {plan.features.slice(0, 3).map((f, i) => (
-                        <span
-                          key={i}
-                          className="text-[10px] bg-amber-50 border border-amber-100 text-amber-800 px-1.5 py-0.5 rounded"
-                        >
-                          {f}
-                        </span>
-                      ))}
-                      {plan.features.length > 3 && (
-                        <span className="text-[10px] text-slate-400">
-                          +{plan.features.length - 3} more
-                        </span>
-                      )}
-                    </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    id={`plan-toggle-active-${plan.id}`}
-                    onClick={() => toggleActive(plan)}
-                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-colors ${plan.is_active ? "border-amber-300 text-amber-800 hover:bg-amber-50" : "border-emerald-300 text-emerald-800 hover:bg-emerald-50"}`}
-                  >
-                    {plan.is_active ? (
-                      <>
-                        <EyeOff className="w-3 h-3" /> Deactivate
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="w-3 h-3" /> Activate
-                      </>
+                {plan.features && plan.features.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {plan.features.slice(0, 3).map((f, i) => (
+                      <span
+                        key={i}
+                        className="text-xs bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded"
+                      >
+                        {f}
+                      </span>
+                    ))}
+                    {plan.features.length > 3 && (
+                      <span className="text-xs text-stone-400 self-center">
+                        +{plan.features.length - 3} more
+                      </span>
                     )}
-                  </button>
-                  <button
-                    id={`plan-edit-${plan.id}`}
-                    onClick={() => setEditing({ ...plan })}
-                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
-                  >
-                    <Pencil className="w-3 h-3" /> Edit
-                  </button>
-                </div>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button
+                  id={`plan-toggle-active-${plan.id}`}
+                  onClick={() => toggleActive(plan)}
+                  variant="outline"
+                  size="sm"
+                  className={`h-9 sm:h-8 gap-1.5 text-xs ${plan.is_active ? "text-stone-700" : "text-emerald-700 border-emerald-200 hover:bg-emerald-50"}`}
+                >
+                  {plan.is_active ? (
+                    <>
+                      <EyeOff className="w-3.5 h-3.5" /> Deactivate
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-3.5 h-3.5" /> Activate
+                    </>
+                  )}
+                </Button>
+                <Button
+                  id={`plan-edit-${plan.id}`}
+                  onClick={() => setEditing({ ...plan })}
+                  variant="outline"
+                  size="sm"
+                  className="h-9 sm:h-8 gap-1.5 text-xs"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Edit
+                </Button>
+              </div>
+            </div>
+          </div>
         ))}
+        {plans.length === 0 && (
+          <div className="admin-card">
+            <EmptyState icon={Package} title="No plans found" />
+          </div>
+        )}
       </div>
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className={dialogCls}>
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-slate-900">
+            <DialogTitle className="text-base font-semibold text-stone-900 pr-6 break-words">
               Edit Plan &mdash; {editing?.name}
             </DialogTitle>
           </DialogHeader>
           {editing && (
             <div className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700">Name (Hindi / default)</Label>
+                  <Label className={fieldLabelCls}>Name (Hindi / default)</Label>
                   <Input
                     id="edit-plan-name"
                     value={editing.name}
@@ -713,7 +683,7 @@ function PlansCrud({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700">English Name</Label>
+                  <Label className={fieldLabelCls}>English Name</Label>
                   <Input
                     id="edit-plan-name-en"
                     value={editing.name_en ?? ""}
@@ -721,12 +691,14 @@ function PlansCrud({
                     className="text-sm"
                     placeholder="e.g. Griha Shanti"
                   />
-                  <p className="text-[10px] text-slate-400">Shown when the site is in English. Blank → uses the default name.</p>
+                  <p className="text-xs text-stone-400">
+                    Shown when the site is in English. Blank → uses the default name.
+                  </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700">Price (paise)</Label>
+                  <Label className={fieldLabelCls}>Price (paise)</Label>
                   <Input
                     id="edit-plan-price"
                     type="number"
@@ -736,12 +708,12 @@ function PlansCrud({
                     }
                     className="text-sm font-mono"
                   />
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-xs text-stone-400 tabular-nums">
                     = Rs.{(editing.price_paise / 100).toLocaleString("en-IN")}
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700">Billing Period</Label>
+                  <Label className={fieldLabelCls}>Billing Period</Label>
                   <Select
                     value={editing.billing_period}
                     onValueChange={(v) =>
@@ -759,7 +731,7 @@ function PlansCrud({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Tagline</Label>
+                <Label className={fieldLabelCls}>Tagline</Label>
                 <Textarea
                   id="edit-plan-tagline"
                   value={editing.tagline ?? ""}
@@ -770,7 +742,7 @@ function PlansCrud({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Highlight Text</Label>
+                <Label className={fieldLabelCls}>Highlight Text</Label>
                 <Input
                   id="edit-plan-highlight"
                   value={editing.highlight_text ?? ""}
@@ -780,13 +752,13 @@ function PlansCrud({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Card Image</Label>
-                <div className="flex items-center gap-3">
+                <Label className={fieldLabelCls}>Card Image</Label>
+                <div className="flex flex-wrap items-center gap-3">
                   {editing.card_image_url && (
                     <img
                       src={editing.card_image_url}
                       alt="Card preview"
-                      className="w-14 h-14 object-cover rounded-lg border border-slate-200"
+                      className="w-14 h-14 object-cover rounded-lg border border-stone-200"
                     />
                   )}
                   <CloudinaryImageButton
@@ -795,41 +767,38 @@ function PlansCrud({
                     onUploaded={(url) => setEditing({ ...editing, card_image_url: url })}
                   />
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-xs text-stone-400">
                   Yeh photo isi jagah se edit ho sakti hai, ya sabhi plan photos ek saath —{" "}
-                  <a href="/admin/images" className="text-amber-700 hover:underline">
+                  <a href="/admin/images" className="text-orange-700 hover:underline">
                     Admin → Photos
                   </a>{" "}
                   par.
                 </p>
               </div>
-              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-4 py-3">
                 <Switch
                   id="edit-plan-active"
                   checked={editing.is_active}
                   onCheckedChange={(v) => setEditing({ ...editing, is_active: v })}
                 />
-                <div>
+                <div className="min-w-0">
                   <Label
                     htmlFor="edit-plan-active"
-                    className="text-sm font-semibold text-slate-800 cursor-pointer"
+                    className="text-sm font-medium text-stone-900 cursor-pointer"
                   >
                     Active Plan
                   </Label>
-                  <p className="text-[10px] text-slate-500 mt-0.5">
+                  <p className="text-xs text-stone-500 mt-0.5">
                     Inactive plans hidden but never deleted (soft-delete only).
                   </p>
                 </div>
               </div>
-              {error && (
-                <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                  {error}
-                </div>
-              )}
-              <div className="flex justify-end gap-2 pt-2">
+              {error && <Notice tone="bad">{error}</Notice>}
+              <div className={dialogFooterCls}>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-9"
                   onClick={() => {
                     setEditing(null);
                     setError(null);
@@ -837,12 +806,7 @@ function PlansCrud({
                 >
                   Cancel
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="bg-amber-700 hover:bg-amber-800 text-white"
-                >
+                <Button size="sm" onClick={handleSave} disabled={saving} className={primaryBtnCls}>
                   {saving ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -936,7 +900,14 @@ function SevasCrud({
       setError(err.message);
     } else {
       setCreating(false);
-      setNewSeva({ name: "", name_en: "", slug: "", description: "", sort_order: 0, is_active: true });
+      setNewSeva({
+        name: "",
+        name_en: "",
+        slug: "",
+        description: "",
+        sort_order: 0,
+        is_active: true,
+      });
       onUpdated();
     }
     setSaving(false);
@@ -953,100 +924,107 @@ function SevasCrud({
     if (!err) onUpdated();
   };
 
-  if (loading)
-    return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-xl bg-amber-100/50" />
-        ))}
-      </div>
-    );
+  if (loading) return <LoadingRows />;
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+        <p className="text-xs text-stone-500">
+          {sevas.length} seva{sevas.length === 1 ? "" : "s"} · inactive sevas are hidden, never
+          deleted.
+        </p>
         <Button
           id="create-seva-btn"
           size="sm"
           onClick={() => setCreating(true)}
-          className="bg-amber-700 hover:bg-amber-800 text-white text-xs"
+          className={`${primaryBtnCls} sm:h-8 gap-1.5 self-start sm:self-auto`}
         >
-          <Plus className="w-3.5 h-3.5 mr-1.5" />
+          <Plus className="w-3.5 h-3.5" />
           New Seva
         </Button>
       </div>
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 text-xs px-4 py-3 rounded-xl">
-          {error}
-        </div>
-      )}
+      {error && <Notice tone="bad">{error}</Notice>}
       <div className="space-y-3">
         {sevas.map((seva) => (
-          <Card
+          <div
             key={seva.id}
-            className={`border transition-all ${seva.is_active ? "border-amber-900/10 bg-white" : "border-slate-200 bg-slate-50/50"} ${successId === seva.id ? "ring-2 ring-emerald-400" : ""}`}
+            className={`admin-card p-4 transition-shadow ${seva.is_active ? "" : "bg-stone-50"} ${successId === seva.id ? "ring-2 ring-emerald-400" : ""}`}
           >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-slate-900 text-sm">{seva.name}</span>
-                    <code className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono">
-                      {seva.slug}
-                    </code>
-                    <span className="text-[10px] text-slate-400">sort #{seva.sort_order}</span>
-                    <Badge
-                      variant={seva.is_active ? "default" : "secondary"}
-                      className={`text-[10px] ${seva.is_active ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-slate-100 text-slate-600"}`}
-                    >
-                      {seva.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                  {seva.description && (
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">{seva.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    id={`seva-toggle-${seva.id}`}
-                    onClick={() => toggleActive(seva)}
-                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-colors ${seva.is_active ? "border-amber-300 text-amber-800 hover:bg-amber-50" : "border-emerald-300 text-emerald-800 hover:bg-emerald-50"}`}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`font-semibold text-sm ${seva.is_active ? "text-stone-900" : "text-stone-500"}`}
                   >
-                    {seva.is_active ? (
-                      <>
-                        <EyeOff className="w-3 h-3" /> Deactivate
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="w-3 h-3" /> Activate
-                      </>
-                    )}
-                  </button>
-                  <button
-                    id={`seva-edit-${seva.id}`}
-                    onClick={() => setEditing({ ...seva })}
-                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
-                  >
-                    <Pencil className="w-3 h-3" /> Edit
-                  </button>
+                    {seva.name}
+                  </span>
+                  <code className={`${codeCls} break-all`}>{seva.slug}</code>
+                  <span className="text-xs text-stone-400 tabular-nums">
+                    sort #{seva.sort_order}
+                  </span>
+                  <StatusPill tone={seva.is_active ? "good" : "neutral"}>
+                    {seva.is_active ? "Active" : "Inactive"}
+                  </StatusPill>
                 </div>
+                {seva.description && (
+                  <p className="text-xs text-stone-500 mt-1 line-clamp-2 sm:line-clamp-1">
+                    {seva.description}
+                  </p>
+                )}
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button
+                  id={`seva-toggle-${seva.id}`}
+                  onClick={() => toggleActive(seva)}
+                  variant="outline"
+                  size="sm"
+                  className={`h-9 sm:h-8 gap-1.5 text-xs ${seva.is_active ? "text-stone-700" : "text-emerald-700 border-emerald-200 hover:bg-emerald-50"}`}
+                >
+                  {seva.is_active ? (
+                    <>
+                      <EyeOff className="w-3.5 h-3.5" /> Deactivate
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-3.5 h-3.5" /> Activate
+                    </>
+                  )}
+                </Button>
+                <Button
+                  id={`seva-edit-${seva.id}`}
+                  onClick={() => setEditing({ ...seva })}
+                  variant="outline"
+                  size="sm"
+                  className="h-9 sm:h-8 gap-1.5 text-xs"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Edit
+                </Button>
+              </div>
+            </div>
+          </div>
         ))}
+        {sevas.length === 0 && (
+          <div className="admin-card">
+            <EmptyState
+              icon={Flame}
+              title="No sevas yet"
+              description="Create the first seva with New Seva."
+            />
+          </div>
+        )}
       </div>
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className={dialogCls}>
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-slate-900">
+            <DialogTitle className="text-base font-semibold text-stone-900 pr-6 break-words">
               Edit Seva &mdash; {editing?.name}
             </DialogTitle>
           </DialogHeader>
           {editing && (
             <div className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700">Name</Label>
+                  <Label className={fieldLabelCls}>Name</Label>
                   <Input
                     id="edit-seva-name"
                     value={editing.name}
@@ -1055,7 +1033,7 @@ function SevasCrud({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700">Slug (unique)</Label>
+                  <Label className={fieldLabelCls}>Slug (unique)</Label>
                   <Input
                     id="edit-seva-slug"
                     value={editing.slug}
@@ -1070,7 +1048,7 @@ function SevasCrud({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">English Name</Label>
+                <Label className={fieldLabelCls}>English Name</Label>
                 <Input
                   id="edit-seva-name-en"
                   value={editing.name_en ?? ""}
@@ -1078,10 +1056,12 @@ function SevasCrud({
                   className="text-sm"
                   placeholder="e.g. Sundarkand Path"
                 />
-                <p className="text-[10px] text-slate-400">Shown when the site is in English. Blank → uses the default name.</p>
+                <p className="text-xs text-stone-400">
+                  Shown when the site is in English. Blank → uses the default name.
+                </p>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Description</Label>
+                <Label className={fieldLabelCls}>Description</Label>
                 <Textarea
                   id="edit-seva-desc"
                   value={editing.description ?? ""}
@@ -1091,7 +1071,7 @@ function SevasCrud({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Sort Order</Label>
+                <Label className={fieldLabelCls}>Sort Order</Label>
                 <Input
                   id="edit-seva-sort"
                   type="number"
@@ -1102,7 +1082,7 @@ function SevasCrud({
                   className="text-sm font-mono w-24"
                 />
               </div>
-              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-4 py-3">
                 <Switch
                   id="edit-seva-active"
                   checked={editing.is_active}
@@ -1111,24 +1091,21 @@ function SevasCrud({
                 <div>
                   <Label
                     htmlFor="edit-seva-active"
-                    className="text-sm font-semibold text-slate-800 cursor-pointer"
+                    className="text-sm font-medium text-stone-900 cursor-pointer"
                   >
                     Active Seva
                   </Label>
-                  <p className="text-[10px] text-slate-500 mt-0.5">
+                  <p className="text-xs text-stone-500 mt-0.5">
                     Inactive sevas hidden from assignment but never deleted.
                   </p>
                 </div>
               </div>
-              {error && (
-                <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                  {error}
-                </div>
-              )}
-              <div className="flex justify-end gap-2 pt-2">
+              {error && <Notice tone="bad">{error}</Notice>}
+              <div className={dialogFooterCls}>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-9"
                   onClick={() => {
                     setEditing(null);
                     setError(null);
@@ -1140,7 +1117,7 @@ function SevasCrud({
                   size="sm"
                   onClick={handleSaveEdit}
                   disabled={saving}
-                  className="bg-amber-700 hover:bg-amber-800 text-white"
+                  className={primaryBtnCls}
                 >
                   {saving ? (
                     <>
@@ -1160,16 +1137,16 @@ function SevasCrud({
         </DialogContent>
       </Dialog>
       <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className={dialogCls}>
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-slate-900">
+            <DialogTitle className="text-base font-semibold text-stone-900 pr-6 break-words">
               Create New Seva
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Name *</Label>
+                <Label className={fieldLabelCls}>Name *</Label>
                 <Input
                   id="create-seva-name"
                   value={newSeva.name ?? ""}
@@ -1179,7 +1156,7 @@ function SevasCrud({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Slug * (unique)</Label>
+                <Label className={fieldLabelCls}>Slug * (unique)</Label>
                 <Input
                   id="create-seva-slug"
                   value={newSeva.slug ?? ""}
@@ -1195,7 +1172,7 @@ function SevasCrud({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">English Name</Label>
+              <Label className={fieldLabelCls}>English Name</Label>
               <Input
                 id="create-seva-name-en"
                 value={newSeva.name_en ?? ""}
@@ -1203,10 +1180,12 @@ function SevasCrud({
                 className="text-sm"
                 placeholder="e.g. Sundarkand Path"
               />
-              <p className="text-[10px] text-slate-400">Optional — shown when the site is in English.</p>
+              <p className="text-xs text-stone-400">
+                Optional — shown when the site is in English.
+              </p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Description</Label>
+              <Label className={fieldLabelCls}>Description</Label>
               <Textarea
                 id="create-seva-desc"
                 value={newSeva.description ?? ""}
@@ -1217,7 +1196,7 @@ function SevasCrud({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Sort Order</Label>
+              <Label className={fieldLabelCls}>Sort Order</Label>
               <Input
                 id="create-seva-sort"
                 type="number"
@@ -1228,15 +1207,12 @@ function SevasCrud({
                 className="text-sm font-mono w-24"
               />
             </div>
-            {error && (
-              <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                {error}
-              </div>
-            )}
-            <div className="flex justify-end gap-2 pt-2">
+            {error && <Notice tone="bad">{error}</Notice>}
+            <div className={dialogFooterCls}>
               <Button
                 variant="outline"
                 size="sm"
+                className="h-9"
                 onClick={() => {
                   setCreating(false);
                   setError(null);
@@ -1249,7 +1225,7 @@ function SevasCrud({
                 size="sm"
                 onClick={handleCreate}
                 disabled={saving}
-                className="bg-amber-700 hover:bg-amber-800 text-white"
+                className={primaryBtnCls}
               >
                 {saving ? (
                   <>
@@ -1325,143 +1301,130 @@ function ScheduleRulesEditor({
     rules: scheduleRules.filter((r) => r.seva_id === seva.id),
   }));
 
-  if (loading)
-    return (
-      <div className="space-y-3">
-        {[1, 2].map((i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-xl bg-amber-100/50" />
-        ))}
-      </div>
-    );
+  if (loading) return <LoadingRows count={2} className="h-14" />;
 
   return (
     <div className="space-y-4">
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 text-xs px-4 py-3 rounded-xl">
-          {error}
-        </div>
-      )}
-      <Card className="border border-amber-200 bg-amber-50/40">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-bold text-amber-950 flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Schedule Rule
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3 items-end">
-            <div className="space-y-1.5 min-w-[180px] flex-1">
-              <Label className="text-xs font-semibold text-slate-700">Seva</Label>
-              <Select
-                value={adding.sevaId}
-                onValueChange={(v) => setAdding({ ...adding, sevaId: v })}
-              >
-                <SelectTrigger id="schedule-seva-select" className="text-sm">
-                  <SelectValue placeholder="Select seva..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {sevas
-                    .filter((s) => s.is_active)
-                    .map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Weekday</Label>
-              <Select
-                value={adding.weekday}
-                onValueChange={(v) => setAdding({ ...adding, weekday: v })}
-              >
-                <SelectTrigger id="schedule-weekday-select" className="text-sm w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {WEEKDAYS.map((d) => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Occurrence</Label>
-              <Select
-                value={adding.occurrence}
-                onValueChange={(v) => setAdding({ ...adding, occurrence: v })}
-              >
-                <SelectTrigger id="schedule-occurrence-select" className="text-sm w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {OCCURRENCES.map((o) => (
-                    <SelectItem key={o} value={o}>
-                      {o}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              id="schedule-add-btn"
-              size="sm"
-              onClick={handleAdd}
-              disabled={saving}
-              className="bg-amber-700 hover:bg-amber-800 text-white"
+      {error && <Notice tone="bad">{error}</Notice>}
+      <Panel
+        title="Add schedule rule"
+        description="Which weekday occurrence each seva is performed on."
+      >
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:items-end">
+          <div className="space-y-1.5 col-span-2 sm:min-w-[180px] sm:flex-1">
+            <Label className={fieldLabelCls}>Seva</Label>
+            <Select
+              value={adding.sevaId}
+              onValueChange={(v) => setAdding({ ...adding, sevaId: v })}
             >
-              {saving ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5 mr-1" />
-                  Add
-                </>
-              )}
-            </Button>
+              <SelectTrigger id="schedule-seva-select" className="text-sm">
+                <SelectValue placeholder="Select seva..." />
+              </SelectTrigger>
+              <SelectContent>
+                {sevas
+                  .filter((s) => s.is_active)
+                  .map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
-        </CardContent>
-      </Card>
+          <div className="space-y-1.5">
+            <Label className={fieldLabelCls}>Weekday</Label>
+            <Select
+              value={adding.weekday}
+              onValueChange={(v) => setAdding({ ...adding, weekday: v })}
+            >
+              <SelectTrigger id="schedule-weekday-select" className="text-sm w-full sm:w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WEEKDAYS.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className={fieldLabelCls}>Occurrence</Label>
+            <Select
+              value={adding.occurrence}
+              onValueChange={(v) => setAdding({ ...adding, occurrence: v })}
+            >
+              <SelectTrigger id="schedule-occurrence-select" className="text-sm w-full sm:w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {OCCURRENCES.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {o}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            id="schedule-add-btn"
+            size="sm"
+            onClick={handleAdd}
+            disabled={saving}
+            className={`${primaryBtnCls} col-span-2 sm:col-span-1 gap-1`}
+          >
+            {saving ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <>
+                <Plus className="w-3.5 h-3.5" />
+                Add
+              </>
+            )}
+          </Button>
+        </div>
+      </Panel>
       <div className="space-y-3">
         {rulesBySeva
           .filter((g) => g.rules.length > 0)
           .map(({ seva, rules }) => (
-            <Card key={seva.id} className="border border-amber-900/10 bg-white">
-              <CardContent className="p-4">
-                <div className="font-semibold text-slate-900 text-sm mb-2">{seva.name}</div>
-                <div className="flex flex-wrap gap-2">
-                  {rules.map((rule) => (
-                    <div
-                      key={rule.id}
-                      className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 text-xs font-semibold text-amber-800"
+            <div key={seva.id} className="admin-card p-4">
+              <div className="font-medium text-stone-900 text-sm mb-2.5">{seva.name}</div>
+              <div className="flex flex-wrap gap-2">
+                {rules.map((rule) => (
+                  <div
+                    key={rule.id}
+                    className="flex items-center gap-1.5 bg-stone-50 border border-stone-200 rounded-full pl-3 pr-1 py-0.5 text-xs font-medium text-stone-700"
+                  >
+                    <Clock className="w-3 h-3 text-stone-400" />
+                    {rule.occurrence} {rule.weekday}
+                    <button
+                      id={`remove-rule-${rule.id}`}
+                      onClick={() => handleRemove(rule.id)}
+                      disabled={removing === rule.id}
+                      className="ml-0.5 w-7 h-7 rounded-full inline-flex items-center justify-center text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="Remove rule"
+                      aria-label="Remove rule"
                     >
-                      <Clock className="w-3 h-3 text-amber-600" />
-                      {rule.occurrence} {rule.weekday}
-                      <button
-                        id={`remove-rule-${rule.id}`}
-                        onClick={() => handleRemove(rule.id)}
-                        disabled={removing === rule.id}
-                        className="ml-1 hover:text-rose-600 transition-colors"
-                        title="Remove rule"
-                      >
-                        {removing === rule.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <X className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                      {removing === rule.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <X className="w-3 h-3" />
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         {rulesBySeva.every((g) => g.rules.length === 0) && (
-          <div className="text-center py-10 text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-100">
-            No schedule rules defined. Add rules above.
+          <div className="admin-card">
+            <EmptyState
+              icon={Clock}
+              title="No schedule rules defined"
+              description="Add rules above."
+            />
           </div>
         )}
       </div>
@@ -1517,14 +1480,12 @@ function PlanAddonEditor({
         addonType === "prasad"
           ? "Quarterly Prasad Box — pavitra prasad ghar par daak dwara"
           : "Sankalp Certificate — sankalp praamanpatra varshik";
-      const { error: err } = await supabase
-        .from("plan_addons")
-        .insert({
-          plan_id: plan.id,
-          addon_type: addonType,
-          description: defaultDesc,
-          is_active: true,
-        });
+      const { error: err } = await supabase.from("plan_addons").insert({
+        plan_id: plan.id,
+        addon_type: addonType,
+        description: defaultDesc,
+        is_active: true,
+      });
       if (err) {
         setError(err.message);
         setToggling(null);
@@ -1552,97 +1513,76 @@ function PlanAddonEditor({
     onUpdated();
   };
 
-  if (loading)
-    return (
-      <div className="space-y-3">
-        {[1, 2].map((i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-xl bg-amber-100/50" />
-        ))}
-      </div>
-    );
+  if (loading) return <LoadingRows count={2} className="h-20" />;
 
   return (
     <div className="space-y-4">
       {toast && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs px-4 py-3 rounded-xl flex items-center gap-2">
-          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-          {toast}
-        </div>
+        <Notice tone="good" icon={Check}>
+          <span className="break-words">{toast}</span>
+        </Notice>
       )}
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 text-xs px-4 py-3 rounded-xl">
-          {error}
-        </div>
-      )}
+      {error && <Notice tone="bad">{error}</Notice>}
       <div className="space-y-3">
         {plans.map((plan) => {
           const prasad = getAddon(plan.id, "prasad");
           const cert = getAddon(plan.id, "certificate");
           return (
-            <Card key={plan.id} className="border border-amber-900/10 bg-white">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="font-bold text-slate-900">{plan.name}</span>
-                  <code className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono">
-                    {plan.slug}
-                  </code>
-                  {!plan.is_active && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Inactive
-                    </Badge>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div
-                    className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${prasad?.is_active ? "bg-amber-50 border-amber-300" : "bg-white border-slate-200"}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Package
-                        className={`w-4 h-4 shrink-0 ${prasad?.is_active ? "text-amber-600" : "text-slate-400"}`}
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-slate-800">Prasad Box</div>
-                        <div className="text-[10px] text-slate-500">Quarterly delivery</div>
-                      </div>
-                    </div>
-                    <Switch
-                      id={`addon-prasad-${plan.id}`}
-                      checked={prasad?.is_active ?? false}
-                      disabled={toggling === `${plan.id}:prasad`}
-                      onCheckedChange={() => handleToggleAddon(plan, "prasad")}
+            <div key={plan.id} className="admin-card p-4">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="font-semibold text-stone-900">{plan.name}</span>
+                <code className={`${codeCls} break-all`}>{plan.slug}</code>
+                {!plan.is_active && <StatusPill tone="neutral">Inactive</StatusPill>}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div
+                  className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors ${prasad?.is_active ? "bg-amber-50/60 border-amber-200" : "bg-white border-stone-200"}`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Package
+                      className={`w-4 h-4 shrink-0 ${prasad?.is_active ? "text-amber-600" : "text-stone-400"}`}
                     />
-                  </div>
-                  <div
-                    className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${cert?.is_active ? "bg-blue-50 border-blue-300" : "bg-white border-slate-200"}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Award
-                        className={`w-4 h-4 shrink-0 ${cert?.is_active ? "text-blue-600" : "text-slate-400"}`}
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-slate-800">Sankalp Certificate</div>
-                        <div className="text-[10px] text-slate-500">Annual praamanpatra</div>
-                      </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-stone-900">Prasad Box</div>
+                      <div className="text-xs text-stone-500">Quarterly delivery</div>
                     </div>
-                    <Switch
-                      id={`addon-certificate-${plan.id}`}
-                      checked={cert?.is_active ?? false}
-                      disabled={toggling === `${plan.id}:certificate`}
-                      onCheckedChange={() => handleToggleAddon(plan, "certificate")}
-                    />
                   </div>
+                  <Switch
+                    id={`addon-prasad-${plan.id}`}
+                    checked={prasad?.is_active ?? false}
+                    disabled={toggling === `${plan.id}:prasad`}
+                    onCheckedChange={() => handleToggleAddon(plan, "prasad")}
+                  />
                 </div>
-              </CardContent>
-            </Card>
+                <div
+                  className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors ${cert?.is_active ? "bg-sky-50/60 border-sky-200" : "bg-white border-stone-200"}`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Award
+                      className={`w-4 h-4 shrink-0 ${cert?.is_active ? "text-sky-600" : "text-stone-400"}`}
+                    />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-stone-900">Sankalp Certificate</div>
+                      <div className="text-xs text-stone-500">Annual praamanpatra</div>
+                    </div>
+                  </div>
+                  <Switch
+                    id={`addon-certificate-${plan.id}`}
+                    checked={cert?.is_active ?? false}
+                    disabled={toggling === `${plan.id}:certificate`}
+                    onCheckedChange={() => handleToggleAddon(plan, "certificate")}
+                  />
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>
-      <div className="text-xs text-amber-800/70 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-        <strong>Note:</strong> Toggling off sets{" "}
-        <code className="bg-amber-100 px-1 rounded text-[10px] font-mono">is_active = false</code>{" "}
-        &mdash; the row is never deleted. Every toggle auto-regenerates{" "}
-        <code className="bg-amber-100 px-1 rounded text-[10px] font-mono">plans.features</code>.
-      </div>
+      <Notice tone="info">
+        <span className="font-medium">Note:</span> Toggling off sets{" "}
+        <code className={codeCls}>is_active = false</code> &mdash; the row is never deleted. Every
+        toggle auto-regenerates <code className={codeCls}>plans.features</code>.
+      </Notice>
     </div>
   );
 }

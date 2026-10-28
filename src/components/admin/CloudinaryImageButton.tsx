@@ -40,7 +40,7 @@ export function CloudinaryImageButton({
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 min-w-0">
       <input
         ref={inputRef}
         type="file"
@@ -58,7 +58,7 @@ export function CloudinaryImageButton({
         variant="outline"
         onClick={() => inputRef.current?.click()}
         disabled={progress != null}
-        className="gap-1.5 text-xs"
+        className="h-9 sm:h-8 gap-1.5 text-xs max-w-full"
       >
         {progress != null ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -67,7 +67,7 @@ export function CloudinaryImageButton({
         )}
         {progress != null ? `Uploading ${progress}%` : label}
       </Button>
-      {err && <div className="text-[11px] text-rose-600">{err}</div>}
+      {err && <div className="text-xs text-rose-600 break-words">{err}</div>}
     </div>
   );
 }

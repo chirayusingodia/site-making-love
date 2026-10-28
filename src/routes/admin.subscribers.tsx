@@ -14,26 +14,19 @@ import {
   Tag,
   User,
   ArrowUpRight,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  PauseCircle,
   AlertCircle,
   ReceiptText,
   Video,
   RefreshCw,
-  Filter,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  PhoneCall,
   CircleStop,
   Play,
   Copy,
   QrCode,
   Plus,
 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { callAdminApi, fetchMyRole } from "@/lib/admin-api";
@@ -41,6 +34,16 @@ import { todayIST } from "@/lib/offline-subscriptions-logic";
 import { ymLabel } from "@/lib/finance-ui";
 import { AddOfflineSubscriberDialog } from "@/components/admin/offline-dialogs";
 import { OfflineSubscriberPanel } from "@/components/admin/offline-subscriber-panel";
+import {
+  EmptyState as AdminEmptyState,
+  Notice,
+  PageHeader,
+  Panel,
+  StatCard,
+  StatusPill,
+  TableScroll,
+  type Tone,
+} from "@/components/admin/admin-ui";
 
 export const Route = createFileRoute("/admin/subscribers")({
   component: AdminSubscribersPage,
@@ -255,52 +258,22 @@ function fmtDate(d: string | null) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string; icon: React.ElementType }> = {
-    active: {
-      label: "Active",
-      cls: "bg-emerald-50 text-emerald-800 border-emerald-200",
-      icon: CheckCircle2,
-    },
-    paused: {
-      label: "Paused",
-      cls: "bg-amber-50 text-amber-800 border-amber-200",
-      icon: PauseCircle,
-    },
-    cancelled: {
-      label: "Cancelled",
-      cls: "bg-rose-50 text-rose-800 border-rose-200",
-      icon: XCircle,
-    },
-    halted: {
-      // Distinct from paused (amber, voluntary) AND cancelled (rose,
-      // final): red = urgent-but-recoverable, CircleStop reads as
-      // "stopped", not "crossed out".
-      label: "Halted",
-      cls: "bg-red-50 text-red-800 border-red-200",
-      icon: CircleStop,
-    },
-    pending: { label: "Pending", cls: "bg-slate-100 text-slate-700 border-slate-200", icon: Clock },
-    expired: {
-      label: "Expired",
-      cls: "bg-slate-100 text-slate-500 border-slate-200",
-      icon: AlertCircle,
-    },
+  const map: Record<string, { label: string; tone: Tone }> = {
+    active: { label: "Active", tone: "good" },
+    paused: { label: "Paused", tone: "warn" },
+    cancelled: { label: "Cancelled", tone: "neutral" },
+    // Distinct from paused (amber, voluntary) AND cancelled (neutral,
+    // final): red = urgent-but-recoverable.
+    halted: { label: "Halted", tone: "bad" },
+    pending: { label: "Pending", tone: "neutral" },
+    expired: { label: "Expired", tone: "neutral" },
   };
-  const m = map[status] ?? {
-    label: status,
-    cls: "bg-slate-100 text-slate-700 border-slate-200",
-    icon: AlertCircle,
-  };
-  const Icon = m.icon;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${m.cls}`}
-    >
-      <Icon className="w-3 h-3" />
-      {m.label}
-    </span>
-  );
+  const m = map[status] ?? { label: status, tone: "neutral" as Tone };
+  return <StatusPill tone={m.tone}>{m.label}</StatusPill>;
 }
+
+const FIELD_CLS =
+  "h-9 w-full rounded-md border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20";
 
 // ─── Server-side query builder ────────────────────────────────
 // Centralised so list query, count query, and CSV query all apply
@@ -613,67 +586,80 @@ function Subscriber360Modal({
   ] as const;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col border border-amber-900/10 overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="bg-white rounded-xl shadow-xl w-[calc(100vw-2rem)] sm:w-full sm:max-w-3xl max-h-[90vh] flex flex-col border border-stone-200 overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-amber-100 bg-[#FFFDF9]">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900">
+        <div className="flex items-start justify-between gap-3 px-4 sm:px-6 py-4 border-b border-stone-100">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-stone-900 break-words">
                 {primary?.full_name || sub.profile_full_name || "Unknown Subscriber"}
               </h2>
               <StatusBadge status={sub.status} />
             </div>
-            <p className="text-xs text-amber-900/60 mt-0.5 font-mono">
-              {sub.subscription_id.slice(0, 8)}… • {sub.plan_name || "Unknown Plan"} • Started{" "}
-              {fmtDate(sub.start_date)}
+            <p className="text-xs text-stone-500 mt-1 break-words">
+              <span className="font-mono">{sub.subscription_id.slice(0, 8)}…</span> ·{" "}
+              {sub.plan_name || "Unknown Plan"} · Started {fmtDate(sub.start_date)}
               {(sub.profile_alt_phone || sub.profile_phone) && (
-                <> • {sub.profile_alt_phone || sub.profile_phone}</>
+                <>
+                  {" "}
+                  · <span className="font-mono">{sub.profile_alt_phone || sub.profile_phone}</span>
+                </>
               )}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-amber-50"
+            aria-label="Close"
+            className="shrink-0 text-stone-400 hover:text-stone-700 transition-colors p-2 -m-1 rounded-md hover:bg-stone-100"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 border-b border-amber-100 px-6 bg-white">
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
-                  tab === t.key
-                    ? "border-amber-700 text-amber-900"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {t.label}
-              </button>
-            );
-          })}
+        <div className="border-b border-stone-100 px-2 sm:px-4 overflow-x-auto">
+          <div role="tablist" className="flex">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              const active = tab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(t.key)}
+                  className={`flex items-center gap-1.5 px-3 py-3 text-[13px] font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                    active
+                      ? "border-orange-600 text-stone-900"
+                      : "border-transparent text-stone-500 hover:text-stone-800"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {loading360 && (
             <div className="space-y-3">
               {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full bg-amber-50" />
+                <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>
           )}
 
           {!loading360 && tab === "overview" && (
-            <div className="space-y-5">
-              <Section title="Subscription Record" icon={ReceiptText}>
+            <div className="space-y-6">
+              <Section title="Subscription record" icon={ReceiptText}>
                 <Grid2>
                   <Detail label="Plan" value={sub.plan_name || "—"} />
                   <Detail
@@ -687,10 +673,10 @@ function Subscriber360Modal({
                     />
                   )}
                   <Detail label="Status" value={<StatusBadge status={sub.status} />} />
-                  <Detail label="Start Date" value={fmtDate(sub.start_date)} />
-                  <Detail label="Next Billing" value={fmtDate(sub.next_billing_date)} />
+                  <Detail label="Start date" value={fmtDate(sub.start_date)} />
+                  <Detail label="Next billing" value={fmtDate(sub.next_billing_date)} />
                   {isOfflineQr ? (
-                    <Detail label="Payment Mode" value="QR / Offline" />
+                    <Detail label="Payment mode" value="QR / Offline" />
                   ) : (
                     <>
                       <Detail
@@ -702,20 +688,20 @@ function Subscriber360Modal({
                         }
                         mono
                       />
-                      <Detail label="Mandate Status" value={sub.mandate_status || "—"} />
+                      <Detail label="Mandate status" value={sub.mandate_status || "—"} />
                     </>
                   )}
                   <Detail label="Channel" value={sub.acquisition_channel || "—"} />
                   {sub.status === "paused" && (
-                    <Detail label="Paused At" value={fmtDate(sub.paused_at)} />
+                    <Detail label="Paused at" value={fmtDate(sub.paused_at)} />
                   )}
                   {sub.status === "halted" && (
-                    <Detail label="Halted At" value={fmtDate(sub.halted_at)} />
+                    <Detail label="Halted at" value={fmtDate(sub.halted_at)} />
                   )}
                   {sub.status === "cancelled" && (
                     <>
-                      <Detail label="Cancelled At" value={fmtDate(sub.cancelled_at)} />
-                      <Detail label="Cancel Reason" value={sub.cancel_reason || "—"} />
+                      <Detail label="Cancelled at" value={fmtDate(sub.cancelled_at)} />
+                      <Detail label="Cancel reason" value={sub.cancel_reason || "—"} />
                     </>
                   )}
                 </Grid2>
@@ -731,7 +717,7 @@ function Subscriber360Modal({
                     />
                     <Detail label="Email" value={sub.profile_email || "—"} />
                     {sub.profile_alt_phone && (
-                      <Detail label="Calling Number" value={sub.profile_alt_phone} mono />
+                      <Detail label="Calling number" value={sub.profile_alt_phone} mono />
                     )}
                   </Grid2>
                 </Section>
@@ -741,7 +727,7 @@ function Subscriber360Modal({
                   (~3 days). Resume pokes the mandate; if the mandate
                   itself is dead, re-issue a fresh organic link. */}
               {isOfflineQr && (
-                <Section title="QR / Offline Payment" icon={QrCode}>
+                <Section title="QR / Offline payment" icon={QrCode}>
                   <OfflineSubscriberPanel
                     subscriptionId={sub.subscription_id}
                     name={primary?.full_name || sub.profile_full_name || null}
@@ -756,65 +742,69 @@ function Subscriber360Modal({
               )}
 
               {sub.status === "halted" && !isOfflineQr && (
-                <Section title="Halted — Recovery Actions" icon={CircleStop}>
-                  <div className="rounded-xl border border-red-200 bg-red-50/60 px-4 py-3 text-xs text-red-900">
+                <Section title="Halted — recovery actions" icon={CircleStop}>
+                  <Notice tone="bad" className="text-xs">
                     Razorpay ne retries exhaust kar diye hain. Resume se wahi mandate dobara charge
                     hota hai; fail hone par niche se naya payment link bhejein.
-                  </div>
+                  </Notice>
                   <div className="flex flex-wrap items-center gap-2 mt-3">
                     <Button
                       onClick={resumeSubscription}
                       disabled={resumeBusy}
                       size="sm"
-                      className="bg-red-700 hover:bg-red-800 text-white gap-1.5 text-xs h-8"
+                      className="bg-orange-600 hover:bg-orange-700 text-white gap-1.5 h-9 sm:h-8"
                     >
                       {resumeBusy ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <Play className="w-3.5 h-3.5" />
                       )}
-                      Resume Subscription
+                      Resume subscription
                     </Button>
                     <Button
                       onClick={reissueLink}
                       disabled={reissueBusy}
                       size="sm"
                       variant="outline"
-                      className="border-red-300 text-red-800 hover:bg-red-50 gap-1.5 text-xs h-8"
+                      className="gap-1.5 h-9 sm:h-8"
                     >
                       {reissueBusy ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <RefreshCw className="w-3.5 h-3.5" />
                       )}
-                      Send New Payment Link
+                      Send new payment link
                     </Button>
                   </div>
                   {resumeMsg && (
                     <p
-                      className={`text-xs mt-2 ${resumeMsg.ok ? "text-emerald-700" : "text-red-700"}`}
+                      className={`text-xs mt-2 ${resumeMsg.ok ? "text-emerald-700" : "text-rose-700"}`}
                     >
                       {resumeMsg.text}
                     </p>
                   )}
                   {reissuedLink && (
-                    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 flex items-center gap-2 flex-wrap">
-                      <code className="text-[11px] break-all">{reissuedLink}</code>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigator.clipboard.writeText(reissuedLink)}
-                        className="gap-1 h-6 text-[11px]"
-                      >
-                        <Copy className="w-3 h-3" /> Copy
-                      </Button>
-                      <span className="text-[11px] text-emerald-800 font-semibold">
+                    <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <code className="flex-1 min-w-0 text-xs break-all text-stone-800">
+                          {reissuedLink}
+                        </code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigator.clipboard.writeText(reissuedLink)}
+                          className="gap-1 h-8 text-xs shrink-0"
+                        >
+                          <Copy className="w-3 h-3" /> Copy
+                        </Button>
+                      </div>
+                      <p className="text-xs text-emerald-800">
                         Purana halted row cancelled (mandate_dead_reissued) — naya link organic,
                         kisi ko credit nahi.
-                      </span>
+                      </p>
                     </div>
                   )}
-                  {reissueErr && <p className="text-xs text-red-700 mt-2">{reissueErr}</p>}
+                  {reissueErr && <p className="text-xs text-rose-700 mt-2">{reissueErr}</p>}
                 </Section>
               )}
 
@@ -824,12 +814,12 @@ function Subscriber360Modal({
                     {sub.agent_full_name && (
                       <>
                         <Detail label="Agent" value={sub.agent_full_name} />
-                        <Detail label="Agent Code" value={sub.agent_code || "—"} mono />
+                        <Detail label="Agent code" value={sub.agent_code || "—"} mono />
                       </>
                     )}
                     {sub.coupon_code && (
                       <>
-                        <Detail label="Coupon Code" value={sub.coupon_code} mono />
+                        <Detail label="Coupon code" value={sub.coupon_code} mono />
                         <Detail
                           label="Discount"
                           value={`${
@@ -844,33 +834,26 @@ function Subscriber360Modal({
                 </Section>
               )}
 
-              <Section title={`Family Members (${sub.family_members.length})`} icon={Users}>
-                <div className="space-y-2">
+              <Section title={`Family members (${sub.family_members.length})`} icon={Users}>
+                <div className="rounded-lg border border-stone-200 divide-y divide-stone-100">
                   {sub.family_members
                     .sort((a, b) => a.slot_number - b.slot_number)
                     .map((m) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center gap-3 bg-amber-50/50 rounded-lg px-3 py-2.5 border border-amber-100"
-                      >
-                        <div className="w-7 h-7 rounded-full bg-amber-200 flex items-center justify-center text-xs font-bold text-amber-900">
+                      <div key={m.id} className="flex items-center gap-3 px-3 py-2.5">
+                        <div className="w-7 h-7 shrink-0 rounded-full bg-stone-100 flex items-center justify-center text-xs font-semibold text-stone-600">
                           {m.slot_number}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-slate-900 truncate">
+                            <span className="text-sm font-medium text-stone-900 truncate">
                               {m.full_name}
                             </span>
-                            {m.is_primary && (
-                              <span className="text-[10px] bg-amber-700 text-white px-1.5 py-0.5 rounded font-semibold">
-                                Primary
-                              </span>
-                            )}
+                            {m.is_primary && <StatusPill tone="info">Primary</StatusPill>}
                           </div>
-                          <div className="text-xs text-amber-900/60 flex gap-2 mt-0.5">
+                          <div className="text-xs text-stone-500 flex flex-wrap gap-x-2 mt-0.5">
                             {m.gotra && <span>Gotra: {m.gotra}</span>}
-                            {m.relation && <span>• {m.relation}</span>}
-                            {m.dob && <span>• DOB: {fmtDate(m.dob)}</span>}
+                            {m.relation && <span>· {m.relation}</span>}
+                            {m.dob && <span>· DOB: {fmtDate(m.dob)}</span>}
                           </div>
                         </div>
                       </div>
@@ -881,133 +864,135 @@ function Subscriber360Modal({
           )}
 
           {!loading360 && tab === "payments" && (
-            <div className="space-y-2">
+            <div>
               {!payments || payments.length === 0 ? (
                 <EmptyState label="No payment records found." />
               ) : (
-                payments.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full flex-none ${
-                          p.status === "captured"
-                            ? "bg-emerald-500"
-                            : p.status === "failed"
-                              ? "bg-rose-500"
-                              : p.status === "refunded"
-                                ? "bg-sky-500"
-                                : "bg-slate-300"
-                        }`}
-                      />
-                      <div>
-                        <div className="text-sm font-semibold text-slate-900">
-                          {fmtINR(p.amount_paise)}
+                <div className="rounded-lg border border-stone-200 divide-y divide-stone-100">
+                  {payments.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-start justify-between gap-3 px-3 sm:px-4 py-3"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div
+                          className={`w-2 h-2 rounded-full flex-none mt-1.5 ${
+                            p.status === "captured"
+                              ? "bg-emerald-500"
+                              : p.status === "failed"
+                                ? "bg-rose-500"
+                                : p.status === "refunded"
+                                  ? "bg-sky-500"
+                                  : "bg-stone-300"
+                          }`}
+                        />
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-stone-900 tabular-nums">
+                            {fmtINR(p.amount_paise)}
+                          </div>
+                          <div className="text-xs text-stone-500 font-mono break-all">
+                            {p.razorpay_payment_id || "no rzp id"} · {p.method || "—"}
+                            {p.cycle_number != null ? ` · cycle ${p.cycle_number}` : ""}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono">
-                          {p.razorpay_payment_id || "no rzp id"} • {p.method || "—"}
-                          {p.cycle_number != null ? ` • cycle ${p.cycle_number}` : ""}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xs font-medium text-stone-700 capitalize">
+                          {p.status}
                         </div>
+                        <div className="text-xs text-stone-400 whitespace-nowrap">
+                          {fmtDate(p.paid_at || p.created_at)}
+                        </div>
+                        {p.failure_reason && (
+                          <div className="text-xs text-rose-600 mt-0.5 max-w-40">
+                            {p.failure_reason}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-[11px] font-semibold text-slate-700 capitalize">
-                        {p.status}
-                      </div>
-                      <div className="text-[11px] text-slate-400">
-                        {fmtDate(p.paid_at || p.created_at)}
-                      </div>
-                      {p.failure_reason && (
-                        <div className="text-[10px] text-rose-600 mt-0.5">{p.failure_reason}</div>
-                      )}
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
           )}
 
           {!loading360 && tab === "proofs" && (
-            <div className="space-y-2">
+            <div>
               {!sevaProofs || sevaProofs.length === 0 ? (
                 <EmptyState label="No seva proofs linked to this subscriber yet." />
               ) : (
-                sevaProofs.map((proof) => (
-                  <div
-                    key={proof.id}
-                    className="flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`p-2 rounded-lg ${proof.is_delivered ? "bg-emerald-100" : "bg-amber-100"}`}
-                      >
-                        <Video
-                          className={`w-4 h-4 ${proof.is_delivered ? "text-emerald-700" : "text-amber-700"}`}
-                        />
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold text-slate-900">
-                          {proof.sevas?.name || "Seva"} — {MONTHS[(proof.month || 1) - 1]}{" "}
-                          {proof.year}
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                          {proof.sankalp_batches?.batch_type?.replace("_", " ") || "—"} batch •{" "}
-                          {proof.media_type === "video" ? "🎬 Video" : "📷 Image"}
-                          {proof.caption && ` • ${proof.caption}`}
+                <div className="rounded-lg border border-stone-200 divide-y divide-stone-100">
+                  {sevaProofs.map((proof) => (
+                    <div
+                      key={proof.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 sm:px-4 py-3"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <Video className="w-4 h-4 mt-0.5 shrink-0 text-stone-400" />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-stone-900">
+                            {proof.sevas?.name || "Seva"} — {MONTHS[(proof.month || 1) - 1]}{" "}
+                            {proof.year}
+                          </div>
+                          <div className="text-xs text-stone-500 break-words">
+                            {proof.sankalp_batches?.batch_type?.replace("_", " ") || "—"} batch ·{" "}
+                            {proof.media_type === "video" ? "Video" : "Image"}
+                            {proof.caption && ` · ${proof.caption}`}
+                          </div>
                         </div>
                       </div>
+                      <div className="flex sm:flex-col items-center sm:items-end gap-3 sm:gap-1 pl-7 sm:pl-0 shrink-0">
+                        {proof.is_delivered ? (
+                          <StatusPill tone="good">
+                            Delivered {fmtDate(proof.delivered_at)}
+                          </StatusPill>
+                        ) : (
+                          <StatusPill tone="warn">Pending delivery</StatusPill>
+                        )}
+                        <a
+                          href={proof.media_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-orange-700 hover:underline"
+                        >
+                          View media ↗
+                        </a>
+                      </div>
                     </div>
-                    <div className="text-right flex flex-col items-end gap-1">
-                      {proof.is_delivered ? (
-                        <span className="text-[11px] font-semibold text-emerald-700">
-                          Delivered {fmtDate(proof.delivered_at)}
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-amber-600 font-semibold">
-                          Pending Delivery
-                        </span>
-                      )}
-                      <a
-                        href={proof.media_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] text-sky-600 hover:underline"
-                      >
-                        View Media ↗
-                      </a>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
           )}
 
           {!loading360 && tab === "history" && (
-            <div className="space-y-2">
+            <div>
               {!planHistory || planHistory.length === 0 ? (
                 <EmptyState label="No plan changes recorded for this subscription." />
               ) : (
-                planHistory.map((h) => (
-                  <div
-                    key={h.id}
-                    className="flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <ArrowUpRight className="w-4 h-4 text-amber-700 flex-none" />
-                      <div>
-                        <div className="text-sm font-semibold text-slate-900">
-                          {h.old_plan?.name || "—"} → {h.new_plan?.name || "—"}
+                <div className="rounded-lg border border-stone-200 divide-y divide-stone-100">
+                  {planHistory.map((h) => (
+                    <div
+                      key={h.id}
+                      className="flex items-start justify-between gap-3 px-3 sm:px-4 py-3"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <ArrowUpRight className="w-4 h-4 mt-0.5 text-stone-400 flex-none" />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-stone-900">
+                            {h.old_plan?.name || "—"} → {h.new_plan?.name || "—"}
+                          </div>
+                          {h.changer?.full_name && (
+                            <div className="text-xs text-stone-500">By {h.changer.full_name}</div>
+                          )}
                         </div>
-                        {h.changer?.full_name && (
-                          <div className="text-[11px] text-slate-500">By {h.changer.full_name}</div>
-                        )}
+                      </div>
+                      <div className="text-xs text-stone-500 whitespace-nowrap">
+                        {fmtDate(h.changed_at)}
                       </div>
                     </div>
-                    <div className="text-[11px] text-slate-500">{fmtDate(h.changed_at)}</div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -1029,33 +1014,35 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <section>
       <div className="flex items-center gap-2 mb-3">
-        <Icon className="w-4 h-4 text-amber-700" />
-        <h3 className="text-sm font-bold text-slate-800">{title}</h3>
+        <Icon className="w-4 h-4 text-stone-400" />
+        <h3 className="text-sm font-semibold text-stone-900">{title}</h3>
       </div>
       {children}
-    </div>
+    </section>
   );
 }
 
 function Grid2({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 gap-x-6 gap-y-3">{children}</div>;
+  return <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-6 gap-y-3">{children}</div>;
 }
 
 function Detail({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
-    <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-900/50 mb-0.5">
-        {label}
+    <div className="min-w-0">
+      <div className="text-xs font-medium text-stone-500 mb-0.5">{label}</div>
+      <div
+        className={`text-sm text-stone-900 break-words ${mono ? "font-mono text-xs break-all" : ""}`}
+      >
+        {value}
       </div>
-      <div className={`text-sm text-slate-900 ${mono ? "font-mono text-xs" : ""}`}>{value}</div>
     </div>
   );
 }
 
 function EmptyState({ label }: { label: string }) {
-  return <div className="text-center py-10 text-sm text-slate-400">{label}</div>;
+  return <AdminEmptyState title={label} />;
 }
 
 // ─── Main Page ────────────────────────────────────────────────
@@ -1222,9 +1209,45 @@ function AdminSubscribersPage() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  const toggleExpanded = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const subscriberName = (row: SubscriberListRow) =>
+    row.primary_member_name ||
+    row.profile_full_name || <span className="text-stone-400 font-normal">No name on file</span>;
+
+  const planPrice = (row: SubscriberListRow) =>
+    row.plan_price_paise != null && (isOwner || row.payment_mode !== "offline_qr")
+      ? fmtINR(row.plan_price_paise)
+      : "";
+
+  const statusPills = (row: SubscriberListRow) => (
+    <>
+      <StatusBadge status={row.status} />
+      {row.payment_mode === "offline_qr" && <StatusPill tone="neutral">QR</StatusPill>}
+      {row.family_member_count === 0 && row.status === "active" && (
+        <StatusPill tone="bad">Details incomplete</StatusPill>
+      )}
+    </>
+  );
+
+  const checkboxCls = (on: boolean, tone: "rose" | "amber") =>
+    `flex items-center gap-2 h-9 text-sm border rounded-md px-3 cursor-pointer select-none ${
+      on
+        ? tone === "rose"
+          ? "border-rose-300 bg-rose-50 text-rose-800 font-medium"
+          : "border-amber-300 bg-amber-50 text-amber-800 font-medium"
+        : "border-stone-200 bg-white text-stone-700"
+    }`;
+
   // ── Render ──────────────────────────────────────────────────
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* 360 Modal */}
       {selected360 && (
         <Subscriber360Modal
@@ -1246,468 +1269,530 @@ function AdminSubscribersPage() {
         />
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-5 rounded-2xl border border-amber-900/10 shadow-2xs">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Subscribers</h1>
-          <p className="text-xs text-amber-900/60 mt-0.5">
-            {loading
-              ? "Loading…"
-              : `Showing ${rows.length > 0 ? page * PAGE_SIZE + 1 : 0}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} of ${totalCount.toLocaleString()} records`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isOwner && (
-            <Button
-              onClick={() => setAddingOffline(true)}
-              size="sm"
-              variant="outline"
-              className="border-violet-300 bg-violet-50 text-violet-900 gap-1.5 text-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add offline subscriber
-            </Button>
-          )}
-          <Button
-            onClick={() => fetchPage(page, filters)}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="border-amber-900/15 bg-amber-50/50 text-amber-900 gap-1.5 text-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <Button
-            onClick={() => exportCSVServerSide(filters, setExporting)}
-            disabled={exporting || totalCount === 0}
-            size="sm"
-            className="bg-amber-700 hover:bg-amber-800 text-white gap-1.5 text-xs"
-          >
-            {exporting ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…
-              </>
-            ) : (
-              <>
-                <Download className="w-3.5 h-3.5" /> Export CSV ({totalCount.toLocaleString()})
-              </>
+      <PageHeader
+        title="Subscribers"
+        description={
+          loading
+            ? "Loading…"
+            : `Showing ${rows.length > 0 ? page * PAGE_SIZE + 1 : 0}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} of ${totalCount.toLocaleString()} records`
+        }
+        actions={
+          <>
+            {isOwner && (
+              <Button
+                onClick={() => setAddingOffline(true)}
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add offline subscriber
+              </Button>
             )}
-          </Button>
-        </div>
-      </div>
+            <Button
+              onClick={() => fetchPage(page, filters)}
+              disabled={loading}
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+            <Button
+              onClick={() => exportCSVServerSide(filters, setExporting)}
+              disabled={exporting || totalCount === 0}
+              size="sm"
+              className="bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+            >
+              {exporting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" /> Export CSV ({totalCount.toLocaleString()})
+                </>
+              )}
+            </Button>
+          </>
+        }
+      />
 
       {/* Error Banner */}
       {errorMsg && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-none" />
+        <Notice tone="bad" icon={AlertCircle}>
           {errorMsg}
-        </div>
+        </Notice>
       )}
 
       <SubscriberCounts />
 
       {/* Filters */}
-      <Card className="border border-amber-900/10 bg-white">
-        <CardHeader className="pb-3 pt-4 px-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-              <Filter className="w-4 h-4 text-amber-700" />
-              Filters
-              <span className="text-[10px] font-normal text-amber-900/50">
-                (applied server-side)
-              </span>
-            </div>
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="text-xs text-amber-700 hover:underline flex items-center gap-1"
-              >
-                <X className="w-3 h-3" /> Clear all
-              </button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="px-5 pb-4">
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-            {/* Search */}
-            <div className="xl:col-span-2 relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-              <input
-                id="sub-search"
-                type="text"
-                placeholder="Name or phone…"
-                value={pendingFilters.search}
-                onChange={(e) => setPending((p) => ({ ...p, search: e.target.value }))}
-                onKeyDown={(e) => e.key === "Enter" && applyPendingFilters()}
-                className="w-full pl-8 pr-3 py-2 text-xs border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white placeholder-slate-400"
-              />
-            </div>
-
-            {/* Status */}
-            <select
-              id="sub-filter-status"
-              value={pendingFilters.status}
-              onChange={(e) => setPending((p) => ({ ...p, status: e.target.value }))}
-              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="halted">Halted</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="pending">Pending</option>
-              <option value="expired">Expired</option>
-            </select>
-
-            {/* Plan */}
-            <select
-              id="sub-filter-plan"
-              value={pendingFilters.planId}
-              onChange={(e) => setPending((p) => ({ ...p, planId: e.target.value }))}
-              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-            >
-              <option value="all">All Plans</option>
-              {planOptions.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Agent */}
-            <select
-              id="sub-filter-agent"
-              value={pendingFilters.agentId}
-              onChange={(e) => setPending((p) => ({ ...p, agentId: e.target.value }))}
-              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-            >
-              <option value="all">All Agents</option>
-              {agentOptions.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.full_name}
-                </option>
-              ))}
-            </select>
-
-            {/* Payment mode — autopay (mandate) vs QR / offline */}
-            <select
-              id="sub-filter-payment-mode"
-              value={pendingFilters.paymentMode}
-              onChange={(e) => setPending((p) => ({ ...p, paymentMode: e.target.value }))}
-              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-            >
-              <option value="all">All Payment Modes</option>
-              <option value="autopay">Autopay</option>
-              <option value="offline_qr">QR / Offline</option>
-            </select>
-
-            {/* Joined — "active last month" / "new this month" */}
-            <select
-              id="sub-filter-joined"
-              value={pendingFilters.joined}
-              onChange={(e) => setPending((p) => ({ ...p, joined: e.target.value }))}
-              className="text-xs border border-amber-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-              title="Pair with Status = Active to see who was active last month and still is"
-            >
-              <option value="all">Joined: any time</option>
-              <option value="before_this_month">Member before this month</option>
-              <option value="this_month">New this month</option>
-            </select>
-
-            {/* Details Incomplete call queue (0 family members) */}
-            <label
-              className={`flex items-center gap-2 text-xs border rounded-lg px-2.5 py-2 cursor-pointer select-none ${
-                pendingFilters.sankalpPending
-                  ? "border-rose-300 bg-rose-50 text-rose-800 font-semibold"
-                  : "border-amber-200 bg-white text-slate-700"
-              }`}
-              title="Subscriptions with 0 family members — sales call queue, oldest purchase first"
-            >
-              <input
-                type="checkbox"
-                checked={pendingFilters.sankalpPending}
-                onChange={(e) => setPending((p) => ({ ...p, sankalpPending: e.target.checked }))}
-                className="accent-rose-600"
-              />
-              Details Incomplete (0 members)
-            </label>
-
-            {/* Stale Pending queue — abandoned checkouts [Part C] */}
-            <label
-              className={`flex items-center gap-2 text-xs border rounded-lg px-2.5 py-2 cursor-pointer select-none ${
-                pendingFilters.stalePending
-                  ? "border-amber-300 bg-amber-50 text-amber-800 font-semibold"
-                  : "border-amber-200 bg-white text-slate-700"
-              }`}
-              title={`Pending > ${STALE_PENDING_OPS_MINUTES} min — checkout opened but never paid; customer likely stuck. Follow up proactively.`}
-            >
-              <input
-                type="checkbox"
-                checked={pendingFilters.stalePending}
-                onChange={(e) => setPending((p) => ({ ...p, stalePending: e.target.checked }))}
-                className="accent-amber-600"
-              />
-              Stale Pending (abandoned checkout)
-            </label>
-
-            {/* Date range */}
-            <div className="xl:col-span-1 flex gap-2">
-              <input
-                id="sub-filter-date-from"
-                type="date"
-                value={pendingFilters.dateFrom}
-                onChange={(e) => setPending((p) => ({ ...p, dateFrom: e.target.value }))}
-                title="Start date from"
-                className="flex-1 text-xs border border-amber-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-              />
-              <input
-                id="sub-filter-date-to"
-                type="date"
-                value={pendingFilters.dateTo}
-                onChange={(e) => setPending((p) => ({ ...p, dateTo: e.target.value }))}
-                title="Start date to"
-                className="flex-1 text-xs border border-amber-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white text-slate-700"
-              />
-            </div>
-          </div>
-
-          {/* Apply button — filters are pending until explicitly applied */}
-          <div className="flex justify-end mt-3">
+      <Panel
+        title="Filters"
+        description="Applied server-side."
+        actions={
+          hasActiveFilters ? (
             <Button
-              onClick={applyPendingFilters}
+              variant="ghost"
               size="sm"
-              className="bg-amber-700 hover:bg-amber-800 text-white text-xs h-7 px-4 gap-1.5"
+              onClick={clearFilters}
+              className="gap-1 text-orange-700"
             >
-              <Search className="w-3 h-3" />
-              Apply Filters
+              <X className="w-3.5 h-3.5" /> Clear all
             </Button>
+          ) : undefined
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {/* Search */}
+          <div className="sm:col-span-2 lg:col-span-1 xl:col-span-2 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+            <input
+              id="sub-search"
+              type="text"
+              placeholder="Name or phone…"
+              value={pendingFilters.search}
+              onChange={(e) => setPending((p) => ({ ...p, search: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && applyPendingFilters()}
+              className={`${FIELD_CLS} pl-8 placeholder:text-stone-400`}
+            />
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Table */}
-      <div className="rounded-xl border border-amber-900/10 overflow-hidden bg-white shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-amber-100 bg-amber-50/60">
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Subscriber
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Plan
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Start
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Next Billing
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Agent / Coupon
-                </th>
-                <th className="text-left py-3 px-4 text-[10px] font-bold text-amber-900/60 uppercase tracking-wider">
-                  Family
-                </th>
-                <th className="py-3 px-4"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading &&
-                [...Array(PAGE_SIZE > 10 ? 8 : PAGE_SIZE)].map((_, i) => (
-                  <tr key={i} className="border-b border-amber-50">
-                    {[...Array(8)].map((_, j) => (
-                      <td key={j} className="py-3 px-4">
-                        <Skeleton className="h-4 w-full bg-amber-50" />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+          {/* Status */}
+          <select
+            id="sub-filter-status"
+            value={pendingFilters.status}
+            onChange={(e) => setPending((p) => ({ ...p, status: e.target.value }))}
+            className={FIELD_CLS}
+          >
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+            <option value="halted">Halted</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="pending">Pending</option>
+            <option value="expired">Expired</option>
+          </select>
 
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-slate-400">
-                    {hasActiveFilters
-                      ? "No subscribers match the current filters."
-                      : errorMsg
-                        ? "Query failed — check error above."
-                        : "No subscriber records found."}
-                  </td>
-                </tr>
-              )}
+          {/* Plan */}
+          <select
+            id="sub-filter-plan"
+            value={pendingFilters.planId}
+            onChange={(e) => setPending((p) => ({ ...p, planId: e.target.value }))}
+            className={FIELD_CLS}
+          >
+            <option value="all">All Plans</option>
+            {planOptions.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name}
+              </option>
+            ))}
+          </select>
 
-              {!loading &&
-                rows.map((row) => {
-                  const isExpanded = expandedRows.has(row.subscription_id);
-                  const hasMoreMembers = row.family_member_count > 1;
+          {/* Agent */}
+          <select
+            id="sub-filter-agent"
+            value={pendingFilters.agentId}
+            onChange={(e) => setPending((p) => ({ ...p, agentId: e.target.value }))}
+            className={FIELD_CLS}
+          >
+            <option value="all">All Agents</option>
+            {agentOptions.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.full_name}
+              </option>
+            ))}
+          </select>
 
-                  return (
-                    // [Pass-2 F13] keyed Fragment — keys on the inner <tr>
-                    // don't key the list item React actually reconciles.
-                    <Fragment key={row.subscription_id}>
-                      <tr
-                        className={`border-b border-amber-50 hover:bg-amber-50/30 transition-colors ${isExpanded ? "bg-amber-50/20" : ""}`}
+          {/* Payment mode — autopay (mandate) vs QR / offline */}
+          <select
+            id="sub-filter-payment-mode"
+            value={pendingFilters.paymentMode}
+            onChange={(e) => setPending((p) => ({ ...p, paymentMode: e.target.value }))}
+            className={FIELD_CLS}
+          >
+            <option value="all">All Payment Modes</option>
+            <option value="autopay">Autopay</option>
+            <option value="offline_qr">QR / Offline</option>
+          </select>
+
+          {/* Joined — "active last month" / "new this month" */}
+          <select
+            id="sub-filter-joined"
+            value={pendingFilters.joined}
+            onChange={(e) => setPending((p) => ({ ...p, joined: e.target.value }))}
+            className={FIELD_CLS}
+            title="Pair with Status = Active to see who was active last month and still is"
+          >
+            <option value="all">Joined: any time</option>
+            <option value="before_this_month">Member before this month</option>
+            <option value="this_month">New this month</option>
+          </select>
+
+          {/* Date range */}
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              id="sub-filter-date-from"
+              type="date"
+              value={pendingFilters.dateFrom}
+              onChange={(e) => setPending((p) => ({ ...p, dateFrom: e.target.value }))}
+              title="Start date from"
+              aria-label="Start date from"
+              className={`${FIELD_CLS} min-w-0 px-2`}
+            />
+            <input
+              id="sub-filter-date-to"
+              type="date"
+              value={pendingFilters.dateTo}
+              onChange={(e) => setPending((p) => ({ ...p, dateTo: e.target.value }))}
+              title="Start date to"
+              aria-label="Start date to"
+              className={`${FIELD_CLS} min-w-0 px-2`}
+            />
+          </div>
+
+          {/* Details Incomplete call queue (0 family members) */}
+          <label
+            className={checkboxCls(pendingFilters.sankalpPending, "rose")}
+            title="Subscriptions with 0 family members — sales call queue, oldest purchase first"
+          >
+            <input
+              type="checkbox"
+              checked={pendingFilters.sankalpPending}
+              onChange={(e) => setPending((p) => ({ ...p, sankalpPending: e.target.checked }))}
+              className="accent-rose-600"
+            />
+            <span className="truncate">Details Incomplete (0 members)</span>
+          </label>
+
+          {/* Stale Pending queue — abandoned checkouts [Part C] */}
+          <label
+            className={checkboxCls(pendingFilters.stalePending, "amber")}
+            title={`Pending > ${STALE_PENDING_OPS_MINUTES} min — checkout opened but never paid; customer likely stuck. Follow up proactively.`}
+          >
+            <input
+              type="checkbox"
+              checked={pendingFilters.stalePending}
+              onChange={(e) => setPending((p) => ({ ...p, stalePending: e.target.checked }))}
+              className="accent-amber-600"
+            />
+            <span className="truncate">Stale Pending (abandoned checkout)</span>
+          </label>
+        </div>
+
+        {/* Apply button — filters are pending until explicitly applied */}
+        <div className="flex justify-end mt-3">
+          <Button
+            onClick={applyPendingFilters}
+            size="sm"
+            className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+          >
+            <Search className="w-3.5 h-3.5" />
+            Apply filters
+          </Button>
+        </div>
+      </Panel>
+
+      {/* List */}
+      <Panel title="Subscriptions" flush>
+        {loading ? (
+          <div className="p-4 sm:p-5 space-y-2">
+            {[...Array(PAGE_SIZE > 10 ? 8 : PAGE_SIZE)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <AdminEmptyState
+            icon={Users}
+            title={
+              hasActiveFilters
+                ? "No subscribers match the current filters."
+                : errorMsg
+                  ? "Query failed — check error above."
+                  : "No subscriber records found."
+            }
+          />
+        ) : (
+          <>
+            {/* Phone: stacked cards */}
+            <ul className="md:hidden divide-y divide-stone-100">
+              {rows.map((row) => {
+                const isExpanded = expandedRows.has(row.subscription_id);
+                const hasMoreMembers = row.family_member_count > 1;
+                return (
+                  <li key={row.subscription_id} className="px-4 py-3 space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium text-stone-900 break-words">
+                          {subscriberName(row)}
+                        </div>
+                        {row.primary_member_gotra && (
+                          <div className="text-xs text-stone-500">
+                            Gotra: {row.primary_member_gotra}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => open360(row)}
+                        disabled={loading360Open}
+                        size="sm"
+                        variant="outline"
+                        className="h-9 px-3 gap-1 shrink-0"
                       >
-                        {/* Subscriber */}
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-900">
-                            {row.primary_member_name || row.profile_full_name || (
-                              <span className="text-slate-400 italic">No name on file</span>
+                        {loading360Open ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5" />
+                        )}
+                        360°
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">{statusPills(row)}</div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                      <div className="min-w-0">
+                        <div className="text-stone-500">Plan</div>
+                        <div className="text-stone-800 truncate">
+                          {row.plan_name || "—"}
+                          {row.plan_billing_period === "yearly" && (
+                            <span className="ml-1 text-sky-700 font-medium">Annual</span>
+                          )}
+                        </div>
+                        {planPrice(row) && (
+                          <div className="text-stone-500 tabular-nums">{planPrice(row)}</div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-stone-500">Contact</div>
+                        {row.profile_phone ? (
+                          <div className="font-mono text-stone-700 break-all">
+                            {row.profile_phone}
+                            {row.profile_alt_phone && (
+                              <span className="font-sans text-stone-500"> (WhatsApp)</span>
                             )}
                           </div>
-                          {row.primary_member_gotra && (
-                            <div className="text-[11px] text-amber-900/60">
-                              Gotra: {row.primary_member_gotra}
-                            </div>
-                          )}
-                          {row.profile_phone && (
-                            <div className="text-[11px] text-slate-500 font-mono">
-                              {row.profile_phone}
-                              {row.profile_alt_phone && (
-                                <span className="text-amber-700"> (WhatsApp)</span>
-                              )}
-                            </div>
-                          )}
-                          {row.profile_alt_phone && (
-                            <div className="text-[11px] text-emerald-700 font-mono font-semibold">
-                              {row.profile_alt_phone} (Call)
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Plan */}
-                        <td className="py-3 px-4">
-                          <div className="font-medium text-slate-800">{row.plan_name || "—"}</div>
-                          <div className="text-[11px] text-slate-400">
-                            {row.plan_price_paise != null &&
-                            (isOwner || row.payment_mode !== "offline_qr")
-                              ? fmtINR(row.plan_price_paise)
-                              : ""}
-                            {row.plan_billing_period === "yearly" && (
-                              <span className="ml-1 text-sky-600 font-semibold">Annual</span>
-                            )}
+                        ) : (
+                          !row.profile_alt_phone && <div className="text-stone-400">—</div>
+                        )}
+                        {row.profile_alt_phone && (
+                          <div className="font-mono text-emerald-700 font-medium break-all">
+                            {row.profile_alt_phone} (Call)
                           </div>
-                        </td>
-
-                        {/* Status */}
-                        <td className="py-3 px-4">
-                          <div className="flex flex-col items-start gap-1">
-                            <StatusBadge status={row.status} />
-                            {row.payment_mode === "offline_qr" && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-violet-50 text-violet-800 border-violet-200">
-                                <QrCode className="w-3 h-3" />
-                                QR
-                              </span>
-                            )}
-                            {row.family_member_count === 0 && row.status === "active" && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-rose-50 text-rose-700 border-rose-200">
-                                <PhoneCall className="w-3 h-3" />
-                                Details Incomplete
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Start */}
-                        <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
-                          {fmtDate(row.start_date)}
-                        </td>
-
-                        {/* Next Billing */}
-                        <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
-                          {fmtDate(row.next_billing_date)}
-                        </td>
-
-                        {/* Agent / Coupon */}
-                        <td className="py-3 px-4">
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-stone-500">Start</div>
+                        <div className="text-stone-700">{fmtDate(row.start_date)}</div>
+                      </div>
+                      <div>
+                        <div className="text-stone-500">Next billing</div>
+                        <div className="text-stone-700">{fmtDate(row.next_billing_date)}</div>
+                      </div>
+                      {(row.agent_full_name || row.coupon_code) && (
+                        <div className="col-span-2 min-w-0 flex flex-wrap gap-x-3 gap-y-0.5 text-stone-600">
                           {row.agent_full_name && (
-                            <div className="flex items-center gap-1 text-[11px] text-slate-700">
-                              <User className="w-3 h-3 text-amber-600" />
+                            <span className="inline-flex items-center gap-1">
+                              <User className="w-3 h-3 text-stone-400" />
                               {row.agent_full_name}
-                            </div>
+                            </span>
                           )}
                           {row.coupon_code && (
-                            <div className="flex items-center gap-1 text-[11px] text-slate-500 font-mono mt-0.5">
-                              <Tag className="w-3 h-3 text-emerald-600" />
+                            <span className="inline-flex items-center gap-1 font-mono">
+                              <Tag className="w-3 h-3 text-stone-400" />
                               {row.coupon_code}
-                            </div>
-                          )}
-                          {!row.agent_full_name && !row.coupon_code && (
-                            <span className="text-slate-300 text-xs">—</span>
-                          )}
-                        </td>
-
-                        {/* Family count + expand */}
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-semibold text-slate-700">
-                              {row.family_member_count}
                             </span>
-                            {hasMoreMembers && (
-                              <button
-                                onClick={() =>
-                                  setExpanded((prev) => {
-                                    const next = new Set(prev);
-                                    next.has(row.subscription_id)
-                                      ? next.delete(row.subscription_id)
-                                      : next.add(row.subscription_id);
-                                    return next;
-                                  })
-                                }
-                                className="text-amber-700 hover:text-amber-900 transition-colors"
-                                title={isExpanded ? "Collapse" : "Expand family members"}
-                              >
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4" />
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* 360 */}
-                        <td className="py-3 px-4">
-                          <Button
-                            onClick={() => open360(row)}
-                            disabled={loading360Open}
-                            size="sm"
-                            variant="outline"
-                            className="text-[11px] h-7 px-2.5 border-amber-200 text-amber-900 hover:bg-amber-50 gap-1"
-                          >
-                            {loading360Open ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Eye className="w-3 h-3" />
-                            )}
-                            360°
-                          </Button>
-                        </td>
-                      </tr>
-
-                      {/* Expanded: load all members lazily for this row */}
-                      {isExpanded && (
-                        <ExpandedMembersRow
-                          key={`${row.subscription_id}-exp`}
-                          subscriptionId={row.subscription_id}
-                        />
+                          )}
+                        </div>
                       )}
-                    </Fragment>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-stone-600">
+                      <span>
+                        Family:{" "}
+                        <span className="font-semibold text-stone-800">
+                          {row.family_member_count}
+                        </span>
+                      </span>
+                      {hasMoreMembers && (
+                        <button
+                          onClick={() => toggleExpanded(row.subscription_id)}
+                          className="inline-flex items-center gap-0.5 font-medium text-orange-700 py-1"
+                        >
+                          {isExpanded ? "Hide" : "Show"}
+                          {isExpanded ? (
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {isExpanded && <MemberChips subscriptionId={row.subscription_id} />}
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Tablet / desktop: table */}
+            <TableScroll className="hidden md:block">
+              <table className="w-full text-sm admin-table-fixed min-w-[960px]">
+                <thead>
+                  <tr className="text-left text-xs text-stone-500 border-b border-stone-100">
+                    <th className="font-medium px-4 py-2.5">Subscriber</th>
+                    <th className="font-medium px-3 py-2.5">Plan</th>
+                    <th className="font-medium px-3 py-2.5">Status</th>
+                    <th className="font-medium px-3 py-2.5">Start</th>
+                    <th className="font-medium px-3 py-2.5">Next billing</th>
+                    <th className="font-medium px-3 py-2.5">Agent / coupon</th>
+                    <th className="font-medium px-3 py-2.5">Family</th>
+                    <th className="px-4 py-2.5">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {rows.map((row) => {
+                    const isExpanded = expandedRows.has(row.subscription_id);
+                    const hasMoreMembers = row.family_member_count > 1;
+
+                    return (
+                      // [Pass-2 F13] keyed Fragment — keys on the inner <tr>
+                      // don't key the list item React actually reconciles.
+                      <Fragment key={row.subscription_id}>
+                        <tr
+                          className={`align-top hover:bg-stone-50/60 transition-colors ${isExpanded ? "bg-stone-50/60" : ""}`}
+                        >
+                          {/* Subscriber */}
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-stone-900">{subscriberName(row)}</div>
+                            {row.primary_member_gotra && (
+                              <div className="text-xs text-stone-500">
+                                Gotra: {row.primary_member_gotra}
+                              </div>
+                            )}
+                            {row.profile_phone && (
+                              <div className="text-xs text-stone-500 font-mono">
+                                {row.profile_phone}
+                                {row.profile_alt_phone && (
+                                  <span className="font-sans text-stone-400"> (WhatsApp)</span>
+                                )}
+                              </div>
+                            )}
+                            {row.profile_alt_phone && (
+                              <div className="text-xs text-emerald-700 font-mono font-medium">
+                                {row.profile_alt_phone} (Call)
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Plan */}
+                          <td className="px-3 py-3">
+                            <div className="text-stone-800">{row.plan_name || "—"}</div>
+                            <div className="text-xs text-stone-500 tabular-nums">
+                              {planPrice(row)}
+                              {row.plan_billing_period === "yearly" && (
+                                <span className="ml-1 text-sky-700 font-medium">Annual</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-3 py-3">
+                            <div className="flex flex-col items-start gap-1">
+                              {statusPills(row)}
+                            </div>
+                          </td>
+
+                          {/* Start */}
+                          <td className="px-3 py-3 text-xs text-stone-600 whitespace-nowrap">
+                            {fmtDate(row.start_date)}
+                          </td>
+
+                          {/* Next Billing */}
+                          <td className="px-3 py-3 text-xs text-stone-600 whitespace-nowrap">
+                            {fmtDate(row.next_billing_date)}
+                          </td>
+
+                          {/* Agent / Coupon */}
+                          <td className="px-3 py-3">
+                            {row.agent_full_name && (
+                              <div className="flex items-center gap-1 text-xs text-stone-700">
+                                <User className="w-3 h-3 text-stone-400" />
+                                {row.agent_full_name}
+                              </div>
+                            )}
+                            {row.coupon_code && (
+                              <div className="flex items-center gap-1 text-xs text-stone-500 font-mono mt-0.5">
+                                <Tag className="w-3 h-3 text-stone-400" />
+                                {row.coupon_code}
+                              </div>
+                            )}
+                            {!row.agent_full_name && !row.coupon_code && (
+                              <span className="text-stone-300 text-xs">—</span>
+                            )}
+                          </td>
+
+                          {/* Family count + expand */}
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-semibold text-stone-700 tabular-nums">
+                                {row.family_member_count}
+                              </span>
+                              {hasMoreMembers && (
+                                <button
+                                  onClick={() => toggleExpanded(row.subscription_id)}
+                                  className="p-1 rounded text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors"
+                                  title={isExpanded ? "Collapse" : "Expand family members"}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4" />
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* 360 */}
+                          <td className="px-4 py-3 text-right">
+                            <Button
+                              onClick={() => open360(row)}
+                              disabled={loading360Open}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2.5 gap-1 text-xs"
+                            >
+                              {loading360Open ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Eye className="w-3 h-3" />
+                              )}
+                              360°
+                            </Button>
+                          </td>
+                        </tr>
+
+                        {/* Expanded: load all members lazily for this row */}
+                        {isExpanded && (
+                          <ExpandedMembersRow
+                            key={`${row.subscription_id}-exp`}
+                            subscriptionId={row.subscription_id}
+                          />
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </TableScroll>
+          </>
+        )}
 
         {/* Pagination footer */}
         {!loading && totalCount > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-amber-100 bg-amber-50/30">
-            <p className="text-xs text-amber-900/60">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-stone-100">
+            <p className="text-xs text-stone-500">
               Page {page + 1} of {totalPages} · {totalCount.toLocaleString()} total
             </p>
             <div className="flex items-center gap-1">
@@ -1716,59 +1801,63 @@ function AdminSubscribersPage() {
                 disabled={page === 0 || loading}
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-amber-200"
+                className="h-9 w-9 sm:h-8 sm:w-8 p-0"
+                aria-label="Previous page"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
+                <ChevronLeft className="w-4 h-4" />
               </Button>
-              {/* Page number pills */}
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 7) {
-                  pageNum = i;
-                } else if (page <= 3) {
-                  pageNum = i;
-                } else if (page >= totalPages - 4) {
-                  pageNum = totalPages - 7 + i;
-                } else {
-                  pageNum = page - 3 + i;
-                }
-                return (
-                  <Button
-                    key={pageNum}
-                    onClick={() => setPage(pageNum)}
-                    disabled={loading}
-                    variant={pageNum === page ? "default" : "outline"}
-                    size="sm"
-                    className={`h-7 w-7 p-0 text-xs ${
-                      pageNum === page
-                        ? "bg-amber-700 text-white border-amber-700 hover:bg-amber-800"
-                        : "border-amber-200 text-slate-600"
-                    }`}
-                  >
-                    {pageNum + 1}
-                  </Button>
-                );
-              })}
+              {/* Page number pills (hidden on phones — prev/next + "Page x of y" instead) */}
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 7) {
+                    pageNum = i;
+                  } else if (page <= 3) {
+                    pageNum = i;
+                  } else if (page >= totalPages - 4) {
+                    pageNum = totalPages - 7 + i;
+                  } else {
+                    pageNum = page - 3 + i;
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      disabled={loading}
+                      variant={pageNum === page ? "default" : "outline"}
+                      size="sm"
+                      className={`h-8 w-8 p-0 text-xs tabular-nums ${
+                        pageNum === page
+                          ? "bg-orange-600 text-white border-orange-600 hover:bg-orange-700"
+                          : "text-stone-600"
+                      }`}
+                    >
+                      {pageNum + 1}
+                    </Button>
+                  );
+                })}
+              </div>
               <Button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1 || loading}
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-amber-200"
+                className="h-9 w-9 sm:h-8 sm:w-8 p-0"
+                aria-label="Next page"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }
 
 // ─── Expanded member row (lazy loads all members for one sub) ─
 
-function ExpandedMembersRow({ subscriptionId }: { subscriptionId: string }) {
+function MemberChips({ subscriptionId }: { subscriptionId: string }) {
   const [members, setMembers] = useState<FamilyMember[] | null>(null);
 
   useEffect(() => {
@@ -1780,34 +1869,37 @@ function ExpandedMembersRow({ subscriptionId }: { subscriptionId: string }) {
       .then(({ data }) => setMembers((data || []) as FamilyMember[]));
   }, [subscriptionId]);
 
+  return members === null ? (
+    <div className="flex items-center gap-2 text-xs text-stone-500">
+      <Loader2 className="w-3 h-3 animate-spin" /> Loading members…
+    </div>
+  ) : (
+    <div className="flex flex-wrap gap-1.5">
+      {members.map((m) => (
+        <span
+          key={m.id}
+          className="inline-flex items-center gap-1 bg-white border border-stone-200 text-stone-800 text-xs px-2 py-0.5 rounded-full"
+        >
+          <span className="font-medium">{m.full_name}</span>
+          {m.gotra && <span className="text-stone-500">· {m.gotra}</span>}
+          {m.is_primary && (
+            <span className="text-[10px] font-semibold bg-sky-50 text-sky-700 px-1 rounded">P</span>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ExpandedMembersRow({ subscriptionId }: { subscriptionId: string }) {
   return (
-    <tr className="border-b border-amber-100 bg-amber-50/20">
+    <tr className="bg-stone-50/60">
       <td colSpan={8} className="px-4 pb-3 pt-0">
-        {members === null ? (
-          <div className="flex items-center gap-2 text-xs text-amber-900/50 mt-1.5">
-            <Loader2 className="w-3 h-3 animate-spin" /> Loading members…
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {members.map((m) => (
-              <span
-                key={m.id}
-                className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 text-[11px] px-2 py-0.5 rounded-full"
-              >
-                <span className="font-semibold">{m.full_name}</span>
-                {m.gotra && <span className="text-amber-700/70">· {m.gotra}</span>}
-                {m.is_primary && (
-                  <span className="text-[9px] bg-amber-700 text-white px-1 rounded">P</span>
-                )}
-              </span>
-            ))}
-          </div>
-        )}
+        <MemberChips subscriptionId={subscriptionId} />
       </td>
     </tr>
   );
 }
-
 
 // ─── Counts strip: active now, last month vs this month ──────
 // Counts only (no ₹) → served to admins too. "Paying" = a payment covers that
@@ -1829,16 +1921,19 @@ function SubscriberCounts() {
   if (failed) return null;
   const cur = data?.months[1];
   const prev = data?.months[0];
-  const tile = (label: string, value: number | undefined, sub: string) => (
-    <div className="rounded-xl border border-amber-900/10 bg-white p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/60">{label}</div>
-      <div className="text-xl font-bold text-slate-900 mt-1">{value ?? "—"}</div>
-      <div className="text-[11px] text-slate-500">{sub}</div>
-    </div>
+  const loading = data === null;
+  const tile = (label: string, value: number | undefined, sub: string, className?: string) => (
+    <StatCard
+      label={label}
+      value={value ?? "—"}
+      hint={sub || undefined}
+      loading={loading}
+      className={className}
+    />
   );
   const delta = cur && prev ? cur.paying - prev.paying : null;
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
       {tile("Active now", data?.activeNow, "status = active")}
       {tile(
         `Paying · ${prev ? ymLabel(prev.ym) : "last month"}`,
@@ -1855,6 +1950,7 @@ function SubscriberCounts() {
         `Cancelled · ${prev ? ymLabel(prev.ym) : "last month"}`,
         prev?.cancelled,
         prev ? `+ ${prev.lapsed} lapsed` : "",
+        "col-span-2 md:col-span-1",
       )}
     </div>
   );

@@ -4,9 +4,9 @@ import { supabase } from "@/lib/supabase";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { stripMarkdown } from "@/lib/markdown-lite";
 import {
-  Search,
   ChevronDown,
   ChevronRight,
+  FileText,
   Loader2,
   Save,
   Plus,
@@ -18,8 +18,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  Panel,
+  SegmentedTabs,
+  StatusPill,
+  TableScroll,
+} from "@/components/admin/admin-ui";
 import { CloudinaryImageButton } from "@/components/admin/CloudinaryImageButton";
 
 // Admin/owner tier — no extra beforeLoad needed here, the parent
@@ -30,30 +38,22 @@ export const Route = createFileRoute("/admin/seo")({
 });
 
 function AdminSeoPage() {
+  const [tab, setTab] = useState<"pages" | "blog">("pages");
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <Search className="w-5 h-5 text-amber-700" />
-          SEO & Content
-        </h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Page meta editor, structured-data wiring and blog content — reflected live in each page's
-          &lt;head&gt;.
-        </p>
-      </div>
-      <Tabs defaultValue="pages">
-        <TabsList>
-          <TabsTrigger value="pages">Page Meta</TabsTrigger>
-          <TabsTrigger value="blog">Blog Posts</TabsTrigger>
-        </TabsList>
-        <TabsContent value="pages">
-          <PageMetaTab />
-        </TabsContent>
-        <TabsContent value="blog">
-          <BlogTab />
-        </TabsContent>
-      </Tabs>
+    <div className="space-y-6">
+      <PageHeader
+        title="SEO & Content"
+        description="Page meta editor, structured-data wiring and blog content — reflected live in each page's <head>."
+      />
+      <SegmentedTabs
+        value={tab}
+        onChange={setTab}
+        items={[
+          { value: "pages", label: "Page Meta" },
+          { value: "blog", label: "Blog Posts" },
+        ]}
+      />
+      {tab === "pages" ? <PageMetaTab /> : <BlogTab />}
     </div>
   );
 }
@@ -112,14 +112,8 @@ function PageMetaTab() {
     load();
   }, [load]);
 
-  if (loading) return <Skeleton className="h-64 w-full rounded-2xl mt-3" />;
-  if (error) {
-    return (
-      <div className="mt-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm px-4 py-3">
-        {error}
-      </div>
-    );
-  }
+  if (loading) return <Skeleton className="h-64 w-full rounded-xl" />;
+  if (error) return <Notice tone="bad">{error}</Notice>;
 
   const allPages: KnownPage[] = [
     ...STATIC_PAGES,
@@ -127,7 +121,7 @@ function PageMetaTab() {
   ];
 
   return (
-    <div className="space-y-2.5 mt-3">
+    <div className="space-y-2.5">
       {allPages.map((page) => (
         <PageSeoRowEditor
           key={page.path}
@@ -197,30 +191,37 @@ function PageSeoRowEditor({
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs">
+    <section className="admin-card overflow-hidden">
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-3.5 text-left"
+        aria-expanded={open}
+        className="w-full flex items-center gap-2.5 px-4 sm:px-5 py-3 min-h-12 text-left hover:bg-stone-50/60 transition-colors"
       >
-        <span className="flex items-center gap-2 text-sm font-bold text-slate-900">
-          {open ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-          {page.label}
-          <span className="text-[11px] font-mono font-normal text-slate-400">{page.path}</span>
-          {!row?.title && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
-              Not set
-            </span>
-          )}
+        {open ? (
+          <ChevronDown className="w-4 h-4 text-stone-400 shrink-0" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />
+        )}
+        <span className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-2">
+          <span className="text-sm font-medium text-stone-900 truncate">{page.label}</span>
+          <span className="text-xs font-mono text-stone-400 truncate">{page.path}</span>
         </span>
+        {!row?.title && <StatusPill tone="warn">Not set</StatusPill>}
       </button>
 
       {open && (
-        <div className="border-t border-slate-100 p-5 space-y-3.5">
+        <div className="border-t border-stone-100 p-4 sm:p-5 space-y-4">
           <div>
             <Label className="flex items-center justify-between">
               Title
-              <span className={title.length > 60 ? "text-rose-600 text-[11px]" : "text-slate-400 text-[11px]"}>
+              <span
+                className={
+                  title.length > 60
+                    ? "text-rose-600 text-xs tabular-nums"
+                    : "text-stone-400 text-xs tabular-nums"
+                }
+              >
                 {title.length}/60
               </span>
             </Label>
@@ -234,7 +235,13 @@ function PageSeoRowEditor({
           <div>
             <Label className="flex items-center justify-between">
               Meta Description
-              <span className={desc.length > 160 ? "text-rose-600 text-[11px]" : "text-slate-400 text-[11px]"}>
+              <span
+                className={
+                  desc.length > 160
+                    ? "text-rose-600 text-xs tabular-nums"
+                    : "text-stone-400 text-xs tabular-nums"
+                }
+              >
                 {desc.length}/160
               </span>
             </Label>
@@ -248,20 +255,41 @@ function PageSeoRowEditor({
           </div>
           <div>
             <Label>OG Image</Label>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex flex-wrap items-center gap-3 mt-1">
               {ogImage && (
-                <img src={ogImage} alt="OG preview" className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+                <img
+                  src={ogImage}
+                  alt="OG preview"
+                  className="w-16 h-16 object-cover rounded-lg border border-stone-200"
+                />
               )}
-              <CloudinaryImageButton folder="punyata-site/seo" label="Upload image" onUploaded={setOgImage} />
+              <CloudinaryImageButton
+                folder="punyata-site/seo"
+                label="Upload image"
+                onUploaded={setOgImage}
+              />
             </div>
           </div>
-          <div className="flex items-center gap-3 pt-1">
-            <Button size="sm" disabled={busy} onClick={save} className="gap-1.5 bg-amber-700 hover:bg-amber-800 text-white">
-              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={save}
+              className="h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {busy ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
               Save
             </Button>
             {msg && (
-              <span className={`text-xs ${msg.ok ? "text-emerald-700" : "text-rose-700"}`}>{msg.text}</span>
+              <span
+                className={`text-xs break-words ${msg.ok ? "text-emerald-700" : "text-rose-700"}`}
+              >
+                {msg.text}
+              </span>
             )}
           </div>
         </div>
@@ -346,69 +374,129 @@ function BlogTab() {
   }
 
   return (
-    <div className="space-y-4 mt-3">
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => setEditing("new")} className="gap-1.5 bg-amber-700 hover:bg-amber-800 text-white">
+    <Panel
+      title="Blog posts"
+      description="Drafts and published articles on /blog."
+      flush
+      actions={
+        <Button
+          size="sm"
+          onClick={() => setEditing("new")}
+          className="h-9 sm:h-8 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+        >
           <Plus className="w-3.5 h-3.5" /> New Post
         </Button>
-      </div>
-
-      {loading && <Skeleton className="h-48 w-full rounded-2xl" />}
+      }
+    >
+      {loading && (
+        <div className="p-4 sm:p-5">
+          <Skeleton className="h-48 w-full rounded-lg" />
+        </div>
+      )}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm px-4 py-3">{error}</div>
+        <div className="p-4 sm:p-5">
+          <Notice tone="bad">{error}</Notice>
+        </div>
       )}
 
-      {!loading && !error && (
-        <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs p-5 overflow-auto">
-          <table className="w-full text-sm whitespace-nowrap">
-            <thead>
-              <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
-                <th className="pb-2">Title</th>
-                <th className="pb-2">Slug</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2">Published</th>
-                <th className="pb-2 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(posts ?? []).map((p) => (
-                <tr key={p.id} className="border-t border-slate-100">
-                  <td className="py-2 font-semibold">{p.title}</td>
-                  <td className="py-2 text-xs font-mono text-slate-500">/blog/{p.slug}</td>
-                  <td className="py-2">
-                    {p.is_published ? (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        Published
-                      </span>
-                    ) : (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                        Draft
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-2 text-xs">{p.published_at?.slice(0, 10) ?? "—"}</td>
-                  <td className="py-2 text-right space-x-1.5">
-                    <Button size="sm" variant="outline" onClick={() => setEditing(p)}>
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-rose-700 border-rose-200 hover:bg-rose-50"
-                      onClick={() => deletePost(p)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!loading && posts?.length === 0 && (
-            <div className="text-slate-400 text-sm px-2 py-6 text-center">Koi blog post nahi hai.</div>
-          )}
-        </section>
+      {!loading && !error && (posts ?? []).length === 0 && (
+        <EmptyState icon={FileText} title="Koi blog post nahi hai." />
       )}
+
+      {!loading && !error && (posts ?? []).length > 0 && (
+        <>
+          {/* Phone: stacked cards */}
+          <ul className="md:hidden divide-y divide-stone-100">
+            {(posts ?? []).map((p) => (
+              <li key={p.id} className="px-4 py-3 flex items-start gap-3">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-sm font-medium text-stone-900 break-words">{p.title}</p>
+                  <p className="text-xs font-mono text-stone-500 break-all">/blog/{p.slug}</p>
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <BlogStatus published={p.is_published} />
+                    <span className="text-xs text-stone-500 tabular-nums">
+                      {p.published_at?.slice(0, 10) ?? "—"}
+                    </span>
+                  </div>
+                </div>
+                <BlogRowActions onEdit={() => setEditing(p)} onDelete={() => deletePost(p)} />
+              </li>
+            ))}
+          </ul>
+
+          {/* Tablet / desktop: table */}
+          <TableScroll className="hidden md:block">
+            <table className="w-full text-sm">
+              <thead className="bg-stone-50/60">
+                <tr className="text-left text-xs font-medium text-stone-500 border-b border-stone-100">
+                  <th className="px-4 py-2.5 font-medium">Title</th>
+                  <th className="px-4 py-2.5 font-medium">Slug</th>
+                  <th className="px-4 py-2.5 font-medium">Status</th>
+                  <th className="px-4 py-2.5 font-medium">Published</th>
+                  <th className="px-4 py-2.5 font-medium text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {(posts ?? []).map((p) => (
+                  <tr key={p.id} className="hover:bg-stone-50/60">
+                    <td className="px-4 py-3 font-medium text-stone-900">{p.title}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-stone-500 whitespace-nowrap">
+                      /blog/{p.slug}
+                    </td>
+                    <td className="px-4 py-3">
+                      <BlogStatus published={p.is_published} />
+                    </td>
+                    <td className="px-4 py-3 text-xs text-stone-600 tabular-nums whitespace-nowrap">
+                      {p.published_at?.slice(0, 10) ?? "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end">
+                        <BlogRowActions
+                          onEdit={() => setEditing(p)}
+                          onDelete={() => deletePost(p)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+        </>
+      )}
+    </Panel>
+  );
+}
+
+function BlogStatus({ published }: { published: boolean }) {
+  return published ? (
+    <StatusPill tone="good">Published</StatusPill>
+  ) : (
+    <StatusPill tone="neutral">Draft</StatusPill>
+  );
+}
+
+function BlogRowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="flex items-center gap-1.5 shrink-0">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={onEdit}
+        className="h-9 w-9 sm:h-8 sm:w-8 p-0"
+        aria-label="Edit post"
+      >
+        <Pencil className="w-3.5 h-3.5" />
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-9 w-9 sm:h-8 sm:w-8 p-0 text-rose-700 border-rose-200 hover:bg-rose-50"
+        onClick={onDelete}
+        aria-label="Delete post"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </Button>
     </div>
   );
 }
@@ -463,7 +551,11 @@ function BlogEditor({
           is_published: isPublished,
         });
       } else {
-        const { data, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
+        const { data, error } = await supabase
+          .from("blog_posts")
+          .insert(payload)
+          .select("id")
+          .single();
         if (error) throw new Error(error.message);
         savedId = (data as { id: string }).id;
         await logAdminAudit("blog_posts.create", "blog_posts", savedId, {
@@ -476,7 +568,11 @@ function BlogEditor({
       // A4 — publish auto-creates a page_seo row if one doesn't exist yet.
       if (isPublished && !wasPublished) {
         const path = `/blog/${slug.trim()}`;
-        const { data: existing } = await supabase.from("page_seo").select("path").eq("path", path).maybeSingle();
+        const { data: existing } = await supabase
+          .from("page_seo")
+          .select("path")
+          .eq("path", path)
+          .maybeSingle();
         if (!existing) {
           const { error: seoErr } = await supabase.from("page_seo").insert({
             path,
@@ -501,16 +597,23 @@ function BlogEditor({
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-2xs p-5 space-y-4 mt-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-slate-900">{post ? "Edit Post" : "New Post"}</h2>
-        <Button size="sm" variant="outline" onClick={onCancel}>
+    <Panel
+      title={post ? "Edit Post" : "New Post"}
+      actions={
+        <Button size="sm" variant="outline" onClick={onCancel} className="h-9 sm:h-8">
           Cancel
         </Button>
-      </div>
+      }
+      bodyClassName="space-y-4"
+    >
       <div>
         <Label>Title</Label>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Post title" className="mt-1" />
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Post title"
+          className="mt-1"
+        />
       </div>
       <div>
         <Label>Slug</Label>
@@ -523,7 +626,7 @@ function BlogEditor({
           placeholder="post-slug"
           className="mt-1"
         />
-        <p className="text-[11px] text-slate-400 mt-1">punyata.com/blog/{slug || "…"}</p>
+        <p className="text-xs text-stone-400 mt-1 break-all">punyata.com/blog/{slug || "…"}</p>
       </div>
       <div>
         <Label>Body (Markdown)</Label>
@@ -532,16 +635,26 @@ function BlogEditor({
           onChange={(e) => setBodyMd(e.target.value)}
           rows={14}
           className="font-mono text-xs mt-1"
-          placeholder={"## Heading\n\nContent yahan likhein — **bold**, *italic*, [link](https://...), - bullet list."}
+          placeholder={
+            "## Heading\n\nContent yahan likhein — **bold**, *italic*, [link](https://...), - bullet list."
+          }
         />
       </div>
       <div>
         <Label>Cover Image</Label>
-        <div className="flex items-center gap-3 mt-1">
+        <div className="flex flex-wrap items-center gap-3 mt-1">
           {coverUrl && (
-            <img src={coverUrl} alt="Cover preview" className="w-20 h-20 object-cover rounded-lg border border-slate-200" />
+            <img
+              src={coverUrl}
+              alt="Cover preview"
+              className="w-20 h-20 object-cover rounded-lg border border-stone-200"
+            />
           )}
-          <CloudinaryImageButton folder="punyata-site/blog" label="Upload cover" onUploaded={setCoverUrl} />
+          <CloudinaryImageButton
+            folder="punyata-site/blog"
+            label="Upload cover"
+            onUploaded={setCoverUrl}
+          />
         </div>
       </div>
       <div className="flex items-center gap-2.5">
@@ -550,11 +663,21 @@ function BlogEditor({
           {isPublished ? "Published" : "Draft"}
         </Label>
       </div>
-      {err && <p className="text-xs text-rose-700">{err}</p>}
-      <Button disabled={busy} onClick={save} className="gap-1.5 bg-amber-700 hover:bg-amber-800 text-white">
-        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-        Save
-      </Button>
-    </section>
+      {err && <Notice tone="bad">{err}</Notice>}
+      <div className="flex flex-wrap gap-2 pt-1 border-t border-stone-100">
+        <Button
+          disabled={busy}
+          onClick={save}
+          className="mt-3 h-9 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+        >
+          {busy ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Save className="w-3.5 h-3.5" />
+          )}
+          Save
+        </Button>
+      </div>
+    </Panel>
   );
 }
