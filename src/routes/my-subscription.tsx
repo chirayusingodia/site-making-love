@@ -38,6 +38,8 @@ import { nextSevaDate, fmtSevaDate, monthsActive, elapsedSevaDates, type SevaDat
 import { specialDayItems } from "@/lib/special-days";
 import { computeImpact, impactTiles, type PunyaImpact, type ImpactPlanFlags } from "@/lib/punya-impact";
 import { renderPunyaCard, sharePunyaCard } from "@/lib/punya-card-render";
+import { renderPatraToBlob, type PatraRenderData } from "@/lib/ashirwad-patra-render";
+import { occasionLabel } from "@/lib/ashirwad-patra";
 import { useTranslation, localizedName, type Lang } from "@/lib/translations";
 import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
 
@@ -98,6 +100,9 @@ interface PatraRow {
   occasion_label: string;
   batch_date: string;
   image_url: string | null;
+  gotra: string | null;
+  seva_names: string[];
+  batch_kind: "second_tuesday" | "last_saturday";
 }
 
 interface ProofRow {
@@ -177,7 +182,7 @@ function sevaIcon(s: LiveSeva): LucideIcon {
 }
 
 function MySubscriptionPage() {
-  const { userId, loading: sessionLoading } = useSessionProfile();
+  const { userId, loading: sessionLoading, profile: sessionProfile } = useSessionProfile();
   const { t, lang } = useTranslation();
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [membersBySub, setMembersBySub] = useState<Record<string, MemberRow[]>>({});
@@ -225,7 +230,7 @@ function MySubscriptionPage() {
         // (newest first; only rendered images shown). RLS-scoped.
         const pRes = await supabase
           .from("ashirwad_patras")
-          .select("id,patra_no,names,occasion_label,batch_date,image_url")
+          .select("id,patra_no,names,occasion_label,batch_date,image_url,gotra,seva_names,batch_kind")
           .in("subscription_id", subIds)
           .order("batch_date", { ascending: false });
         setPatras((pRes.data as PatraRow[]) ?? []);
@@ -384,6 +389,91 @@ function MySubscriptionPage() {
   // Next scheduled seva (cadence hint) — only meaningful while active.
   const next = isActive ? nextSevaDate(hasLastSaturday) : null;
 
+  // Ashirwad Patra per pooja. A patra issued by the team (with its image) is
+  // used as-is; for every other pooja that has already happened we issue one
+  // automatically — rendered from the family's own names + that day's sevas —
+  // so the shelf is never blank. A row issued without an image is rendered from
+  // its own frozen snapshot.
+  const DAY_LABEL: Record<string, string> = {
+    sd_2nd_tuesday: "2nd Tuesday",
+    sd_last_saturday: "Last Saturday",
+  };
+  const familyNames = members.map((m) => m.full_name?.trim()).filter((n): n is string => !!n);
+  const fallbackName = sessionProfile?.full_name?.trim();
+  const autoNames = familyNames.length > 0 ? familyNames : fallbackName ? [fallbackName] : [];
+  const autoGotra = members.find((m) => m.gotra?.trim())?.gotra?.trim() ?? null;
+  const realByDate = new Map(patras.map((r) => [r.batch_date.slice(0, 10), r]));
+  const patraItems: PatraItem[] = [];
+  const itemByIso = new Map<string, PatraItem>();
+  for (const pj of [...pastPoojas].reverse()) {
+    const iso = isoOf(pj.date);
+    const real = realByDate.get(iso);
+    let item: PatraItem | null = null;
+    if (real?.image_url) {
+      item = { key: real.id, iso, patraNo: real.patra_no, url: real.image_url, render: null };
+    } else if (real) {
+      item = {
+        key: real.id,
+        iso,
+        patraNo: real.patra_no,
+        url: null,
+        render: {
+          names: real.names,
+          gotra: real.gotra,
+          sevaNames: real.seva_names,
+          occasionLabel: real.occasion_label,
+          batchDate: iso,
+          patraNo: real.patra_no,
+        },
+      };
+    } else if (autoNames.length > 0) {
+      const kind = pj.labelKey === "sd_last_saturday" ? "last_saturday" : "second_tuesday";
+      const no = `AP-${iso.replace(/-/g, "")}-${current.id.slice(0, 4).toUpperCase()}`;
+      item = {
+        key: `auto-${iso}`,
+        iso,
+        patraNo: no,
+        url: null,
+        render: {
+          names: autoNames,
+          gotra: autoGotra,
+          sevaNames: includedSevas
+            .filter((sv) => sv.days.length === 0 || sv.days.includes(DAY_LABEL[pj.labelKey]))
+            .map((sv) => sv.name),
+          occasionLabel: occasionLabel(kind, false),
+          batchDate: iso,
+          patraNo: no,
+        },
+      };
+    }
+    if (item) {
+      patraItems.push(item);
+      itemByIso.set(iso, item);
+    }
+  }
+  // Team-issued patras for dates outside the calendar cadence (e.g. catch-ups).
+  for (const r of patras) {
+    const iso = r.batch_date.slice(0, 10);
+    if (itemByIso.has(iso)) continue;
+    patraItems.push({
+      key: r.id,
+      iso,
+      patraNo: r.patra_no,
+      url: r.image_url,
+      render: r.image_url
+        ? null
+        : {
+            names: r.names,
+            gotra: r.gotra,
+            sevaNames: r.seva_names,
+            occasionLabel: r.occasion_label,
+            batchDate: iso,
+            patraNo: r.patra_no,
+          },
+    });
+  }
+  patraItems.sort((a, b) => (a.iso < b.iso ? 1 : -1));
+
   const joinLabel = fmtDate(current.start_date ?? current.created_at);
   const priceLabel = plan ? formatINR(plan.price_paise) : "";
   const whatsInTitle = plan
@@ -464,7 +554,7 @@ function MySubscriptionPage() {
         <PoojaHistory
           poojas={pastPoojas}
           sevasPerPooja={includedSevas.length}
-          patras={patras}
+          patraByIso={itemByIso}
           next={isActive ? next : null}
           lang={lang}
         />
@@ -593,46 +683,8 @@ function MySubscriptionPage() {
           </div>
         )}
 
-        {/* ═══ ASHIRWAD PATRA gallery ═══ */}
-        {patras.length > 0 && (
-          <div className="card-soft p-5">
-            <div className="flex items-center gap-2">
-              <ScrollText size={18} className="text-brand" />
-              <h3 className="text-base">{t("ms_patra_title")}</h3>
-            </div>
-            <p className="text-[11.5px] text-muted-foreground mt-0.5">{t("ms_patra_desc")}</p>
-            <div className="flex gap-3 mt-3 overflow-x-auto scrollbar-none pb-1">
-              {patras.map((p) => (
-                <div key={p.id} className="shrink-0 w-[104px]">
-                  <div className="h-[140px] rounded-xl border border-brand/25 overflow-hidden bg-gradient-to-b from-[#FFF7EE] to-[#FDE9D6]">
-                    {p.image_url ? (
-                      <a href={p.image_url} target="_blank" rel="noreferrer">
-                        <img src={p.image_url} alt={`${t("ms_patra")} ${p.patra_no}`} className="w-full h-full object-cover" />
-                      </a>
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-2 text-center">
-                        <ScrollText size={24} className="text-brand-deep" />
-                        <span className="text-[9px] text-muted-foreground">{t("ms_soon")}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2 justify-center mt-1.5">
-                    {p.image_url && (
-                      <>
-                        <a href={p.image_url} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-brand inline-flex items-center gap-1">
-                          <ExternalLink size={11} /> {t("ms_view")}
-                        </a>
-                        <a href={patraDownloadUrl(p.image_url)} className="text-[11px] font-bold text-foreground/70 inline-flex items-center gap-1">
-                          <Download size={11} /> {t("ms_save")}
-                        </a>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* ═══ ASHIRWAD PATRA shelf — issued or auto-issued ═══ */}
+        <PatraShelf items={patraItems} />
 
         {/* ═══ FAMILY / SANKALP ═══ */}
         <div className="card-soft p-5">
@@ -696,6 +748,120 @@ function MySubscriptionPage() {
   );
 }
 
+interface PatraItem {
+  key: string;
+  iso: string;
+  patraNo: string;
+  /** Final hosted image, when the team has issued + uploaded it. */
+  url: string | null;
+  /** Otherwise: what to draw on the client. */
+  render: PatraRenderData | null;
+}
+
+// One canvas render per distinct certificate per page load, shared by the
+// history row and the shelf.
+const patraBlobCache = new Map<string, Promise<string>>();
+function patraObjectUrl(item: PatraItem): Promise<string> {
+  const d = item.render!;
+  const key = JSON.stringify([d.names, d.gotra, d.sevaNames, d.occasionLabel, d.batchDate, d.patraNo]);
+  let hit = patraBlobCache.get(key);
+  if (!hit) {
+    hit = renderPatraToBlob(d).then((b) => URL.createObjectURL(b));
+    patraBlobCache.set(key, hit);
+  }
+  return hit;
+}
+
+/** The patra image URL for an item: hosted, or rendered on the spot. */
+function usePatraUrl(item: PatraItem): string | null {
+  const [url, setUrl] = useState<string | null>(item.url);
+  useEffect(() => {
+    if (item.url) {
+      setUrl(item.url);
+      return;
+    }
+    if (!item.render) return;
+    let live = true;
+    patraObjectUrl(item)
+      .then((u) => live && setUrl(u))
+      .catch(() => live && setUrl(null));
+    return () => {
+      live = false;
+    };
+  }, [item]);
+  return url;
+}
+
+function PatraLink({ item, label, className }: { item: PatraItem; label: string; className: string }) {
+  const url = usePatraUrl(item);
+  if (!url) return <span className="self-start text-[11px] text-muted-foreground shrink-0">…</span>;
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className={className}>
+      <ScrollText size={12} /> {label}
+    </a>
+  );
+}
+
+function PatraThumb({ item, lang }: { item: PatraItem; lang: Lang }) {
+  const url = usePatraUrl(item);
+  const en = lang === "english";
+  const dm = fmtDayMonth(item.iso, lang);
+  return (
+    <div className="shrink-0 w-[104px]">
+      <div className="h-[140px] rounded-xl border border-brand/25 overflow-hidden bg-gradient-to-b from-[#FFF7EE] to-[#FDE9D6]">
+        {url ? (
+          <a href={url} target="_blank" rel="noreferrer">
+            <img src={url} alt={item.patraNo} className="w-full h-full object-cover" />
+          </a>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-2 text-center animate-pulse">
+            <ScrollText size={24} className="text-brand-deep" />
+            <span className="text-[9px] text-muted-foreground">{en ? "Preparing…" : "तैयार हो रहा है…"}</span>
+          </div>
+        )}
+      </div>
+      <div className="text-[11px] font-bold text-center mt-1.5">
+        {dm.day} {dm.mon}
+      </div>
+      {url && (
+        <div className="flex gap-2 justify-center mt-0.5">
+          <a href={url} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-brand inline-flex items-center gap-1">
+            <ExternalLink size={11} /> {en ? "View" : "देखें"}
+          </a>
+          <a
+            href={item.url ? patraDownloadUrl(url) : url}
+            download={`${item.patraNo}.png`}
+            className="text-[11px] font-bold text-foreground/70 inline-flex items-center gap-1"
+          >
+            <Download size={11} /> {en ? "Save" : "सेव"}
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Every Ashirwad Patra, newest first. Issued by the team when available,
+// otherwise issued automatically for each pooja already performed.
+function PatraShelf({ items }: { items: PatraItem[] }) {
+  const { t, lang } = useTranslation();
+  if (items.length === 0) return null;
+  return (
+    <div className="card-soft p-5">
+      <div className="flex items-center gap-2">
+        <ScrollText size={18} className="text-brand" />
+        <h3 className="text-base">{t("ms_patra_title")}</h3>
+      </div>
+      <p className="text-[11.5px] text-muted-foreground mt-0.5">{t("ms_patra_desc")}</p>
+      <div className="flex gap-3 mt-3 overflow-x-auto scrollbar-none pb-1">
+        {items.map((it) => (
+          <PatraThumb key={it.key} item={it} lang={lang} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function isoOf(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
@@ -706,13 +872,13 @@ function isoOf(d: Date): string {
 function PoojaHistory({
   poojas,
   sevasPerPooja,
-  patras,
+  patraByIso,
   next,
   lang,
 }: {
   poojas: SevaDate[];
   sevasPerPooja: number;
-  patras: PatraRow[];
+  patraByIso: Map<string, PatraItem>;
   next: SevaDate | null;
   lang: Lang;
 }) {
@@ -721,7 +887,6 @@ function PoojaHistory({
   const [showAll, setShowAll] = useState(false);
   const rows = [...poojas].reverse();
   const visible = showAll ? rows : rows.slice(0, 4);
-  const patraByDate = new Map(patras.map((p) => [p.batch_date.slice(0, 10), p]));
 
   return (
     <div className="card-soft p-5">
@@ -759,7 +924,7 @@ function PoojaHistory({
             const iso = isoOf(pj.date);
             const special = specialDayItems(pj.date);
             const main = special[0];
-            const patra = patraByDate.get(iso);
+            const patra = patraByIso.get(iso);
             const day = pj.date.toLocaleDateString("en-IN", { day: "2-digit" });
             const mon = pj.date.toLocaleDateString(en ? "en-IN" : "hi-IN", { month: "short" });
             return (
@@ -793,15 +958,12 @@ function PoojaHistory({
                     ))}
                   </div>
                 </div>
-                {patra?.image_url && (
-                  <a
-                    href={patra.image_url}
-                    target="_blank"
-                    rel="noreferrer"
+                {patra && (
+                  <PatraLink
+                    item={patra}
+                    label={t("ms_patra")}
                     className="self-start inline-flex items-center gap-1 bg-[#EAF8EE] text-[#1FA855] text-[11px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
-                  >
-                    <ScrollText size={12} /> {t("ms_patra")}
-                  </a>
+                  />
                 )}
               </li>
             );
