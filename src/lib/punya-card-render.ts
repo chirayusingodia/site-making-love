@@ -18,6 +18,8 @@ export interface PunyaCardData {
   lang: "hindi" | "english";
   months: number;
   poojas: number;
+  /** Individual sevas performed across those poojas (a pooja day has several). */
+  sevas?: number;
   /** Family members the sankalp is taken for (up to 4 shown). */
   names: string[];
   tiles: ImpactTile[];
@@ -192,38 +194,49 @@ export async function renderPunyaCard(data: PunyaCardData): Promise<Blob> {
 
   drawSilk(ctx);
 
+  // Names — measured first so the whole card can tighten up when they wrap
+  const names = data.names.map((n) => n.trim()).filter(Boolean).slice(0, 4);
+  const chips = names.map((n) => {
+    const f = fit(ctx, n, 700, 30, 330);
+    ctx.font = f;
+    return { n, f, w: ctx.measureText(n).width + 56 };
+  });
+  const rows: (typeof chips)[] = [];
+  let cur: typeof chips = [];
+  let cw = 0;
+  for (const c of chips) {
+    if (cur.length && cw + 14 + c.w > W - 160) {
+      rows.push(cur);
+      cur = [];
+      cw = 0;
+    }
+    cw += (cur.length ? 14 : 0) + c.w;
+    cur.push(c);
+  }
+  if (cur.length) rows.push(cur);
+  // Two rows of names push everything down; compact the header, chips,
+  // banner and tiles so the latest-pooja ribbon still fits.
+  const compact = rows.length > 1;
+  const logoTop = compact ? 34 : 40;
+  const logoH = compact ? 128 : 176;
+  const brandY = compact ? 224 : 296;
+  const subY = compact ? 258 : 336;
+  const chipH = compact ? 50 : 58;
+  const rowStep = compact ? 60 : 72;
+
   // Logo + brand
-  drawLogo(ctx, MX, 40, 176);
+  drawLogo(ctx, MX, logoTop, logoH);
   const brand = ctx.createLinearGradient(MX - 110, 70, MX + 110, 120);
   brand.addColorStop(0, BRAND[0]);
   brand.addColorStop(1, BRAND[1]);
-  txt(ctx, "पुण्यता", MX, 296, font(700, 56), brand);
-  txt(ctx, hi ? "तीर्थ गुरु पुष्करराज" : "Tirth Guru Pushkarraj", MX, 336, font(400, 20), ON_BG);
+  txt(ctx, "पुण्यता", MX, brandY, font(700, compact ? 48 : 56), brand);
+  txt(ctx, hi ? "तीर्थ गुरु पुष्करराज" : "Tirth Guru Pushkarraj", MX, subY, font(400, 20), ON_BG);
 
   // Names — "in the name of"
-  const names = data.names.map((n) => n.trim()).filter(Boolean).slice(0, 4);
-  let y = 386;
+  let y = subY + (compact ? 48 : 50);
   if (names.length) {
     txt(ctx, hi ? "इनके नाम से संपन्न" : "Offered in the name of", MX, y, font(400, hi ? 24 : 22), ON_BG);
-    y += 24;
-    const chips = names.map((n) => {
-      const f = fit(ctx, n, 700, 30, 330);
-      ctx.font = f;
-      return { n, f, w: ctx.measureText(n).width + 56 };
-    });
-    const rows: (typeof chips)[] = [];
-    let cur: typeof chips = [];
-    let cw = 0;
-    for (const c of chips) {
-      if (cur.length && cw + 14 + c.w > W - 160) {
-        rows.push(cur);
-        cur = [];
-        cw = 0;
-      }
-      cw += (cur.length ? 14 : 0) + c.w;
-      cur.push(c);
-    }
-    if (cur.length) rows.push(cur);
+    y += compact ? 20 : 24;
     rows.forEach((row) => {
       const rw = row.reduce((a, c) => a + c.w, 0) + 14 * (row.length - 1);
       let x = MX - rw / 2;
@@ -233,17 +246,17 @@ export async function renderPunyaCard(data: PunyaCardData): Promise<Blob> {
         ctx.shadowBlur = 16;
         ctx.shadowOffsetY = 5;
         ctx.fillStyle = "#FFFFFF";
-        rr(ctx, x, y, c.w, 58, 29);
+        rr(ctx, x, y, c.w, chipH, chipH / 2);
         ctx.fill();
         ctx.restore();
         ctx.strokeStyle = "#E0B34A";
         ctx.lineWidth = 1.7;
-        rr(ctx, x, y, c.w, 58, 29);
+        rr(ctx, x, y, c.w, chipH, chipH / 2);
         ctx.stroke();
-        txt(ctx, c.n, x + c.w / 2, y + 39, c.f, INK);
+        txt(ctx, c.n, x + c.w / 2, y + chipH * 0.67, c.f, INK);
         x += c.w + 14;
       });
-      y += 72;
+      y += rowStep;
     });
   }
 
@@ -257,7 +270,7 @@ export async function renderPunyaCard(data: PunyaCardData): Promise<Blob> {
   // Banner: pooja count + caption
   const num = String(data.poojas);
   const bt = y + 10;
-  const bh = 176;
+  const bh = compact ? 150 : 176;
   ctx.save();
   ctx.shadowColor = "rgba(150,90,30,0.16)";
   ctx.shadowBlur = 24;
@@ -273,7 +286,7 @@ export async function renderPunyaCard(data: PunyaCardData): Promise<Blob> {
   ctx.lineWidth = 2.5;
   rr(ctx, 64, bt, W - 128, bh, 36);
   ctx.stroke();
-  txt(ctx, num, 200, bt + 128, font(700, num.length > 2 ? 110 : 140), ng(bt + 20, bt + 140));
+  txt(ctx, num, 200, bt + bh - 48, font(700, num.length > 2 ? 110 : 140), ng(bt + 20, bt + 140));
   ctx.globalAlpha = 0.5;
   ctx.beginPath();
   ctx.moveTo(320, bt + 34);
@@ -284,16 +297,17 @@ export async function renderPunyaCard(data: PunyaCardData): Promise<Blob> {
   const cwid = W - 64 - cx - 30;
   const l1 = hi ? "पावन पूजाएँ" : "sacred poojas";
   const l2 = hi ? "आपके नाम से संपन्न" : "done in your name";
-  txt(ctx, l1, cx, bt + 76, fit(ctx, l1, 700, 40, cwid), INK, "left");
-  txt(ctx, l2, cx, bt + 124, fit(ctx, l2, 700, 34, cwid), INK, "left");
-  txt(ctx, hi ? `${data.months} माह की सदस्यता` : `${data.months}-month membership`, cx, bt + 158, font(400, 21), SOFT, "left");
+  txt(ctx, l1, cx, bt + bh * 0.43, fit(ctx, l1, 700, 40, cwid), INK, "left");
+  txt(ctx, l2, cx, bt + bh * 0.7, fit(ctx, l2, 700, 34, cwid), INK, "left");
+  const sub = hi ? `${data.sevas ? `${data.sevas} सेवाएँ · ` : ""}${data.months} माह की सदस्यता` : `${data.sevas ? `${data.sevas} sevas · ` : ""}${data.months}-month membership`;
+  txt(ctx, sub, cx, bt + bh - 18, font(400, 21), SOFT, "left");
 
   // Tiles
   const gx = 64;
-  const gap = 18;
+  const gap = compact ? 14 : 18;
   const gw = (W - gx * 2 - gap) / 2;
-  const gh = 124;
-  const tilesTop = bt + bh + 28;
+  const gh = compact ? 112 : 124;
+  const tilesTop = bt + bh + (compact ? 22 : 28);
   data.tiles.forEach((tile, i) => {
     const odd = data.tiles.length % 2 === 1 && i === data.tiles.length - 1;
     const w = odd ? W - gx * 2 : gw;
@@ -323,9 +337,9 @@ export async function renderPunyaCard(data: PunyaCardData): Promise<Blob> {
     txt(ctx, tile.emoji, dx, dy + 12, EMOJI, INK);
     const tx = x + 110;
     const tw = w - 110 - 20;
-    txt(ctx, tile.value, tx, ty + 54, fit(ctx, tile.value, 700, 46, tw), ng(ty + 10, ty + 56), "left");
-    txt(ctx, tile.label, tx, ty + 88, fit(ctx, tile.label, 700, hi ? 22 : 21, tw), INK, "left");
-    txt(ctx, tile.sub, tx, ty + 112, fit(ctx, tile.sub, 400, 16, tw), SOFT, "left");
+    txt(ctx, tile.value, tx, ty + gh * 0.44, fit(ctx, tile.value, 700, 46, tw), ng(ty + 10, ty + 56), "left");
+    txt(ctx, tile.label, tx, ty + gh * 0.71, fit(ctx, tile.label, 700, hi ? 22 : 21, tw), INK, "left");
+    txt(ctx, tile.sub, tx, ty + gh * 0.9, fit(ctx, tile.sub, 400, 16, tw), SOFT, "left");
   });
   const endY = tilesTop + Math.ceil(data.tiles.length / 2) * (gh + gap);
 

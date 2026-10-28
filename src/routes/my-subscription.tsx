@@ -365,10 +365,13 @@ function MySubscriptionPage() {
     sundarkandPerMonth: sundarSevas.reduce((a, s) => a + Math.max(s.days.length, 1), 0),
     hawanPerMonth: hawanSevas.reduce((a, s) => a + Math.max(s.days.length, 1), 0),
   };
-  const impact = computeImpact(Math.max(pastPoojas.length, sevasCompleted), members.length, flags);
+  const impact = computeImpact(pastPoojas.length, members.length, flags);
   // Completed sevas follow the joining date: every scheduled pooja since
   // she joined counts. Recorded proofs/manual marks can only raise it.
-  const completedCount = Math.max(pastPoojas.length, sevasCompleted);
+  // One pooja = every seva in the plan (Premium: 6), so completed sevas =
+  // poojas since joining × sevas in the plan — not just the pooja count.
+  const sevaTotal = pastPoojas.length * includedSevas.length;
+  const completedCount = Math.max(sevaTotal, sevasCompleted);
   const latestPooja = pastPoojas.length > 0 ? pastPoojas[pastPoojas.length - 1] : null;
   const latestSpecial = latestPooja ? specialDayItems(latestPooja.date)[0] : undefined;
   const latestCard = latestPooja
@@ -450,6 +453,7 @@ function MySubscriptionPage() {
             impact={impact}
             months={months}
             flags={flags}
+            completedCount={completedCount}
             names={members.map((m) => m.full_name)}
             latestCard={latestCard}
             lang={lang}
@@ -748,6 +752,7 @@ function ImpactCard({
   impact,
   months,
   flags,
+  completedCount,
   names,
   latestCard,
   lang,
@@ -755,6 +760,7 @@ function ImpactCard({
   impact: PunyaImpact;
   months: number;
   flags: ImpactPlanFlags;
+  completedCount: number;
   names: string[];
   latestCard: { dateLabel: string; occasion: string } | null;
   lang: Lang;
@@ -769,7 +775,7 @@ function ImpactCard({
     setBusy(true);
     setNote(null);
     try {
-      const blob = await renderPunyaCard({ lang, months, poojas: impact.poojas, names, tiles, lastPooja: latestCard });
+      const blob = await renderPunyaCard({ lang, months, poojas: impact.poojas, sevas: completedCount, names, tiles, lastPooja: latestCard });
       const msg = en
         ? "My Punya Bank on Punyata — sevas done in my family's name at Tirth Guru Pushkarraj 🙏 punyata.com"
         : "पुण्यता पर मेरा पुण्य खाता — तीर्थ गुरु पुष्करराज में परिवार के नाम से सेवा 🙏 punyata.com";
