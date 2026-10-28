@@ -34,7 +34,7 @@ import { supabase } from "@/lib/supabase";
 import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 import { usePublicPlans, getPlanById, formatINR } from "@/lib/plans";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
-import { nextSevaDate, fmtSevaDate, monthsActive, elapsedSevaDates } from "@/lib/seva-dates";
+import { nextSevaDate, fmtSevaDate, monthsActive, elapsedSevaDates, type SevaDate } from "@/lib/seva-dates";
 import { specialDayItems } from "@/lib/special-days";
 import { computeImpact, impactTiles, type PunyaImpact, type ImpactPlanFlags } from "@/lib/punya-impact";
 import { renderPunyaCard, sharePunyaCard } from "@/lib/punya-card-render";
@@ -460,6 +460,15 @@ function MySubscriptionPage() {
           />
         )}
 
+        {/* ═══ POOJA HISTORY — every pooja since joining, with its special day ═══ */}
+        <PoojaHistory
+          poojas={pastPoojas}
+          sevasPerPooja={includedSevas.length}
+          patras={patras}
+          next={isActive ? next : null}
+          lang={lang}
+        />
+
         {/* ═══ ACTIVE MEMBERSHIP ═══ */}
         <div className="card-soft p-5">
           <div className="flex items-center justify-between">
@@ -584,67 +593,6 @@ function MySubscriptionPage() {
           </div>
         )}
 
-        {/* ═══ PUNYA LEDGER (bahi-khata) — from Ashirwad Patras ═══ */}
-        <div className="card-soft p-5">
-          <div className="flex items-center gap-2">
-            <BookOpen size={18} className="text-brand" />
-            <h3 className="text-base">{t("ms_ledger")}</h3>
-          </div>
-          <p className="text-[11.5px] text-muted-foreground mt-0.5">{t("ms_ledger_desc")}</p>
-
-          {patras.length === 0 ? (
-            <div className="mt-3 rounded-2xl border border-dashed border-brand/40 bg-brand-soft/30 p-4 text-center">
-              <p className="text-xs font-semibold text-foreground/80">{t("ms_ledger_empty")}</p>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                {isActive && next
-                  ? `${t("ms_ledger_empty_active_pre")} ${fmtSevaDate(next.date, lang)} ${t("ms_ledger_empty_active_post")}`
-                  : t("ms_ledger_empty_inactive")}
-              </p>
-            </div>
-          ) : (
-            <ul className="mt-3">
-              {patras.map((p) => {
-                const dm = fmtDayMonth(p.batch_date, lang);
-                // Auspicious day the pooja fell on (festival / tithi / weekday deity).
-                const bd = p.batch_date.slice(0, 10).split("-").map(Number);
-                const special =
-                  bd.length === 3 && !bd.some(isNaN)
-                    ? specialDayItems(new Date(bd[0], bd[1] - 1, bd[2]))[0]
-                    : undefined;
-                return (
-                  <li key={p.id} className="flex items-center gap-3 py-2.5 border-b border-black/5 last:border-0">
-                    <div className="w-10 text-center shrink-0">
-                      <div className="text-base font-extrabold leading-none">{dm.day}</div>
-                      <div className="text-[10px] font-semibold text-muted-foreground">{dm.mon}</div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13.5px] font-bold truncate">{p.occasion_label}</div>
-                      {special && (
-                        <div className="text-[11px] font-semibold text-brand truncate">
-                          ✦ {lang === "english" ? special.en : special.hi}
-                        </div>
-                      )}
-                      <div className="text-[11px] text-muted-foreground">{t("ms_patra")} {p.patra_no}</div>
-                    </div>
-                    {p.image_url ? (
-                      <a
-                        href={p.image_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 bg-[#EAF8EE] text-[#1FA855] text-[11.5px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
-                      >
-                        <Play size={12} /> {t("ms_proof")}
-                      </a>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground shrink-0">{t("ms_preparing")}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
         {/* ═══ ASHIRWAD PATRA gallery ═══ */}
         {patras.length > 0 && (
           <div className="card-soft p-5">
@@ -748,6 +696,132 @@ function MySubscriptionPage() {
   );
 }
 
+function isoOf(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Every pooja that has come around since she joined (newest first): the date,
+// the special day it fell on (festival / tithi / weekday deity), how many
+// sevas ran, and the Ashirwad Patra if one has been issued for that day.
+function PoojaHistory({
+  poojas,
+  sevasPerPooja,
+  patras,
+  next,
+  lang,
+}: {
+  poojas: SevaDate[];
+  sevasPerPooja: number;
+  patras: PatraRow[];
+  next: SevaDate | null;
+  lang: Lang;
+}) {
+  const { t } = useTranslation();
+  const en = lang === "english";
+  const [showAll, setShowAll] = useState(false);
+  const rows = [...poojas].reverse();
+  const visible = showAll ? rows : rows.slice(0, 4);
+  const patraByDate = new Map(patras.map((p) => [p.batch_date.slice(0, 10), p]));
+
+  return (
+    <div className="card-soft p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <BookOpen size={18} className="text-brand" />
+          <h3 className="text-base">{en ? "Pooja History" : "पूजा इतिहास"}</h3>
+        </div>
+        {rows.length > 0 && (
+          <span className="bg-accent text-brand text-[11px] font-extrabold px-2.5 py-1 rounded-full">
+            {rows.length} {en ? (rows.length === 1 ? "pooja" : "poojas") : "पूजाएँ"}
+          </span>
+        )}
+      </div>
+      <p className="text-[11.5px] text-muted-foreground mt-0.5">
+        {en
+          ? "Every pooja done in your name — the date and the special day it fell on."
+          : "आपके नाम से हुई हर पूजा — तिथि और वह विशेष दिन जब वह संपन्न हुई।"}
+      </p>
+
+      {rows.length === 0 ? (
+        <div className="mt-3 rounded-2xl border border-dashed border-brand/40 bg-brand-soft/30 p-4 text-center">
+          <p className="text-xs font-semibold text-foreground/80">
+            {en ? "Your first pooja is coming" : "आपकी पहली पूजा आने वाली है"}
+          </p>
+          {next && (
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {fmtSevaDate(next.date, lang)} · {t(next.labelKey)}
+            </p>
+          )}
+        </div>
+      ) : (
+        <ul className="mt-3">
+          {visible.map((pj) => {
+            const iso = isoOf(pj.date);
+            const special = specialDayItems(pj.date);
+            const main = special[0];
+            const patra = patraByDate.get(iso);
+            const day = pj.date.toLocaleDateString("en-IN", { day: "2-digit" });
+            const mon = pj.date.toLocaleDateString(en ? "en-IN" : "hi-IN", { month: "short" });
+            return (
+              <li key={iso} className="flex gap-3 py-3 border-b border-black/5 last:border-0">
+                <div className="w-11 shrink-0 text-center rounded-xl bg-[#FFF7F1] border border-brand/15 py-1.5">
+                  <div className="text-base font-extrabold leading-none">{day}</div>
+                  <div className="text-[10px] font-semibold text-muted-foreground mt-0.5">{mon}</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13.5px] font-bold leading-tight">
+                    {main ? (en ? main.en : main.hi) : t(pj.labelKey)}
+                  </div>
+                  {main && (
+                    <div className="text-[11px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">
+                      {en ? main.descEn : main.descHi}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <span className="text-[10.5px] font-bold text-brand bg-brand-soft/50 px-2 py-0.5 rounded-full">
+                      {t(pj.labelKey)}
+                    </span>
+                    {sevasPerPooja > 0 && (
+                      <span className="text-[10.5px] font-bold text-[#2f8f43] bg-success/12 px-2 py-0.5 rounded-full">
+                        ✓ {sevasPerPooja} {en ? "sevas done" : "सेवाएँ संपन्न"}
+                      </span>
+                    )}
+                    {special.slice(1).map((x) => (
+                      <span key={x.en} className="text-[10.5px] font-semibold text-foreground/70 bg-secondary px-2 py-0.5 rounded-full">
+                        {en ? x.en : x.hi}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {patra?.image_url && (
+                  <a
+                    href={patra.image_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="self-start inline-flex items-center gap-1 bg-[#EAF8EE] text-[#1FA855] text-[11px] font-bold px-2.5 py-1.5 rounded-full shrink-0"
+                  >
+                    <ScrollText size={12} /> {t("ms_patra")}
+                  </a>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {rows.length > 4 && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-2 w-full text-xs font-bold text-brand py-2"
+        >
+          {showAll ? (en ? "Show less" : "कम दिखाएँ") : en ? `Show all ${rows.length} poojas` : `सभी ${rows.length} पूजाएँ देखें`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ImpactCard({
   impact,
   months,
@@ -796,10 +870,10 @@ function ImpactCard({
             {en ? "Your impact" : "आपका पुण्य प्रभाव"}
           </div>
           <h3 className="text-[17px] mt-0.5">
-            {impact.poojas > 0
+            {completedCount > 0
               ? en
-                ? `${impact.poojas} poojas in your name`
-                : `आपके नाम से ${impact.poojas} पूजाएँ`
+                ? `${completedCount} sevas in your name · ${impact.poojas} poojas`
+                : `आपके नाम से ${completedCount} सेवाएँ · ${impact.poojas} पूजाएँ`
               : en
                 ? "Your first pooja is coming"
                 : "आपकी पहली पूजा आने वाली है"}

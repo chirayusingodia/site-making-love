@@ -268,7 +268,7 @@ export async function renderPunyaCard(data: PunyaCardData): Promise<Blob> {
   };
 
   // Banner: pooja count + caption
-  const num = String(data.poojas);
+  const num = String(data.sevas ?? data.poojas);
   const bt = y + 10;
   const bh = compact ? 150 : 176;
   ctx.save();
@@ -295,11 +295,11 @@ export async function renderPunyaCard(data: PunyaCardData): Promise<Blob> {
   ctx.globalAlpha = 1;
   const cx = 352;
   const cwid = W - 64 - cx - 30;
-  const l1 = hi ? "पावन पूजाएँ" : "sacred poojas";
+  const l1 = hi ? "पावन सेवाएँ" : "sacred sevas";
   const l2 = hi ? "आपके नाम से संपन्न" : "done in your name";
   txt(ctx, l1, cx, bt + bh * 0.43, fit(ctx, l1, 700, 40, cwid), INK, "left");
   txt(ctx, l2, cx, bt + bh * 0.7, fit(ctx, l2, 700, 34, cwid), INK, "left");
-  const sub = hi ? `${data.sevas ? `${data.sevas} सेवाएँ · ` : ""}${data.months} माह की सदस्यता` : `${data.sevas ? `${data.sevas} sevas · ` : ""}${data.months}-month membership`;
+  const sub = hi ? `${data.poojas} पूजाएँ · ${data.months} माह की सदस्यता` : `${data.poojas} poojas · ${data.months}-month membership`;
   txt(ctx, sub, cx, bt + bh - 18, font(400, 21), SOFT, "left");
 
   // Tiles
