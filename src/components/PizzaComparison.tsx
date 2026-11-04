@@ -3,7 +3,7 @@ import { UtensilsCrossed } from "lucide-react";
 import { useTranslation } from "@/lib/translations";
 
 interface PizzaComparisonProps {
-  /** Public plan id (e.g. "basic" | "grah" | "varsh" | any new plan slug) */
+  /** Public plan id (e.g. "basic" | "sarv-mangal-sankalp" | "varsh" | any new plan slug) */
   planId: string;
   price: string;
   cycle: string;
@@ -158,7 +158,7 @@ export function PizzaComparison({ planId, price, cycle, size = "md" }: PizzaComp
   let leftLabel = lang === "hindi" ? "रेगुलर पिज्जा" : "Regular Pizza";
   let leftPrice = "₹300+";
 
-  if (planId === "grah") {
+  if (planId === "sarv-mangal-sankalp") {
     leftIcon = <AnimatedPizzaIcon className={isLg ? "w-6.5 h-6.5" : "w-4.5 h-4.5"} />;
     leftLabel = lang === "hindi" ? "फैमिली पिज्जा" : "Family Pizza";
     leftPrice = "₹450+";

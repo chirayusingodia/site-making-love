@@ -10,9 +10,12 @@ import {
   Notice,
   PageHeader,
   Panel,
+  SegmentedTabs,
   StatusPill,
   TableScroll,
 } from "@/components/admin/admin-ui";
+import { TelecallerPayroll } from "@/components/admin/telecaller-payroll";
+import { TelecallerAssignment } from "@/components/admin/telecaller-assignment";
 
 export const Route = createFileRoute("/admin/commissions")({
   // OWNER-ONLY (financial data — same gate discipline as /admin/reports).
@@ -52,7 +55,33 @@ function inr(paise: number): string {
   return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
+type CommissionTab = "payroll" | "assign" | "engine";
+
 function AdminCommissionsPage() {
+  const [tab, setTab] = useState<CommissionTab>("payroll");
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Telecaller commissions"
+        description="₹80 pehli conversion par, ₹20 har agle paid mahine. Salary, payment history aur subscriber assignment yahin."
+      />
+      <SegmentedTabs<CommissionTab>
+        value={tab}
+        onChange={setTab}
+        items={[
+          { value: "payroll", label: "Monthly salary" },
+          { value: "assign", label: "Subscriber assignment" },
+          { value: "engine", label: "Engine & lock" },
+        ]}
+      />
+      {tab === "payroll" && <TelecallerPayroll />}
+      {tab === "assign" && <TelecallerAssignment />}
+      {tab === "engine" && <CommissionEngine />}
+    </div>
+  );
+}
+
+function CommissionEngine() {
   const [periods, setPeriods] = useState<PeriodRow[] | null>(null);
   const [byPeriod, setByPeriod] = useState<{ period: string; net: number; count: number }[] | null>(
     null,
@@ -123,10 +152,10 @@ function AdminCommissionsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Commission engine"
-        description="Reconciler idempotent hai — dobara chalane par zero duplicate banega. Locked month mein koi entry nahi likhi ja sakti."
-      />
+      <p className="text-sm text-stone-500">
+        Reconciler idempotent hai — dobara chalane par zero duplicate banega. Locked month mein
+        koi entry nahi likhi ja sakti; month ko lock karne se pehle sabka payment record kar dijiye.
+      </p>
 
       {error && (
         <Notice tone="bad" icon={AlertTriangle}>

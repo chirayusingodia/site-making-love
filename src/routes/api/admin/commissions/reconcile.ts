@@ -52,6 +52,7 @@ interface SubRow {
   attributed_at: string | null;
   created_at: string;
   start_date: string | null;
+  cancelled_at: string | null;
   billing_period: "monthly" | "yearly" | null;
   price_paise: number | null;
 }
@@ -100,7 +101,7 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
                   // compared undefined === "active" and NEVER fired.
                   .select(
                     "id,user_id,status,sales_agent_id,telecaller_id,attribution_source,attributed_at," +
-                      "created_at,start_date,plans(billing_period,price_paise)",
+                      "created_at,start_date,cancelled_at,plans(billing_period,price_paise)",
                   )
                   .range(from, to),
               ),
@@ -243,9 +244,32 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
           // "first", paying the 20% bonus twice under a fresh payment_id
           // the unique index could not catch. The ledger itself is the
           // truth: a subscription earns first_deal EXACTLY once, ever.
-          const subsWithFirstDealEver = new Set(
-            entries.filter((e) => e.kind === "first_deal").map((e) => e.subscription_id),
+          //
+          // [2026-11-04] The claim is PER BENEFICIARY: agent and telecaller
+          // each earn their own first deal on one subscription (the DB
+          // index was widened in migration 043).
+          const claimKey = (subId: string, agentId: string | null, profileId: string | null) =>
+            agentId ? `${subId}|agent:${agentId}` : `${subId}|telecaller:${profileId}`;
+          const firstDealClaims = new Set(
+            entries
+              .filter((e) => e.kind === "first_deal")
+              .map((e) => claimKey(e.subscription_id, e.agent_id, e.profile_id)),
           );
+          // Telecaller flat pay is once per subscriber per month: the
+          // month the ₹80 lands there is no ₹20, and two captured
+          // payments in one month still pay a single ₹20.
+          const telecallerMonthKeys = new Set(
+            entries
+              .filter(
+                (e) =>
+                  e.profile_id &&
+                  e.amount_paise > 0 &&
+                  e.status !== "void" &&
+                  e.status !== "clawed_back",
+              )
+              .map((e) => `${e.subscription_id}|${e.profile_id}|${e.payout_period}`),
+          );
+          let skippedSameMonth = 0;
 
           let attributionsResolved = 0;
           let firstDealEntries = 0;
@@ -307,16 +331,6 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
               }
             }
 
-            // [Bug 2.1] `isFirst` used to be recomputed from
-            // subsWithFirstDealEver, which was derived ONCE before the
-            // loop — several already-captured payments of one
-            // subscription in a single backlog run ALL saw true and ALL
-            // paid the 20% bonus (dedupe keyed by payment_id only).
-            // Payments sort oldest-first, so the claim now happens
-            // inside acceptDrafts the moment first_deal drafts are
-            // queued; every later iteration sees false.
-            const isFirst = !subsWithFirstDealEver.has(sub.id);
-
             const beneficiaries = [
               ...(sub.sales_agent_id ? [{ role: "agent" as const, id: sub.sales_agent_id }] : []),
               ...(sub.telecaller_id
@@ -345,13 +359,21 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
                   skippedZeroPaise++;
                   continue;
                 }
+                if (d.profile_id) {
+                  const mk = `${d.subscription_id}|${d.profile_id}|${d.payout_period}`;
+                  if (telecallerMonthKeys.has(mk)) {
+                    skippedSameMonth++;
+                    continue;
+                  }
+                  telecallerMonthKeys.add(mk);
+                }
                 existingKeys.add(entryKey(d));
                 toInsert.push(d);
                 if (kind === "first_deal") {
-                  // [Bug 2.1] Claim the subscription's one-and-only
-                  // first_deal as soon as its drafts are queued —
-                  // later payments in THIS run can never re-earn it.
-                  subsWithFirstDealEver.add(sub.id);
+                  // [Bug 2.1] Claim this beneficiary's one-and-only
+                  // first_deal as soon as its draft is queued — later
+                  // payments in THIS run can never re-earn it.
+                  firstDealClaims.add(claimKey(d.subscription_id, d.agent_id, d.profile_id));
                   firstDealEntries++;
                 } else {
                   trailEntries++;
@@ -359,72 +381,74 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
               }
             };
 
-            if ((sub.billing_period ?? "monthly") === "yearly") {
-              // H2 (REVIEW): accrual now runs for EVERY captured yearly
-              // payment INCLUDING the first — previously the whole
-              // months-2..12 block sat behind `!isFirst`, so year-1
-              // trail was silently never created for anyone.
-              //
-              // H3: rate lookup lives in buildYearlyAccrualEntries →
-              // resolveTrailPercent (effective_to aware, ordered). The
-              // inline `rates.find` + dead `appliedPct` are gone.
-              if (isFirst) {
+            // Per beneficiary: each has their own first deal, so a telecaller
+            // assigned AFTER the agent (or after earlier months) still earns
+            // their ₹80 once, then ₹20 from the following month.
+            const isYearly = (sub.billing_period ?? "monthly") === "yearly";
+            // Yearly accrual follows the subscription: stop after the month
+            // it was cancelled/expired (no ₹20 for a subscriber who left).
+            const ended = sub.status === "cancelled" || sub.status === "expired";
+            const lastAccrualPeriod = ended
+              ? sub.cancelled_at
+                ? periodOf(sub.cancelled_at)
+                : "0000-00"
+              : "9999-99";
+
+            for (const ben of beneficiaries) {
+              const one = [ben];
+              const isFirstForBen = !firstDealClaims.has(
+                claimKey(
+                  sub.id,
+                  ben.role === "agent" ? ben.id : null,
+                  ben.role === "telecaller" ? ben.id : null,
+                ),
+              );
+              if (isFirstForBen) {
                 acceptDrafts(
                   buildCommissionEntriesForPayment({
                     subscriptionId: sub.id,
                     paymentId: pay.id,
-                    billingPeriod: "yearly",
+                    billingPeriod: isYearly ? "yearly" : "monthly",
                     pricePaise,
                     paidAtIso,
                     isFirstCapturedPayment: true,
-                    beneficiaries,
+                    beneficiaries: one,
                     rates,
                   }),
                   "first_deal",
                 );
-              }
-              for (const payoutPeriod of dueYearlyAccrualPeriods(paidAtIso, nowMs)) {
+              } else if (!isYearly) {
                 acceptDrafts(
-                  buildYearlyAccrualEntries({
+                  buildCommissionEntriesForPayment({
                     subscriptionId: sub.id,
                     paymentId: pay.id,
+                    billingPeriod: "monthly",
                     pricePaise,
                     paidAtIso,
-                    targetPeriod: payoutPeriod,
-                    beneficiaries,
+                    isFirstCapturedPayment: false,
+                    beneficiaries: one,
                     rates,
                   }),
                   "trail",
                 );
               }
-            } else if (isFirst) {
-              acceptDrafts(
-                buildCommissionEntriesForPayment({
-                  subscriptionId: sub.id,
-                  paymentId: pay.id,
-                  billingPeriod: "monthly",
-                  pricePaise,
-                  paidAtIso,
-                  isFirstCapturedPayment: true,
-                  beneficiaries,
-                  rates,
-                }),
-                "first_deal",
-              );
-            } else {
-              acceptDrafts(
-                buildCommissionEntriesForPayment({
-                  subscriptionId: sub.id,
-                  paymentId: pay.id,
-                  billingPeriod: "monthly",
-                  pricePaise,
-                  paidAtIso,
-                  isFirstCapturedPayment: false,
-                  beneficiaries,
-                  rates,
-                }),
-                "trail",
-              );
+              if (isYearly) {
+                for (const payoutPeriod of dueYearlyAccrualPeriods(paidAtIso, nowMs)) {
+                  if (payoutPeriod > lastAccrualPeriod) continue;
+                  acceptDrafts(
+                    buildYearlyAccrualEntries({
+                      subscriptionId: sub.id,
+                      paymentId: pay.id,
+                      pricePaise,
+                      paidAtIso,
+                      targetPeriod: payoutPeriod,
+                      beneficiaries: one,
+                      rates,
+                    }),
+                    "trail",
+                  );
+                }
+              }
             }
           }
 
@@ -531,6 +555,7 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
             firstDealEntries,
             trailEntries,
             skippedLocked,
+            skippedSameMonth,
             reversalsInserted,
             flipsApplied,
             holdsMatured,

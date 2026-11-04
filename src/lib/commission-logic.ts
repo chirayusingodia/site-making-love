@@ -29,6 +29,17 @@ export const FIRST_DEAL_PERCENT = 20;
  * Switching later is a one-line change here, NOT a migration. */
 export const FIRST_DEAL_BASE_YEARLY: "full_payment" | "monthly_equivalent_x3" = "full_payment";
 
+/**
+ * TELECALLER FLAT PAY (owner decision 2026-11-04): telecallers do NOT
+ * earn percentages. ₹80 once when a lead converts into a paying
+ * subscriber, then ₹20 per subscriber for every following paid month.
+ * Agents keep the percentage model above. Tune the rupees here only;
+ * each ledger row stores the amount it was paid at, so changing these
+ * never rewrites history.
+ */
+export const TELECALLER_FIRST_DEAL_PAISE = 80 * 100;
+export const TELECALLER_TRAIL_PAISE = 20 * 100;
+
 /** Standard trail when a person has no explicit rate row. */
 export const DEFAULT_TRAIL_PERCENT = 1;
 
@@ -349,18 +360,22 @@ export function buildCommissionEntriesForPayment(input: {
         ? roundHalfUp((pricePaise / 12) * 3)
         : pricePaise;
     for (const b of beneficiaries) {
+      const flat = b.role === "telecaller";
       out.push({
         subscription_id: subscriptionId,
         payment_id: paymentId,
         agent_id: b.role === "agent" ? b.id : null,
-        profile_id: b.role === "telecaller" ? b.id : null,
+        profile_id: flat ? b.id : null,
         kind: "first_deal",
-        percent_applied: FIRST_DEAL_PERCENT,
+        // Flat pay carries percent 0 — the amount is the rupee constant.
+        percent_applied: flat ? 0 : FIRST_DEAL_PERCENT,
         base_paise: basePaise,
-        amount_paise: roundHalfUp((basePaise * FIRST_DEAL_PERCENT) / 100),
+        amount_paise: flat
+          ? TELECALLER_FIRST_DEAL_PAISE
+          : roundHalfUp((basePaise * FIRST_DEAL_PERCENT) / 100),
         payout_period: period,
         status: "held",
-        note: "first deal — held 30 days",
+        note: flat ? "first deal — flat ₹80, held 30 days" : "first deal — held 30 days",
       });
     }
     return out;
@@ -368,22 +383,20 @@ export function buildCommissionEntriesForPayment(input: {
 
   const makeTrail = (basePaise: number, payoutPeriod: string) => {
     for (const b of beneficiaries) {
-      const percent = resolveTrailPercent(
-        rates,
-        b.role === "agent" ? { agentId: b.id } : { profileId: b.id },
-        payoutPeriod,
-      );
+      const flat = b.role === "telecaller";
+      const percent = flat ? 0 : resolveTrailPercent(rates, { agentId: b.id }, payoutPeriod);
       out.push({
         subscription_id: subscriptionId,
         payment_id: paymentId,
         agent_id: b.role === "agent" ? b.id : null,
-        profile_id: b.role === "telecaller" ? b.id : null,
+        profile_id: flat ? b.id : null,
         kind: "trail",
         percent_applied: percent,
         base_paise: basePaise,
-        amount_paise: roundHalfUp((basePaise * percent) / 100),
+        amount_paise: flat ? TELECALLER_TRAIL_PAISE : roundHalfUp((basePaise * percent) / 100),
         payout_period: payoutPeriod,
         status: "accrued",
+        ...(flat ? { note: "monthly trail — flat ₹20" } : {}),
       });
     }
   };
@@ -443,22 +456,20 @@ export function buildYearlyAccrualEntries(input: {
   const { subscriptionId, paymentId, pricePaise, targetPeriod, beneficiaries, rates } = input;
   const monthlyBase = roundHalfUp(pricePaise / 12);
   return beneficiaries.map((b) => {
-    const percent = resolveTrailPercent(
-      rates,
-      b.role === "agent" ? { agentId: b.id } : { profileId: b.id },
-      targetPeriod,
-    );
+    const flat = b.role === "telecaller";
+    const percent = flat ? 0 : resolveTrailPercent(rates, { agentId: b.id }, targetPeriod);
     return {
       subscription_id: subscriptionId,
       payment_id: paymentId,
       agent_id: b.role === "agent" ? b.id : null,
-      profile_id: b.role === "telecaller" ? b.id : null,
+      profile_id: flat ? b.id : null,
       kind: "trail" as const,
       percent_applied: percent,
       base_paise: monthlyBase,
-      amount_paise: roundHalfUp((monthlyBase * percent) / 100),
+      amount_paise: flat ? TELECALLER_TRAIL_PAISE : roundHalfUp((monthlyBase * percent) / 100),
       payout_period: targetPeriod,
       status: "accrued" as const,
+      ...(flat ? { note: "monthly trail — flat ₹20" } : {}),
     };
   });
 }

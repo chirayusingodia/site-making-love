@@ -55,8 +55,8 @@ export async function resolveActivePlan(
   db: SupabaseClient,
   planIdOrSlug: string,
 ): Promise<PlanRow | null> {
-  // Slug first (public URLs use slug aliases like "grah"); fall back to
-  // uuid only when the input IS one — .eq('id', 'grah') would make
+  // Slug first (public URLs use slug aliases like "sarv-mangal-sankalp"); fall back to
+  // uuid only when the input IS one — .eq('id', 'sarv-mangal-sankalp') would make
   // Postgres throw an invalid-uuid cast error.
   const cols = "id,name,slug,price_paise,billing_period";
   const bySlug = await db

@@ -111,6 +111,7 @@ function buildNav(isOwner: boolean): NavGroup[] {
           { label: "QR Collections", href: "/admin/qr-collections", icon: QrCode },
           { label: "Commissions", href: "/admin/commissions", icon: BadgeIndianRupee },
           { label: "Performance", href: "/admin/performance", icon: TrendingUp },
+          { label: "Telecaller Review", href: "/admin/telecaller-review", icon: TrendingUp },
         ],
       },
       {

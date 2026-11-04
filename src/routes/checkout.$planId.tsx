@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -14,7 +14,7 @@ import {
   MapPin,
   CalendarDays,
 } from "lucide-react";
-import { usePublicPlans, getPlanById } from "@/lib/plans";
+import { usePublicPlans, getPlanById, LEGACY_PLAN_IDS } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
@@ -38,6 +38,13 @@ export const Route = createFileRoute("/checkout/$planId")({
   validateSearch: (search: Record<string, unknown>): { att?: string } => ({
     att: typeof search.att === "string" ? search.att : undefined,
   }),
+  beforeLoad: ({ params, search }) => {
+    const current = LEGACY_PLAN_IDS[params.planId];
+    if (current) {
+      // Keep ?att= so old telecaller payment links still attribute correctly.
+      throw redirect({ to: "/checkout/$planId", params: { planId: current }, search, statusCode: 301 });
+    }
+  },
   component: CheckoutPage,
 });
 

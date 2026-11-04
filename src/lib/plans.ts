@@ -86,7 +86,7 @@ interface DbPlanAddon {
 export type { LiveSeva, ComparisonValue } from "@/lib/plans-schedule";
 
 export type Plan = {
-  id: string; // public URL id (slug alias, e.g. "grah" for "premium")
+  id: string; // public URL id (slug alias, e.g. "sarv-mangal-sankalp" for "premium")
   slug: string; // DB slug
   name: string; // DB plans.name
   nameEn: string | null; // DB plans.name_en (optional English display name)
@@ -213,7 +213,7 @@ const PLAN_PRESENTATION: Record<string, PlanPresentation> = {
     },
   },
   premium: {
-    planId: "grah",
+    planId: "sarv-mangal-sankalp",
     heading: "Sarv Mangal Sankalp — 6 Sevas, 2 Baar Har Mahine",
     subheading:
       "Sundarkand Path, Gau Seva, Vanar Seva, Saadhu Santo Ko Bhojan, Griha Shanti Hawan aur Sarv Rog Nivaran Hawan — sab kuch ek hi pack mein",
@@ -847,7 +847,23 @@ export function usePublicPlans() {
   });
 }
 
-/** Lookup by public URL id or DB slug (e.g. "grah" | "premium"). */
+/**
+ * Retired public URL ids → current id. /plan/<old> and /checkout/<old>
+ * redirect here so links already shared on WhatsApp / ads keep working.
+ */
+export const LEGACY_PLAN_IDS: Record<string, string> = {
+  grah: "sarv-mangal-sankalp",
+};
+
+/**
+ * DB slug → public URL id (the `/plan/<id>` path segment). Mirrors
+ * buildPlan's fallback: plans without a presentation entry use their slug.
+ */
+export function publicPlanId(dbSlug: string): string {
+  return PLAN_PRESENTATION[dbSlug]?.planId ?? dbSlug;
+}
+
+/** Lookup by public URL id or DB slug (e.g. "sarv-mangal-sankalp" | "premium"). */
 export function getPlanById(plans: Plan[], id: string): Plan | undefined {
   return plans.find((p) => p.id === id || p.slug === id);
 }

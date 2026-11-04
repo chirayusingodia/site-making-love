@@ -64,7 +64,7 @@ export const IMAGE_SLOT_SECTIONS: ImageSlotSection[] = [
   {
     title: "Plan — प्रीमियम (गृह शांति)",
     description: "Plan card की मुख्य फोटो एवं plan detail page का step-by-step slideshow।",
-    livePage: "/plan/grah",
+    livePage: "/plan/sarv-mangal-sankalp",
     slots: [
       siteImage("planPremiumHero", "Card व Slide 1 — मुख्य फोटो"),
       siteImage("planPremiumSankalp", "Slide 2 — संकल्प"),

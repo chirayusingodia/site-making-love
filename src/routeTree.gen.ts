@@ -52,6 +52,7 @@ import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminSignupsRouteImport } from './routes/admin.signups'
 import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
+import { Route as AdminTelecallerReviewRouteImport } from './routes/admin.telecaller-review'
 import { Route as AgentIndexRouteImport } from './routes/agent.index'
 import { Route as AgentMyLeadsRouteImport } from './routes/agent.my-leads'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
@@ -108,8 +109,14 @@ import { Route as TelecallerPersonSubscriptionIdRouteImport } from './routes/tel
 import { Route as TelecallerQueueQueueKeyRouteImport } from './routes/telecaller.queue.$queueKey'
 import { Route as ApiAdminAuditLogFiltersRouteImport } from './routes/api/admin/audit-log/filters'
 import { Route as ApiAdminAuditLogListRouteImport } from './routes/api/admin/audit-log/list'
+import { Route as ApiAdminCommissionsAssignTelecallerRouteImport } from './routes/api/admin/commissions/assign-telecaller'
+import { Route as ApiAdminCommissionsAttributionListRouteImport } from './routes/api/admin/commissions/attribution-list'
 import { Route as ApiAdminCommissionsLockRouteImport } from './routes/api/admin/commissions/lock'
+import { Route as ApiAdminCommissionsPayRouteImport } from './routes/api/admin/commissions/pay'
+import { Route as ApiAdminCommissionsPayrollRouteImport } from './routes/api/admin/commissions/payroll'
+import { Route as ApiAdminCommissionsPayrollExportRouteImport } from './routes/api/admin/commissions/payroll-export'
 import { Route as ApiAdminCommissionsReconcileRouteImport } from './routes/api/admin/commissions/reconcile'
+import { Route as ApiAdminCommissionsTelecallerReviewRouteImport } from './routes/api/admin/commissions/telecaller-review'
 import { Route as ApiAdminContentAnalyzeRouteImport } from './routes/api/admin/content/analyze'
 import { Route as ApiAdminContentGenerateRouteImport } from './routes/api/admin/content/generate'
 import { Route as ApiAdminContentListRouteImport } from './routes/api/admin/content/list'
@@ -374,6 +381,11 @@ const AdminStaffRoute = AdminStaffRouteImport.update({
 const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
   id: '/subscribers',
   path: '/subscribers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTelecallerReviewRoute = AdminTelecallerReviewRouteImport.update({
+  id: '/telecaller-review',
+  path: '/telecaller-review',
   getParentRoute: () => AdminRoute,
 } as any)
 const AgentIndexRoute = AgentIndexRouteImport.update({
@@ -668,15 +680,50 @@ const ApiAdminAuditLogListRoute = ApiAdminAuditLogListRouteImport.update({
   path: '/api/admin/audit-log/list',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminCommissionsAssignTelecallerRoute =
+  ApiAdminCommissionsAssignTelecallerRouteImport.update({
+    id: '/api/admin/commissions/assign-telecaller',
+    path: '/api/admin/commissions/assign-telecaller',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminCommissionsAttributionListRoute =
+  ApiAdminCommissionsAttributionListRouteImport.update({
+    id: '/api/admin/commissions/attribution-list',
+    path: '/api/admin/commissions/attribution-list',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminCommissionsLockRoute = ApiAdminCommissionsLockRouteImport.update({
   id: '/api/admin/commissions/lock',
   path: '/api/admin/commissions/lock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminCommissionsPayRoute = ApiAdminCommissionsPayRouteImport.update({
+  id: '/api/admin/commissions/pay',
+  path: '/api/admin/commissions/pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminCommissionsPayrollRoute =
+  ApiAdminCommissionsPayrollRouteImport.update({
+    id: '/api/admin/commissions/payroll',
+    path: '/api/admin/commissions/payroll',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminCommissionsPayrollExportRoute =
+  ApiAdminCommissionsPayrollExportRouteImport.update({
+    id: '/api/admin/commissions/payroll-export',
+    path: '/api/admin/commissions/payroll-export',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminCommissionsReconcileRoute =
   ApiAdminCommissionsReconcileRouteImport.update({
     id: '/api/admin/commissions/reconcile',
     path: '/api/admin/commissions/reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminCommissionsTelecallerReviewRoute =
+  ApiAdminCommissionsTelecallerReviewRouteImport.update({
+    id: '/api/admin/commissions/telecaller-review',
+    path: '/api/admin/commissions/telecaller-review',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiAdminContentAnalyzeRoute = ApiAdminContentAnalyzeRouteImport.update({
@@ -994,6 +1041,7 @@ export interface FileRoutesByFullPath {
   '/admin/signups': typeof AdminSignupsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
+  '/admin/telecaller-review': typeof AdminTelecallerReviewRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
@@ -1051,8 +1099,14 @@ export interface FileRoutesByFullPath {
   '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
   '/api/admin/audit-log/filters': typeof ApiAdminAuditLogFiltersRoute
   '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
+  '/api/admin/commissions/assign-telecaller': typeof ApiAdminCommissionsAssignTelecallerRoute
+  '/api/admin/commissions/attribution-list': typeof ApiAdminCommissionsAttributionListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
+  '/api/admin/commissions/pay': typeof ApiAdminCommissionsPayRoute
+  '/api/admin/commissions/payroll': typeof ApiAdminCommissionsPayrollRoute
+  '/api/admin/commissions/payroll-export': typeof ApiAdminCommissionsPayrollExportRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/commissions/telecaller-review': typeof ApiAdminCommissionsTelecallerReviewRoute
   '/api/admin/content/analyze': typeof ApiAdminContentAnalyzeRoute
   '/api/admin/content/generate': typeof ApiAdminContentGenerateRoute
   '/api/admin/content/list': typeof ApiAdminContentListRoute
@@ -1144,6 +1198,7 @@ export interface FileRoutesByTo {
   '/admin/signups': typeof AdminSignupsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
+  '/admin/telecaller-review': typeof AdminTelecallerReviewRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
@@ -1201,8 +1256,14 @@ export interface FileRoutesByTo {
   '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
   '/api/admin/audit-log/filters': typeof ApiAdminAuditLogFiltersRoute
   '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
+  '/api/admin/commissions/assign-telecaller': typeof ApiAdminCommissionsAssignTelecallerRoute
+  '/api/admin/commissions/attribution-list': typeof ApiAdminCommissionsAttributionListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
+  '/api/admin/commissions/pay': typeof ApiAdminCommissionsPayRoute
+  '/api/admin/commissions/payroll': typeof ApiAdminCommissionsPayrollRoute
+  '/api/admin/commissions/payroll-export': typeof ApiAdminCommissionsPayrollExportRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/commissions/telecaller-review': typeof ApiAdminCommissionsTelecallerReviewRoute
   '/api/admin/content/analyze': typeof ApiAdminContentAnalyzeRoute
   '/api/admin/content/generate': typeof ApiAdminContentGenerateRoute
   '/api/admin/content/list': typeof ApiAdminContentListRoute
@@ -1298,6 +1359,7 @@ export interface FileRoutesById {
   '/admin/signups': typeof AdminSignupsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
+  '/admin/telecaller-review': typeof AdminTelecallerReviewRoute
   '/agent/my-leads': typeof AgentMyLeadsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/$planId': typeof CheckoutPlanIdRoute
@@ -1355,8 +1417,14 @@ export interface FileRoutesById {
   '/telecaller/queue/$queueKey': typeof TelecallerQueueQueueKeyRoute
   '/api/admin/audit-log/filters': typeof ApiAdminAuditLogFiltersRoute
   '/api/admin/audit-log/list': typeof ApiAdminAuditLogListRoute
+  '/api/admin/commissions/assign-telecaller': typeof ApiAdminCommissionsAssignTelecallerRoute
+  '/api/admin/commissions/attribution-list': typeof ApiAdminCommissionsAttributionListRoute
   '/api/admin/commissions/lock': typeof ApiAdminCommissionsLockRoute
+  '/api/admin/commissions/pay': typeof ApiAdminCommissionsPayRoute
+  '/api/admin/commissions/payroll': typeof ApiAdminCommissionsPayrollRoute
+  '/api/admin/commissions/payroll-export': typeof ApiAdminCommissionsPayrollExportRoute
   '/api/admin/commissions/reconcile': typeof ApiAdminCommissionsReconcileRoute
+  '/api/admin/commissions/telecaller-review': typeof ApiAdminCommissionsTelecallerReviewRoute
   '/api/admin/content/analyze': typeof ApiAdminContentAnalyzeRoute
   '/api/admin/content/generate': typeof ApiAdminContentGenerateRoute
   '/api/admin/content/list': typeof ApiAdminContentListRoute
@@ -1453,6 +1521,7 @@ export interface FileRouteTypes {
     | '/admin/signups'
     | '/admin/staff'
     | '/admin/subscribers'
+    | '/admin/telecaller-review'
     | '/agent/my-leads'
     | '/blog/$slug'
     | '/checkout/$planId'
@@ -1510,8 +1579,14 @@ export interface FileRouteTypes {
     | '/telecaller/queue/$queueKey'
     | '/api/admin/audit-log/filters'
     | '/api/admin/audit-log/list'
+    | '/api/admin/commissions/assign-telecaller'
+    | '/api/admin/commissions/attribution-list'
     | '/api/admin/commissions/lock'
+    | '/api/admin/commissions/pay'
+    | '/api/admin/commissions/payroll'
+    | '/api/admin/commissions/payroll-export'
     | '/api/admin/commissions/reconcile'
+    | '/api/admin/commissions/telecaller-review'
     | '/api/admin/content/analyze'
     | '/api/admin/content/generate'
     | '/api/admin/content/list'
@@ -1603,6 +1678,7 @@ export interface FileRouteTypes {
     | '/admin/signups'
     | '/admin/staff'
     | '/admin/subscribers'
+    | '/admin/telecaller-review'
     | '/agent/my-leads'
     | '/blog/$slug'
     | '/checkout/$planId'
@@ -1660,8 +1736,14 @@ export interface FileRouteTypes {
     | '/telecaller/queue/$queueKey'
     | '/api/admin/audit-log/filters'
     | '/api/admin/audit-log/list'
+    | '/api/admin/commissions/assign-telecaller'
+    | '/api/admin/commissions/attribution-list'
     | '/api/admin/commissions/lock'
+    | '/api/admin/commissions/pay'
+    | '/api/admin/commissions/payroll'
+    | '/api/admin/commissions/payroll-export'
     | '/api/admin/commissions/reconcile'
+    | '/api/admin/commissions/telecaller-review'
     | '/api/admin/content/analyze'
     | '/api/admin/content/generate'
     | '/api/admin/content/list'
@@ -1756,6 +1838,7 @@ export interface FileRouteTypes {
     | '/admin/signups'
     | '/admin/staff'
     | '/admin/subscribers'
+    | '/admin/telecaller-review'
     | '/agent/my-leads'
     | '/blog/$slug'
     | '/checkout/$planId'
@@ -1813,8 +1896,14 @@ export interface FileRouteTypes {
     | '/telecaller/queue/$queueKey'
     | '/api/admin/audit-log/filters'
     | '/api/admin/audit-log/list'
+    | '/api/admin/commissions/assign-telecaller'
+    | '/api/admin/commissions/attribution-list'
     | '/api/admin/commissions/lock'
+    | '/api/admin/commissions/pay'
+    | '/api/admin/commissions/payroll'
+    | '/api/admin/commissions/payroll-export'
     | '/api/admin/commissions/reconcile'
+    | '/api/admin/commissions/telecaller-review'
     | '/api/admin/content/analyze'
     | '/api/admin/content/generate'
     | '/api/admin/content/list'
@@ -1930,8 +2019,14 @@ export interface RootRouteChildren {
   ApiTelecallerSendPaymentLinkRoute: typeof ApiTelecallerSendPaymentLinkRoute
   ApiAdminAuditLogFiltersRoute: typeof ApiAdminAuditLogFiltersRoute
   ApiAdminAuditLogListRoute: typeof ApiAdminAuditLogListRoute
+  ApiAdminCommissionsAssignTelecallerRoute: typeof ApiAdminCommissionsAssignTelecallerRoute
+  ApiAdminCommissionsAttributionListRoute: typeof ApiAdminCommissionsAttributionListRoute
   ApiAdminCommissionsLockRoute: typeof ApiAdminCommissionsLockRoute
+  ApiAdminCommissionsPayRoute: typeof ApiAdminCommissionsPayRoute
+  ApiAdminCommissionsPayrollRoute: typeof ApiAdminCommissionsPayrollRoute
+  ApiAdminCommissionsPayrollExportRoute: typeof ApiAdminCommissionsPayrollExportRoute
   ApiAdminCommissionsReconcileRoute: typeof ApiAdminCommissionsReconcileRoute
+  ApiAdminCommissionsTelecallerReviewRoute: typeof ApiAdminCommissionsTelecallerReviewRoute
   ApiAdminContentAnalyzeRoute: typeof ApiAdminContentAnalyzeRoute
   ApiAdminContentGenerateRoute: typeof ApiAdminContentGenerateRoute
   ApiAdminContentListRoute: typeof ApiAdminContentListRoute
@@ -2284,6 +2379,13 @@ declare module '@tanstack/react-router' {
       path: '/subscribers'
       fullPath: '/admin/subscribers'
       preLoaderRoute: typeof AdminSubscribersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/telecaller-review': {
+      id: '/admin/telecaller-review'
+      path: '/telecaller-review'
+      fullPath: '/admin/telecaller-review'
+      preLoaderRoute: typeof AdminTelecallerReviewRouteImport
       parentRoute: typeof AdminRoute
     }
     '/agent/': {
@@ -2678,6 +2780,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAuditLogListRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/commissions/assign-telecaller': {
+      id: '/api/admin/commissions/assign-telecaller'
+      path: '/api/admin/commissions/assign-telecaller'
+      fullPath: '/api/admin/commissions/assign-telecaller'
+      preLoaderRoute: typeof ApiAdminCommissionsAssignTelecallerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/commissions/attribution-list': {
+      id: '/api/admin/commissions/attribution-list'
+      path: '/api/admin/commissions/attribution-list'
+      fullPath: '/api/admin/commissions/attribution-list'
+      preLoaderRoute: typeof ApiAdminCommissionsAttributionListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/commissions/lock': {
       id: '/api/admin/commissions/lock'
       path: '/api/admin/commissions/lock'
@@ -2685,11 +2801,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCommissionsLockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/commissions/pay': {
+      id: '/api/admin/commissions/pay'
+      path: '/api/admin/commissions/pay'
+      fullPath: '/api/admin/commissions/pay'
+      preLoaderRoute: typeof ApiAdminCommissionsPayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/commissions/payroll': {
+      id: '/api/admin/commissions/payroll'
+      path: '/api/admin/commissions/payroll'
+      fullPath: '/api/admin/commissions/payroll'
+      preLoaderRoute: typeof ApiAdminCommissionsPayrollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/commissions/payroll-export': {
+      id: '/api/admin/commissions/payroll-export'
+      path: '/api/admin/commissions/payroll-export'
+      fullPath: '/api/admin/commissions/payroll-export'
+      preLoaderRoute: typeof ApiAdminCommissionsPayrollExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/commissions/reconcile': {
       id: '/api/admin/commissions/reconcile'
       path: '/api/admin/commissions/reconcile'
       fullPath: '/api/admin/commissions/reconcile'
       preLoaderRoute: typeof ApiAdminCommissionsReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/commissions/telecaller-review': {
+      id: '/api/admin/commissions/telecaller-review'
+      path: '/api/admin/commissions/telecaller-review'
+      fullPath: '/api/admin/commissions/telecaller-review'
+      preLoaderRoute: typeof ApiAdminCommissionsTelecallerReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/content/analyze': {
@@ -3067,6 +3211,7 @@ interface AdminRouteChildren {
   AdminSignupsRoute: typeof AdminSignupsRoute
   AdminStaffRoute: typeof AdminStaffRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
+  AdminTelecallerReviewRoute: typeof AdminTelecallerReviewRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminPanditBatchIdRoute: typeof AdminPanditBatchIdRoute
 }
@@ -3093,6 +3238,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSignupsRoute: AdminSignupsRoute,
   AdminStaffRoute: AdminStaffRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
+  AdminTelecallerReviewRoute: AdminTelecallerReviewRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminPanditBatchIdRoute: AdminPanditBatchIdRoute,
 }
@@ -3227,8 +3373,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTelecallerSendPaymentLinkRoute: ApiTelecallerSendPaymentLinkRoute,
   ApiAdminAuditLogFiltersRoute: ApiAdminAuditLogFiltersRoute,
   ApiAdminAuditLogListRoute: ApiAdminAuditLogListRoute,
+  ApiAdminCommissionsAssignTelecallerRoute:
+    ApiAdminCommissionsAssignTelecallerRoute,
+  ApiAdminCommissionsAttributionListRoute:
+    ApiAdminCommissionsAttributionListRoute,
   ApiAdminCommissionsLockRoute: ApiAdminCommissionsLockRoute,
+  ApiAdminCommissionsPayRoute: ApiAdminCommissionsPayRoute,
+  ApiAdminCommissionsPayrollRoute: ApiAdminCommissionsPayrollRoute,
+  ApiAdminCommissionsPayrollExportRoute: ApiAdminCommissionsPayrollExportRoute,
   ApiAdminCommissionsReconcileRoute: ApiAdminCommissionsReconcileRoute,
+  ApiAdminCommissionsTelecallerReviewRoute:
+    ApiAdminCommissionsTelecallerReviewRoute,
   ApiAdminContentAnalyzeRoute: ApiAdminContentAnalyzeRoute,
   ApiAdminContentGenerateRoute: ApiAdminContentGenerateRoute,
   ApiAdminContentListRoute: ApiAdminContentListRoute,
