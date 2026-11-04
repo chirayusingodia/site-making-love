@@ -129,25 +129,16 @@ function EarningsPage() {
         <div className="rounded-2xl border border-indigo-900/10 bg-white shadow-2xs p-5">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-indigo-700" />
-            Aapka trail rate
+            Aapki kamai ka rate
           </h2>
           {loading ? (
             <Skeleton className="h-8 w-20 mt-3" />
           ) : (
             <>
-              <div className="text-3xl font-extrabold text-indigo-800 mt-2">
-                {(data?.trailRate.percent ?? 1).toLocaleString("en-IN")}%
-              </div>
-              {data?.trailRate.since && (
-                <p className="text-xs text-slate-500 mt-1">
-                  {data.trailRate.reason === "promotion"
-                    ? `Promotion mila — ${data.trailRate.since} se`
-                    : `${data.trailRate.since} se laagoo`}
-                </p>
-              )}
-              <p className="text-[11px] text-slate-400 mt-2">
-                First-deal bonus sabke liye fixed 20% hai — promotion sirf trail badhati hai.
-              </p>
+              <div className="text-3xl font-extrabold text-indigo-800 mt-2">₹80</div>
+              <p className="text-xs text-slate-500 mt-1">har naye subscriber ki pehli conversion par</p>
+              <div className="text-xl font-bold text-indigo-800 mt-3">₹20 / mahina</div>
+              <p className="text-xs text-slate-500 mt-1">us subscriber ke har agle paid mahine par</p>
             </>
           )}
         </div>

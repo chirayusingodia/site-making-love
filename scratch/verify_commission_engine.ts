@@ -212,8 +212,8 @@ const firstMonthly = buildCommissionEntriesForPayment({
   beneficiaries: [{ role: "telecaller", id: TELECALLER_T }],
   rates,
 });
-check("first deal: 20% of ₹399 = ₹79.80 (7980p)", firstMonthly[0].amount_paise === roundHalfUp(PREMIUM_PAISE * 0.2));
-check("first deal: percent WRITTEN onto the entry (explainable in 2029)", Number(firstMonthly[0].percent_applied) === 20);
+check("first deal: TELECALLER gets flat ₹80 (8000p), not a percentage", firstMonthly[0].amount_paise === 8000);
+check("first deal: flat pay is recorded with percent 0", Number(firstMonthly[0].percent_applied) === 0);
 check("first deal: lands as HELD (30-day hold)", firstMonthly[0].status === "held");
 
 const trailAug = buildCommissionEntriesForPayment({
@@ -226,7 +226,7 @@ const trailAug = buildCommissionEntriesForPayment({
   beneficiaries: [{ role: "telecaller", id: TELECALLER_T }],
   rates,
 });
-check("trail month-2 @1% = ₹3.99 (399p)", trailAug[0].amount_paise === 399);
+check("trail month-2: TELECALLER gets flat ₹20 (2000p)", trailAug[0].amount_paise === 2000);
 check("trail accrues as ACCRUED (not held)", trailAug[0].status === "accrued");
 
 // ─────────────────────────────────────────────────────────────
@@ -241,8 +241,8 @@ const annualFirstFull = buildCommissionEntriesForPayment({
   beneficiaries: [{ role: "telecaller", id: TELECALLER_T }],
   rates,
 });
-check("annual first deal, FULL base: 20% of ₹4101 = ₹820.20",
-  annualFirstFull[0].base_paise === ANNUAL_PAISE && annualFirstFull[0].amount_paise === 82020);
+check("annual first deal: telecaller flat ₹80 (base still recorded)",
+  annualFirstFull[0].base_paise === ANNUAL_PAISE && annualFirstFull[0].amount_paise === 8000);
 check("annual FIRST payment produces ONLY the held first_deal (accruals come from their own builder)",
   annualFirstFull.every((e) => e.kind === "first_deal"));
 
@@ -285,7 +285,7 @@ const accrualSep = buildYearlyAccrualEntries({
   beneficiaries: [{ role: "telecaller", id: TELECALLER_T }],
   rates: promotedRates,
 });
-check("Sep accrual @1% of ₹4,101/12 = ₹3.42 (342p)", accrualSep[0].percent_applied === 1 && accrualSep[0].amount_paise === 342);
+check("Sep accrual: telecaller flat ₹20 regardless of rate rows", accrualSep[0].amount_paise === 2000);
 const accrualOct = buildYearlyAccrualEntries({
   subscriptionId: "sub-y",
   paymentId: "pay-y1",
@@ -295,8 +295,8 @@ const accrualOct = buildYearlyAccrualEntries({
   beneficiaries: [{ role: "telecaller", id: TELECALLER_T }],
   rates: promotedRates,
 });
-check("Oct accrual AFTER promotion @2% = ₹6.84 (684p) — superseded rate can no longer win",
-  accrualOct[0].percent_applied === 2 && accrualOct[0].amount_paise === 684);
+check("Oct accrual: still flat ₹20 (promotion % rows no longer apply to telecallers)",
+  accrualOct[0].amount_paise === 2000);
 
 // ─────────────────────────────────────────────────────────────
 console.log("\n— §10.5 clawbacks + holds + locking —");
@@ -428,10 +428,10 @@ const flat = rows.flatMap((r) => r.e);
 const t = (id: string) => flat.filter((e) => e.profile_id === TELECALLER_T && e.payment_id === id)[0];
 const a = (id: string) => flat.filter((e) => e.agent_id === AGENT_A && e.payment_id === id)[0];
 
-ok = ok && t("ex-p1").amount_paise === 7980 && a("ex-p1").amount_paise === 7980;
-ok = ok && t("ex-p2").amount_paise === 399 && a("ex-p2").amount_paise === 399;
-ok = ok && t("ex-p3").amount_paise === 399 && a("ex-p3").amount_paise === 399;
-ok = ok && t("ex-p4").amount_paise === 798 && a("ex-p4").amount_paise === 399; // promotion lifts HER book only... and agents' book too when they're promoted separately
+ok = ok && t("ex-p1").amount_paise === 8000 && a("ex-p1").amount_paise === 7980;
+ok = ok && t("ex-p2").amount_paise === 2000 && a("ex-p2").amount_paise === 399;
+ok = ok && t("ex-p3").amount_paise === 2000 && a("ex-p3").amount_paise === 399;
+ok = ok && t("ex-p4").amount_paise === 2000 && a("ex-p4").amount_paise === 399; // telecaller flat; agent stays on percent
 ok = ok && flat.every((e) => e.kind === "first_deal" ? e.status === "held" : e.status === "accrued");
 check("worked example numbers all match the §10.1 table", ok);
 
@@ -446,7 +446,7 @@ console.log(
   `    REFUND clawback: ${refundPlan.reversals.length} reversal rows × -7980p into 2026-11; ${refundPlan.flipIds.length} in-place flips`,
 );
 check("refund claws back BOTH beneficiaries independently (separate pools)",
-  refundPlan.reversals.length === 2 && refundPlan.reversals.every((r) => r.amount_paise === -7980));
+  refundPlan.reversals.length === 2 && refundPlan.reversals.some((r) => r.amount_paise === -8000) && refundPlan.reversals.some((r) => r.amount_paise === -7980));
 
 // ─────────────────────────────────────────────────────────────
 console.log("\n— H1/H5 regression checks —");
@@ -491,7 +491,7 @@ for (const e of yFirst) {
   const who = e.agent_id ? "AGENT  " : "TELECAL";
   yRows.push(`    Aug (annual first)  ${who} first_deal pct=20% base=${e.base_paise} amt=${e.amount_paise} [${e.status}]`);
 }
-let yOk = yFirst.every((e) => e.base_paise === ANNUAL_PAISE && e.amount_paise === 82020 && e.status === "held");
+let yOk = yFirst.every((e) => e.base_paise === ANNUAL_PAISE && e.amount_paise === (e.profile_id ? 8000 : 82020) && e.status === "held");
 
 const yDue = dueYearlyAccrualPeriods("2026-08-05T06:00:00Z", Date.parse("2026-11-15T00:00:00Z"));
 for (const period of yDue) {
@@ -523,7 +523,7 @@ const yFlat = [
   ...buildYearlyAccrualEntries({ subscriptionId: "ex-y", paymentId: "p", pricePaise: ANNUAL_PAISE, paidAtIso: "2026-08-05T06:00:00Z", targetPeriod: "2026-09", beneficiaries: [{ role: "telecaller", id: TELECALLER_T }], rates: exRates }),
   ...buildYearlyAccrualEntries({ subscriptionId: "ex-y", paymentId: "p", pricePaise: ANNUAL_PAISE, paidAtIso: "2026-08-05T06:00:00Z", targetPeriod: "2026-11", beneficiaries: [{ role: "telecaller", id: TELECALLER_T }], rates: exRates }),
 ];
-yOk = yOk && yFlat[0].amount_paise === 342 && yFlat[1].amount_paise === 684;
+yOk = yOk && yFlat[0].amount_paise === 2000 && yFlat[1].amount_paise === 2000;
 check("yearly leg numbers correct (₹820.20 held ×2; 342/342/684 accruals; year-1 trail EXISTS)", yOk);
 
 // ─────────────────────────────────────────────────────────────
