@@ -40,6 +40,7 @@ export function TelecallerAssignment() {
   const [telecallerId, setTelecallerId] = useState("");
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [data, setData] = useState<ListResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -52,12 +53,13 @@ export function TelecallerAssignment() {
           filter,
           telecallerId: telecallerId || undefined,
           search: query || undefined,
+          showAll,
         }),
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "List load nahi hui");
     }
-  }, [filter, telecallerId, query]);
+  }, [filter, telecallerId, query, showAll]);
 
   useEffect(() => {
     setData(null);
@@ -121,6 +123,10 @@ export function TelecallerAssignment() {
             <option key={t.id} value={t.id}>{t.full_name ?? t.phone ?? t.id.slice(0, 6)}</option>
           ))}
         </select>
+        <label className="inline-flex items-center gap-2 text-xs text-stone-600">
+          <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
+          Purani (cancelled/expired) subscriptions bhi dikhayein
+        </label>
         <input
           className="rounded-md border border-stone-300 px-3 py-2 text-sm sm:ml-auto sm:w-64"
           placeholder="Naam ya phone search"
@@ -142,6 +148,7 @@ export function TelecallerAssignment() {
                   <th className="font-medium px-4 sm:px-5 py-2.5">Subscriber</th>
                   <th className="font-medium px-3 py-2.5">Plan</th>
                   <th className="font-medium px-3 py-2.5">Status</th>
+                  <th className="font-medium px-3 py-2.5">Start</th>
                   <th className="font-medium px-3 py-2.5">Kaise link hua</th>
                   <th className="font-medium px-4 sm:px-5 py-2.5">Telecaller</th>
                 </tr>
@@ -157,6 +164,7 @@ export function TelecallerAssignment() {
                     <td className="px-3 py-2.5">
                       <StatusPill tone={r.status === "active" ? "good" : "neutral"}>{r.status}</StatusPill>
                     </td>
+                    <td className="px-3 py-2.5 text-xs text-stone-600">{r.since?.slice(0, 10)}</td>
                     <td className="px-3 py-2.5 text-xs text-stone-600">
                       {r.source ? (SOURCE_LABEL[r.source] ?? r.source) : "Abhi reconcile nahi hua"}
                     </td>

@@ -271,6 +271,39 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
           );
           let skippedSameMonth = 0;
 
+          // [2026-11-04] The telecaller's ₹80 is once per PERSON, not per
+          // subscription: if this subscriber already generated a first
+          // deal for this telecaller on an earlier subscription (cancel +
+          // re-subscribe), the new subscription pays only the ₹20 trail.
+          // A voided / clawed-back first deal does not count.
+          const subUser = (subId: string) => subsById.get(subId)?.user_id ?? null;
+          const personFirstDealSubs = new Map<string, Set<string>>(); // user|telecaller → sub ids
+          const notePersonFirstDeal = (subId: string, profileId: string | null) => {
+            const u = subUser(subId);
+            if (!u || !profileId) return;
+            const k = `${u}|${profileId}`;
+            const set = personFirstDealSubs.get(k) ?? new Set<string>();
+            set.add(subId);
+            personFirstDealSubs.set(k, set);
+          };
+          for (const e of entries) {
+            if (
+              e.kind === "first_deal" &&
+              e.profile_id &&
+              e.amount_paise > 0 &&
+              e.status !== "void" &&
+              e.status !== "clawed_back"
+            ) {
+              notePersonFirstDeal(e.subscription_id, e.profile_id);
+            }
+          }
+          const telecallerPaidBefore = (sub: { id: string; user_id: string }, profileId: string) => {
+            const set = personFirstDealSubs.get(`${sub.user_id}|${profileId}`);
+            if (!set) return false;
+            for (const id of set) if (id !== sub.id) return true;
+            return false;
+          };
+
           let attributionsResolved = 0;
           let firstDealEntries = 0;
           let trailEntries = 0;
@@ -374,6 +407,7 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
                   // first_deal as soon as its draft is queued — later
                   // payments in THIS run can never re-earn it.
                   firstDealClaims.add(claimKey(d.subscription_id, d.agent_id, d.profile_id));
+                  notePersonFirstDeal(d.subscription_id, d.profile_id);
                   firstDealEntries++;
                 } else {
                   trailEntries++;
@@ -396,13 +430,17 @@ export const Route = createFileRoute("/api/admin/commissions/reconcile")({
 
             for (const ben of beneficiaries) {
               const one = [ben];
-              const isFirstForBen = !firstDealClaims.has(
-                claimKey(
-                  sub.id,
-                  ben.role === "agent" ? ben.id : null,
-                  ben.role === "telecaller" ? ben.id : null,
-                ),
-              );
+              const isFirstForBen =
+                !firstDealClaims.has(
+                  claimKey(
+                    sub.id,
+                    ben.role === "agent" ? ben.id : null,
+                    ben.role === "telecaller" ? ben.id : null,
+                  ),
+                ) &&
+                // Re-subscription of a person this telecaller was already
+                // paid ₹80 for → trail only.
+                !(ben.role === "telecaller" && telecallerPaidBefore(sub, ben.id));
               if (isFirstForBen) {
                 acceptDrafts(
                   buildCommissionEntriesForPayment({
