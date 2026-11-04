@@ -417,7 +417,7 @@ function PlansPreview() {
         }`}
       >
         {visiblePlans.map((p) => {
-          const isPopular = p.id === "grah";
+          const isPopular = p.id === "sarv-mangal-sankalp";
           const isAnnual = p.id === "varsh";
           return (
             <Link

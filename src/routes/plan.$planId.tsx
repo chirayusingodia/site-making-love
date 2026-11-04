@@ -1,7 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, Star, ScrollText, ListChecks, Quote, Sparkles, Users } from "lucide-react";
 import { ChadhavaHeartBadge, AuthenticityTrust } from "@/components/TrustAuthenticity";
-import { usePublicPlans, getPlanById, fetchPublicPlansData, localizePlan, type Plan } from "@/lib/plans";
+import {
+  usePublicPlans,
+  getPlanById,
+  fetchPublicPlansData,
+  localizePlan,
+  LEGACY_PLAN_IDS,
+  type Plan,
+} from "@/lib/plans";
 import { isHawanSeva } from "@/lib/plans-schedule";
 import { NextPoojaCountdown } from "@/components/NextPoojaCountdown";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
@@ -19,6 +26,12 @@ import { trackViewContent } from "@/lib/meta-pixel";
 import { useEffect } from "react";
 
 export const Route = createFileRoute("/plan/$planId")({
+  beforeLoad: ({ params }) => {
+    const current = LEGACY_PLAN_IDS[params.planId];
+    if (current) {
+      throw redirect({ to: "/plan/$planId", params: { planId: current }, statusCode: 301 });
+    }
+  },
   head: async ({ params }) => {
     const [seo, planData] = await Promise.all([
       fetchPageSeo(`/plan/${params.planId}`),
@@ -60,7 +73,7 @@ export const Route = createFileRoute("/plan/$planId")({
 
     return {
       meta,
-      links: [{ rel: "canonical", href: `https://www.punyata.com/plan/${params.planId}` }],
+      links: [{ rel: "canonical", href: `https://www.punyata.com/plan/${plan?.id ?? params.planId}` }],
     };
   },
   component: PlanDetailPage,

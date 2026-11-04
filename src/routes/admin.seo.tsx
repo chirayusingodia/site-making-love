@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { stripMarkdown } from "@/lib/markdown-lite";
+import { publicPlanId } from "@/lib/plans";
 import {
   ChevronDown,
   ChevronRight,
@@ -117,7 +118,9 @@ function PageMetaTab() {
 
   const allPages: KnownPage[] = [
     ...STATIC_PAGES,
-    ...plans.map((p) => ({ path: `/plan/${p.slug}`, label: `Plan — ${p.name}` })),
+    // Key by the public URL id — plan.$planId.tsx reads page_seo for
+    // `/plan/<url id>`, which differs from the DB slug (premium → sarv-mangal-sankalp).
+    ...plans.map((p) => ({ path: `/plan/${publicPlanId(p.slug)}`, label: `Plan — ${p.name}` })),
   ];
 
   return (
