@@ -29,7 +29,7 @@ export const Route = createFileRoute("/api/admin/commissions/attribution-list")(
         if (!gate.ok) return json({ error: gate.error }, gate.status);
         const { db } = gate.auth;
 
-        let b: { filter?: unknown; telecallerId?: unknown; search?: unknown } = {};
+        let b: { filter?: unknown; telecallerId?: unknown; search?: unknown; showAll?: unknown } = {};
         try {
           b = await request.json();
         } catch {
@@ -39,6 +39,7 @@ export const Route = createFileRoute("/api/admin/commissions/attribution-list")(
         const telecallerId =
           typeof b.telecallerId === "string" && UUID_RE.test(b.telecallerId) ? b.telecallerId : null;
         const search = typeof b.search === "string" ? b.search.trim().slice(0, 60) : "";
+        const showAll = b.showAll === true;
 
         try {
           const { data: tcs, error: tcErr } = await db
@@ -75,7 +76,21 @@ export const Route = createFileRoute("/api/admin/commissions/attribution-list")(
           const { data: subsRaw, error: subErr } = await q;
           if (subErr) return json({ error: subErr.message }, 500);
           const truncated = (subsRaw?.length ?? 0) > LIMIT;
-          const subs = ((subsRaw ?? []) as unknown as SubRow[]).slice(0, LIMIT);
+          let subs = ((subsRaw ?? []) as unknown as SubRow[]).slice(0, LIMIT);
+
+          // One subscriber can own several subscriptions (re-subscribed
+          // after cancel/expiry). By default show one row per person: the
+          // live one (active > paused), else the newest. Rows arrive
+          // newest-first, so the first seen wins a tie.
+          if (!showAll) {
+            const rank = (st: string) => (st === "active" ? 0 : st === "paused" ? 1 : 2);
+            const best = new Map<string, SubRow>();
+            for (const s of subs) {
+              const cur = best.get(s.user_id);
+              if (!cur || rank(s.status) < rank(cur.status)) best.set(s.user_id, s);
+            }
+            subs = subs.filter((s) => best.get(s.user_id) === s);
+          }
 
           const uids = [...new Set(subs.map((s) => s.user_id))];
           const subIds = subs.map((s) => s.id);
