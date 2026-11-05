@@ -41,6 +41,8 @@ import {
   ymShort,
 } from "@/lib/finance-ui";
 import { FinanceLedger, type FinanceCategory } from "@/components/admin/finance-ledger";
+import { QuickAddExpense } from "@/components/admin/quick-add-expense";
+import { FinanceWeekly } from "@/components/admin/finance-weekly";
 import { FinanceCategories } from "@/components/admin/finance-categories";
 import {
   EmptyState,
@@ -86,7 +88,7 @@ interface PnlResponse {
 }
 
 type Preset = PresetKey | "custom";
-type FinanceTab = "overview" | "compare" | "ledger" | "categories";
+type FinanceTab = "overview" | "weekly" | "compare" | "ledger" | "categories";
 
 const PRESETS: { key: Preset; label: string }[] = [
   { key: "this_month", label: "This month" },
@@ -429,6 +431,7 @@ function FinancePage() {
         meta={`${ymLabel(range.fromYm)}${range.fromYm !== range.toYm ? ` – ${ymLabel(range.toYm)}` : ""}`}
         actions={
           <>
+            <QuickAddExpense onSaved={changed} />
             <Button
               size="sm"
               variant="outline"
@@ -564,6 +567,7 @@ function FinancePage() {
           onChange={setTab}
           items={[
             { value: "overview", label: "Overview" },
+            { value: "weekly", label: "Weekly" },
             { value: "compare", label: "Compare" },
             { value: "ledger", label: "Ledger" },
             { value: "categories", label: "Categories" },
@@ -571,6 +575,7 @@ function FinancePage() {
         />
 
         {tab === "overview" && <Overview data={data} loading={loading} />}
+        {tab === "weekly" && <FinanceWeekly />}
         {tab === "compare" && <ComparePanel basis={basis} today={today} />}
         {tab === "ledger" && (
           <FinanceLedger

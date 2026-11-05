@@ -103,7 +103,7 @@ const catOf = (e: LedgerEntry) =>
 const paiseToRupees = (p: number): string =>
   p % 100 === 0 ? String(p / 100) : (p / 100).toFixed(2);
 
-function blankDraft(): EntryDraft {
+export function blankDraft(): EntryDraft {
   return {
     entryType: "expense",
     entryDate: todayIST(new Date()),
@@ -503,7 +503,7 @@ export function FinanceLedger({
 
 // ─── Add / edit / duplicate ──────────────────────────────────
 
-function EntryDialog({
+export function EntryDialog({
   draft,
   categories,
   onClose,
