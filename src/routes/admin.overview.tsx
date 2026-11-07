@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { usePublicPlans } from "@/lib/plans";
 import { callAdminApi } from "@/lib/admin-api";
 import { useUserRole } from "@/hooks/use-user-role";
+import { QuickAddExpense } from "@/components/admin/quick-add-expense";
 import { NeedsChirayuCard } from "@/components/admin/needs-chirayu";
 import {
   Users,
@@ -338,6 +339,8 @@ function AdminOverviewPage() {
         description="Subscriptions, revenue and today's fulfilment work at a glance."
         meta={metrics ? `Updated ${metrics.lastUpdated}` : undefined}
         actions={
+          <div className="flex items-center gap-2">
+          {isOwner && <QuickAddExpense />}
           <Button
             onClick={fetchMetrics}
             disabled={loading}
@@ -348,6 +351,7 @@ function AdminOverviewPage() {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
+          </div>
         }
       />
 
