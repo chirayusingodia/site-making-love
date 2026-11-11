@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Loader2, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { callUserApi } from "@/lib/auth-api";
+import { isInternationalPhone } from "@/lib/phone";
 
 // ─────────────────────────────────────────────────────────────
 // PUNYATA — Profile completion form (SHARED)
@@ -84,11 +85,14 @@ export function FamilyAddressForm({
   subscriptionId,
   initialMembers,
   initialAddress,
+  payerPhone,
   onSaved,
 }: {
   subscriptionId: string;
   initialMembers: ExistingMember[];
   initialAddress: ExistingAddress | null;
+  /** Account phone (E.164) — used only to show the India-only prasad note. */
+  payerPhone?: string | null;
   onSaved?: () => void;
 }) {
   const [members, setMembers] = useState<MemberDraft[]>(() => seedMembers(initialMembers));
@@ -373,6 +377,11 @@ export function FamilyAddressForm({
           <p className="text-xs text-muted-foreground mt-0.5">
             Premium Annual के Prasad Box की होम डिलीवरी इसी पते पर होगी।
           </p>
+          {isInternationalPhone(payerPhone) && (
+            <p className="text-xs font-semibold text-amber-700 mt-1">
+              Prasad sirf India ke address par bheja jata hai — apne parivar ka India address daalein, ya skip karein.
+            </p>
+          )}
         </div>
         <input
           type="text"

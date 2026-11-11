@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireOwner } from "@/lib/supabase-admin.server";
-import { normalizePhoneE164 } from "@/lib/phone";
+import { parsePhone } from "@/lib/phone";
 import { validateFamilyMembers } from "@/lib/family-validation";
 import {
   computeCoverage,
@@ -49,8 +49,11 @@ export const Route = createFileRoute("/api/admin/offline/create")({
           typeof body.fullName === "string" ? body.fullName.trim().slice(0, 120) : "";
         if (fullName.length < 2) return json({ error: "Naam zaroori hai" }, 400);
 
-        const phone = typeof body.phone === "string" ? normalizePhoneE164(body.phone) : null;
-        if (!phone) return json({ error: "Sahi Indian mobile number daalein" }, 400);
+        const parsedPhone = typeof body.phone === "string" ? parsePhone(body.phone) : null;
+        if (!parsedPhone) {
+          return json({ error: "Sahi mobile number daalein (videsh ka number +country code ke saath)" }, 400);
+        }
+        const phone = parsedPhone.e164;
 
         const planId =
           typeof body.planId === "string" && UUID_RE.test(body.planId) ? body.planId : null;
@@ -123,7 +126,7 @@ export const Route = createFileRoute("/api/admin/offline/create")({
             createdUser = true;
             const { error: profErr } = await db
               .from("profiles")
-              .insert({ id: userId, full_name: fullName, phone });
+              .insert({ id: userId, full_name: fullName, phone, country_code: parsedPhone.country });
             if (profErr) {
               await db.auth.admin.deleteUser(userId);
               return json({ error: `Profile bani nahi: ${profErr.message}` }, 500);

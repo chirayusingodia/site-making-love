@@ -95,6 +95,8 @@ export interface CreateMandateInput {
   /** Punyata subscription_mandates.id, when known at creation time. */
   mandateDbId?: string | null;
   couponCode?: string | null;
+  /** ISO-3166 alpha-2 of the payer's phone country (support aid; flows into webhooks). */
+  payerCountry?: string | null;
   /** Debit cycles. Callers MUST derive this from totalCountForTenure() —
    *  never a literal (that is precisely the 2026-08-28 bug). */
   totalCount: number;

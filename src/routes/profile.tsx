@@ -362,6 +362,7 @@ function LoggedInView() {
               <FamilyAddressForm
                 key={`${current.id}:${dataRev}`}
                 subscriptionId={current.id}
+                payerPhone={profile?.phone}
                 initialMembers={currentMembers}
                 initialAddress={
                   profile

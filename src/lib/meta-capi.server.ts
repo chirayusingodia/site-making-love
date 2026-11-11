@@ -1,5 +1,5 @@
 import process from "node:process";
-import { normalizePhoneE164 } from "@/lib/phone";
+import { normalizePhoneE164, waDigits } from "@/lib/phone";
 
 // Server-side Meta Conversions API sender. Plain fetch, no SDK; .server.ts
 // keeps it (and the token) out of the client bundle. Env is read per request
@@ -25,8 +25,7 @@ export async function sha256Hex(value: string): Promise<string> {
 
 /** Meta phone format: E.164 digits only, country code included, no "+". */
 export function metaPhoneDigits(raw: string): string | null {
-  const e164 = normalizePhoneE164(raw);
-  return e164 ? e164.replace(/\D/g, "") : null;
+  return waDigits(normalizePhoneE164(raw));
 }
 
 export async function hashPhone(raw: string): Promise<string | null> {

@@ -54,7 +54,7 @@ export const Route = createFileRoute("/subscription-success")({
 function SubscriptionSuccessPage() {
   const { ref } = Route.useSearch();
   const navigate = useNavigate();
-  const { userId, loading: sessionLoading } = useSessionProfile();
+  const { userId, profile: sessionProfile, loading: sessionLoading } = useSessionProfile();
   const [members, setMembers] = useState<ExistingMember[]>([]);
   const [address, setAddress] = useState<ExistingAddress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -208,6 +208,7 @@ function SubscriptionSuccessPage() {
             ) : ref ? (
               <FamilyAddressForm
                 subscriptionId={ref}
+                payerPhone={sessionProfile?.phone}
                 initialMembers={members}
                 initialAddress={address}
               />

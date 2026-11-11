@@ -34,6 +34,7 @@ import { supabase } from "@/lib/supabase";
 import { pendingCheckoutIsStale } from "@/lib/checkout-ttl";
 import { usePublicPlans, getPlanById, formatINR } from "@/lib/plans";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
+import { IstTag } from "@/components/IstTag";
 import { nextSevaDate, fmtSevaDate, monthsActive, elapsedSevaDates, type SevaDate } from "@/lib/seva-dates";
 import { specialDayItems } from "@/lib/special-days";
 import { computeImpact, impactTiles, type PunyaImpact, type ImpactPlanFlags } from "@/lib/punya-impact";
@@ -915,6 +916,7 @@ function PoojaHistory({
           {next && (
             <p className="text-[11px] text-muted-foreground mt-1">
               {fmtSevaDate(next.date, lang)} · {t(next.labelKey)}
+              <IstTag />
             </p>
           )}
         </div>

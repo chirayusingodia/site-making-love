@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/input-otp";
 import { requestOtp, verifyOtp, reconcileMyProfile, AuthApiError } from "@/lib/auth-api";
 import { turnstileEnabled, renderTurnstile, type RenderedTurnstile } from "@/lib/turnstile";
+import { parsePhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/login")({
   // Explicit optional return type keeps every existing ?redirect-only
@@ -63,8 +64,10 @@ const PHONE_OTP_LOGIN_ENABLED = false;
 
 /** Keeps only a plausible 10-digit Indian mobile from ?prefill=. */
 function sanitizePrefill(raw: string | undefined): string {
-  const digits = (raw ?? "").replace(/\D/g, "");
-  return /^[6-9]\d{9}$/.test(digits) ? digits : "";
+  // ?prefill= may be +E.164 now (complete-profile sends it). OTP login is
+  // India-only, so only an Indian number is pre-filled (as 10 digits).
+  const p = parsePhone(raw ?? "");
+  return p && p.country === "IN" ? p.national : "";
 }
 
 function LoginPage() {

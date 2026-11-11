@@ -140,6 +140,10 @@ export interface RazorpayPaymentEntity {
   currency?: string;
   status?: string; // 'captured' | 'failed' | ...
   method?: string; // 'upi' | 'card' | ...
+  /** true for a card issued outside India (migration 044). */
+  international?: boolean;
+  fee?: number; // paise, Razorpay fee incl. GST
+  tax?: number; // paise, GST on the fee
   created_at?: number; // unix seconds
   error_code?: string | null;
   error_description?: string | null;
@@ -349,6 +353,25 @@ export function countConsecutiveFailures(rowsDesc: { status: string }[]): number
   return n;
 }
 
+/**
+ * Phase 1 lock (migration 044): payments are INR-only. A payment whose
+ * currency is present and not INR must never reach the ledger (it would
+ * mix currencies into every amount_paise sum). Absent currency = INR.
+ */
+export function isNonInrPayment(pay: RazorpayPaymentEntity | undefined | null): boolean {
+  return !!pay?.currency && pay.currency.toUpperCase() !== "INR";
+}
+
+/** Gateway-cost / origin columns shared by captured + failed rows. */
+function intlColumns(pay: RazorpayPaymentEntity): Record<string, unknown> {
+  return {
+    currency: pay.currency ? pay.currency.toUpperCase() : "INR",
+    international: pay.international === true,
+    fee_paise: typeof pay.fee === "number" ? pay.fee : null,
+    tax_paise: typeof pay.tax === "number" ? pay.tax : null,
+  };
+}
+
 /** Payment row to upsert for a successful charge / activation. */
 export function capturedPaymentRow(
   subscriptionId: string,
@@ -356,7 +379,9 @@ export function capturedPaymentRow(
 ): Record<string, unknown> | null {
   const pay = ctx.payment;
   if (!pay?.id || typeof pay.amount !== "number") return null;
+  if (isNonInrPayment(pay)) return null; // Phase 1 lock — logged by the caller
   return {
+    ...intlColumns(pay),
     subscription_id: subscriptionId,
     // Stamped so a refund is later routed back through the provider
     // that actually took this money (migration 022).
@@ -436,8 +461,10 @@ export function failedPaymentRow(
 ): Record<string, unknown> | null {
   const pay = ctx.payment;
   if (!pay?.id) return null;
+  if (isNonInrPayment(pay)) return null; // Phase 1 lock — logged by the caller
   const reason = pay.error_description || pay.error_reason || pay.error_code || null;
   return {
+    ...intlColumns(pay),
     subscription_id: subscriptionId,
     gateway: GATEWAY_ID,
     razorpay_payment_id: pay.id,
@@ -457,6 +484,23 @@ export function failedPaymentRow(
 }
 
 // ─── Orchestration (db-touching) ─────────────────────────────
+
+/** Postgres CHECK violation raised by payments_currency_inr_only. */
+function isCurrencyCheckViolation(err: { code?: string; message?: string }): boolean {
+  return err.code === "23514" && /payments_currency_inr_only/.test(err.message ?? "");
+}
+
+/**
+ * Phase 1 INR lock tripped. Loud log (support must see this), but the
+ * webhook still returns 200 so Razorpay does not retry-storm.
+ */
+function logNonInr(subscriptionId: string, ctx: WebhookContext): void {
+  console.error(
+    `[INTERNATIONAL][NON-INR PAYMENT NOT RECORDED] subscription=${subscriptionId} ` +
+      `razorpay_payment_id=${ctx.payment?.id} currency=${ctx.payment?.currency} ` +
+      `amount=${ctx.payment?.amount} event=${ctx.event} — Phase 1 is INR-only; reconcile manually.`,
+  );
+}
 
 export interface ProcessResult {
   handled: boolean;
@@ -734,7 +778,12 @@ export async function processWebhookEvent(
       const { error } = await db
         .from("payments")
         .upsert(row, { onConflict: "razorpay_payment_id" });
-      if (error) throw new Error(`payment upsert failed: ${error.message}`);
+      if (error && !isCurrencyCheckViolation(error)) {
+        throw new Error(`payment upsert failed: ${error.message}`);
+      }
+      if (error) logNonInr(sub.id, ctx);
+    } else if (isNonInrPayment(ctx.payment)) {
+      logNonInr(sub.id, ctx);
     }
     action = "payment_failed";
 
@@ -844,7 +893,22 @@ export async function processWebhookEvent(
         const { error } = await db
           .from("payments")
           .upsert(row, { onConflict: "razorpay_payment_id" });
-        if (error) throw new Error(`payment upsert failed: ${error.message}`);
+        if (error && !isCurrencyCheckViolation(error)) {
+          throw new Error(`payment upsert failed: ${error.message}`);
+        }
+        if (error) logNonInr(sub.id, ctx);
+        // An NRI may register with an Indian number but pay with a
+        // foreign card — flip the display flag on capture. Best-effort;
+        // never fails the webhook (display/filter only).
+        if (!error && ctx.payment?.international === true) {
+          const { error: intlErr } = await db
+            .from("subscriptions")
+            .update({ is_international: true })
+            .eq("id", sub.id);
+          if (intlErr) console.error("is_international flip failed:", intlErr.message);
+        }
+      } else if (isNonInrPayment(ctx.payment)) {
+        logNonInr(sub.id, ctx);
       }
     }
 

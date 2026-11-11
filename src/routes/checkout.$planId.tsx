@@ -18,7 +18,7 @@ import { usePublicPlans, getPlanById, LEGACY_PLAN_IDS } from "@/lib/plans";
 import { Header, WhatsAppFloat } from "@/components/site-chrome";
 import { useSessionProfile } from "@/hooks/use-session";
 import { callUserApi, AuthApiError } from "@/lib/auth-api";
-import { normalizePhoneE164 } from "@/lib/phone";
+import { PhoneInput, usePhoneField } from "@/components/PhoneInput";
 import { useTranslation } from "@/lib/translations";
 import { UpcomingPoojaCards } from "@/components/UpcomingPoojaCards";
 import { captureAttributionOnce, getStoredAttribution, getMetaCheckoutContext } from "@/lib/attribution";
@@ -262,7 +262,7 @@ function CheckoutPage() {
   // before someone can pay. Seeded once from the loaded profile, then
   // left alone (so refresh() after a save doesn't clobber more typing).
   const [nameInput, setNameInput] = useState("");
-  const [phoneInput, setPhoneInput] = useState("");
+  const phoneField = usePhoneField();
   const [identitySeeded, setIdentitySeeded] = useState(false);
   const [identitySaving, setIdentitySaving] = useState(false);
   const [identityError, setIdentityError] = useState<string | null>(null);
@@ -272,7 +272,7 @@ function CheckoutPage() {
     if (identitySeeded || authPhase !== "ready" || profileLoading) return;
     if (profile) {
       setNameInput(profile.full_name ?? "");
-      setPhoneInput(profile.phone ? profile.phone.replace(/\D/g, "").slice(-10) : "");
+      phoneField.seed(profile.phone);
       setIdentitySeeded(true);
       return;
     }
@@ -293,17 +293,18 @@ function CheckoutPage() {
   const saveIdentity = async (): Promise<boolean> => {
     const trimmedName = nameInput.trim();
     const currentName = profile?.full_name ?? "";
-    const currentPhoneDigits = profile?.phone ? profile.phone.replace(/\D/g, "").slice(-10) : "";
-    const typedPhoneDigits = phoneInput.replace(/\D/g, "");
+    const currentE164 = profile?.phone ?? "";
+    const typedE164 = phoneField.e164;
 
     const payload: { full_name?: string; phone?: string } = {};
     if (trimmedName && trimmedName !== currentName) payload.full_name = trimmedName;
-    if (typedPhoneDigits && typedPhoneDigits !== currentPhoneDigits) {
-      if (!normalizePhoneE164(typedPhoneDigits)) {
+    if (phoneField.national.trim() && typedE164 !== currentE164) {
+      if (!typedE164) {
         setIdentityError(t("checkout_phone_required"));
         return false;
       }
-      payload.phone = typedPhoneDigits;
+      // Always +E.164 (country-aware). The server derives country_code.
+      payload.phone = typedE164;
     }
     if (Object.keys(payload).length === 0) {
       setIdentityError(null);
@@ -554,7 +555,7 @@ function CheckoutPage() {
     // naam / mobile / terms box is still missing gets highlighted and
     // scrolled into view (first missing one wins).
     const nameMissing = !nameInput.trim();
-    const phoneMissing = !normalizePhoneE164(phoneInput.replace(/\D/g, ""));
+    const phoneMissing = phoneField.e164 === null;
     if (nameMissing || phoneMissing || !agreedToTerms) {
       const firstMissing = nameMissing
         ? "checkout-name"
@@ -625,10 +626,28 @@ function CheckoutPage() {
         prefill: {
           name: nameInput.trim() || profile?.full_name || "",
           contact:
-            phoneInput.replace(/\D/g, "") || profile?.phone?.replace(/\D/g, "").slice(-10) || "",
+            phoneField.country === "IN"
+              ? phoneField.national
+              : (phoneField.e164 ?? profile?.phone ?? ""),
           email: profile?.email || "",
         },
         notes: { punyata_subscription_id: res.subscriptionDbId },
+        // Overseas payer (phone country ≠ IN): show Card first — most NRIs
+        // have no UPI Autopay. UPI stays visible via the default blocks.
+        // Shape per Razorpay "Configure Payment Methods" sample code.
+        ...(phoneField.country !== "IN"
+          ? {
+              config: {
+                display: {
+                  blocks: {
+                    intl_cards: { name: "Pay with Card", instruments: [{ method: "card" }] },
+                  },
+                  sequence: ["block.intl_cards"],
+                  preferences: { show_default_blocks: true },
+                },
+              },
+            }
+          : {}),
         theme: { color: "#D85A30" },
         handler: () => {
           // Money received on Razorpay's side. We do NOT touch
@@ -673,7 +692,7 @@ function CheckoutPage() {
 
   const paying = payState === "creating" || payState === "checkout";
   const nameMissing = !nameInput.trim();
-  const phoneMissing = !normalizePhoneE164(phoneInput.replace(/\D/g, ""));
+  const phoneMissing = phoneField.e164 === null;
   // Highlight flags — only after the first Pay tap, and they clear on
   // their own the moment the field becomes valid.
   const nameBad = submitAttempted && nameMissing;
@@ -787,26 +806,24 @@ function CheckoutPage() {
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">{t("checkout_phone_label")}</label>
-            <input
-              id="checkout-phone"
-              type="tel"
-              inputMode="numeric"
-              value={phoneInput}
-              onChange={(e) => {
-                setPhoneInput(e.target.value.replace(/[^\d]/g, "").slice(0, 10));
-                setPhoneTaken(false);
-                setIdentityError(null);
-              }}
-              onBlur={saveIdentity}
-              placeholder={t("checkout_phone_placeholder")}
-              aria-invalid={phoneBad}
-              className={`w-full px-3 py-2 rounded-xl border focus:border-brand focus:ring-1 focus:ring-brand outline-none text-sm font-semibold text-foreground ${
-                phoneBad ? badRing : "border-black/10"
-              }`}
-            />
+            <div id="checkout-phone" className={phoneBad ? `rounded-xl ${badRing}` : ""}>
+              <PhoneInput
+                field={phoneField}
+                onEdit={() => {
+                  setPhoneTaken(false);
+                  setIdentityError(null);
+                }}
+                onBlur={saveIdentity}
+              />
+            </div>
             {phoneBad && (
               <p className="text-[11px] font-bold text-destructive">
                 {t("checkout_phone_required")}
+              </p>
+            )}
+            {phoneField.country !== "IN" && (
+              <p className="text-[11px] text-muted-foreground pt-1">
+                {t("checkout_intl_inr_note").replace("{amount}", `${plan.price}${plan.cycle}`)}
               </p>
             )}
           </div>
@@ -824,7 +841,7 @@ function CheckoutPage() {
             // "3 pages for everyone" problem this change fixes.
             <Link
               to="/login"
-              search={{ redirect: checkoutUrl, prefill: phoneInput.replace(/\D/g, "") }}
+              search={{ redirect: checkoutUrl, prefill: phoneField.e164 ?? "" }}
               className="inline-block text-[11px] font-bold text-brand underline"
             >
               OTP se login karein

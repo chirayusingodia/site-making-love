@@ -124,6 +124,8 @@ export interface CreateMandateOptions {
   planPricePaise: number;
   billingPeriod: BillingPeriod;
   couponCode?: string | null;
+  /** Payer's phone country (ISO alpha-2) → Razorpay notes.payer_country. */
+  payerCountry?: string | null;
   /**
    * Whether this mandate becomes the charging one immediately.
    * true  — first mandate on a fresh subscription (nothing to displace).
@@ -247,6 +249,7 @@ export async function createMandateForSubscription(
       subscriptionDbId: opts.subscriptionId,
       mandateDbId,
       couponCode: opts.couponCode ?? null,
+      payerCountry: opts.payerCountry ?? null,
       totalCount,
     });
     return { mandate, totalCount };

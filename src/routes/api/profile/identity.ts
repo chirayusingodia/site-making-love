@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireUser, getServiceClient } from "@/lib/supabase-admin.server";
-import { normalizePhoneE164 } from "@/lib/phone";
+import { parsePhone } from "@/lib/phone";
 
 // POST /api/profile/identity
 // Auth: Bearer <supabase access token> (end user)
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/profile/identity")({
           return json({ error: "Invalid JSON body" }, 400);
         }
 
-        const update: { full_name?: string; phone?: string } = {};
+        const update: { full_name?: string; phone?: string; country_code?: string } = {};
 
         if (typeof body?.full_name === "string") {
           const name = body.full_name.trim().slice(0, 120);
@@ -43,9 +43,13 @@ export const Route = createFileRoute("/api/profile/identity")({
 
         let phone: string | null = null;
         if (typeof body?.phone === "string" && body.phone.trim()) {
-          phone = normalizePhoneE164(body.phone);
-          if (!phone) return json({ error: "10-anki valid mobile number daalein" }, 400);
+          const parsed = parsePhone(body.phone);
+          if (!parsed)
+            return json({ error: "Valid mobile number daalein (country code ke saath)" }, 400);
+          phone = parsed.e164;
           update.phone = phone;
+          // Derived server-side from the phone — never from the request body.
+          update.country_code = parsed.country;
         }
 
         if (Object.keys(update).length === 0) {

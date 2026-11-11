@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { Header } from "@/components/site-chrome";
 import { completeGoogleProfile, fetchMyProfile, AuthApiError, signOut } from "@/lib/auth-api";
+import { PhoneInput, usePhoneField } from "@/components/PhoneInput";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/complete-profile")({
@@ -46,12 +47,12 @@ function CompleteProfilePage() {
 
   const [phase, setPhase] = useState<Phase>("resolving");
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
+  const phoneField = usePhoneField();
   // Same-number checkbox: default TRUE (the common case) — unticking
   // reveals a second field for the actual calling number, since
   // `phone` above stays the WhatsApp number (seva proofs ride on it).
   const [sameAsWhatsapp, setSameAsWhatsapp] = useState(true);
-  const [altPhone, setAltPhone] = useState("");
+  const altPhoneField = usePhoneField();
   const [error, setError] = useState<string | null>(null);
   const [phoneTaken, setPhoneTaken] = useState(false);
   const decided = useRef(false);
@@ -114,10 +115,10 @@ function CompleteProfilePage() {
     };
   }, [navigate, target]);
 
-  const phoneDigits = phone.replace(/\D/g, "");
-  const phoneValid = /^[6-9]\d{9}$/.test(phoneDigits);
-  const altPhoneDigits = altPhone.replace(/\D/g, "");
-  const altPhoneValid = sameAsWhatsapp || /^[6-9]\d{9}$/.test(altPhoneDigits);
+  // Always send +E.164 (country-aware); the server re-derives country_code.
+  const phoneE164 = phoneField.e164;
+  const phoneValid = phoneE164 !== null;
+  const altPhoneValid = sameAsWhatsapp || altPhoneField.e164 !== null;
 
   const submit = async () => {
     setError(null);
@@ -126,8 +127,8 @@ function CompleteProfilePage() {
     try {
       await completeGoogleProfile(
         fullName.trim(),
-        phoneDigits,
-        sameAsWhatsapp ? undefined : altPhoneDigits,
+        phoneE164 ?? "",
+        sameAsWhatsapp ? undefined : (altPhoneField.e164 ?? ""),
       );
       navigate({ to: target, replace: true });
     } catch (err) {
@@ -183,22 +184,7 @@ function CompleteProfilePage() {
             </div>
             <div>
               <label className="block text-sm font-bold text-foreground mb-1">मोबाइल नंबर</label>
-              <div className="flex items-center gap-0">
-                <span className="px-4 py-3 rounded-l-xl border border-r-0 border-black/10 bg-secondary font-semibold text-foreground">
-                  +91
-                </span>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="9876543210"
-                  value={phoneDigits}
-                  autoComplete="tel-national"
-                  maxLength={10}
-                  disabled={phoneTaken}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  className="w-full px-4 py-3 rounded-r-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground disabled:bg-secondary disabled:text-muted-foreground"
-                />
-              </div>
+              <PhoneInput field={phoneField} disabled={phoneTaken} />
               <p className="text-xs text-muted-foreground mt-1">
                 Koi OTP nahi aayega — number sirf record ke liye. Seva ka proof bhi isi WhatsApp
                 number par aayega.
@@ -211,7 +197,7 @@ function CompleteProfilePage() {
                 checked={sameAsWhatsapp}
                 onChange={(e) => {
                   setSameAsWhatsapp(e.target.checked);
-                  if (e.target.checked) setAltPhone("");
+                  if (e.target.checked) altPhoneField.seed(null);
                 }}
                 className="mt-0.5 w-4 h-4 accent-brand"
               />
@@ -223,21 +209,7 @@ function CompleteProfilePage() {
                 <label className="block text-sm font-bold text-foreground mb-1">
                   Calling Number
                 </label>
-                <div className="flex items-center gap-0">
-                  <span className="px-4 py-3 rounded-l-xl border border-r-0 border-black/10 bg-secondary font-semibold text-foreground">
-                    +91
-                  </span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="9876543210"
-                    value={altPhoneDigits}
-                    autoComplete="tel-national"
-                    maxLength={10}
-                    onChange={(e) => setAltPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    className="w-full px-4 py-3 rounded-r-xl border border-black/10 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-foreground"
-                  />
-                </div>
+                <PhoneInput field={altPhoneField} />
                 <p className="text-xs text-muted-foreground mt-1">
                   Team isi number par call karegi — WhatsApp update upar wale number par hi aayenge.
                 </p>
@@ -254,7 +226,7 @@ function CompleteProfilePage() {
                   onClick={() =>
                     navigate({
                       to: "/login",
-                      search: { redirect: target, prefill: phoneDigits },
+                      search: { redirect: target, prefill: phoneE164 ?? "" },
                       replace: true,
                     })
                   }
@@ -265,7 +237,7 @@ function CompleteProfilePage() {
                 <button
                   onClick={() => {
                     setPhoneTaken(false);
-                    setPhone("");
+                    phoneField.seed(null);
                   }}
                   className="w-full text-xs text-muted-foreground hover:text-brand"
                 >

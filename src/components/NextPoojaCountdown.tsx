@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { nextSevaDate, nextSevaDateTime, fmtSevaDate } from "@/lib/seva-dates";
 import { useTranslation } from "@/lib/translations";
+import { IstTag } from "@/components/IstTag";
 import type { LiveSeva } from "@/lib/plans-schedule";
 import { UpcomingPoojaCards } from "@/components/UpcomingPoojaCards";
 
@@ -100,6 +101,7 @@ export function NextPoojaCountdown({
         <div className="mt-2.5 pt-2.5 border-t border-brand/10 space-y-0.5">
           <div className="text-xs font-bold text-foreground">
             {dateLabel} · {cadenceLabel}
+            <IstTag />
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <MapPin size={11} className="text-brand shrink-0" />
@@ -194,7 +196,7 @@ export function NextPoojaCountdown({
           </div>
           {!sevas && (
             <div className="text-xs text-[#FFF3EA]/80 pl-[21px]">
-              {dateLabel} · {cadenceLabel}
+              {dateLabel} · {cadenceLabel}<IstTag />
             </div>
           )}
         </div>

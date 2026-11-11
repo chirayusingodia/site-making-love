@@ -257,6 +257,7 @@ export const razorpayAdapter: PaymentGatewayAdapter = {
         punyata_subscription_id: input.subscriptionDbId,
         ...(input.mandateDbId ? { punyata_mandate_id: input.mandateDbId } : {}),
         ...(input.couponCode ? { coupon_code: input.couponCode } : {}),
+        ...(input.payerCountry ? { payer_country: input.payerCountry } : {}),
       },
     });
     return toGatewayMandate(res);

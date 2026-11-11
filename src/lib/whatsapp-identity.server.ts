@@ -5,7 +5,7 @@
 // THE RULE: Meta/Gupshup hands us a VERIFIED phone number (`wa_id`)
 // on every inbound message/Flow submission. That number is the key:
 //
-//   normalizePhoneE164(wa_id) → look up profiles.phone (UNIQUE, 001)
+//   normalizeWaId(wa_id) (adds the "+" back) → look up profiles.phone (UNIQUE, 001)
 //     found     → RETURNING customer, adopt that profile
 //     not found → NEW customer, create auth.users + profiles
 //
@@ -56,13 +56,18 @@ export type WhatsAppIdentity =
 
 /**
  * Pure: turns a raw wa_id (Meta/Gupshup deliver it WITHOUT a leading
- * '+', e.g. "918005828548") into our canonical E.164 form. Delegates
- * entirely to the one existing phone parser — do not special-case
- * wa_id's shape here, it is already one of normalizePhoneE164's
- * accepted input shapes (12-digit, leading "91").
+ * '+', e.g. "918005828548", "14155550123") into our canonical E.164.
+ * Rule: wa_id is E.164 minus the plus; we add it back and use the one
+ * phone parser — any country. If that fails, fall back to legacy
+ * India-shaped inputs (bare 10-digit / leading 0): real wa_ids never
+ * look like that, but old fixtures and manual lookups do. The
+ * international read goes FIRST so a 10-digit Singapore wa_id
+ * (6581234567) is never mistaken for an Indian mobile.
  */
 export function normalizeWaId(waIdRaw: string): string | null {
-  return normalizePhoneE164(waIdRaw);
+  const digits = waIdRaw.replace(/\D/g, "");
+  const viaPlus = digits ? normalizePhoneE164(`+${digits}`) : null;
+  return viaPlus ?? normalizePhoneE164(waIdRaw);
 }
 
 /**

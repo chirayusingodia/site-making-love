@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireUser, getServiceClient } from "@/lib/supabase-admin.server";
-import { normalizePhoneE164 } from "@/lib/phone";
+import { parsePhone } from "@/lib/phone";
 
 // POST /api/profile/upsert-identity
 // Auth: Bearer <supabase access token> (end user)
@@ -46,10 +46,14 @@ export const Route = createFileRoute("/api/profile/upsert-identity")({
         }
 
         let phone: string | undefined;
+        let countryCode: string | undefined;
         if (typeof body?.phone === "string" && body.phone.trim()) {
-          const normalized = normalizePhoneE164(body.phone);
-          if (!normalized) return json({ error: "10-anki valid mobile number daalein" }, 400);
-          phone = normalized;
+          const parsed = parsePhone(body.phone);
+          if (!parsed)
+            return json({ error: "Valid mobile number daalein (country code ke saath)" }, 400);
+          phone = parsed.e164;
+          // Derived server-side from the phone — never from the request body.
+          countryCode = parsed.country;
         }
 
         if (fullName === undefined && phone === undefined) {
@@ -87,7 +91,7 @@ export const Route = createFileRoute("/api/profile/upsert-identity")({
             .from("profiles")
             .update({
               ...(fullName !== undefined ? { full_name: fullName } : {}),
-              ...(phone !== undefined ? { phone } : {}),
+              ...(phone !== undefined ? { phone, country_code: countryCode } : {}),
               updated_at: new Date().toISOString(),
             })
             .eq("id", auth.userId);
@@ -113,7 +117,7 @@ export const Route = createFileRoute("/api/profile/upsert-identity")({
         const { error: insErr } = await auth.db.from("profiles").insert({
           id: auth.userId,
           ...(fullName ? { full_name: fullName } : {}),
-          ...(phone ? { phone } : {}),
+          ...(phone ? { phone, country_code: countryCode } : {}),
           ...(verifiedEmail ? { email: verifiedEmail } : {}),
         });
 

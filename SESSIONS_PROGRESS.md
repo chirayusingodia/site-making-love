@@ -423,6 +423,18 @@ Brief: `SESSION_OFFLINE_QR_AND_FINANCE_PROMPT.md`. Owner decisions (locked): off
 
 ---
 
+## ✅ Session — International (NRI / overseas) customers (2026-11-09) — NOT COMMITTED, migration 044 NOT APPLIED
+
+Phase 1: anyone, any country, can subscribe (self or family in India); charged in INR, Razorpay cards + UPI. Login stays Google-first.
+
+- **Migration** `20261109_044_international_customers.sql`: `normalize_phone_e164` now India fast path (026, unchanged output) + explicit `+`/`00` E.164 for the world; trigger message updated; `profiles.country_code`; `payments.currency/international/fee_paise/tax_paise` (+ `currency='INR'` CHECK = Phase 1 lock); `subscriptions.is_international`; `subscriber_list_view` appended `country_code, is_international`. Apply BEFORE deploying the code (profile inserts write `country_code`).
+- **Phone parser** `src/lib/phone.ts` rewritten on `libphonenumber-js/min`: `parsePhone`, `normalizePhoneE164(raw, country='IN')`, `waDigits`, `sqlMirrorNormalize` (test-only), `flagEmoji`, `isInternationalPhone`. India output byte-identical (frozen `scratch/phone_legacy_snapshot.ts`). Only intended widening: `"0091 …"` (previously null) is now accepted, per the SQL spec.
+- **Tests:** `scratch/verify_phone_international.ts` (wired as `npm run test:phone`, first in `npm test`) + new asserts in `verify_webhook.ts`.
+- **UI:** `components/PhoneInput.tsx` (+ `usePhoneField`) on checkout and complete-profile; Razorpay `config.display` card-first block for non-IN; INR/FX note; admin Subscribers 🌍 badge + "International" filter; India-only prasad note; `IntlPolicyNote` on refund + terms; `IstTag` "(IST)" on pooja dates for non-IST viewers.
+- **Server:** identity routes derive `country_code` from the parsed phone; `requestOtpForPhone` rejects non-IN (SMS-pumping guard); webhook records currency/international/fee/tax and refuses non-INR (logged, 200); checkout stamps `is_international` + `notes.payer_country`; `normalizeWaId`/`buildWaLink`/Meta CAPI are country-agnostic.
+- **Manual prerequisites:** Razorpay International Payments + international *recurring* cards for Subscriptions (see session prompt §1).
+- **Follow-ups:** multi-currency plans; PayPal/second gateway; foreign SMS OTP login; international prasad; GST export-of-services; geo-IP country default; fee_paise → P&L "gateway fees" line and Overview/Reports "International subs" stat (not built); flag next to phone number in admin lists (flag is on the 🌍 pill only).
+
 ## ⏳ NOT DONE YET — Remaining Scope
 
 ### Session 5 — Sales Agents & Coupons Manager ⚠️

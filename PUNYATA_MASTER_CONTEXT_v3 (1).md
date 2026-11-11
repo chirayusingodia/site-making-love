@@ -1164,6 +1164,10 @@ Not itself a data/money-integrity bug like §21's other findings — pure layout
 auth-gated (`beforeLoad` redirects an unauthenticated session to `/`), so a real admin/telecaller login
 is needed for an in-browser pass. Shipped in commit `e64a3f1` on `Staging`.
 
+
+### International customers (2026-11-09) — phone identity is now multi-country
+
+`src/lib/phone.ts` (`parsePhone`, libphonenumber-js) and SQL `normalize_phone_e164()` (migration 044) are a **matched pair** — change one, change the other, and run `npm run test:phone` (its `sqlMirrorNormalize` parity check). Rules: Indian input → `+91XXXXXXXXXX` exactly as before; non-Indian numbers only as explicit `+`/`00` E.164 (or with a country picked in the UI); bare foreign digits are rejected (a typo'd Indian number must never become a foreign identity — the 2026-08-30 bug class). `profiles.country_code` is derived server-side from the phone, never from the request. Phone OTP login stays India-only. Payments are INR-only (`payments_currency_inr_only` CHECK); a non-INR capture is logged loudly and not recorded. `wa_id` is E.164 minus `+`; `normalizeWaId` re-adds it (international first, legacy India shapes as fallback).
 ---
 
 ## 22. What v3 Described But Was Never Built

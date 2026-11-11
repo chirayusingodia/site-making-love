@@ -1,7 +1,8 @@
 // ─────────────────────────────────────────────────────────────
 // PUNYATA — Session 4: Sankalp batch business logic (PURE)
 //
-// Everything in this file is a pure function with zero imports.
+// Everything in this file is a pure function; its only import is the pure
+// phone helper (src/lib/phone.ts).
 // No Supabase client, no env, no Date.now() hidden inside —
 // callers pass data in, results come out. This is what makes the
 // Tuesday/Saturday independence and catch-up rules unit-testable
@@ -27,6 +28,7 @@
 //  - Tuesday and Saturday batches are ALWAYS independent records.
 //  - Status labels: Done / Pending / Missed only. Never "Covered".
 // ─────────────────────────────────────────────────────────────
+import { normalizePhoneE164, waDigits } from "./phone";
 
 // CONFIRMED (Session 4 revision): 5 SUBSCRIPTIONS (family units)
 // per segment — NOT 20 subscriptions. Each subscription has up to
@@ -456,12 +458,14 @@ export function groupForPandit(members: PanditMember[]): PanditGroup[] {
 
 // ─── WhatsApp wa.me stub (Meta API pending — no real API calls) ───
 
-/** '98765 43210' → '919876543210'; '+91-9876543210' → '919876543210'. */
+/**
+ * '98765 43210' → '919876543210'; '+91-9876543210' → '919876543210';
+ * '+1 415 555 0123' → '14155550123'. Country-agnostic via the one phone
+ * parser. Unparseable input passes through as bare digits (legacy
+ * behaviour) so a link is still produced for odd values.
+ */
 export function normalizePhoneForWa(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 10) return `91${digits}`;
-  if (digits.length === 12 && digits.startsWith("91")) return digits;
-  return digits; // already E.164-ish or unusual — pass through
+  return waDigits(normalizePhoneE164(raw) ?? "") ?? raw.replace(/\D/g, "");
 }
 
 export function buildWaLink(phoneRaw: string, message: string): string {

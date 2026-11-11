@@ -1,3 +1,4 @@
+import { IstTag } from "@/components/IstTag";
 import { Moon, Sparkles, Sun } from "lucide-react";
 import { upcomingSevaDates } from "@/lib/seva-dates";
 import { isHawanSeva, type LiveSeva } from "@/lib/plans-schedule";
@@ -60,6 +61,7 @@ export function UpcomingPoojaCards({ sevas }: { sevas: LiveSeva[] }) {
             <div className="min-w-0 space-y-0.5">
               <div className="text-[10px] font-bold uppercase tracking-wider text-brand">
                 {i === 0 ? t("checkout_next_seva") : t("checkout_after_that")} · {u.weekday}
+                <IstTag />
               </div>
               {u.sevas.length > 0 && (
                 <div className="text-[12px] leading-snug text-foreground/80">

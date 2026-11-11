@@ -3,6 +3,8 @@ import { ShieldCheck, RefreshCcw, Check, X } from "lucide-react";
 import { SiteChrome, WHATSAPP_URL } from "@/components/site-chrome";
 import { useLanguage } from "@/lib/translations";
 
+import { IntlPolicyNote } from "@/components/IntlPolicyNote";
+
 export const Route = createFileRoute("/refund-policy")({
   head: () => ({
     meta: [
@@ -174,6 +176,8 @@ function RefundPolicyPage() {
           <h2 className="text-base font-bold text-[#5B1A1A]">{c.partialHeading}</h2>
           <p className="text-sm text-foreground/80 leading-relaxed">{c.partialBody}</p>
         </section>
+
+        <IntlPolicyNote />
 
         <div className="card-soft p-5 space-y-2 border border-brand/10 text-center">
           <h2 className="text-base font-bold text-brand">{c.moreInfoHeading}</h2>

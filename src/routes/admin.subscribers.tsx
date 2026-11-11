@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { callAdminApi, fetchMyRole } from "@/lib/admin-api";
 import { todayIST } from "@/lib/offline-subscriptions-logic";
+import { flagEmoji } from "@/lib/phone";
 import { ymLabel } from "@/lib/finance-ui";
 import { AddOfflineSubscriberDialog } from "@/components/admin/offline-dialogs";
 import { OfflineSubscriberPanel } from "@/components/admin/offline-subscriber-panel";
@@ -109,6 +110,9 @@ interface SubscriberListRow {
   profile_alt_phone: string | null;
   // "autopay" | "offline_qr" (migration 042) — carries no amount, safe for admin.
   payment_mode: string | null;
+  // International (migration 044) — operational, not financial.
+  country_code: string | null;
+  is_international: boolean | null;
 }
 
 /** Filters that are applied server-side before pagination. */
@@ -134,6 +138,8 @@ interface FilterState {
    * pending is worth a proactive call.
    */
   stalePending: boolean;
+  /** Overseas payers (subscriptions.is_international). */
+  international: boolean;
 }
 
 const STALE_PENDING_OPS_MINUTES = 60;
@@ -149,6 +155,7 @@ const DEFAULT_FILTERS: FilterState = {
   dateTo: "",
   sankalpPending: false,
   stalePending: false,
+  international: false,
 };
 
 // ─── 360 Modal Types (unchanged — still queries real tables) ──
@@ -225,6 +232,8 @@ interface Subscription360 {
   profile_email: string | null;
   profile_alt_phone: string | null;
   payment_mode: string | null;
+  country_code?: string | null;
+  is_international?: boolean | null;
   family_members: FamilyMember[];
   payments?: Payment[];
   seva_proofs?: SevaProof[];
@@ -305,6 +314,7 @@ function applyFilters(query: any, filters: FilterState): any {
   if (filters.planId !== "all") query = query.eq("plan_id", filters.planId);
   if (filters.agentId !== "all") query = query.eq("agent_id", filters.agentId);
   if (filters.paymentMode !== "all") query = query.eq("payment_mode", filters.paymentMode);
+  if (filters.international) query = query.eq("is_international", true);
   if (filters.joined !== "all") {
     // Start date vs the first of the current IST month. With Status = Active this
     // is "active last month AND still active" (before_this_month) or "new this month".
@@ -1164,7 +1174,8 @@ function AdminSubscribersPage() {
     filters.dateTo ||
     filters.search ||
     filters.sankalpPending ||
-    filters.stalePending;
+    filters.stalePending ||
+    filters.international;
 
   // ── Open 360 modal: load full family_members lazily ──
   const open360 = async (row: SubscriberListRow) => {
@@ -1202,6 +1213,8 @@ function AdminSubscribersPage() {
       profile_email: row.profile_email,
       profile_alt_phone: row.profile_alt_phone,
       payment_mode: row.payment_mode,
+      country_code: row.country_code,
+      is_international: row.is_international,
       family_members: (fm || []) as FamilyMember[],
     });
     setLoad360Open(false);
@@ -1230,6 +1243,11 @@ function AdminSubscribersPage() {
     <>
       <StatusBadge status={row.status} />
       {row.payment_mode === "offline_qr" && <StatusPill tone="neutral">QR</StatusPill>}
+      {row.is_international && (
+        <StatusPill tone="neutral">
+          🌍 International{row.country_code ? ` ${flagEmoji(row.country_code)}` : ""}
+        </StatusPill>
+      )}
       {row.family_member_count === 0 && row.status === "active" && (
         <StatusPill tone="bad">Details incomplete</StatusPill>
       )}
@@ -1465,6 +1483,20 @@ function AdminSubscribersPage() {
               className="accent-rose-600"
             />
             <span className="truncate">Details Incomplete (0 members)</span>
+          </label>
+
+          {/* International payers — telecaller may need to mind the time zone */}
+          <label
+            className={checkboxCls(pendingFilters.international, "amber")}
+            title="Overseas customers (phone country or foreign card)"
+          >
+            <input
+              type="checkbox"
+              checked={pendingFilters.international}
+              onChange={(e) => setPending((p) => ({ ...p, international: e.target.checked }))}
+              className="accent-amber-600"
+            />
+            <span className="truncate">🌍 International</span>
           </label>
 
           {/* Stale Pending queue — abandoned checkouts [Part C] */}

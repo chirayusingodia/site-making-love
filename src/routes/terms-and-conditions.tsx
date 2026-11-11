@@ -3,6 +3,8 @@ import { ShieldCheck, ScrollText } from "lucide-react";
 import { SiteChrome, WHATSAPP_URL } from "@/components/site-chrome";
 import { useLanguage } from "@/lib/translations";
 
+import { IntlPolicyNote } from "@/components/IntlPolicyNote";
+
 export const Route = createFileRoute("/terms-and-conditions")({
   head: () => ({
     meta: [
@@ -229,6 +231,8 @@ function TermsPage() {
             </section>
           ))}
         </div>
+
+        <IntlPolicyNote />
 
         <div className="card-soft p-5 space-y-2 border border-brand/10 text-center">
           <h2 className="text-base font-bold text-brand">{s.questionsHeading}</h2>

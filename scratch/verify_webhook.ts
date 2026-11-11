@@ -24,6 +24,8 @@
 
 import { createHmac } from "node:crypto";
 import {
+  capturedPaymentRow,
+  failedPaymentRow,
   countConsecutiveFailures,
   extractContext,
   FAILURE_DEMOTE_THRESHOLD,
@@ -805,6 +807,33 @@ const seedCapture = (payId: string, ts = 1785000000) => ({
       db.tables.subscriptions[0].status === "active" &&
       db.tables.payments.length === 0,
   );
+}
+
+// ── International (migration 044): row builders + Phase 1 INR lock ──
+{
+  const base = { event: "subscription.charged", razorpaySubId: "sub_I", subscription: { paid_count: 1 } };
+  const intl = capturedPaymentRow("sub-1", {
+    ...base,
+    payment: { id: "pay_I", amount: 59900, currency: "INR", method: "card", international: true, fee: 2300, tax: 351, created_at: 1754370605 },
+  } as never) as Record<string, unknown> | null;
+  check("intl: captured row stamps international=true", intl?.international === true);
+  check("intl: captured row stamps fee_paise/tax_paise", intl?.fee_paise === 2300 && intl?.tax_paise === 351);
+  check("intl: currency INR", intl?.currency === "INR");
+  const dom = capturedPaymentRow("sub-1", {
+    ...base,
+    payment: { id: "pay_D", amount: 59900, method: "upi", created_at: 1754370605 },
+  } as never) as Record<string, unknown> | null;
+  check("domestic: international=false, fee NULL, currency INR", dom?.international === false && dom?.fee_paise === null && dom?.currency === "INR");
+  const usd = capturedPaymentRow("sub-1", {
+    ...base,
+    payment: { id: "pay_U", amount: 900, currency: "USD", created_at: 1754370605 },
+  } as never);
+  check("non-INR captured payment is NOT built (Phase 1 lock)", usd === null);
+  const usdFail = failedPaymentRow("sub-1", {
+    ...base,
+    payment: { id: "pay_UF", amount: 900, currency: "USD", created_at: 1754370605 },
+  } as never);
+  check("non-INR failed payment is NOT built", usdFail === null);
 }
 
 // ─────────────────────────────────────────────────────────────

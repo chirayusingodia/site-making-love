@@ -202,6 +202,25 @@ export async function createCheckoutForUser(input: {
   const plan = await resolveActivePlan(adminDb, planIdOrSlug);
   if (!plan) throw new CheckoutError("Plan not found or inactive", 404);
 
+  // Payer country comes from the SERVER-held profile (derived from the
+  // verified phone when it was saved) — never from the request. Used for
+  // the display flag + Razorpay notes only; never for pricing/activation.
+  // Best-effort: a missing column (migration 044 not applied) or lookup
+  // failure degrades to "domestic" rather than blocking checkout.
+  let payerCountry: string | null = null;
+  try {
+    const { data: prof } = await adminDb
+      .from("profiles")
+      .select("country_code")
+      .eq("id", userId)
+      .maybeSingle();
+    const cc = (prof as { country_code?: string | null } | null)?.country_code;
+    payerCountry = typeof cc === "string" && /^[A-Z]{2}$/.test(cc) ? cc : null;
+  } catch {
+    payerCountry = null;
+  }
+  const isInternational = payerCountry !== null && payerCountry !== "IN";
+
   // An offline (QR) subscriber who logs in must not be able to buy online
   // on top of it: that would leave TWO live subscriptions and a double
   // sankalp. Moving them to autopay is a manual team step (out of scope).
@@ -342,6 +361,14 @@ export async function createCheckoutForUser(input: {
       if (Object.keys(backfill).length > 1) {
         await adminDb.from("subscriptions").update(backfill).eq("id", existingPending.id);
       }
+      // The customer may have changed their phone country since the
+      // pending row was made. Separate best-effort write (display only).
+      if (isInternational) {
+        await adminDb
+          .from("subscriptions")
+          .update({ is_international: true })
+          .eq("id", existingPending.id);
+      }
       // Refresh the Meta matching context on reuse (the visitor may have
       // gained fbp/fbc since). Separate best-effort write so a missing
       // migration-041 column can never take the attribution backfill down.
@@ -478,6 +505,9 @@ export async function createCheckoutForUser(input: {
     plan_id: plan.id,
     ...(couponDecision?.ok ? { coupon_id: couponDecision.coupon!.id } : {}),
     status: "pending",
+    // Only written when true so an India checkout never depends on
+    // migration 044 having landed.
+    ...(isInternational ? { is_international: true } : {}),
     ...(resolvedChannel
       ? { acquisition_channel: resolvedChannel }
       : couponDecision?.ok
@@ -530,6 +560,7 @@ export async function createCheckoutForUser(input: {
       planPricePaise: plan.price_paise,
       billingPeriod: plan.billing_period,
       couponCode,
+      payerCountry,
       // First mandate on a brand-new pending subscription: nothing to
       // displace, so it charges as soon as the customer authorises it.
       isCurrent: true,

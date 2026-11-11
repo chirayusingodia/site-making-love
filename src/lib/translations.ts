@@ -122,6 +122,8 @@ export const translations = {
     checkout_name_placeholder: "आपका नाम",
     checkout_phone_label: "मोबाइल नंबर",
     checkout_phone_placeholder: "10-अंकों का मोबाइल नंबर",
+    checkout_intl_inr_note:
+      "आपसे {amount} INR (₹) में charge होगा। आपका बैंक इसे अपनी currency में convert करेगा (बैंक की forex fee लग सकती है)। International Visa/Mastercard cards accepted.",
     checkout_saving: "Save हो रहा है…",
     checkout_family_note: "परिवार के नाम-गोत्र भुगतान के बाद profile पर जोड़े जाते हैं।",
     checkout_order_summary: "Order Summary",
@@ -421,6 +423,8 @@ export const translations = {
     checkout_name_placeholder: "Your name",
     checkout_phone_label: "Mobile Number",
     checkout_phone_placeholder: "10-digit mobile number",
+    checkout_intl_inr_note:
+      "You will be charged {amount} in INR (₹). Your bank converts it to your own currency (a bank forex fee may apply). International Visa/Mastercard cards accepted.",
     checkout_saving: "Saving…",
     checkout_family_note: "Family members' names & gotras are added to your profile after payment.",
     checkout_order_summary: "Order Summary",

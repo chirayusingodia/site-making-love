@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { normalizePhoneE164 } from "@/lib/phone";
+import { normalizePhoneE164, parsePhone } from "@/lib/phone";
 
 // ─────────────────────────────────────────────────────────────
 // PUNYATA — Signup-first checkout: phone OTP auth (server-only)
@@ -146,10 +146,17 @@ export async function requestOtpForPhone(
     captchaToken?: string | null;
   },
 ): Promise<RequestOtpResult> {
-  const phone = normalizePhoneE164(rawPhone);
-  if (!phone) {
+  // OTP login is INDIA-ONLY ON PURPOSE. Phone parsing now accepts
+  // foreign E.164 (international customers sign in with Google), but
+  // sending SMS to foreign numbers is costly and is the SMS-pumping
+  // vector otp_send_log was built against. Non-IN → the same generic
+  // rejection as a malformed number. Revisit only with a deliberate
+  // decision to enable international SMS OTP.
+  const parsedPhone = parsePhone(rawPhone);
+  if (!parsedPhone || parsedPhone.country !== "IN") {
     throw new Error("Invalid Indian mobile number");
   }
+  const phone = parsedPhone.e164;
   const name = rawName.trim().slice(0, 120);
   const ip =
     typeof opts?.clientIp === "string" && opts.clientIp.trim() ? opts.clientIp.trim() : null;

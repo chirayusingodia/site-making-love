@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json, requireUser, getServiceClient } from "@/lib/supabase-admin.server";
-import { normalizePhoneE164 } from "@/lib/auth.server";
+import { parsePhone } from "@/lib/phone";
 
 // POST /api/auth/complete-google-profile
 // Auth: Bearer <supabase access token> (the Google-OAuth session that
@@ -42,13 +42,15 @@ export const Route = createFileRoute("/api/auth/complete-google-profile")({
           return json({ error: "Invalid JSON body" }, 400);
         }
 
-        if (typeof body?.phone !== "string" || body.phone.trim().length < 10) {
-          return json({ error: "10-anki valid mobile number daalein" }, 400);
+        // Client sends +E.164 for foreign numbers (country picker). Bare
+        // 10-digit Indian input still works. country_code is DERIVED here
+        // from the parsed phone — never read from the request body.
+        const parsed = typeof body?.phone === "string" ? parsePhone(body.phone) : null;
+        if (!parsed) {
+          return json({ error: "Valid mobile number daalein (country code ke saath)" }, 400);
         }
-        const phone = normalizePhoneE164(body.phone);
-        if (!phone) {
-          return json({ error: "Valid 10-digit Indian mobile number daalein" }, 400);
-        }
+        const phone = parsed.e164;
+        const countryCode = parsed.country;
         const fullName =
           typeof body?.full_name === "string" ? body.full_name.trim().slice(0, 120) : "";
 
@@ -56,9 +58,9 @@ export const Route = createFileRoute("/api/auth/complete-google-profile")({
         // WhatsApp number above. Same format rules apply.
         let altPhone: string | null = null;
         if (typeof body?.alt_phone === "string" && body.alt_phone.trim()) {
-          altPhone = normalizePhoneE164(body.alt_phone);
+          altPhone = parsePhone(body.alt_phone)?.e164 ?? null;
           if (!altPhone) {
-            return json({ error: "Calling number bhi valid 10-anki hona chahiye" }, 400);
+            return json({ error: "Calling number bhi valid daalein (country code ke saath)" }, 400);
           }
         }
 
@@ -99,6 +101,7 @@ export const Route = createFileRoute("/api/auth/complete-google-profile")({
           id: auth.userId,
           ...(fullName ? { full_name: fullName } : {}),
           phone,
+          country_code: countryCode,
           ...(altPhone ? { alt_phone: altPhone } : {}),
           ...(verifiedEmail ? { email: verifiedEmail } : {}),
         });
